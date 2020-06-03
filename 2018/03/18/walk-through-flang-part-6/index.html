@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 6</title>
+  <meta name="description" content="At this point we should have a reasonable picture of how flang parses and generates semantic information. So now it is time to explore with more detail what is actually synthesized and how it can be used later in the compiler. In this chapter we are going to see the symbol table.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2018/03/18/walk-through-flang-part-6/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 6">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2018/03/18/walk-through-flang-part-6/">
+  <meta property="og:description" content="At this point we should have a reasonable picture of how flang parses and generates semantic information. So now it is time to explore with more detail what is actually synthesized and how it can be used later in the compiler. In this chapter we are going to see the symbol table.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 6">
+  <meta name="twitter:description" content="At this point we should have a reasonable picture of how flang parses and generates semantic information. So now it is time to explore with more detail what is actually synthesized and how it can b...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 6</h1>
+    
+    <p class="post-meta"><time datetime="2018-03-18T14:37:03+00:00" itemprop="datePublished">Mar 18, 2018</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>At this point we should have a reasonable picture of how flang parses and generates semantic information. So now it is time to explore with more detail what is actually synthesized and how it can be used later in the compiler. In this chapter we are going to see the symbol table.</p>
+
+<!--more-->
+
+<h2>Symbols</h2>
+
+<p>
+Our Fortran programs deal with abstract, symbolic entities. These entities, which often have a name, are called collectively <em>symbols</em>. Those symbols are created by the front end as it finds declarative statements in our code. Declarations assigns several properties, or attributes, to the symbols. The front end also needs to look up these symbols in order to check their properties. For instance, in a derived type construct like
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">TYPE</span><span class="w"> </span><span class="n">T</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">X</span><span class="w">
+  </span><span class="kt">REAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">Y</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">TYPE</span><span class="w"> </span><span class="n">T</span><span class="w">
+</span><span class="k">TYPE</span><span class="p">(</span><span class="n">T</span><span class="p">)</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">W</span></code></pre></figure>
+
+<p>
+The front end will need symbols for <code>T</code>, <code>X</code>, <code>Y</code> and <code>W</code>. <code>T</code> is a derived type. <code>X</code> and <code>Y</code> are components of the derived type <code>T</code>. <code>X</code> is the first component of <code>T</code> and has type <code>INTEGER</code>. <code>Y</code> is the second component of <code>T</code> and has type <code>REAL</code> and rank 1 with size 2. <code>W</code> is a variable whose type is <code>TYPE(T)</code>.
+</p>
+
+<h3>Symbol table</h3>
+
+<p>
+For resource-management purposes we want to group the symbols under a single data structure usually called the symbol table.
+</p>
+
+<h2>Flang symbol table</h2>
+
+<h3>Definition</h3>
+
+<p>
+Flang has symbol table is in a global variable called <code>stb</code>, declared in <code>symacc.h</code> (I think <code>symacc</code> means <em>symbol access</em>). This variable has type <code>STB</code> which is a struct with several fields described below.
+</p>
+
+<p>The variable is (apparently) defined twice, an empty one in <code>symacc.c</code> and another one in <code>tools/flang2/utils/symtab/symtabdf.h</code> (this is valid in C code but incredibly confusing, don't do it). The latter is a file generated when compiling flang itself. This is the real definition and initializes the first 5 fields which are made of tables that won't change during the compilation (no idea at this why these tables are not decoupled from the <code>STB</code>).
+</p>
+
+<table>
+<thead>
+<tr>
+<th>
+Field declaration
+</th>
+<th>
+Meaning
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th colspan="2">
+Static arrays defined when building flang
+</th>
+</tr>
+<tr>
+  <td><code>const char *stypes[ST_MAX + 1];</code></td>
+  <td>
+   This an array indexed by the different symbol kinds. Each entry in this array contains a human-readable name of the symbol kind.
+  </td>
+</tr>
+<tr>
+  <td><code>OVCLASS ovclass[ST_MAX + 1];</code></td>
+  <td>This an array indexed by the different symbol kinds. Each entry in this array contains an overload class for the symbol kind. We will see below what is this.
+&lt;/tr&gt;
+<tr>
+  <td><code>const char *ocnames[OC_MAX + 1];</code></td>
+  <td>This an array indexed by the different overload clases. Each entry in this array contains a debug name of the overload class itself.
+&lt;/tr&gt;
+<tr>
+  <td><code>const char *scnames[SC_MAX + 1];</code></td>
+  <td>This an array indexed by the different storage clases. Each entry in this array contains a debug name of the storage class itself. We will see below that is this.</td>
+</tr>
+<tr>
+  <td><code>const char *tynames[TY_MAX + 1];</code></td>
+  <td>This an array indexed by the different types. Each entry in this array contains a human-readable name of the type itself.</td>
+</tr>
+<tr>
+<th colspan="2">
+Distinguished constants
+</th>
+</tr>
+<tr>
+  <td><code>int i0, i1;</code></td>
+  <td>These represent the symbols for the constants <code>0</code> and <code>1</code> of type <code>INTEGER</code>. Because these are very common values, having a symbol for them is handy in the compiler.</td>
+</tr>
+<tr>
+  <td><code>int k0, k1;</code></td>
+  <td>These represent the symbols for the constants <code>0_8</code> and <code>1_8</code> respectively.</td>
+</tr>
+<tr>
+  <td><code>SPTR flt0, dbl0, quad0;</code></td>
+  <td>These represent the symbols for the constants <code>0.0_4</code>, <code>0.0_8</code> and <code>0.0_16</code> respectively.</td>
+</tr>
+<tr>
+  <td><code>SPTR fltm0, dblm0, quadm0;</code></td>
+  <td>These represent the symbols for the constants <code>-0.0_4</code>, <code>-0.0_8</code> and <code>-0.0_16</code>. Because of the numeric model used by Fortran involves a sign plus magnitude representation, there is a negative zero (or signed zero) distinct to the regular zero.</td>
+</tr>
+<tr>
+  <td><code>SPTR flt1, dbl1, quad1;</code></td>
+  <td>These represent the symbols for the constants <code>1.0_4</code>, <code>1.0_8</code> and <code>1.0_16</code> respectively.</td>
+</tr>
+<tr>
+  <td><code>SPTR flt2, dbl2, quad2;</code></td>
+  <td>These represent the symbols for the constants <code>2.0_4</code>, <code>2.0_8</code> and <code>2.0_16</code> respectively.</td>
+</tr>
+<tr>
+  <td><code>SPTR flthalf, dblhalf, quadhalf;</code></td>
+  <td>These represent the symbols for the constants <code>0.5_4</code>, <code>0.5_8</code> and <code>0.5_16</code> respectively.</td>
+</tr>
+<tr>
+<th colspan="2">
+Data type table
+</th>
+</tr>
+<tr>
+  <td><code>INDEX_BY(ISZ_T, DTYPE) dt_base;</code></td>
+  <td>This is a table, that may grow, indexed by an integer and keeps information of the different types</td>
+</tr>
+<tr>
+  <td><code>int dt_size;</code></td>
+  <td>Number of elements that can be stored in the table <code>dt_base</code>.</td>
+</tr>
+<tr>
+  <td><code>int dt_avail;</code></td>
+  <td>Highest index valid in the table <code>dt_base</code>.</td>
+</tr>
+<tr>
+<th colspan="2">
+Scope
+</th>
+</tr>
+<tr>
+  <td><code>int curr_scope;</code></td>
+  <td>This is an integer that represents the current scope.</td>
+</tr>
+<tr>
+<th colspan="2">
+Hash table
+</th>
+</tr>
+<tr>
+  <td><code>SPTR hashtb[HASHSIZE + 1];</code></td>
+  <td>This is a hash table of symbols.</td>
+</tr>
+<tr>
+<th colspan="2">
+The symbol table itself
+</th>
+</tr>
+<tr>
+  <td><code>SPTR firstusym, firstosym;</code></td>
+  <td>Contain the first symbol that is not an intrinsic or a predefined one. I'm not sure about the difference between the two apparently <code>firstusym</code> may change when finishing the handling of internal subprograms (probably because we want subsequent sibling internal subprograms start with an "empty" table).</td>
+</tr>
+<tr>
+  <td><code>INDEX_BY(SYM, SPTR) stg_base;</code></td>
+  <td>Table of symbols (of type <code>SYM</code>) indexed by <code>SPTR</code>. A <code>SPTR</code> is an integer (actually an enumerator but used everywhere else as an index). This is the table proper. When adding a symbol it is added in this table.</td>
+</tr>
+<tr>
+  <td><code>int stg_size;</code></td>
+  <td>Size of <code>stg_base</code>.</td>
+</tr>
+<tr>
+  <td><code>int stg_avail;</code></td>
+  <td>Next symbol free in <code>stg_base</code>.</td>
+</tr>
+<tr>
+<th colspan="2">
+Strings table
+</th>
+</tr>
+<tr>
+  <td><code>char *n_base;</code></td>
+  <td>Table of strings. This is just a sequence of null-terminated strings. When using strings, we will find their contents by having the offset in <code>n_base</code> stored somewhere else.</td>
+</tr>
+<tr>
+  <td><code>int n_size;</code></td>
+  <td>Size of n_base.</td>
+</tr>
+<tr>
+  <td><code>int namavl;</code></td>
+  <td>Next position in <code>n_base</code> available.</td>
+</tr>
+<tr>
+<th colspan="2">
+Labels table
+</th>
+</tr>
+<tr>
+  <td><code>int lbavail;</code></td>
+  <td>This is the next label available, when the compiler needs to emit an internal label in the code. flang1 starts from 99999 and decreases this value for each label. flang2 starts from zero and increases the value instead</td>
+</tr>
+<tr>
+  <td><code>int lb_string_avail;</code></td>
+  <td>This does not seem to be used anywhere(?)</td>
+</tr>
+<tr>
+<th colspan="2">
+Seemingly unused things
+</th>
+</tr>
+<tr>
+  <td><code>INT *w_base;</code></td>
+  <td>This is not used anywhere. Apparently it is allocated and then deallocated. But nothing else uses it. <code>flang2</code> also does not seem to bother to deallocate it.</td>
+</tr>
+<tr>
+  <td><code>int w_size;</code></td>
+  <td>The size of <code>w_base</code> but otherwise not used for anything.</td>
+</tr>
+<tr>
+  <td><code>int wrdavl;</code></td>
+  <td>Not used for anything apparently.</td>
+</tr>
+<tr>
+<th colspan="2">
+Distinguished data types
+</th>
+</tr>
+<tr>
+  <td><code>DTYPE dt_int;</code></td>
+  <td>This is the type index for the default <code>INTEGER</code> of the target.</td>
+</tr>
+<tr>
+  <td><code>DTYPE dt_real;</code></td>
+  <td>This is the type index for the default <code>REAL</code> of the target.</td>
+</tr>
+<tr>
+  <td><code>DTYPE dt_cmplx;</code></td>
+  <td>This is the type index for the default <code>COMPLEX</code> of the target.</td>
+</tr>
+<tr>
+  <td><code>DTYPE dt_log;</code></td>
+  <td>This is the type index for the default <code>LOGICAL</code> of the target.</td>
+</tr>
+<tr>
+  <td><code>DTYPE dt_dble;</code></td>
+  <td>This is the type index for the default <code>DOUBLE PRECISION</code> of the target.</td>
+</tr>
+<tr>
+  <td><code>DTYPE dt_dcmplx;</code></td>
+  <td>This is the type index for the default <code>DOUBLE COMPLEX</code> of the target. This is an extension of flang.</td>
+</tr>
+<tr>
+  <td><code>DTYPE dt_ptr;</code></td>
+  <td>This is the <code>INTEGER</code> type index for the type used for Cray pointers. This is an extension of flang.</td>
+</tr>
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+<h3>Integers. Integers everywhere</h3>
+
+<p>
+If the flang code weren't stuck in the 1980s the design would look a bit different nowadays. Each kind of entity (symbols, data types, trees, etc) would be represented using a pointer of a particular type. Unfortunately this is not how the flang front end works. Instead all entities are designated using an index or an offset. This offset is meaningful only within its associated table. Thus is a <code>SPTR</code> is just an integer that indexes the <code>stb.stg_base</code> and a <code>DTYPE</code> indexes <code>stb.dt_base</code>. A similar thing happens with the trees (AST).
+<p>
+
+<p>
+That said, the flang code rarely uses these tables directly, instead it uses macros to access the properties given one of those integers. Get the wrong integer and you will be accessing the wrong table and using wrong data. The whole picture is a bit grim at this point from a maintenance point of view. Probably there are technical reasons in the past that justified a design like this (limited memory, compilers were also more limited at that time, reek of Fortran-style engineering, etc). None of these reasons seem to have been revisited very seriously in the code which explains its unpleasant dated look and feel. The code shows some shy attempts to move to a more declarative setting by using enums, see below, but this is still not enough: in C enums and integers are almost interchangeable, and many places the code still gives up and uses plain <code>int</code>.
+</p>
+
+<p style="padding: 1em; background-color: #efe;">
+If moving to a more "graph-like" approach using pointers for the entities is not feasible in this code base, an intermediate solution could be what in modern programming languages is often called a "new type". Here we want to use the same physical representation (integers indexing arrays) to mean different things. So we need a different type. Typically in C this is achievable by wrapping the type (in this case an integer) in a struct and passing that struct by value (as we were doing with the original integer). Most convention calls are designed in a way that passing a struct like this is equivalent to pass the original integer.Type checking rules of C will catch many wrong uses and the macros can be reused by just readjusting them. Often, though, more strictness may raise issues when the original code was doing dubious things that even if out of the type discipline, are still correct. So this process is likely to be painful anyways: the technical debt repayment is going to involve a fat bill.
+</p>
+
+<h3>Static tables</h3>
+
+<p>
+From the definition above we see that flang uses several tables. A first set of them are static and won't change (<code>stypes</code>, <code>ovclass</code>, <code>ocnames</code>, <code>scnames</code> and <code>tynames</code>) and their sizes are known upfront (<code>ST_MAX</code>, <code>OC_MAX</code>, <code>SC_MAX</code> and <code>TY_MAX</code>). 
+</p>
+
+<p>
+A second set of them are dynamic and may grow depending on the program unit being compied.
+</p>
+
+<h2>Data types</h2>
+
+<p>
+There is a table of data types in <code>stb.dt_base</code> which can contain up to <code>stb.dt_size</code> entries. The next available slot for a new datatype (when we need a new one) is represented in <code>stb.dt_avail</code>. This table is reallocated dynamically as needed. The table is indexed by integers (of type <code>ISZ_T</code> which happens to be a <code>long</code>). That table is a bit special because it has entries of variable length. While scalar types like <code>INTEGER</code> will just take one entry, types associated to arrays will take up to three entries. The first entry is always of type <code>TY_KIND</code> which is a set of kinds of types. That type determines whether more data follows. The set of kinds of types is static and predefined in <code>symtab.h</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>&lt;build-dir&gt;/tools/flang1/utils/symtab/symtab.h</figcaption><pre><code class="language-c" data-lang="c"> <span class="k">typedef</span> <span class="k">enum</span> <span class="n">TY_KIND</span> <span class="p">{</span>
+     <span class="n">TY_NONE</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>     <span class="c1">// No type in this entry of the table</span>
+     <span class="n">TY_WORD</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>     <span class="c1">// 32-bit value. Used internally by flang.</span>
+     <span class="n">TY_DWORD</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>    <span class="c1">// 64-bit value. Used internally by flang.</span>
+     <span class="n">TY_HOLL</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>     <span class="c1">// Type of Hollerith constants.</span>
+     <span class="n">TY_BINT</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>     <span class="c1">// Type of a BYTE (flang extension?).</span>
+     <span class="n">TY_SINT</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>     <span class="c1">// Type of an INTEGER(KIND=2)</span>
+     <span class="n">TY_INT</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>      <span class="c1">// Type of an INTEGER(KIND=4)</span>
+     <span class="n">TY_INT8</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>     <span class="c1">// Type of an INTEGER(KIND=8)</span>
+     <span class="n">TY_REAL</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>     <span class="c1">// Type of a REAL(KIND=4)</span>
+     <span class="n">TY_DBLE</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>     <span class="c1">// Type of a REAL(KIND=8) or DOUBLE PRECISION</span>
+     <span class="n">TY_QUAD</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>    <span class="c1">// Type of a REAL(KIND=16)</span>
+     <span class="n">TY_CMPLX</span> <span class="o">=</span> <span class="mi">11</span><span class="p">,</span>   <span class="c1">// Type of a COMPLEX(KIND=4) (also called COMPLEX*8)</span>
+     <span class="n">TY_DCMPLX</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>  <span class="c1">// Type of a COMPLEX(KIND=8) (also called COMPLEX*16)</span>
+     <span class="n">TY_QCMPLX</span> <span class="o">=</span> <span class="mi">13</span><span class="p">,</span>  <span class="c1">// Type of a COMPLEX(KIND=16) (also called COMPLEX*32)</span>
+     <span class="n">TY_BLOG</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>    <span class="c1">// Type of a LOGICAL(KIND=1)</span>
+     <span class="n">TY_SLOG</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>    <span class="c1">// Type of a LOGICAL(KIND=2)</span>
+     <span class="n">TY_LOG</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>     <span class="c1">// Type of a LOGICAL(KIND=4)</span>
+     <span class="n">TY_LOG8</span> <span class="o">=</span> <span class="mi">17</span><span class="p">,</span>    <span class="c1">// Type of a LOGICAL(KIND=8)</span>
+     <span class="n">TY_CHAR</span> <span class="o">=</span> <span class="mi">18</span><span class="p">,</span>    <span class="c1">// Type of CHARACTER(KIND=1)</span>
+     <span class="n">TY_NCHAR</span> <span class="o">=</span> <span class="mi">19</span><span class="p">,</span>   <span class="c1">// Type of CHARACTER(KIND=2)</span>
+     <span class="n">TY_PTR</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>     <span class="c1">// Type of pointers. Used internally by flang.</span>
+     <span class="n">TY_ARRAY</span> <span class="o">=</span> <span class="mi">21</span><span class="p">,</span>   <span class="c1">// Type of an array</span>
+     <span class="n">TY_STRUCT</span> <span class="o">=</span> <span class="mi">22</span><span class="p">,</span>  <span class="c1">// Type of a struct</span>
+     <span class="n">TY_UNION</span> <span class="o">=</span> <span class="mi">23</span><span class="p">,</span>   <span class="c1">// Type of a UNION (flang extension)</span>
+     <span class="n">TY_DERIVED</span> <span class="o">=</span> <span class="mi">24</span><span class="p">,</span> <span class="c1">// Type of a derived type (i.e. TYPE(T))</span>
+     <span class="n">TY_NUMERIC</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span> <span class="c1">// Any numeric type. Internally used for intrinsics.</span>
+     <span class="n">TY_ANY</span> <span class="o">=</span> <span class="mi">26</span><span class="p">,</span>     <span class="c1">// Any type. Internally used for intrinsics.</span>
+     <span class="n">TY_PROC</span> <span class="o">=</span> <span class="mi">27</span><span class="p">,</span>    <span class="c1">// Procedure pointers and dummy procedures</span>
+     <span class="n">TY_128</span> <span class="o">=</span> <span class="mi">28</span><span class="p">,</span>     <span class="c1">// A vector of 128-bit (e.g. SSE, Neon, Altivec)</span>
+     <span class="n">TY_256</span> <span class="o">=</span> <span class="mi">29</span><span class="p">,</span>     <span class="c1">// A vector of 256-bit (e.g AVX-2)</span>
+     <span class="n">TY_512</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>     <span class="c1">// A vector of 512-bit (e.g. AVX-512)</span>
+     <span class="c1">// A few more that are unused apparently</span>
+     <span class="c1">// related to __float128 and __int128</span>
+ <span class="p">}</span> <span class="n">TY_KIND</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Because some of the kinds are fundamental to the language and do not need anything else to be represented, the data type table is prepopulated with a few <code>DTYPE</code>s which match the above types.
+</p>
+
+
+<figure class="highlight"><figcaption>&lt;build-dir&gt;/tools/flang1/utils/symtab/symtab.h</figcaption><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">enum</span> <span class="n">DTYPE</span> <span class="p">{</span>
+    <span class="n">DT_NONE</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>          <span class="c1">// TY_NONE</span>
+    <span class="n">DT_WORD</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>          <span class="c1">// TY_WORD</span>
+    <span class="n">DT_DWORD</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>         <span class="c1">// TY_DWORD</span>
+    <span class="n">DT_HOLL</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>          <span class="c1">// TY_HOLL</span>
+    <span class="n">DT_BINT</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>          <span class="c1">// TY_BINT</span>
+    <span class="n">DT_SINT</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>          <span class="c1">// TY_SINT</span>
+    <span class="n">DT_INT4</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>          <span class="c1">// TY_INT</span>
+    <span class="n">DT_INT8</span> <span class="o">=</span> <span class="mi">7</span><span class="p">,</span>          <span class="c1">// TY_INT8</span>
+    <span class="n">DT_REAL4</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>         <span class="c1">// TY_REAL</span>
+    <span class="n">DT_REAL8</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>         <span class="c1">// TY_DBLE</span>
+    <span class="n">DT_QUAD</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>         <span class="c1">// TY_QUAD</span>
+    <span class="n">DT_CMPLX8</span> <span class="o">=</span> <span class="mi">11</span><span class="p">,</span>       <span class="c1">// TY_CMPLX</span>
+    <span class="n">DT_CMPLX16</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>      <span class="c1">// TY_DCMPLX</span>
+    <span class="n">DT_QCMPLX</span> <span class="o">=</span> <span class="mi">13</span><span class="p">,</span>       <span class="c1">// TY_QCMPLX</span>
+    <span class="n">DT_BLOG</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>         <span class="c1">// TY_BLOG</span>
+    <span class="n">DT_SLOG</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>         <span class="c1">// TY_SLOG</span>
+    <span class="n">DT_LOG4</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>         <span class="c1">// TY_LOG</span>
+    <span class="n">DT_LOG8</span> <span class="o">=</span> <span class="mi">17</span><span class="p">,</span>         <span class="c1">// TY_LOG8</span>
+    <span class="n">DT_ADDR</span> <span class="o">=</span> <span class="mi">18</span><span class="p">,</span>         <span class="c1">// TY_PTR</span>
+    <span class="n">DT_CHAR</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>         <span class="c1">// TY_CHAR</span>
+    <span class="n">DT_NCHAR</span> <span class="o">=</span> <span class="mi">22</span><span class="p">,</span>        <span class="c1">// TY_NCHAR</span>
+    <span class="n">DT_ANY</span> <span class="o">=</span> <span class="mi">24</span><span class="p">,</span>          <span class="c1">// TY_ANY</span>
+    <span class="n">DT_NUMERIC</span> <span class="o">=</span> <span class="mi">25</span><span class="p">,</span>      <span class="c1">// TY_NUMERIC</span>
+    <span class="n">DT_ASSNCHAR</span> <span class="o">=</span> <span class="mi">26</span><span class="p">,</span>     <span class="c1">// Assumed-size array of TY_NCHAR</span>
+    <span class="n">DT_ASSCHAR</span> <span class="o">=</span> <span class="mi">28</span><span class="p">,</span>      <span class="c1">// Assumed-size array pf TY_CHAR</span>
+    <span class="n">DT_IARRAY</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>       <span class="c1">// Integer array of size 1.</span>
+                          <span class="c1">// Used internally for array </span>
+                          <span class="c1">// descriptors of array sections.</span>
+    <span class="c1">// ... other types for SIMD and __float128, __int128</span>
+    <span class="n">DT_MAXIMUM_POSSIBLE_INDEX</span> <span class="o">=</span> <span class="mh">0x7FFFFFFF</span>
+<span class="p">}</span> <span class="n">DTYPE</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+The macro <code>DTY</code> is used to obtain the kind (this is one of the <code>TY_</code> above) of a given <code>DTYPE</code>. 
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define DTY(dt) (stb.dt_base[dt])</span></code></pre></figure>
+
+
+<p>
+Each kind of type has a few properties related, these are defined in a table generated when compiling flang. These properties can be queried with the following macros (dttypes is a table that associates each <code>TY_KIND</code> with its properties).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define DT_ISINT(dt)	(dttypes[DTY(dt)]&amp;_TY_INT)
+#define DT_ISREAL(dt)	(dttypes[DTY(dt)]&amp;_TY_REAL)
+#define DT_ISCMPLX(dt)	(dttypes[DTY(dt)]&amp;_TY_CMPLX)
+#define DT_ISNUMERIC(dt) (dttypes[DTY(dt)]&amp;(_TY_INT|_TY_REAL|_TY_CMPLX))
+#define DT_ISBASIC(dt)	(dttypes[DTY(dt)]&amp;_TY_BASIC)
+#define DT_ISUNSIGNED(dt) (dttypes[DTY(dt)]&amp;_TY_UNSIGNED)
+#define DT_ISSCALAR(dt)	(dttypes[DTY(dt)]&amp;_TY_SCALAR)
+#define DT_ISVEC(dt)	(dttypes[DTY(dt)]&amp;_TY_VEC)
+#define DT_ISLOG(dt)	(dttypes[DTY(dt)]&amp;_TY_LOG)  // Is LOGICAL
+#define DT_ISWORD(dt)	(dttypes[DTY(dt)]&amp;_TY_WORD)
+#define DT_ISDWORD(dt)	(dttypes[DTY(dt)]&amp;_TY_DWORD)
+#define DT_ISVECT(dt)   (dttypes[DTY(dt)]&amp;_TY_VECT)</span></code></pre></figure>
+
+
+<p>
+We add new types in the table using the function <code>get_type</code> (note that intrinsic types are already there and don't need registering).
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>Kind</th>
+  <th>Extra slots</th>
+  <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="vertical-align: top;"><code>TY_CHAR</code></td>
+  <td style="vertical-align: top;">1</td>
+  <td style="vertical-align: top;"><ol><li>Length of the string (represented by a tree).</li></ol></td>
+</tr>
+<tr>
+  <td style="vertical-align: top;"><code>TY_ARRAY</code></td>
+  <td style="vertical-align: top;">2</td>
+  <td style="vertical-align: top;">
+   <ol>
+   <li><code>DTYPE</code> of the element.</li>
+   <li>Index inside <code>aux.arrdsc_base</code>.</li>
+   </ol>
+   There is a function <code>get_array_dtype</code> to create <code>DTYPE</code>s of this kind.
+  </td>
+</tr>
+<tr>
+  <td style="vertical-align: top;"><code>TY_DERIVED</code></td>
+  <td style="vertical-align: top;">5</td>
+  <td style="vertical-align: top;">
+   <ol>
+   <li>Linked list of components of the derived type.</li>
+   <li>Size in bytes.</li>
+   <li>Symbol <code>T</code> associated to a <code>TYPE(T)</code></li>
+   <li>Alignment.</li>
+   <li>Tree for constant initialization.</li>
+   </ol>
+  </td>
+</tr>
+</tbody>
+</table>
+
+<p>
+So the way to access to the extra information of a <code>DTYPE</code> is basically doing <code>DTY(d+k)</code> to access the extra slot <code>k</code>. If we <code>k == 0</code> then <code>DTY(d)</code> is just its <code>TY_KIND</code>. Note that creating a new <code>TY_CHAR</code> or <code>TY_DERIVED</code> involves creating a new type and then manually setting the various <code>DTY(d+k)</code>.
+</p>
+
+<h2>Symbols</h2>
+
+<p>
+Symbols are all stored in <code>stb.stg_base.</code> A symbol is added to the symbol table as needed using the function <code>getsymbol</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symtab.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">int</span>
+<span class="nf">getsymbol</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">getsym</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">name</span><span class="p">));</span>
+<span class="p">}</span></code></pre></figure>
+
+
+</p>
+This function calls the function <code>getsym</code> which uses the macro <code>installsym</code> which ends calling the function <code>installsym_ex</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symtab.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">int</span>
+<span class="nf">getsym</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">olength</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">sptr</span><span class="p">;</span> <span class="cm">/* pointer to symbol table entry */</span>
+
+ <span class="n">sptr</span> <span class="o">=</span> <span class="n">installsym</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">olength</span><span class="p">);</span>
+ <span class="c1">// ... postprocess some symbol kinds ...</span>
+ <span class="k">return</span> <span class="n">sptr</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symacc.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cp">#define installsym(name, olength) installsym_ex(name, olength, IS_GET)</span></code></pre></figure>
+
+
+<p>
+This function always creates a new symbol, using the macro <code>NEWSYM</code> and it usually adds the new symbol to the hash table.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symacc.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">SPTR</span>
+<span class="nf">installsym_ex</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">olength</span><span class="p">,</span> <span class="n">IS_MODE</span> <span class="n">mode</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+  <span class="n">SPTR</span> <span class="n">sptr</span><span class="p">;</span>     <span class="cm">/* pointer to symbol table entry */</span>
+  <span class="n">bool</span> <span class="n">toolong</span><span class="p">;</span>
+
+  <span class="cm">/*
+   * Trim identifier if it is too long.
+   */</span>
+  <span class="c1">// ... omitted ...</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">!=</span> <span class="n">IS_QUICK</span><span class="p">)</span> <span class="p">{</span>
+    <span class="cm">/*
+     * Loop thru the appropriate hash link list to see if symbol is
+     * already in the table.
+     */</span>
+    <span class="c1">// ... omitted ...</span>
+  <span class="p">}</span>
+
+  <span class="cm">/* Symbol not found.  Create a new symbol table entry. */</span>
+
+  <span class="n">NEWSYM</span><span class="p">(</span><span class="n">sptr</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">!=</span> <span class="n">IS_QUICK</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Add the new symbol to the hash table if requested.</span>
+    <span class="c1">// .. omitted ..</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Register the name in the string table.</span>
+  <span class="c1">// .. omitted ..</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">toolong</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">report_too_long_identifier</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">olength</span><span class="p">,</span> <span class="n">max_idlen</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">sptr</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symacc.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/* symbol creation macros */</span>
+<span class="cp">#define NEWSYM(sptr)         \
+  sptr = (SPTR)stb.stg_avail++; \
+  if (sptr &gt;= stb.stg_size)    \
+    realloc_sym_storage();   \
+  BZERO(&amp;stb.stg_base[sptr], char, sizeof(SYM))</span></code></pre></figure>
+
+
+<p>
+If you look closely the macro above you will see how it uses all the <code>stg_*</code> fields related to the (dynamic) symbol table itself. Also not how it zeroes the new symbol.
+</p>
+
+<h3>The string table</h3>
+
+<p>
+Symbols have names. Or if they don't have a real name in the program (e.g. temporaries) we just make one for them up. Those names are often repeated (you would be surprised how often the variable names <code>I</code>, <code>J</code>, <code>K</code>, <code>II</code>, <code>JJ</code>, <code>KK</code>... are used in a Fortran program) so it does not make sense to waste memory storing the same string several times.
+</p>
+
+<p>
+The function <code>putsname</code> is used to add a new string in the table.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symacc.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">int</span>
+<span class="nf">putsname</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">length</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">nptr</span><span class="p">;</span> <span class="cm">/* index into character storage area */</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">np</span><span class="p">;</span> <span class="cm">/* pointer into character storage area */</span>
+  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>    <span class="cm">/* counter */</span>
+
+  <span class="n">nptr</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">namavl</span><span class="p">;</span>
+  <span class="n">stb</span><span class="p">.</span><span class="n">namavl</span> <span class="o">+=</span> <span class="p">(</span><span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">stb</span><span class="p">.</span><span class="n">namavl</span> <span class="o">&gt;</span> <span class="n">stb</span><span class="p">.</span><span class="n">n_size</span><span class="p">)</span> <span class="p">{</span>
+    <span class="cm">/* To avoid quadratic behavior, we increase the storage area size
+       by a factor, not a constant.  Use unsigned arithmetic here
+       to avoid risk of overflow. */</span>
+    <span class="kt">unsigned</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">2u</span> <span class="o">*</span> <span class="n">stb</span><span class="p">.</span><span class="n">n_size</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">&gt;</span> <span class="n">MAX_NMPTR</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">n</span> <span class="o">=</span> <span class="n">MAX_NMPTR</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">stb</span><span class="p">.</span><span class="n">namavl</span> <span class="o">&gt;</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">symini_errfatal</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span> <span class="cm">/* names table overflow */</span>
+    <span class="p">}</span>
+    <span class="n">NEED</span><span class="p">(</span><span class="n">stb</span><span class="p">.</span><span class="n">namavl</span><span class="p">,</span> <span class="n">stb</span><span class="p">.</span><span class="n">n_base</span><span class="p">,</span> <span class="kt">char</span><span class="p">,</span> <span class="n">stb</span><span class="p">.</span><span class="n">n_size</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">np</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">n_base</span> <span class="o">+</span> <span class="n">nptr</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="o">*</span><span class="n">np</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">name</span><span class="o">++</span><span class="p">;</span>
+  <span class="o">*</span><span class="n">np</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">nptr</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+This function always adds a string so we still need a mechanism to be able to reuse some of these strings.
+</p>
+
+<h3>The hash table</h3>
+
+<p>
+For now we will assume that the name of a symbol is enough to identify it (we will see it may not really be but bear with me for now). When the compiler is checking the semantic correctness of the input it will repeatedly need to check symbols. As the name of a symbol identifies it in the symbol table we need a way to quickly retrieve it. If we don't do anything else, we would have to traverse <code>stb.stg_base</code> from 0 to <code>stb.stg_avail</code> and check its name.
+</p>
+
+<p>
+This is where the hash table comes into play. This table associates strings with symbols and it is stored in <code>stb.hashtb</code>. Given a string we can obtain its hash using the macro <code>HASH_ID</code> (which I presume means "hash the given identifier").
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symacc.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cp">#define HASHSIZE 9973
+#define HASH_ID(hv, p, len)                            \
+  hv = p[(len)-1] | (*p &lt;&lt; 16) | (p[(len) &gt;&gt; 1] &lt;&lt; 8); \
+  if ((int)(len) &gt; 3)                                  \
+    hv ^= (p[1] &lt;&lt; 4);                                 \
+  hv %= HASHSIZE;</span></code></pre></figure>
+
+
+<p>
+Once we have the value of the hash in <code>hv</code> we can now traverse the hash table. The values in <code>stb.hashtb</code> are an index in the table <code>stb.stg_base</code> (this is, <code>stb.hashtb</code> is a <code>SPTR</code>). Because hash functions can collide (e.g. two different strings can map to the same hash value) we need a way to handle this. There are several techniques but flang uses <a href="https://en.wikipedia.org/wiki/Hash_table#Separate_chaining">separate chaining</a> using an <em>intrusive list</em>. Basically each symbol contains the link to the next colliding symbol. So the way to traverse all the elements given a hash value is like this
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">SPTR</span> <span class="n">sptr</span><span class="p">;</span>
+<span class="k">for</span> <span class="p">(</span><span class="n">sptr</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">hashtb</span><span class="p">[</span><span class="n">hashval</span><span class="p">];</span> <span class="n">sptr</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">sptr</span> <span class="o">=</span> <span class="n">HASHLKG</span><span class="p">(</span><span class="n">sptr</span><span class="p">))</span> <span class="p">{</span>
+  <span class="c1">// do something with sptr</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+this works because <code>HASHLKG</code> is the hash link getter for a given <code>SPTR</code>. As I mentioned above, all properties of a symbol are accessed via macros and this one is not an exception.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define HASHLKG(s)   (stb.stg_base[s].hashlk)</span></code></pre></figure>
+
+
+<p>
+The function installsym_ex can check the hash table before creating a new symbol, this way the existing symbol is returned.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symacc.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">SPTR</span>
+<span class="nf">installsym_ex</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">olength</span><span class="p">,</span> <span class="n">IS_MODE</span> <span class="n">mode</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+  <span class="n">SPTR</span> <span class="n">sptr</span><span class="p">;</span>     <span class="cm">/* pointer to symbol table entry */</span>
+  <span class="n">bool</span> <span class="n">toolong</span><span class="p">;</span>
+
+  <span class="cm">/*
+   * Trim identifier if it is too long.
+   */</span>
+  <span class="c1">// ... omitted ...</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">!=</span> <span class="n">IS_QUICK</span><span class="p">)</span> <span class="p">{</span>
+    <span class="cm">/*
+     * Loop thru the appropriate hash link list to see if symbol is
+     * already in the table.
+     */</span>
+    <span class="c1">// Here length == min(strlen(name), max-length-allowed-by-fortran)</span>
+    <span class="n">HASH_ID</span><span class="p">(</span><span class="n">hashval</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">length</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">sptr</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">hashtb</span><span class="p">[</span><span class="n">hashval</span><span class="p">];</span> <span class="n">sptr</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">sptr</span> <span class="o">=</span> <span class="n">HASHLKG</span><span class="p">(</span><span class="n">sptr</span><span class="p">))</span> <span class="p">{</span>
+      <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">sname</span><span class="p">;</span>
+      <span class="kt">int</span> <span class="n">np</span> <span class="o">=</span> <span class="n">NMPTRG</span><span class="p">(</span><span class="n">sptr</span><span class="p">);</span>  <span class="c1">// This returns the index within the string</span>
+                              <span class="c1">// table that contains the name of this symbol.</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">np</span> <span class="o">+</span> <span class="n">length</span> <span class="o">&gt;=</span> <span class="n">stb</span><span class="p">.</span><span class="n">namavl</span><span class="p">)</span> <span class="c1">// Defensive programming I think.</span>
+        <span class="k">continue</span><span class="p">;</span>
+      <span class="n">sname</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">n_base</span> <span class="o">+</span> <span class="n">np</span><span class="p">;</span> <span class="c1">// Get the proper string of this symbol</span>
+      <span class="c1">// Quick check with the first letter of the identifier.</span>
+      <span class="c1">// Also check same length (although "sname" could have other null bytes inbetween!)</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">sname</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">||</span> <span class="n">sname</span><span class="p">[</span><span class="n">length</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">'\0'</span><span class="p">)</span>
+        <span class="k">continue</span><span class="p">;</span>
+      <span class="c1">// Check the first "length" characters</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">strncmp</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sname</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">continue</span><span class="p">;</span>
+      <span class="n">nmptr</span> <span class="o">=</span> <span class="n">np</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">HIDDENG</span><span class="p">(</span><span class="n">sptr</span><span class="p">))</span>
+        <span class="k">continue</span><span class="p">;</span>
+
+      <span class="cm">/* Matching entry has been found in symbol table. Return it. */</span>
+
+      <span class="k">return</span> <span class="n">sptr</span><span class="p">;</span>
+    <span class="p">}</span>
+
+ <span class="p">}</span>
+ <span class="c1">// .. rest of the function omitted ..</span></code></pre></figure>
+
+
+<h2>Symbol constants</h2>
+
+<p>
+The <code>stb</code> structure has a section where it keeps distinguished constants <code>i0</code>, <code>i1</code>, <code>k0</code>, <code>k1</code>, ... These distinguished constants are registered as symbols using the <code>getcon</code> function.
+</p>
+
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symtab.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">SPTR</span>
+<span class="nf">getcon</span><span class="p">(</span><span class="n">INT</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="n">DTYPE</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">sptr</span><span class="p">;</span>    <span class="cm">/* symbol table pointer */</span>
+  <span class="kt">int</span> <span class="n">hashval</span><span class="p">;</span> <span class="cm">/* index into hashtb */</span>
+
+  <span class="cm">/*
+   * First loop thru the appropriate hash link list to see if this constant
+   * is already in the symbol table:
+   */</span>
+
+  <span class="n">hashval</span> <span class="o">=</span> <span class="n">HASH_CON</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">hashval</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">hashval</span> <span class="o">=</span> <span class="o">-</span><span class="n">hashval</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">sptr</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">hashtb</span><span class="p">[</span><span class="n">hashval</span><span class="p">];</span> <span class="n">sptr</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">sptr</span> <span class="o">=</span> <span class="n">HASHLKG</span><span class="p">(</span><span class="n">sptr</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">DTY</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="o">==</span> <span class="n">TY_QUAD</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">DTYPEG</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dtype</span> <span class="o">||</span> <span class="n">STYPEG</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ST_CONST</span> <span class="o">||</span>
+          <span class="n">CONVAL1G</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">||</span> <span class="n">CONVAL2G</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">||</span>
+          <span class="n">CONVAL3G</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">||</span> <span class="n">CONVAL4G</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="k">continue</span><span class="p">;</span>
+
+      <span class="cm">/* Matching entry has been found.  Return it:  */</span>
+      <span class="k">return</span> <span class="p">(</span><span class="n">sptr</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">DTYPEG</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dtype</span> <span class="o">||</span> <span class="n">STYPEG</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ST_CONST</span> <span class="o">||</span>
+        <span class="n">CONVAL1G</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">||</span> <span class="n">CONVAL2G</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+      <span class="k">continue</span><span class="p">;</span>
+
+    <span class="cm">/* Matching entry has been found.  Return it:  */</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">sptr</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="cm">/* Constant not found.  Create a new symbol table entry for it: */</span>
+
+  <span class="n">ADDSYM</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">hashval</span><span class="p">);</span>
+  <span class="n">STYPEP</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">ST_CONST</span><span class="p">);</span>
+  <span class="n">CONVAL1P</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+  <span class="n">CONVAL2P</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">DTY</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span> <span class="o">==</span> <span class="n">TY_QUAD</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">CONVAL3P</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+    <span class="n">CONVAL4P</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+  <span class="p">}</span>
+  <span class="n">DTYPEP</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="n">dtype</span><span class="p">);</span>
+  <span class="n">SCOPEP</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="p">(</span><span class="n">sptr</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+As symbol constants do not have a name, the compiler uses a different hash function, <code>HASH_CON</code>, for them based on the contents of the constant. We will look at constants in a later chapter but enough to know for now that they can hold up to 4 integers (but most of them will just hold 2 values), but note how the hash function just checks the first two (I think this has some interesting consequences with small constants of kind <code>TY_QUAD</code>).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define HASH_CON(p) ((p[0] ^ p[1]) % HASHSIZE)</span></code></pre></figure>
+
+
+<p>
+If you're wondering about <code>ADDSYM</code> it is just a convenience that creates the symbol and immediately links it in the hash table.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define ADDSYM(sptr, hashval) \
+  NEWSYM(sptr);               \
+  LINKSYM(sptr, hashval)</span></code></pre></figure>
+
+
+<p>
+What the integers of a constant mean depends on the particular <code>DTYPE</code> used. For integers values are represented in a "big endian" fashion. Just take a look how flang initializes <code>stb.i0</code> and <code>stb.i1</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/symtab.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">void</span>
+<span class="nf">sym_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">INT</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+  <span class="c1">// .. omitted ..</span>
+  <span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">INT</span><span class="p">)</span><span class="mi">0</span><span class="p">;</span>
+  <span class="n">stb</span><span class="p">.</span><span class="n">i0</span> <span class="o">=</span> <span class="n">getcon</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">DT_INT</span><span class="p">);</span>
+  <span class="c1">// .. non-relevant code related to k0 and k1 omitted ..</span>
+  <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">INT</span><span class="p">)</span><span class="mi">1</span><span class="p">;</span>
+  <span class="n">stb</span><span class="p">.</span><span class="n">i1</span> <span class="o">=</span> <span class="n">getcon</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">DT_INT</span><span class="p">);</span>
+  <span class="c1">// .. rest of the function omitted ..</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+If you match that code with the <code>getcon</code> function above then you will infer that <code>CONVAL1G(stb.i1) == 0</code> and <code>CONVAL2G(stb.i1) == 1</code>.
+</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+This was again a bit long, the key points of this chapter are
+</p>
+
+<ul>
+<li>A lot of symbolic information is represented in the <code>stb</code> global variable.</li>
+<li>Symbolic entities are represented as indexes of tables.</li>
+<li>A symbol, represented by <code>SPTR</code>, is an index in <code>stb.stg_base</code>.</li>
+<ul>
+<li>Given a <code>SPTR</code>, macros exist to get and set (put) attributes of the symbol.</li>
+</ul>
+<li>A data type, represented by <code>DTYPE</code>, is an index in <code>stb.dt_base</code>.</li>
+<ul>
+<li>Entries in that table are compound of several items. The first item of which (of type <code>TY_KIND</code>) determines the length of the table.</li>
+<li>The first item given a <code>DTYPE</code> is accessible using the macro <code>DTY</code>.</li>
+</ul>
+<li>There is a hash table that is used both for identifiers and constant symbols.</li>
+<ul>
+<li>The hash table is intrusively linked as an attribute of the symbols.</li>
+</ul>
+</ul>
+
+<p>
+That's all for today :)
+</p>
+</td></tr></td></tr></tbody></table>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/11/19/simple-memory-pool/">&laquo; A very simple memory pool in C++11</a>
+
+
+  <a class="next" href="/2018/05/19/redirect-parts-website-applications-apache/">Redirect parts of your website to different applications with Apache &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

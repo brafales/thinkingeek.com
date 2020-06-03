@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Exploring AArch64 assembler – Chapter 2</title>
+  <meta name="description" content="In the first installment of this series we did a very first simple program. In this chapter we will continue learning a bit more about AArch64.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/10/08/exploring-aarch64-assembler-chapter-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Exploring AArch64 assembler – Chapter 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/10/08/exploring-aarch64-assembler-chapter-2/">
+  <meta property="og:description" content="In the first installment of this series we did a very first simple program. In this chapter we will continue learning a bit more about AArch64.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Exploring AArch64 assembler – Chapter 2">
+  <meta name="twitter:description" content="In the first installment of this series we did a very first simple program. In this chapter we will continue learning a bit more about AArch64.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Exploring AArch64 assembler – Chapter 2</h1>
+    
+    <p class="post-meta"><time datetime="2016-10-08T19:13:16+00:00" itemprop="datePublished">Oct 8, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/aarch64/">AArch64</a>
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the first installment of this series we did a very first simple program. In this chapter we will continue learning a bit more about AArch64.
+</p>
+<!--more-->
+
+<h2>Registers</h2>
+
+<p>
+Computers only work with binary data, so programs are encoded in what it is called machine code. But writing machine code is very unwieldy, so instead assembly language is used. In assembly we can specify instructions (and their operands) and the data of the program. Instructions tell the computer what to do (so they have a meaning).
+</p>
+
+<p>
+The CPU is the part of the computer that executes programs. The instructions of a CPU that implements the AArch64 architecture, can only work in data that is found inside the CPU. The place where this data is located is called the <em>registers</em>. Any data that is not in registers and must be manipulated must be loaded first in the registers. Usually the loaded data will come from the memory but it can come from peripherals. As a way to communicate with the outer world, data can also be taken out of the registers to memory or peripherals.
+</p>
+
+<p>
+In AArch64 there are 31 general-purpose registers. They are called general-purpose because they can hold any kind of data. In general they hold only integer or addresses (we will talk about addresses in a later chapter) but anything that can be encoded in 64 bits can be stored in a register. These 31 registers are called <code>x0</code>, <code>x1</code>, ..., <code>x30</code>. You may be wondering why 31 and not 32, which fits as a more natural power of 2 value. The reason is that what would be the <em>x31</em> is actually called <code>xzr</code> and means the <em>Zero Register</em>. It is a very special register with limited usage. Later we will see some examples on how to use this register. In general all registers can be used for any purpose, but in a later chapter we will see that there are some conventions on how to use them.
+</p>
+
+<p>
+The AArch64 architecture defines more registers but they have more specific purposes and we will unveil them in later chapters.
+</p>
+
+<p>
+While working with 64-bit wide registers could be enough, this would imply that all the operations happen in a 64-bit domain. Many times we do not need so many bits, in fact most programs have enough with 32-bit data (or even less). In order to provide 32-bit processing, it is possible to access the lower 32-bit of a <code>x</code><em>n</em> register using the name <code>w</code><em>n</em>. So the lower 32-bit of register <code>x6</code> is <code>w6</code>. It is not possible to name the upper 32-bits. Register <code>xzr</code> has an equivalent 32-bit name called <code>wzr</code>.
+</p>
+
+<p>
+This is the reason why our program in the first chapter was just.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov w0, #2           // w0 ← 2</code></pre></figure>
+
+<p>
+In C the return value of <code>main</code> is an <code>int</code> value. Technically C does not specify what is the specific width in bits of a <code>int</code> value (it just states some minimal ranges of values it has to be able to represent), but for economical reasons (given that <code>int</code> is the most used type in C) almost all 64-bit environments (including AArch64 and x86-64) make <code>int</code> a 32-bit integer type.
+</p>
+
+<h2>Working with data in registers</h2>
+
+<p>
+Almost all instructions in AArch64 have three operands. A destination register and two source registers. For instance, we can store in register <code>w5</code> the result of adding registers <code>w3</code>, and <code>w4</code> doing:
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add w5, w3, w4       // w5 ← w3 + w4</code></pre></figure>
+
+<p>
+similarly
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add x5, x3, x4       // x5 ← x3 + x4</code></pre></figure>
+
+<p>
+but note that in general we cannot name <code>w</code><em>n</em> and <code>x</code><em>n</em> registers in the same operation.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add w5, w3, x4</code></pre></figure>
+
+<p>will fail with a message suggesting valid alternatives</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">add.s:6: Error: operand mismatch -- `add w5,w3,x4'
+add.s:6: Info:    did you mean this?
+add.s:6: Info:    	add w5,w3,w4
+add.s:6: Info:    other valid variant(s):
+add.s:6: Info:    	add x5,x3,x4</code></pre></figure>
+
+<h3>The zero register</h3>
+
+<p>
+The zero register <code>zr</code> (or <code>wzr</code>) is only useful as a source register. It does not represent a real register, it simply is a way to say «assume a zero here as the value of the operand».
+</p>
+
+<h3>Move</h3>
+
+<p>
+There are several exceptions to the one destination register and two source registers schema mentioned above. A notable one is the <code>mov</code> instruction. It takes a single source register.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov w0, w1    // w0 ← w1</code></pre></figure>
+
+<p>
+Note that this is a convenience instruction and it can be implemented using other instructions. A way could be adding the source register to zero. An instruction that would achieve the same as the mov above could be:
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add w0, w1, wzr   // w0 ← w1 + 0</code></pre></figure>
+
+<p>
+Actually in AArch64 <code>mov</code> is implemented using <code>orr</code> that is an instruction that performs a <a href="https://en.wikipedia.org/wiki/Bitwise_operation#OR">bitwise or operation</a> using as the first source operand <code>wzr</code>.
+</p>
+
+<h3>Immediates</h3>
+
+<p>
+If source operands of instructions were restricted to registers, it would be impossible to load initial values to registers. This is the reason why some instructions allow what is called <em>immediates</em>. An immediate is an integer that is encoded in the instruction itself. This means that not any value will be possible to encode using an immediate, but fortunately many will. The ranges of allowed values of immediates depends on the instruction but many of them allow numbers in the range [-4096, 4095] (i.e. 12-bit). Due to the encoding used, any number in that range multiplied by 2<sup>12</sup> (4096) is also allowed as an immediate. For instance 12288 and 16384 can be used as immediates as well (but not any other number inbetween). Immediates are represented in the assembler syntax preceding them with a <code>#</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov w0, #2      // w0 ← 2
+mov w1, #-2     // w1 ← -2</code></pre></figure>
+
+<p>
+Because immediates are encoded in the instruction itself and the space constraints mentioned above, only one immediate is usually allowed. It may vary depend instructions but in general the second source operand is allowed to be an immediate.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add w0, w1, #2   // w0 ← w1 + 2
+add w0, w1, #-2   // w0 ← w1 + (-2)</code></pre></figure>
+
+<p>
+These are not allowed:
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add w0, #1, w1   // ERROR: second operand should be an integer register
+add w0, #1, #2   // ERROR: second operand should be an integer register.
+                 // This case is actually better expressed as
+                 //    mov w0, #3</code></pre></figure>
+
+<h3>32-bit registers as destination</h3>
+
+<p>
+When the destination register of an instruction is a 32-bit register, the upper 32-bits are set to zero. They are not preserved.
+</p>
+
+<h2>A a silly example</h2>
+
+<p>
+At this point we cannot do much things yet but we can play a bit with our program. The number of arguments to our program is found in w0 when the program starts. Let's just return this same number plus 1.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// test.s</span>
+<span class="p">.</span><span class="n">text</span>
+<span class="p">.</span><span class="n">globl</span> <span class="n">main</span>
+
+<span class="n">main</span><span class="o">:</span>
+  <span class="n">add</span> <span class="n">w0</span><span class="p">,</span> <span class="n">w0</span><span class="p">,</span> <span class="err">#</span><span class="mi">1</span>   <span class="c1">// w0 ← w0 + 1</span>
+  <span class="n">ret</span>              <span class="c1">// return from main</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>aarch64-linux-gnu-gcc <span class="nt">-c</span> test.s
+<span class="nv">$ </span>aarch64-linux-gnu-gcc <span class="nt">-o</span> <span class="nb">test </span>test.o
+<span class="nv">$ </span>./test <span class="p">;</span> <span class="nb">echo</span> <span class="nv">$?</span>
+2
+<span class="nv">$ </span>./test foo <span class="p">;</span> <span class="nb">echo</span> <span class="nv">$?</span>
+3
+<span class="nv">$ </span>./test foo bar <span class="p">;</span> <span class="nb">echo</span> <span class="nv">$?</span>
+4</code></pre></figure>
+
+<p>
+Yay! If you wonder why the first case returns 2 instead of 1, it is because in UNIX the <code>main</code> function of a C program always receives a first parameter with the name of the program executed.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/10/08/not-write-c-parser-part-2/">&laquo; How (not) to write a C++ front end – Part 2</a>
+
+
+  <a class="next" href="/2016/10/23/exploring-aarch64-assembler-chapter-3/">Exploring AArch64 assembler – Chapter 3 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Toying with GCC JIT – Part 1</title>
+  <meta name="description" content="A just-in-time (JIT) compiler is a compiler that in contrast to the usual compilers is not run ahead-of-time, i.e. before running the actual program, but during the program itself.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/11/14/toying-gcc-jit-part-1/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Toying with GCC JIT – Part 1">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/11/14/toying-gcc-jit-part-1/">
+  <meta property="og:description" content="A just-in-time (JIT) compiler is a compiler that in contrast to the usual compilers is not run ahead-of-time, i.e. before running the actual program, but during the program itself.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Toying with GCC JIT – Part 1">
+  <meta name="twitter:description" content="A just-in-time (JIT) compiler is a compiler that in contrast to the usual compilers is not run ahead-of-time, i.e. before running the actual program, but during the program itself.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Toying with GCC JIT – Part 1</h1>
+    
+    <p class="post-meta"><time datetime="2015-11-14T20:00:36+00:00" itemprop="datePublished">Nov 14, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+A <em>just-in-time</em> (JIT) compiler is a compiler that in contrast to the usual compilers is not run <em>ahead-of-time</em>, i.e. before running the actual program, but during the program itself.
+</p>
+
+<!--more-->
+
+<p>
+JIT compilers run during the execution of the program. Since compilation is a heavy process, the benefits brought by the compilation must clearly outweigh the time spent in compiling code. The typical scenarios where JITs are used are those where a program features a <q>interpreter</q>-like process, like an interpreter of a interpreted programming language. Interpretation is in general much slower than execution of compiled code. In order to speedup the interpretation, these systems usually track those parts of the program that are <em>hot</em>, meaning that they are run a lot of times. When a part of the code (usually at a granularity of a function) becomes hot, the implementation of the interpreted language schedules a compilation of that code. When the code has been compiled, the implementation of the language switches from interpretation to the execution of compiled code. This technique, that may bring noticeable speed improvements, has been used in several programming languages including <a href="http://www.oracle.com/technetwork/java/whitepaper-135217.html#hotspot">Java</a>, <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Internals">JavaScript</a> and <a href="http://rpython.readthedocs.org/en/latest/index.html#index">Python</a>.
+</p>
+
+<h2>GCC JIT</h2>
+
+<p style="margin: 1em; background-color: #eee; padding: 1em;">
+Note: I will use <q>GCC JIT</q> but the official name of this component of GCC is <q>libgccjit</q>.
+</p>
+
+<p>
+Recently GCC has earned the ability to act as a just-in-time compiler. The JIT is integrated in the GCC compilation workflow as a front end language (like C, C++ or Fortran). For this post I will be using GCC 5.2. 
+</p>
+
+<h3>Installation</h3>
+
+<p>
+Given that the system compiler is a sensitive piece of software and that it is unlikely that GCC JIT is enabled in your Linux distribution, we will have to build a GCC with that support enabled.
+</p>
+
+<p>
+First, create a directory where we will put everything, enter it and download GCC 5.2
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># define a variable BASEDIR that we will use all the time</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">BASEDIR</span><span class="o">=</span><span class="nv">$HOME</span>/gcc-jit
+<span class="c"># Create the directory, if it does not exist</span>
+<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> <span class="nv">$BASEDIR</span>
+<span class="c"># Enter the new directory</span>
+<span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$BASEDIR</span>
+<span class="c"># Download gcc using 'wget' ('curl' can be used too)</span>
+<span class="nv">$ </span>wget http://ftp.gnu.org/gnu/gcc/gcc-5.2.0/gcc-5.2.0.tar.bz2
+<span class="c"># Unpack the file</span>
+<span class="nv">$ </span><span class="nb">tar </span>xfj gcc-5.2.0.tar.bz2</code></pre></figure>
+
+<p>
+The next step involves building GCC. First we need to get some software required by GCC itself.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Enter in the source code directory of GCC</span>
+<span class="nv">$ </span><span class="nb">cd </span>gcc-5.2.0
+<span class="c"># And now download the prerequisites</span>
+<span class="nv">$ </span>./contrib/download_prerequisites</code></pre></figure>
+
+<p>
+Now, <strong>create a build directory</strong> sibling to <code>gcc-5.2.0</code> and make sure you enter it.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># We are in gcc-5.2.0, go up one level</span>
+<span class="nv">$ </span><span class="nb">cd</span> ..
+<span class="c"># Now create the build directory, gcc-build is a sensible name</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>gcc-build
+<span class="c"># Enter the build directory</span>
+<span class="nv">$ </span><span class="nb">cd </span>gcc-build</code></pre></figure>
+
+<p>
+Now configure the compiler and build it. In this step we will specify where the compiler will be installed. <strong>Make sure that you are in <code>gcc-build</code></strong>! This step takes several minutes (about 15 minutes or so, depending on your machine) but you only have to do it once.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Define an installation path, it must be an absolute path!</span>
+<span class="c"># '$BASEDIR/gcc-install' seems an appropiate place</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">INSTALLDIR</span><span class="o">=</span><span class="nv">$BASEDIR</span>/gcc-install
+<span class="c"># Configure GCC --enable-host-shared is required by jit</span>
+<span class="nv">$ </span>../gcc-5.2.0/configure <span class="nt">--prefix</span><span class="o">=</span><span class="nv">$INSTALLDIR</span> <span class="nt">--enable-languages</span><span class="o">=</span>c,c++,jit <span class="nt">--enable-host-shared</span>
+<span class="c"># Build 'getconf _NPROCESSORS_ONLN' will return the number of threads</span>
+<span class="c"># we can use, in order to build GCC in parallel</span>
+<span class="nv">$ </span>make <span class="nt">-j</span><span class="si">$(</span>getconf _NPROCESSORS_ONLN<span class="si">)</span></code></pre></figure>
+
+<p>
+Now install it
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make <span class="nb">install</span></code></pre></figure>
+
+<p>
+Now check the installation
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Create a convenience variable for the path of GCC</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">GCCDIR</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/bin
+<span class="nv">$ $GCCDIR</span>/g++ <span class="nt">--version</span>
+g++ <span class="o">(</span>GCC<span class="o">)</span> 5.2.0
+Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Free Software Foundation, Inc.
+This is free software<span class="p">;</span> see the <span class="nb">source </span><span class="k">for </span>copying conditions.  There is NO
+warranty<span class="p">;</span> not even <span class="k">for </span>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</code></pre></figure>
+
+<p>
+That's it. You can find much more information about installing <a href="https://gcc.gnu.org/install/">here</a>.
+</p>
+
+<h3>Build programs that use the GCC JIT</h3>
+
+<p>
+The GCC JIT is designed as a library that offers a C interface. This interface is in <code>libgccjit.h</code> and will be located in <code>$INSTALLDIR/include</code>. The library itself is in <code>$INSTALLDIR/lib</code>. Following is a <code>Makefile</code> that can be used when compiling and linking a program that uses GCC JIT.
+</p>
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="nv">JITCFLAGS</span><span class="o">=</span><span class="nt">-I</span><span class="nv">$(INSTALLDIR)</span>/include
+<span class="nv">JITLDFLAGS</span><span class="o">=</span><span class="nt">-L</span><span class="nv">$(INSTALLDIR)</span>/lib <span class="nt">-Wl</span>,-rpath,<span class="nv">$(INSTALLDIR)</span>/lib <span class="nt">-lgccjit</span>
+
+<span class="nl">all</span><span class="o">:</span> <span class="nf">test</span>
+
+<span class="nl">test</span><span class="o">:</span> <span class="nf">test.o</span>
+	<span class="nv">$(CC)</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nv">$+</span> <span class="nv">$(JITLDFLAGS)</span>
+
+<span class="nl">test.o </span><span class="o">:</span> <span class="nf">test.c</span>
+	<span class="nv">$(CC)</span> <span class="nt">-c</span> <span class="nv">$(JITCFLAGS)</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nv">$&lt;</span></code></pre></figure>
+
+<p>
+The flag <code>-Wl,-rpath,...</code> is necessary as we installed GCC in a non-standard directory, and we will need to find <code>libgccjit.so</code> when executing the program.
+</p>
+
+<p>
+Also make sure that the <code>PATH</code> environment variable contains <code>$GCCDIR</code> (defined above), otherwise during the execution of our program, <code>libgccjit.so</code> will not be able to invoke the compiler.
+</p>
+
+<h2>Our first JIT function</h2>
+
+<p>
+As a starter, we will JIT a very simple function that justs computes the addition of two numbers. Before anything we have to be aware that like in a real compiler, lots of things can go wrong before we get any actual code, so we should take care of all possible errors. We will use this very simple routine.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"ERROR: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">c</span><span class="p">);</span>
+  <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>&lt;/p&gt;
+To work with GCC JIT we need a <em>context</em>.
+&lt;/p&gt;</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;libgccjit.h&gt;
+</span>
+<span class="cp">#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+</span>
+<span class="kt">int</span> <span class="nf">main</span> <span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_jit_context</span> <span class="o">*</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">gcc_jit_context_acquire</span><span class="p">();</span> <span class="c1">// get the context</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">ctx</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"acquired context is NULL"</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Our goal is creating a function that adds two numbers, like the following.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">add</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+GCC JIT works with entities called <code>gcc_jit_object</code>s. These objects are of different kinds but for this first example we will need an object of kind type that represents the C <code>int</code> type. We will also need two objects of kind parameter (with <code>int</code> type) that will represent the parameters <code>a</code> and <code>b</code>. We will create also a function, <code>add</code>, with two parameters (<code>a</code> and <code>b</code>) with a block containing a single expression that computes <code>a + b</code>.
+</p>
+
+<p>
+Let's get started. First get an object representing <code>int</code>. Fundamental types (closely following the fundamental ones of C) are obtained using gcc_jit_context_get_type.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">int_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_INT</span><span class="p">);</span></code></pre></figure>
+
+<p>
+You will see that we will have to pass all the time the context we got at the beginning. Now we can create two parameters: <code>a</code> and <code>b</code>. Beside the context, to create a parameter we will need to pass a location, a type and a name. Since we are creating a function <em>out of thin air</em>, we do not have any location so we will leave it <code>NULL</code>. Note that we use the <code>int</code> type we got above.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_a</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"a"</span><span class="p">);</span>
+<span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_b</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"b"</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Now we can compute <code>a + b</code>. Calculations are called <em>rvalues</em> (borrowing the concept from the C language): it means something that has to be computed. An rvalue can be created from a parameter using <code>gcc_jit_param_as_rvalue</code>. This is a very simple calculation that means <em>give me the value that the parameter has now</em>.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_a</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_a</span><span class="p">);</span>
+<span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_b</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_b</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Once we have the two parameters we can add them. This will yield another rvalue of type <code>int</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">a_plus_b</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_binary_op</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+    <span class="n">GCC_JIT_BINARY_OP_PLUS</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="n">rval_a</span><span class="p">,</span> <span class="n">rval_b</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Now we need to create the function <code>add</code>. It has two parameters <code>a</code> and <code>b</code> that we created earlier. It will return <code>int</code> as well.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_param</span><span class="o">*</span> <span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span> <span class="p">};</span>
+<span class="n">gcc_jit_function</span> <span class="o">*</span><span class="n">add_function</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_function</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+    <span class="n">GCC_JIT_FUNCTION_EXPORTED</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"add"</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="cm">/* is_variadic */</span> <span class="mi">0</span><span class="p">);</span></code></pre></figure>
+
+<p>
+The parameter <code>GCC_JIT_FUNCTION_EXPORTED</code> means that it will be available out of the JIT code, otherwise the function can only be called from the JIT code itself. We will get later this <code>add</code> function to call it from our C code.
+</p>
+
+<p>
+Functions are constructed by blocks, which represent a sequence of calculations called <em>statements</em> that may have some visible effect. In our case, just adding two numbers has no effects unless the result of the addition is kept somewhere (i.e. in a variable), or used for something else (i.e. in the expression of the return statement or as the condition expression of an if-then-else statement). All statements inside a block are always executed in order: a block is never partially executed. If the code we want to generate has conditional parts each conditional part goes into a different block. When we create a block, we can give it a symbolic name that can be used for debugging. A block must be ended by transferring the control, either to another block (i.e. if-then-else, switch/case, loops, etc.)  or leaving the function (i.e. return statement).
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">add_function</span><span class="p">,</span> <span class="s">"one_block"</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Now we end the block by just returning the addition we computed.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">a_plus_b</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Ok, this may have looked like a bit slow but we are done with creating code. Next step is compiling it! Compiling a context will give us a result. If the result is non-null it will represent all the functions (and global variables if any) that we have created. From the result we will be able to get the exported functions and execute them. But let's compile first.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_result</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">gcc_jit_context_compile</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+  <span class="n">die</span><span class="p">(</span><span class="s">"compilation failed"</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Now we can get the exported function <code>add</code>. We will get a generic pointer, so we will have to cast apropiately before calling it.
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="o">*</span><span class="n">function_addr</span> <span class="o">=</span> <span class="n">gcc_jit_result_get_code</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s">"add"</span><span class="p">);</span>
+
+<span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">ptr_add_t</span><span class="p">)(</span><span class="kt">int</span><span class="p">,</span> <span class="kt">int</span><span class="p">);</span>
+<span class="n">ptr_add_t</span> <span class="n">add</span> <span class="o">=</span> <span class="p">(</span><span class="n">ptr_add_t</span><span class="p">)</span><span class="n">function_addr</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span> <span class="c1">// Call the jitted code</span>
+<span class="n">assert</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">3</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+Finally we have to release the result of the compilation and the JIT context.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_result_release</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<span class="n">gcc_jit_context_release</span> <span class="p">(</span><span class="n">ctx</span><span class="p">);</span></code></pre></figure>
+
+
+<h2>More interesting examples</h2>
+
+<h3>Conditional code</h3>
+
+<p>
+Our first function required a bit of boilerplate to build it but now that we understand the basics, we can move on to something more sophisticated. Our next function will be like this one.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">add_or_sub</span><span class="p">(</span><span class="n">bool</span> <span class="n">op</span><span class="p">,</span> <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">op</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">;</span>
+  <span class="k">else</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+The only difference here is using a new parameter of type bool and then ending conditionally the first block (after evaluating op) to either go to the <em>true</em> (then) or <em>false</em> (else) block.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Get bool and int types</span>
+<span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">bool_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_BOOL</span><span class="p">);</span>
+<span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">int_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_INT</span><span class="p">);</span>
+
+<span class="c1">// Create parameters: bool op, int a, int b</span>
+<span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_op</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">bool_type</span><span class="p">,</span> <span class="s">"op"</span><span class="p">);</span>
+<span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_a</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"a"</span><span class="p">);</span>
+<span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_b</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"b"</span><span class="p">);</span>
+
+<span class="c1">// Create add_or_sub function as 'int add_or_sub(bool op, int a, int b)'</span>
+<span class="n">gcc_jit_param</span><span class="o">*</span> <span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">param_op</span><span class="p">,</span> <span class="n">param_a</span><span class="p">,</span> <span class="n">param_b</span> <span class="p">};</span>
+<span class="n">gcc_jit_function</span> <span class="o">*</span><span class="n">add_function</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_function</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+    <span class="n">GCC_JIT_FUNCTION_EXPORTED</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"add_or_sub"</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="cm">/* is_variadic */</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="c1">// Now create three blocks</span>
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">if_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">add_function</span><span class="p">,</span> <span class="s">"if_condition"</span><span class="p">);</span>
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">true_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">add_function</span><span class="p">,</span> <span class="s">"true_block"</span><span class="p">);</span>
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">false_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">add_function</span><span class="p">,</span> <span class="s">"false_block"</span><span class="p">);</span>
+
+<span class="c1">// End the first block with a</span>
+<span class="c1">//    if (op)</span>
+<span class="c1">//        goto true_block;</span>
+<span class="c1">//    else</span>
+<span class="c1">//        goto false_block"</span>
+<span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span>
+        <span class="n">if_block</span><span class="p">,</span>
+        <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_op</span><span class="p">),</span>
+        <span class="n">true_block</span><span class="p">,</span>
+        <span class="n">false_block</span><span class="p">);</span>
+
+<span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_a</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_a</span><span class="p">);</span>
+<span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_b</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_b</span><span class="p">);</span>
+
+<span class="c1">// End the first block with</span>
+<span class="c1">//    return a + b;</span>
+<span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+        <span class="n">true_block</span><span class="p">,</span>
+        <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_binary_op</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">GCC_JIT_BINARY_OP_PLUS</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span>
+            <span class="n">rval_a</span><span class="p">,</span>
+            <span class="n">rval_b</span><span class="p">));</span>
+
+<span class="c1">// End the second block with</span>
+<span class="c1">//    return a - b;</span>
+<span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+        <span class="n">false_block</span><span class="p">,</span>
+        <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_binary_op</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">GCC_JIT_BINARY_OP_MINUS</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span>
+            <span class="n">rval_a</span><span class="p">,</span>
+            <span class="n">rval_b</span><span class="p">));</span>
+
+<span class="c1">// Dump the function to dot</span>
+<span class="n">gcc_jit_function_dump_to_dot</span><span class="p">(</span><span class="n">add_function</span><span class="p">,</span> <span class="s">"add_or_sub.dot"</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+We tell GCC JIT to dump a graph-like representation of the function that we have created in <a href="http://www.graphviz.org/">Graphviz</a>. It will look like this.
+</p>
+
+<img src="/wp-content/uploads/2015/11/add_or_sub.png" alt="add_or_sub" width="365" height="163" class="aligncenter size-full wp-image-2210" />
+
+<p>
+Now we can compile the code and see if it works.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Compile the code</span>
+<span class="n">gcc_jit_result</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">gcc_jit_context_compile</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"compilation failed"</span><span class="p">);</span>
+
+<span class="kt">void</span> <span class="o">*</span><span class="n">function_addr</span> <span class="o">=</span> <span class="n">gcc_jit_result_get_code</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s">"add_or_sub"</span><span class="p">);</span>
+
+<span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">ptr_add_or_sub_t</span><span class="p">)(</span><span class="n">bool</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">int</span><span class="p">);</span>
+<span class="n">ptr_add_or_sub_t</span> <span class="n">add_or_sub</span> <span class="o">=</span> <span class="p">(</span><span class="n">ptr_add_or_sub_t</span><span class="p">)</span><span class="n">function_addr</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">add_or_sub</span><span class="p">(</span><span class="nb">true</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">assert</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">3</span><span class="p">);</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">add_or_sub</span><span class="p">(</span><span class="nb">false</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">assert</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span></code></pre></figure>
+
+
+<h3>A loop</h3>
+
+<p>
+Now we want to implement something like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">sum</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">s</span> <span class="o">+=</span> <span class="n">i</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">s</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+We start as usual, defining the parameter <code>n</code> of type <code>int</code> and creating a function that returns <code>int</code> and receives the parameter <code>n</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">int_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_INT</span><span class="p">);</span>
+
+<span class="c1">// 'int n' as a parameter</span>
+<span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_n</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"n"</span><span class="p">);</span>
+<span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_n</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_n</span><span class="p">);</span>
+
+<span class="c1">// int sum(int n)</span>
+<span class="n">gcc_jit_param</span><span class="o">*</span> <span class="n">params</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">param_n</span> <span class="p">};</span>
+<span class="n">gcc_jit_function</span> <span class="o">*</span><span class="n">sum_function</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_function</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+    <span class="n">GCC_JIT_FUNCTION_EXPORTED</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"sum"</span><span class="p">,</span>
+    <span class="k">sizeof</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">/</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">),</span> <span class="n">params</span><span class="p">,</span> <span class="cm">/* is_variadic */</span> <span class="mi">0</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+We will also need a couple of local variables <code>i</code> and <code>s</code> to keep respectively the counter of the loop and the partial sum up to the <code>i - 1</code> value. We also get their rvalue object that we will use later.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Local variables</span>
+<span class="c1">//   int s;</span>
+<span class="n">gcc_jit_lvalue</span><span class="o">*</span> <span class="n">sum_var</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_local</span><span class="p">(</span><span class="n">sum_function</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"s"</span><span class="p">);</span>
+<span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">rval_sum</span> <span class="o">=</span> <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span><span class="n">sum_var</span><span class="p">);</span>
+<span class="c1">//   int i;</span>
+<span class="n">gcc_jit_lvalue</span><span class="o">*</span> <span class="n">ind_var</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_local</span><span class="p">(</span><span class="n">sum_function</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"i"</span><span class="p">);</span>
+<span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">rval_ind</span> <span class="o">=</span> <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span><span class="n">ind_var</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+To implement this function we will need four blocks.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">//       init</span>
+<span class="c1">//        |</span>
+<span class="c1">//        V</span>
+<span class="c1">// .-- loop_header &lt;--.</span>
+<span class="c1">// |      |           |</span>
+<span class="c1">// |      V           |</span>
+<span class="c1">// |   loop_body------'</span>
+<span class="c1">// |</span>
+<span class="c1">// `--&gt; return</span>
+
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">init_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">sum_function</span><span class="p">,</span> <span class="s">"init"</span><span class="p">);</span>
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">loop_header_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">sum_function</span><span class="p">,</span> <span class="s">"loop_header"</span><span class="p">);</span>
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">loop_body_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">sum_function</span><span class="p">,</span> <span class="s">"loop_body"</span><span class="p">);</span>
+<span class="n">gcc_jit_block</span> <span class="o">*</span><span class="n">return_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">sum_function</span><span class="p">,</span> <span class="s">"return"</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+The <code>init</code> block will initialize <code>i</code> and <code>s</code> to zero and then jump to the <code>loop_header</code> block.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Block --- init</span>
+<span class="c1">//    sum = 0</span>
+<span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span><span class="n">init_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">sum_var</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_rvalue_from_int</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+<span class="c1">//    init = 0</span>
+<span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span><span class="n">init_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">ind_var</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_rvalue_from_int</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+<span class="c1">//    goto loop_header</span>
+<span class="n">gcc_jit_block_end_with_jump</span><span class="p">(</span><span class="n">init_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">loop_header_block</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+The block <code>loop_header</code> checks if <code>i &lt; n</code>. If the check succeeds it will jump to <code>loop_body</code> otherwise it will jump to <code>return</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Block --- loop_header</span>
+<span class="c1">//    if (i &lt; n)</span>
+<span class="c1">//       goto loop_body;</span>
+<span class="c1">//    else</span>
+<span class="c1">//       goto return;</span>
+<span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span>
+        <span class="n">loop_header_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+         <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span>
+             <span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+             <span class="n">GCC_JIT_COMPARISON_LT</span><span class="p">,</span> 
+             <span class="n">rval_ind</span><span class="p">,</span>
+             <span class="n">rval_n</span><span class="p">),</span>
+         <span class="n">loop_body_block</span><span class="p">,</span>
+         <span class="n">return_block</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+The block <code>loop_body</code> computes both <code>s = s + i</code> and <code>i = i + 1</code>. These two operations can be compacted as their equivalents <code>s += i</code> and <code>i += 1</code>. After this it jumps back to <code>loop_header</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="c1">// Block --- loop_body</span>
+  <span class="c1">//   s += i;</span>
+  <span class="n">gcc_jit_block_add_assignment_op</span> <span class="p">(</span>
+          <span class="n">loop_body_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">sum_var</span><span class="p">,</span>
+          <span class="n">GCC_JIT_BINARY_OP_PLUS</span><span class="p">,</span>
+          <span class="n">rval_ind</span><span class="p">);</span>
+  <span class="c1">//   i += 1;</span>
+  <span class="n">gcc_jit_block_add_assignment_op</span> <span class="p">(</span>
+          <span class="n">loop_body_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">ind_var</span><span class="p">,</span>
+          <span class="n">GCC_JIT_BINARY_OP_PLUS</span><span class="p">,</span>
+          <span class="n">gcc_jit_context_one</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">));</span> 
+  <span class="c1">//   goto loop_header</span>
+  <span class="n">gcc_jit_block_end_with_jump</span><span class="p">(</span>
+          <span class="n">loop_body_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">loop_header_block</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+Finally the block <code>return</code> just returns the value currently in <code>s</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="c1">// Block --- return</span>
+  <span class="c1">//   return s;</span>
+  <span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span><span class="n">return_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">rval_sum</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+The Graphviz representation of this function looks like this.
+</p>
+
+<img src="/wp-content/uploads/2015/11/sum.png" alt="sum" width="359" height="365" class="aligncenter size-full wp-image-2231" />
+
+<p>
+As before, we can compile and test this function.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Compile the code</span>
+<span class="n">gcc_jit_result</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">gcc_jit_context_compile</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+  <span class="n">die</span><span class="p">(</span><span class="s">"compilation failed"</span><span class="p">);</span>
+
+<span class="c1">// Test it!</span>
+<span class="kt">void</span> <span class="o">*</span><span class="n">function_addr</span> <span class="o">=</span> <span class="n">gcc_jit_result_get_code</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s">"sum"</span><span class="p">);</span>
+
+<span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">ptr_sum_t</span><span class="p">)(</span><span class="kt">int</span><span class="p">);</span>
+<span class="n">ptr_sum_t</span> <span class="n">sum</span> <span class="o">=</span> <span class="p">(</span><span class="n">ptr_sum_t</span><span class="p">)</span><span class="n">function_addr</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">sum</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"SUM(0..99) = %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">x</span><span class="p">);</span>
+<span class="n">assert</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">4950</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+You may want to check <a href="https://gcc.gnu.org/onlinedocs/gcc-5.2.0/jit/index.html">libgccjit</a> documentation for more details, examples and a tutorial. In the next part of this post, we will apply GCC JIT to a very simple regular expression matcher code.
+</p>
+
+<p>
+That's all for today.
+</p>
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/08/17/simple-plugin-gcc-part-3/">&laquo; A simple plugin for GCC – Part 3</a>
+
+
+  <a class="next" href="/2015/11/18/toying-gcc-jit-part-2/">Toying with GCC JIT – Part 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

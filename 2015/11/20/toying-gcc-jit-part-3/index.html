@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Toying with GCC JIT – Part 3</title>
+  <meta name="description" content="In the last two parts of this series we&#39;ve seen how to use GCC JIT and how to apply it to a simple regular expression matcher. But an open question remains, has it been worth the effort? This part will try to figure it out.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/11/20/toying-gcc-jit-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Toying with GCC JIT – Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/11/20/toying-gcc-jit-part-3/">
+  <meta property="og:description" content="In the last two parts of this series we&#39;ve seen how to use GCC JIT and how to apply it to a simple regular expression matcher. But an open question remains, has it been worth the effort? This part will try to figure it out.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Toying with GCC JIT – Part 3">
+  <meta name="twitter:description" content="In the last two parts of this series we&#39;ve seen how to use GCC JIT and how to apply it to a simple regular expression matcher. But an open question remains, has it been worth the effort? This p...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Toying with GCC JIT – Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2015-11-20T23:47:01+00:00" itemprop="datePublished">Nov 20, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the last two parts of this series we've seen how to use GCC JIT and how to apply it to a simple regular expression matcher. But an open question remains, has it been worth the effort? This part will try to figure it out.
+</p>
+<!--more-->
+
+<h2>Generated recognizer</h2>
+
+<p>
+If you want to see the generated code (out of curiosity or for debugging), you can dump it into a Graphviz file. For instance, for the regular expression <code>ab*c</code> we generate a <code>match</code> function that looks like this. Note: to understand these graphs just recall that <code>(char)97</code> is <q>a</q>, <code>(char)98</code> is <q>b</q> and <code>(char)99</code> is <q>c</q>.
+</p>
+
+<p><img src="/wp-content/uploads/2015/11/match.png" alt="match" width="635" height="321" class="aligncenter size-full wp-image-2349" /></p>
+
+<p>Function <code>match</code>, calls <code>matchere</code> in <code>block-10</code>. Its code looks like this.</p>
+
+<p><img src="/wp-content/uploads/2015/11/matchhere.png" alt="matchhere" width="745" height="523" class="aligncenter size-full wp-image-2350" /></p>
+
+<p>Function <code>matchhere</code> calls <code>matchhere_0</code> in <code>block-08</code>. Its code looks like this.</p>
+
+<p><img src="/wp-content/uploads/2015/11/matchhere_0.png" alt="matchhere_0" width="468" height="283" class="aligncenter size-full wp-image-2351" /></p>
+
+<h2>Initial evaluation</h2>
+
+<p>
+Compilation is a hard process so the gains in speed when using a compiled regular expression matcher have to compensate the extra effort put in JIT compilation.
+</p>
+
+<p>
+Let's first run the interpreted matcher to have a baseline. We will use the <code>perf</code> tool.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ perf stat  -r 10 ./jgrep-basic Alice.*Rabbit pg11.txt
+ ...
+ Performance counter stats for './jgrep-basic Alice.*Rabbit pg11.txt' (10 runs):
+
+          1.452121      task-clock (msec)         #    0.881 CPUs utilized          
+                 6      context-switches          #    0.004 M/sec                  
+                 0      cpu-migrations            #    0.000 K/sec                  
+               411      page-faults               #    0.274 M/sec                  
+           5337176      cycles                    #    3.555 GHz                    
+          10176018      instructions              #    1.84  insns per cycle        
+           2767256      branches                  # 1843.335 M/sec                  
+             28643      branch-misses             #    1.03% of all branches        
+
+       0.001647421 seconds time elapsed                                          ( +-  1.97% )</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ perf stat  -r 10 ./jgrep-basic Rabbit.*Alice pg11.txt 
+ ...
+ Performance counter stats for './jgrep-basic Rabbit.*Alice pg11.txt' (10 runs):
+
+          1.387412      task-clock (msec)         #    0.880 CPUs utilized          
+                 6      context-switches          #    0.004 M/sec                  
+                 0      cpu-migrations            #    0.000 K/sec                  
+               410      page-faults               #    0.288 M/sec                  
+           5101269      cycles                    #    3.579 GHz                    
+   &lt;not supported&gt;      stalled-cycles-frontend  
+   &lt;not supported&gt;      stalled-cycles-backend   
+           9765089      instructions              #    1.86  insns per cycle        
+           2631812      branches                  # 1846.365 M/sec                  
+             27335      branch-misses             #    1.04% of all branches        
+
+       0.001576010 seconds time elapsed                                          ( +-  1.44% )</code></pre></figure>
+
+<p>
+As you can see, the original matcher is really fast and takes almost no time to run. Let's see now the JIT matcher.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext"> Performance counter stats for './jgrep-jit Alice.*Rabbit pg11.txt' (10 runs):
+
+         29.554189      task-clock (msec)         #    0.957 CPUs utilized          
+                76      context-switches          #    0.003 M/sec                  
+                18      cpu-migrations            #    0.599 K/sec                  
+              4760      page-faults               #    0.158 M/sec                  
+         109495083      cycles                    #    3.642 GHz                    
+         151094731      instructions              #    1.35  insns per cycle        
+          32323055      branches                  # 1075.125 M/sec                  
+            907950      branch-misses             #    2.81% of all branches        
+
+       0.030883701 seconds time elapsed                                          ( +-  0.70% )</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext"> Performance counter stats for './jgrep-jit Rabbit.*Alice pg11.txt' (10 runs):
+
+         29.393373      task-clock (msec)         #    0.949 CPUs utilized          
+                38      context-switches          #    0.001 M/sec                  
+                18      cpu-migrations            #    0.594 K/sec                  
+              4755      page-faults               #    0.157 M/sec                  
+         109429723      cycles                    #    3.612 GHz                    
+         150594506      instructions              #    1.34  insns per cycle        
+          32197029      branches                  # 1062.878 M/sec                  
+            910856      branch-misses             #    2.83% of all branches        
+
+       0.030959663 seconds time elapsed                                          ( +-  0.48% )</code></pre></figure>
+
+<p>
+Hey! It's slower! More than 15 times slower! Well, the truth is that Alice in Wonderland is a small text file. If we repeat the test on a big text file of 38 MiB (obtained from this <a href="http://lh3lh3.users.sourceforge.net/reb.shtml">benchmarking regex libraries page</a>) then the results are slightly different.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext"> Performance counter stats for './jgrep-basic Linus.*Linux howto' (10 runs):
+
+        148.132887      task-clock (msec)         #    1.016 CPUs utilized          
+                65      context-switches          #    0.447 K/sec                  
+                 1      cpu-migrations            #    0.007 K/sec                  
+               410      page-faults               #    0.003 M/sec                  
+         554034387      cycles                    #    3.814 GHz                   
+        1534869684      instructions              #    2.81  insns per cycle        
+         460535913      branches                  # 3170.543 M/sec                  
+           4086146      branch-misses             #    0.89% of all branches        
+
+       0.145729496 seconds time elapsed                                          ( +-  0.47% )</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext"> Performance counter stats for './jgrep-jit Linus.*Linux howto' (10 runs):
+
+         91.948973      task-clock (msec)         #    0.982 CPUs utilized          
+                70      context-switches          #    0.756 K/sec                  
+                18      cpu-migrations            #    0.194 K/sec                  
+              4754      page-faults               #    0.051 M/sec                  
+         340684126      cycles                    #    3.677 GHz
+         626983375      instructions              #    1.81  insns per cycle        
+         169981734      branches                  # 1834.622 M/sec                  
+           4720583      branch-misses             #    2.78% of all branches        
+
+       0.093643667 seconds time elapsed                                          ( +-  0.47% )</code></pre></figure>
+
+<p>
+Now the results show that our JIT is about 1.55 times faster. Not really brilliant but on big files that extra speed is always very well welcome.
+</p>
+
+<h2>Out of the critical path</h2>
+
+<p>
+The problem with the existing approach is that the JIT compilation may or may not bring enough benefits to be worth. What if we could have the cake and eat it? The idea is to JIT compile the matcher and if we have not finished yet matching lines, switch from the interpreted matcher to the compiled one. If there was not enough time, well, the compilation is simply discarded.
+</p>
+
+<p>
+For the sake of simplicity, we will pass the same arguments as the interpreted code (<code>regexp</code> and <code>text</code>) to the JIT code although, as we know, the <code>regexp</code> parameter will not be used. Also, to avoid complicating the code too much, there will be two global variables <code>match_fun</code> and <code>regexp</code> that will be initialized at the beginning of the <code>main</code> function. These two variables will keep the current matcher function being used and the regular expression. For the matcher function variable, we will initialize it with the interpreted matcher.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"usage: %s regex filename</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+    <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">regexp</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+  <span class="n">match_fun</span> <span class="o">=</span> <span class="n">match</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Then we will proceed to match lines. Since the matcher function may eventually change to the compiled version, we will load it at each iteration, before calling it.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="k">while</span> <span class="p">(</span><span class="n">getline</span><span class="p">(</span><span class="o">&amp;</span><span class="n">line</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">length</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="n">match_fun_t</span> <span class="n">pmatch_fun</span> <span class="o">=</span> <span class="n">atomic_load</span><span class="p">(</span><span class="o">&amp;</span><span class="n">match_fun</span><span class="p">);</span>
+      <span class="kt">int</span> <span class="n">m</span> <span class="o">=</span> <span class="n">pmatch_fun</span><span class="p">(</span><span class="n">regexp</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">m</span><span class="p">)</span>
+          <span class="n">fprintf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="s">"%s"</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>
+We need to make an <code>atomic_load</code> to avoid data races because this variable will be written, concurrently, when the JIT compilation finishes.
+</p>
+
+<p>
+To concurrently compile the code, well, we will just spawn a <em>detached</em> <code>pthread</code> before starting matching lines.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="n">pthread_t</span> <span class="n">concurrent_jit</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">concurrent_jit</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">concurrent_jit_run</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="p">{</span>
+      <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"cannot create pthread: %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+  <span class="p">}</span>
+  <span class="n">pthread_detach</span><span class="p">(</span><span class="n">concurrent_jit</span><span class="p">);</span></code></pre></figure>
+
+<p>
+A detached pthread will allow us to end the program even if the JIT compilation has not finished yet. This way we will be able to benefit from the fastest execution technique assuming that we can run two threads in parallel. Almost all processors in current computers can.
+</p>
+
+<p>
+The function <code>concurrent_jit</code>, simply compiles the code and updates the <code>match_fun</code> pointer.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">void</span><span class="o">*</span> <span class="nf">concurrent_jit_run</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">info</span> <span class="cm">/* unused */</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">gcc_jit_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">;</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">gcc_jit_context_acquire</span> <span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ctx</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"acquired JIT context is NULL"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">gcc_jit_context_set_int_option</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_INT_OPTION_OPTIMIZATION_LEVEL</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+
+    <span class="n">generate_code_regexp</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">regexp</span><span class="p">);</span>
+
+    <span class="n">gcc_jit_result</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">gcc_jit_context_compile</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"compilation failed"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">match_fun_t</span> <span class="n">function_addr</span> <span class="o">=</span> <span class="p">(</span><span class="n">match_fun_t</span><span class="p">)</span><span class="n">gcc_jit_result_get_code</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s">"match"</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">function_addr</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"error getting 'match'"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">atomic_store</span><span class="p">(</span><span class="o">&amp;</span><span class="n">match_fun</span><span class="p">,</span> <span class="n">function_addr</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+In this case we have to use an <code>atomic_store</code> to correctly update the value of <code>match_fun</code> without incurring in data-races.
+</p>
+
+<h2>Evaluation</h2>
+
+<p>
+Let's see if compiling concurrently improves for the short case (where compiling is not worth).
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext"> Performance counter stats for './jgrep-concurrent Alice.*Rabbit pg11.txt' (10 runs):
+
+          2.332571      task-clock (msec)         #    1.273 CPUs utilized          
+                 8      context-switches          #    0.003 M/sec                  
+                 1      cpu-migrations            #    0.419 K/sec                  
+               664      page-faults               #    0.278 M/sec                  
+           8572396      cycles                    #    3.593 GHz                    
+          13861606      instructions              #    1.58  insns per cycle        
+           3562561      branches                  # 1493.029 M/sec                  
+             42731      branch-misses             #    1.21% of all branches        
+
+       0.001832130 seconds time elapsed                                          ( +-  1.06% )</code></pre></figure>
+
+<p>
+Now the timings are much better. The performance is just about 1.15 times worse than the original algorithm. Compared to the 15 times slowdown of the first approach this is quite an improvement. Let's see what happens with the big file.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext"> Performance counter stats for './jgrep-concurrent Linus.*Linux howto' (10 runs):
+
+        109.696936      task-clock (msec)         #    1.324 CPUs utilized          
+                67      context-switches          #    0.608 K/sec                  
+                21      cpu-migrations            #    0.191 K/sec                  
+              4660      page-faults               #    0.042 M/sec                  
+         406626883      cycles                    #    3.690 GHz                    
+         821148178      instructions              #    2.02  insns per cycle        
+         230758607      branches                  # 2094.166 M/sec                  
+           4748270      branch-misses             #    2.06% of all branches        
+
+       0.082870971 seconds time elapsed                                          ( +-  0.68% )</code></pre></figure>
+
+<p>
+Great. We do not lose performance, we even improve a bit, about 1.15 times better. Not much improvement but shows that we actually want to take the compilation out of the critical path.
+</p>
+
+<h3>Viewing the concurrent compilation</h3>
+
+<p>
+Using the <a href="http://www.bsc.es/computer-sciences/extrae">Extrae library</a> we can instrument a pthreads program to get a trace that can be visualized using <a href="http://www.bsc.es/computer-sciences/performance-tools/paraver">Paraver</a>. Here we see what happens in the case of <code>Alice.*Rabbit</code>.
+</p>
+
+<p><img src="/wp-content/uploads/2015/11/paraver_01.png" alt="" width="616" height="115" class="aligncenter size-full wp-image-2328" /></p>
+
+<p>
+Thread 1.1.1 is the main thread (the one running the <code>main</code> function) and thread 1.1.2 is the one that compiles our code. As you can see, JIT compilation takes much longer than actually matching the lines. The blue part in the main thread is where all the calls to <code>match</code> happen. Every call to match is rendered as a green flag but they are drawn overlapped because they last so short.
+</p>
+
+<p>
+For the long file doing <code>Linus.*Linux</code>, the result is quite the opposite. The overall matching process lasts much more than JIT compilation.
+</p>
+
+<p><img src="/wp-content/uploads/2015/11/paraver_02.png" width="597" height="113" class="aligncenter size-full wp-image-2331" /></p>
+
+<p>
+When the code has just been compiled, we see that the a couple of matching calls becomes much slower. The reason is probably caused by the communication between the two threads using atomic instructions.
+</p>
+
+<p><img src="/wp-content/uploads/2015/11/paraver_03.png" alt="paraver_03" width="596" height="113" class="aligncenter size-full wp-image-2333" /></p>
+
+<p>
+Within Paraver we can also measure the average duration of the calls to match.
+</p>
+
+<table>
+<tr>
+<th>Kind of code</th><th>Average<br />(nanoseconds)</th>
+</tr>
+<tr>
+<td>Interpreted</td><td style="text-align: right;">197.29</td>
+</tr>
+<tr>
+<td>Compiled</td><td style="text-align: right;">126.88</td>
+</tr>
+</table>
+
+<p>
+This is consistent with the speed gain of 1.55 times we observed with <code>jgrep-jit</code> on the big file.
+</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+In these three-part short series about GCC JIT we have seen how to apply it to a regular expression matcher to get a bit more of speedup. The obtained speed gains are moderate (1.55 times). Since compilation may be a slow process, taking the compilation out of the critical path is beneficial for the cases where it may undermine the overall execution time of the program.
+</p>
+
+<p>
+I have uploaded the code used in this series to <a href="https://github.com/rofirrim/jgrep">github</a>.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/11/18/toying-gcc-jit-part-2/">&laquo; Toying with GCC JIT – Part 2</a>
+
+
+  <a class="next" href="/2016/01/05/tiny-gcc-front-part-1/">A tiny GCC front end – Part 1 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

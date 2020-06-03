@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>ARM assembler in Raspberry Pi – Chapter 19</title>
+  <meta name="description" content="So far our small assembler programs have output messages using printf and some of them have read input using scanf. These two functions are implemented in the C library, so they are more or less supported in any environment supporting the C language. But how does a program actually communicate with the world?">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2014/05/24/arm-assembler-raspberry-pi-chapter-19/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="ARM assembler in Raspberry Pi – Chapter 19">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2014/05/24/arm-assembler-raspberry-pi-chapter-19/">
+  <meta property="og:description" content="So far our small assembler programs have output messages using printf and some of them have read input using scanf. These two functions are implemented in the C library, so they are more or less supported in any environment supporting the C language. But how does a program actually communicate with the world?">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="ARM assembler in Raspberry Pi – Chapter 19">
+  <meta name="twitter:description" content="So far our small assembler programs have output messages using printf and some of them have read input using scanf. These two functions are implemented in the C library, so they are more or less su...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">ARM assembler in Raspberry Pi – Chapter 19</h1>
+    
+    <p class="post-meta"><time datetime="2014-05-24T14:47:03+00:00" itemprop="datePublished">May 24, 2014</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/raspberry-pi/">Raspberry Pi</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+So far our small assembler programs have output messages using <code>printf</code> and some of them have read input using <code>scanf</code>. These two functions are implemented in the C library, so they are more or less supported in any environment supporting the C language. But how does a program actually communicate with the world?
+</p>
+<!--more-->
+<h2>The operating system</h2>
+<p>
+Our Raspberry Pi runs <a href="http://www.raspbian.org/">Raspbian</a>. Raspbian is an operating system based on <a href="http://www.debian.org/">Debian</a> on top of the <a href="http://www.linux.org">Linux</a> <a href="https://www.kernel.org/">kernel</a>. The operating system is a piece of software (usually a collection of pieces that together form a useful system) that enables and manages the resources required by programs to run. Which sort of resources, you may be wondering? Well, many different kinds of them: processes, files, network devices, network communications, screens, printers, terminals, timers, etc.
+</p>
+<p>
+From the point of view of the program, the operating system is just a big servant providing lots of services to the program. But the operating system is also a caretaker, taking action when something goes wrong or programs (sometimes caused by the users of the operating system) attempt to do something that they are not authorized to do. In our case, Linux is the kernel of the Raspbian operating system. The kernel provides the most basic functionality needed to provide these services (sometimes it provides them directly, sometimes it just provides the minimal essential functionality so they can be implemented). It can be viewed as a foundational program that it is always running (or at least, always ready) so it can serve the requests of the programs run by the users. Linux is a <a href="http://en.wikipedia.org/wiki/Unix-like">UNIX®-like</a> kernel and as such shares lots of features with the long lineage of UNIX®-like operating systems.
+</p>
+<h3>Processes</h3>
+<p>
+In order to assign resources, the operating system needs an entity to which grant such resources. This entity is called a process. A process is a running program. The same program may be run several times, each time it is run it is a different process.
+</p>
+<h2>System calls</h2>
+<p>
+A process interacts with the operating system by performing <em>system calls</em>. A system call is conceptually like calling a function but more sophisticated. It is more sophisticated because now we need to satisfy some extra security requirements. An operating system is a critical part of a system and we cannot let processes <em>dodge</em> the operating system control. A usual function call offers no protection of any kind. Any strategy we could design on top of a plain function call would easily be possible to circumvent. As a consequence of this constraint, we need support from the architecture (in our case ARM) in order to safely and securely implement a system call mechanism.
+</p>
+
+<p>
+In Linux ARM we can perform a system call by using the instruction <code>swi</code>. This instruction means <code>s</code>oft<code>w</code>are <code>i</code>nterruption and its sole purpose is to make a system call to the operating system. It receives a 24-bit operand that is not used at all by the processor but could be used by the the operating system to tell which service has been requested. In Linux such approach is not used and a 0 is set as the operand instead. So, in summary, in Linux we will always use <code>swi #0</code> to perform a system call.
+</p>
+
+<p>
+An operating system, and particularly Linux, provides lots of services through <a href="http://man7.org/linux/man-pages/man2/syscalls.2.html#DESCRIPTION">system calls</a> so we need a way to select one of them. We will do this using the register <code>r7</code>. System calls are similar to function calls in that they receive parameters. No system call in Linux receives more than 7 arguments and the arguments are passed in registers <code>r0</code> to <code>r6</code>. If the system call returns some value it will be returned in register <code>r0</code>.
+</p>
+
+<p>
+Note that the system call convention is incompatible with the convention defined by the AAPCS, so programs will need specific code that deals with a system call. In particular, it makes sense to <em>wrap</em> these system calls into normal functions, that externally, i.e. from the point of the caller, follow the AAPCS. This is precisely the main purpose of the C library. In Linux, the C library is usually <a href="http://www.gnu.org/software/libc/libc.html">GNU Libc</a> (but others can be used in Linux). These libraries hide the extra complexity of making system calls under the appearance of a normal function call.
+</p>
+
+<h2>Hello world, the system call way</h2>
+
+<p>
+As a simple illustration of calling the operating system we will write the archetypical "Hello world" program using system calls. In this case we will call the function <code>write</code>. Write receives three parameters: a file descriptor where we will write some data, a pointer to the data that will be written and the size of such data. Of these three, the most obscure may be now the file descriptor. Without entering into much details, it is just a <em>number</em> that identifies a file assigned to the process. Processes usually start with three preassigned files: the standard input, with the number 0, the standard output, with the number 1, and the standard error, with the number 2. We will write our messages to the standard output, so we will use the file descriptor 1.
+</p>
+
+<h3>The "ea-C" way</h3>
+
+<p>
+Continuing with our example, first we will call <code>write</code> through the C library. The C library follows the AAPCS convention. The prototype of the write system call can be found in the <a href="http://man7.org/linux/man-pages/man2/write.2.html">Linux man pages</a> and is as follows.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">ssize_t</span> <span class="nf">write</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">count</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Here both <code>size_t</code> and <code>ssize_t</code> are 32-bit integers, where the former is unsigned and the latter signed. Equipped with our knowledge of the AAPCS and ARM assembler it should not be hard for us to perform a call like the following
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">const</span> <span class="kt">char</span> <span class="n">greeting</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span> <span class="o">=</span> <span class="s">"Hello world</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">greeting</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">greeting</span><span class="p">));</span> <span class="c1">// Here sizeof(greeting) is 13</span></code></pre></figure>
+
+<p>
+Here is the code
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* write_c.s */
+
+.data
+
+greeting: .asciz "Hello world\n"
+after_greeting:
+
+/* This is an assembler constant: the assembler will compute it. Needless to say
+   that this must evaluate to a constant value. In this case we are computing the
+   difference of addresses between the address after_greeting and greeting. In this
+   case it will be 13 */
+.set size_of_greeting, after_greeting - greeting
+
+.text
+
+.globl main
+
+main:
+    push {r4, lr}
+
+    /* Prepare the call to write */  
+    mov r0, #1                /* First argument: 1 */
+    ldr r1, addr_of_greeting  /* Second argument: &amp;greeting */
+    mov r2, #size_of_greeting /* Third argument: sizeof(greeting) */
+    bl write                  /* write(1, greeting, sizeof(greeting));
+
+    mov r0, #0
+    pop {r4, lr}
+    bx lr
+
+addr_of_greeting : .word greeting</code></pre></figure>
+
+<h3>The system call way</h3>
+
+<p>
+Ok, calling the system call through the C library was not harder than calling a normal function. Let's try the same directly performing a Linux system call. First we have to identify the number of the system call and put it in <code>r7</code>. The call <code>write</code> has the number 4 (you can see the numbers in the file <code>/usr/include/arm-linux-gnueabihf/asm/unistd.h</code>). The parameters are usually the same as in the C function, so we will use registers <code>r0</code>, <code>r1</code> and <code>r2</code> likewise.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* write_sys.s */
+
+.data
+
+
+greeting: .asciz "Hello world\n"
+after_greeting:
+
+.set size_of_greeting, after_greeting - greeting
+
+.text
+
+.globl main
+
+main:
+    push {r7, lr}
+
+    /* Prepare the system call */
+    mov r0, #1                  /* r0 ← 1 */
+    ldr r1, addr_of_greeting    /* r1 ← &amp;greeting */
+    mov r2, #size_of_greeting   /* r2 ← sizeof(greeting) */
+
+    mov r7, #4                  /* select system call 'write' */
+    swi #0                      /* perform the system call */
+
+    mov r0, #0
+    pop {r7, lr}
+    bx lr
+
+addr_of_greeting : .word greeting</code></pre></figure>
+
+<p>
+As you can see it is not that different to a function call but instead of branching to a specific address of code using <code>bl</code> we use <code>swi #0</code>. Truth be told, it is rather unusual to perform system calls directly. It is almost always preferable to call the C library instead.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2014/05/11/arm-assembler-raspberry-pi-chapter-18/">&laquo; ARM assembler in Raspberry Pi – Chapter 18</a>
+
+
+  <a class="next" href="/2014/06/09/tinymce-checkbox-toggler-jquery/">TinyMCE checkbox toggler for jQuery &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

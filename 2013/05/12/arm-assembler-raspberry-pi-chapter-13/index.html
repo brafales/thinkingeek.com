@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>ARM assembler in Raspberry Pi – Chapter 13</title>
+  <meta name="description" content="So far, all examples have dealt with integer values. But processors would be rather limited if they were only able to work with integer values. Fortunately they can work with floating point numbers. In this chapter we will see how we can use the floating point facilities of our Raspberry Pi.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2013/05/12/arm-assembler-raspberry-pi-chapter-13/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="ARM assembler in Raspberry Pi – Chapter 13">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2013/05/12/arm-assembler-raspberry-pi-chapter-13/">
+  <meta property="og:description" content="So far, all examples have dealt with integer values. But processors would be rather limited if they were only able to work with integer values. Fortunately they can work with floating point numbers. In this chapter we will see how we can use the floating point facilities of our Raspberry Pi.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="ARM assembler in Raspberry Pi – Chapter 13">
+  <meta name="twitter:description" content="So far, all examples have dealt with integer values. But processors would be rather limited if they were only able to work with integer values. Fortunately they can work with floating point numbers...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">ARM assembler in Raspberry Pi – Chapter 13</h1>
+    
+    <p class="post-meta"><time datetime="2013-05-12T15:33:12+00:00" itemprop="datePublished">May 12, 2013</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/raspberry-pi/">Raspberry Pi</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+So far, all examples have dealt with integer values. But processors would be rather limited if they were only able to work with integer values. Fortunately they can work with floating point numbers. In this chapter we will see how we can use the floating point facilities of our Raspberry Pi.
+</p>
+<!--more-->
+
+<h2>Floating point numbers</h2>
+
+<p>
+Following is a quick recap of what is a floating point number.
+</p>
+
+<p>
+A <em>binary floating point number</em> is an approximate representation of a real number with three parts: <em>sign</em>, <em>mantissa</em> and <em>exponent</em>. The <em>sign</em> may be just 0 or 1, meaning 1 a negative number, positive otherwise. The <em>mantissa</em> represents a fractional magnitude. Similarly to 1.2345 we can have a binary <code>1.01110</code> where every digit is just a bit. The dot means where the integer part ends and the fractional part starts. Note that there is nothing special in binary fractional numbers: <code>1.01110</code> is just 2<sup>0</sup> + 2<sup>-2</sup> + 2<sup>-3</sup> + 2<sup>-4</sup> = 1.43750<sub>(10</sub>. Usually numbers are normalized, this means that the mantissa is adjusted so the integer part is always 1, so instead of <em>0.00110101</em> we would represent <em>1.101101</em> (in fact a floating point may be a <em>denormal</em> if this property does not hold, but such numbers lie in a very specific range so we can ignore them here). If the mantissa is adjusted so it always has a single 1 as the integer part two things happen. First, we do not represent the integer part (as it is always 1 in normalized numbers). Second, to make things sound we need an <em>exponent</em> which compensates the mantissa being normalized. This means that the number -101.110111 (remember that it is a binary real number) will be represented by a sign = 1, mantissa = 1.01110111 and exponent = 2 (because we moved the dot 2 digits to the left). Similarly, number 0.0010110111 is represented with a sign = 0, mantissa = 1.0110111 and exponent = -3 (we moved the dot 3 digits to the right).
+</p>
+<p>
+In order for different computers to be able to share floating point numbers, IEEE 754 standardizes the format of a floating point number. VFPv2 supports two of the IEEE 754 numbers: Binary32 and Binary64, usually known by their C types, <code>float</code> and <code>double</code>, or by single- and double-precision, respectively. In a <a href="http://en.wikipedia.org/wiki/Single_precision_floating-point_format" title="Single-precision floating-point format">single-precision floating point</a> the mantissa is 23 bits (+1 of the integer one for normalized numbers) and the exponent is 8 bits (so the exponent ranges from -126 to 127). In a<a href="http://en.wikipedia.org/wiki/Double_precision_floating-point_format" title="Double-precision floating-point format"> double-precision floating point</a> the mantissa is 52 bits (+1) and the exponent is 11 bits (so the exponent ranges from -1022 to 1023). A single-precision floating point number occupies 32 bit and a double-precision floating point number occupies 64 bits. Operating double-precision numbers is in average one and a half to twice slower than single-precision.
+</p>
+
+<p>
+<a href="http://cr.yp.to/2005-590/goldberg.pdf" title="What Every Computer Scientist Should Know About Floating Point Arithmetic">Goldberg's famous paper</a> is a classical reference that should be read by anyone serious when using floating point numbers.
+</p>
+
+<h2>Coprocessors</h2>
+<p>
+As I stated several times in earlier chapters, ARM was designed to be very flexible. We can see this in the fact that ARM architecture provides a generic coprocessor interface. Manufacturers of system-on-chips may bundle additional coprocessors. Each coprocessor is identified by a number and provides specific instructions. For instance the Raspberry Pi SoC is a BCM2835 which provides a multimedia coprocessor (which we will not discuss here).
+</p>
+<p>
+That said, there are two standard coprocessors in the ARMv6 architecture: 10 and 11. These two coprocessors provide floating point support for single and double precision, respectively. Although the floating point instructions have their own specific names, they are actually mapped to generic coprocessor instructions targeting coprocessor 10 and 11.
+</p>
+
+<h2>Vector Floating-point v2</h2>
+
+<p>
+ARMv6 defines a floating point subarchitecture called the Vector Floating-point v2 (VFPv2). Version 2 because earlier ARM architectures supported a simpler form called now v1. As stated above, the VFP is implemented on top of two standarized coprocessors 10 and 11. ARMv6 does not require VFPv2 be implemented in hardware (one can always resort to a slower software implementation). Fortunately, the Raspberry Pi does provide a hardware implementation of VFPv2.
+</p>
+
+<h2>VFPv2 Registers</h2>
+
+<p>
+We already know that the ARM architecture provides 16 general purpose registers <code>r0</code> to <code>r15</code>, where some of them play special roles: <code>r13</code>, <code>r14</code> and <code>r15</code>. Despite their name, these general purpose registers do not allow operating floating point numbers in them, so VFPv2 provides us with some specific registers. These registers are named <code>s0</code> to <code>s31</code>, for single-precision, and <code>d0</code> to <code>d15</code> for double precision. These are not 48 different registers. Instead every <code>d<sub>n</sub></code> is mapped to two (consecutive) registers <code>s<sub>2n</sub></code> and <code>s<sub>2n+1</sub></code>, where 0 &le; <code>n</code> &le; 15.
+</p>
+
+<p>
+These registers are structured in 4 banks: <code>s0</code>-<code>s7</code> (<code>d0</code>-<code>d3</code>), <code>s8</code>-<code>s15</code> (<code>d4</code>-<code>d7</code>), <code>s16</code>-<code>s23</code> (<code>d8</code>-<code>d11</code>) and <code>s24</code>-<code>s31</code> (<code>d12</code>-<code>d15</code>). We will call the first bank (bank 0, <code>s0</code>-<code>s7</code>, <code>d0</code>-<code>d3</code>) the <em>scalar</em> bank, while the remaining three are <em>vectorial</em> banks (below we will see why).
+</p>
+<p><img src="/wp-content/uploads/2013/04/vfp-registers.png" alt="vfp-registers" width="558" height="387" class="aligncenter size-full wp-image-976" /></p>
+
+<p>
+VFPv2 provides three control registers but we will only be interested in one called <code>fpscr</code>. This register is similar to the <code>cpsr</code> as it keeps the usual comparison flags <code>N</code>, <code>Z</code>, <code>C</code> and <code>V</code>. It also stores two fields that are very useful, <code>len</code> and <code>stride</code>. These two fields control how floating point instructions behave. We will not care very much of the remaining information in this register: status information of the floating point exceptions, the current rounding mode and whether denormal numbers are flushed to zero.
+</p>
+
+<h2>Arithmetic operations</h2>
+
+<p>
+Most VFPv2 instructions are of the form <code>v<em>name</em> Rdest, Rsource1, Rsource2</code> or <code>f<em>name</em> Rdest, Rsource1</code>. They have three modes of operation.
+</p>
+
+<ul>
+<li>Scalar. This mode is used when the destination register is in bank 0 (<code>s0</code>-<code>s7</code> or <code>d0</code>-<code>d3</code>). In this case, the instruction operates only with <code>Rsource1</code> and <code>Rsource2</code>. No other registers are involved.</li>
+<li>Vectorial. This mode is used when the destination register and Rsource2 (or Rsource1 for instructions with only one source register) are not in the bank 0. In this case the instruction will operate as many registers (starting from the given register in the instruction and wrapping around the bank of the register) as defined in field <code>len</code> of the <code>fpscr</code> (at least 1). The next register operated is defined by the <code>stride</code> field of the <code>fpscr</code> (at least 1). If wrap-around happens, no register can be operated twice.</li>
+<li>Scalar expanded (also called <em>mixed vector/scalar</em>). This mode is used if Rsource2 (or Rsource1 if the instruction only has one source register) is in the bank0, but the destination is not. In this case Rsource2 (or Rsource1 for instructions with only one source) is left fixed as the source. The remaining registers are operated as in the vectorial case (this is, using <code>len</code> and <code>stride</code> from the <code>fpscr</code>).</li>
+</ul>
+
+<p>
+Ok, this looks pretty complicated, so let's see some examples. Most instructions end in <code>.f32</code> if they operate on single-precision and in <code>.f64</code> if they operate in double-precision. We can add two single-precision numbers using <code>vadd.f32 Rdest, Rsource1, Rsource2</code> and double-precision using <code>vadd.f64 Rdest, Rsource1, Rsource2</code>. Note also that we can use predication in these instructions (but be aware that, as usual, predication uses the flags in <code>cpsr</code> not in <code>fpscr</code>). Predication would be specified before the suffix like in <code>vaddne.f32</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">// For this example assume that len = 4, stride = 2
+vadd.f32 s1, s2, s3  /* s1 ← s2 + s3. Scalar operation because Rdest = s1 in the bank 0 */
+vadd.f32 s1, s8, s15 /* s1 ← s8 + s15. ditto */
+vadd.f32 s8, s16, s24 /* s8  ← s16 + s24
+                      s10 ← s18 + s26
+                      s12 ← s20 + s28
+                      s14 ← s22 + s30
+                      or more compactly {s8,s10,s12,s14} ← {s16,s18,s20,s22} + {s24,s26,s28,s30}
+                      Vectorial, since Rdest and Rsource2 are not in bank 0
+                   */
+vadd.f32 s10, s16, s24 /* {s10,s12,s14,s8} ← {s16,s18,s20,s22} + {s24,s26,s28,s30}.
+                       Vectorial, but note the wraparound inside the bank after s14.
+                     */
+vadd.f32 s8, s16, s3 /* {s8,s10,s12,s14} ← {s16,s18,s20,s22} + {s3,s3,s3,s3}
+                     Scalar expanded since Rsource2 is in the bank 0
+                   */</code></pre></figure>
+
+<h2>Load and store</h2>
+
+<p>
+Once we have a rough idea of how we can operate floating points in VFPv2, a question remains: how do we load/store floating point values from/to memory? VFPv2 provides several specific load/store instructions.
+</p>
+
+<p>
+We load/store one single-precision floating point using <code>vldr</code>/<code>vstr</code>. The address of the load/store must be already in a general purpose register, although we can apply an offset in bytes which must be a multiple of 4 (this applies to double-precision as well).
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vldr s1, [r3]         /* s1 ← *r3 */
+vldr s2, [r3, #4]     /* s2 ← *(r3 + 4) */
+vldr s3, [r3, #8]     /* s3 ← *(r3 + 8) */
+vldr s4, [r3, #12]     /* s4 ← *(r3 + 12) */
+
+vstr s10, [r4]        /* *r4 ← s10 */
+vstr s11, [r4, #4]     /* *(r4 + 4) ← s11 */
+vstr s12, [r4, #8]     /* *(r4 + 8) ← s12 */
+vstr s13, [r4, #12]      /* *(r4 + 12) ← s13 */</code></pre></figure>
+
+<p>
+We can load/store several registers with a single instruction. In contrast to general load/store, we cannot load an arbitrary set of registers but instead they must be a sequential set of registers.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">// Here precision can be s or d for single-precision and double-precision
+// floating-point-register-set is {sFirst-sLast} for single-precision 
+// and {dFirst-dLast} for double-precision
+vldm indexing-mode precision Rbase{!}, floating-point-register-set
+vstm indexing-mode precision Rbase{!}, floating-point-register-set</code></pre></figure>
+
+<p>
+The behaviour is similar to the indexing modes we saw in chapter 10. There is a Rbase register used as the base address of several load/store to/from floating point registers. There are only two indexing modes: increment after and decrement before. When using increment after, the address used to load/store the floating point value register is increased by 4 after the load/store has happened. When using decrement before, the base address is first subtracted as many bytes as foating point values are going to be loaded/stored. Rbase is always updated in decrement before but it is optional to update it in increment after.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vldmias r4, {s3-s8} /* s3 ← *r4
+                       s4 ← *(r4 + 4)
+                       s5 ← *(r4 + 8)
+                       s6 ← *(r4 + 12)
+                       s7 ← *(r4 + 16)
+                       s8 ← *(r4 + 20)
+                     */
+vldmias r4!, {s3-s8} /* Like the previous instruction
+                        but at the end r4 ← r4 + 24 
+                      */
+vstmdbs r5!, {s12-s13} /*  *(r5 - 4 * 2) ← s12
+                           *(r5 - 4 * 1) ← s13
+                           r5 ← r5 - 4*2
+                       */</code></pre></figure>
+
+<p>
+For the usual stack operations when we push onto the stack several floating point registers we will use <code>vstmdb</code> with <code>sp!</code> as the base register. To pop from the stack we will use <code>vldmia</code> again with <code>sp!</code> as the base register. Given that these instructions names are very hard to remember we can use the mnemonics <code>vpush</code> and <code>vpop</code>, respectively. 
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vpush {s0-s5} /* Equivalent to vstmdb sp!, {s0-s5} */
+vpop {s0-s5}  /* Equivalent to vldmia sp!, {s0-s5} */</code></pre></figure>
+
+<h2>Movements between registers</h2>
+
+<p>
+Another operation that may be required sometimes is moving among registers. Similar to the <code>mov</code> instruction for general purpose registers there is the <code>vmov</code> instruction. Several movements are possible.
+</p>
+
+<p>We can move floating point values between two floating point registers of the same precision</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vmov s2, s3  /* s2 ← s3 */</code></pre></figure>
+
+<p>
+Between one general purpose register and one single-precision register. But note that data is not converted. Only bits are copied around, so be aware of not mixing floating point values with integer instructions or the other way round.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vmov s2, r3  /* s2 ← r3 */
+vmov r4, s5  /* r4 ← s5 */</code></pre></figure>
+
+<p>
+Like the previous case but between two general purpose registers and two consecutive single-precision registers.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vmov s2, s3, r4, r10 /* s2 ← r4
+                        s3 ← r10 */</code></pre></figure>
+
+<p>
+Between two general purpose registers and one double-precision register. Again, note that data is not converted.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vmov d3, r4, r6  /* Lower32BitsOf(d3) ← r4
+                    Higher32BitsOf(d3) ← r6
+                 */
+vmov r5, r7, d4 /* r5 ← Lower32BitsOf(d4)
+                   r7 ← Higher32BitsOf(d4)
+                 */</code></pre></figure>
+
+<h2>Conversions</h2>
+
+<p>
+Sometimes we need to convert from an integer to a floating-point and the opposite. Note that some conversions may potentially lose precision, in particular when a floating point is converted to an integer. There is a single instruction <code>vcvt</code> with a suffix <code>.T.S</code> where <code>T</code> (target) and <code>S</code> (source) can be <code>u32</code>, <code>s32</code>, <code>f32</code> and <code>f64</code> (<code>S</code> must be different to <code>T</code>). Both registers must be floating point registers, so in order to convert integers to floating point or floating point to an integer value an extra <code>vmov</code> instruction will be required from or to an integer register before or after the conversion. Because of this, for a moment (between the two instructions) a floating point register will contain a value which is not a IEEE 754 value, bear this in mind.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vcvt.f64.f32 d0, s0  /* Converts s0 single-precision value 
+                        to a double-precision value and stores it in d0 */
+
+vcvt.f32.f64 s0, d0  /* Converts d0 double-precision value 
+                        to a single-precision value  and stores it in s0 */
+
+vmov s0, r0          /* Bit copy from integer register r0 to s0 */
+vcvt.f32.s32 s0, s0  /* Converts s0 signed integer value 
+                        to a single-precision value and stores it in s0 */
+
+vmov s0, r0          /* Bit copy from integer register r0 to s0 */
+vcvt.f32.u32 s0, s0  /* Converts s0 unsigned integer value 
+                        to a single-precision value and stores in s0 */
+
+vmov s0, r0          /* Bit copy from integer register r0 to s0 */
+vcvt.f64.s32 d0, s0  /* Converts r0 signed integer value 
+                        to a double-precision value and stores in d0 */
+
+vmov s0, r0          /* Bit copy from integer register r0 to s0 */
+vcvt.f64.u32 d0, s0  /* Converts s0 unsigned integer value 
+                        to a double-precision value and stores in d0 */</code></pre></figure>
+
+<h2>Modifying fpscr</h2>
+
+<p>
+The special register fpscr, where <code>len</code> and <code>stride</code> are set, cannot be modified directly. Instead we have to load fpscr into a general purpose register using <code>vmrs</code> instruction. Then we operate on the register and move it back to the <code>fpscr</code>, using the <code>vmsr</code> instruction.
+</p>
+<p>
+The value of <code>len</code> is stored in bits 16 to 18 of <code>fpscr</code>. The value of <code>len</code> is not directly stored directly in these bits. Instead, we have to subtract 1 before setting the bits. This is because <code>len</code> cannot be 0 (it does not make sense to operate 0 floating points). This way the value <code>000</code> in these bits means <code>len</code> = 1, <code>001</code> means <code>len</code> = 2, ..., <code>111</code> means <code>len</code> = 8. The following is a code that sets <code>len</code> to 8.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* Set the len field of fpscr to be 8 (bits: 111) */
+mov r5, #7                            /* r5 ← 7. 7 is 111 in binary */
+mov r5, r5, LSL #16                   /* r5 ← r5 &lt;&lt; 16 */
+vmrs r4, fpscr                        /* r4 ← fpscr */
+orr r4, r4, r5                        /* r4 ← r4 | r5. Bitwise OR */
+vmsr fpscr, r4                        /* fpscr ← r4 */</code></pre></figure>
+
+<p>
+<code>stride</code> is stored in bits 20 to 21 of <code>fpscr</code>. Similar to <code>len</code>, a value of <code>00</code> in these bits means <code>stride</code> = 1, <code>01</code> means <code>stride</code> = 2, <code>10</code> means <code>stride</code> = 3 and <code>11</code> means <code>stride</code> = 4.
+</p>
+
+<h2>Function call convention and floating-point registers</h2>
+
+<p>
+Since we have introduced new registers we should state how to use them when calling functions. The following rules apply for VFPv2 registers.
+</p>
+<ul>
+<li>Fields <code>len</code> and <code>stride</code> of <code>fpscr</code> have all their bits as zero at the entry of a function and those bits must be zero when leaving it.</li>
+<li>We can pass floating point parameters using registers <code>s0</code>-<code>s15</code> and <code>d0</code>-<code>d7</code>. Note that passing a double-precision after a single-precision may involve discarding an odd-numbered single-precision register (for instance we can use <code>s0</code>, and <code>d1</code> but note that <code>s1</code> will be unused).</li>
+<li>All other floating point registers (<code>s16</code>-<code>s31</code> and <code>d8</code>-<code>d15</code>) must have their values preserved upon leaving the function. Instructions <code>vpush</code> and <code>vpop</code> can be used for that.</li>
+<li>If a function returns a floating-point value, the return register will be <code>s0</code> or <code>d0</code>.</li>
+</ul>
+
+<p>
+Finally a note about variadic functions like printf: you cannot pass a single-precision floating point to one of such functions. Only doubles can be passed. So you will need to convert the single-precision values into double-precision values. Note also that usual integer registers are used (<code>r0</code>-<code>r3</code>), so you will only be able to pass up to 2 double-precision values, the remaining must be passed on the stack. In particular for <code>printf</code>, since <code>r0</code> contains the address of the string format, you will only be able to pass a double-precision in <code>{r2,r3}</code>. 
+</p>
+
+<h2>Assembler</h2>
+
+<p>
+Make sure you pass the flag <code>-mfpu=vfpv2</code> to <code>as</code>, otherwise it will not recognize the VFPv2 instructions.
+</p>
+
+<h2>Colophon</h2>
+
+<p>
+You may want to check this official <a href="http://infocenter.arm.com/help/topic/com.arm.doc.qrc0007e/QRC0007_VFP.pdf">quick reference card of VFP</a>. Note that it includes also VFPv3 not available in the Raspberry Pi processor. Most of what is there has already been presented here although some minor details may have been omitted.
+</p>
+
+<p>
+In the next chapter we will use these instructions in a full example. 
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2013/04/27/capybara-pop-windows-paypal-sandbox/">&laquo; Capybara, pop up windows and the new PayPal sandbox</a>
+
+
+  <a class="next" href="/2013/05/12/arm-assembler-raspberry-pi-chapter-14/">ARM assembler in Raspberry Pi – Chapter 14 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

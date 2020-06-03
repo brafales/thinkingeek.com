@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 2</title>
+  <meta name="description" content="In the previous installment of this series we saw basically how to install flang and we ran a simple smoke test. In this post we will see a high level overview of what happens when we compile a Fortran program using flang. We will also compare it with what usually happens with clang.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/06/17/walk-through-flang-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/06/17/walk-through-flang-part-2/">
+  <meta property="og:description" content="In the previous installment of this series we saw basically how to install flang and we ran a simple smoke test. In this post we will see a high level overview of what happens when we compile a Fortran program using flang. We will also compare it with what usually happens with clang.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 2">
+  <meta name="twitter:description" content="In the previous installment of this series we saw basically how to install flang and we ran a simple smoke test. In this post we will see a high level overview of what happens when we compile a For...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2017-06-17T23:41:50+00:00" itemprop="datePublished">Jun 17, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the previous installment of this series we saw basically how to install flang and we ran a simple smoke test. In this post we will see a high level overview of what happens when we compile a Fortran program using flang. We will also compare it with what usually happens with clang.
+</p>
+<!--more-->
+
+<h2>Driver</h2>
+
+<p>
+The process of obtaining a program, from source code to something that we can execute in some system, has been traditionally called compilation. But actually it is a process that involves several steps. The set of tools that allows us to perform these steps is usually called a <em>toolchain</em>. In general, nothing prevents us from using each tool individually when building a program but commonly a tool called driver is used instead. The driver knows how the toolchain works and how it has to invoke the different tools in order to achieve the expected result.
+</p>
+
+<p>
+In LLVM the current driver for C/C++ is called clang. Unfortunately this is confusing, because clang can also act as a compiler (when the first option is <code>-cc1</code>) and as an assembler (when the first option is <code>-cc1as</code>). When we need to distinguish between clang the driver and clang the compiler/assembler, we will call the former clang (or the driver) and the latter cc1/cc1as.
+</p>
+
+<p>
+When clang (the driver) runs, it analyzes its command line. Depending on the flags it knows it has to do more or less steps. By default a C/C++ driver has to do the following steps: preprocess, compile, assemble and link. Clang can do a few more specific steps but these are not relevant. Some steps may have to be omitted, for instance a preprocessed file (usually with extension <code>.i</code> or <code>.ii</code>) does not have to be processed. If the command line includes <code>-c</code>, no linking happens, if the command line includes <code>-S</code> the code is not assembled so the output of the driver is just assembly code. Some flags are only relevant for some part of the whole process: some apply only to the preprocessor (like -D and -I flags for macros and include paths), others apply only to the compilation itself (like <code>-W</code> flags for warnings) and others apply to the link step (like <code>-L</code> or <code>-l</code> for library paths and libraries). The driver by default behaves like the <code>gcc</code> driver. There is also <code>clang-cl</code> which behaves like the <code>cl.exe</code> driver of Microsoft Visual Studio C/C++ .
+</p>
+
+<h2>Entry point: the driver tool</h2>
+
+<p>
+The entry point of the driver is in <code>llvm/tools/clang/tools/driver/driver.cpp</code>. It does a few checks to see if it is <code>cc1</code> or <code>cc1as</code> and if it is not it will create a <code>Compilation</code> and it will execute it. And this is where all the magic happens. Everything else in that file just takes care of handling the errors that might have happened during compilation. in the snippet below <code>argv</code> is the <code>argv</code> of the <code>main</code> function. Line 459 below simply checks if the compilation <code>C</code> has been created successfully, if so it executes it.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">456
+457
+458
+459
+460
+</pre></td><td class="code"><pre>  <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Compilation</span><span class="o">&gt;</span> <span class="n">C</span><span class="p">(</span><span class="n">TheDriver</span><span class="p">.</span><span class="n">BuildCompilation</span><span class="p">(</span><span class="n">argv</span><span class="p">));</span>
+  <span class="kt">int</span> <span class="n">Res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="k">const</span> <span class="n">Command</span> <span class="o">*&gt;</span><span class="p">,</span> <span class="mi">4</span><span class="o">&gt;</span> <span class="n">FailingCommands</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">C</span><span class="p">.</span><span class="n">get</span><span class="p">())</span>
+    <span class="n">Res</span> <span class="o">=</span> <span class="n">TheDriver</span><span class="p">.</span><span class="n">ExecuteCompilation</span><span class="p">(</span><span class="o">*</span><span class="n">C</span><span class="p">,</span> <span class="n">FailingCommands</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2>The long journey of bulding a compilation</h2>
+
+<p>
+The intriguing function <code>BuildCompilation</code> is defined in <code>llvm/tools/clang/lib/Driver/Driver.cpp</code>. Note that this is inside <code>lib</code> which means this code belongs ot the reusable and modular parts of clang (so if you need a C/C++ compiler, you can use the classes and functions defined in <code>lib</code> to build your personalised C/C++ compiler). The file <code>driver.cpp</code> inside <code>tools</code> is just a tool that uses these components.
+</p>
+<p>
+One of the first things <code>BuildCompilation</code> does is determining what the driver is expected to do.
+</p>
+
+<h3>Detecting the mode of the driver</h3>
+
+<p>
+Detecting the mode of the driver lets us know whether we have to behave like a gcc-style driver, cl.exe driver or flang driver. This impacts how command options are analyzed and also may impact some of the steps done by the driver.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">568
+569
+570
+</pre></td><td class="code"><pre>  <span class="c1">// We look for the driver mode option early, because the mode can affect</span>
+  <span class="c1">// how other options are parsed.</span>
+  <span class="n">ParseDriverMode</span><span class="p">(</span><span class="n">ClangExecutable</span><span class="p">,</span> <span class="n">ArgList</span><span class="p">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">));</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+This function infers the mode of the driver, the set of modes it supports are described in <code>llvm/tools/clang/include/clang/Driver/Driver.h</code> and by default the <code>GCCMode</code> is chosen.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/include/clang/Driver/Driver.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
+72
+73
+74
+75
+76
+77
+</pre></td><td class="code"><pre>  <span class="k">enum</span> <span class="n">DriverMode</span> <span class="p">{</span>
+    <span class="n">GCCMode</span><span class="p">,</span>
+    <span class="n">GXXMode</span><span class="p">,</span>
+    <span class="n">CPPMode</span><span class="p">,</span>
+    <span class="n">CLMode</span><span class="p">,</span>
+    <span class="n">FortranMode</span>
+  <span class="p">}</span> <span class="n">Mode</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+If you follow this function you will see that it does this
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">94
+95
+96
+</pre></td><td class="code"><pre><span class="kt">void</span> <span class="n">Driver</span><span class="o">::</span><span class="n">ParseDriverMode</span><span class="p">(</span><span class="n">StringRef</span> <span class="n">ProgramName</span><span class="p">,</span>
+                             <span class="n">ArrayRef</span><span class="o">&lt;</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*&gt;</span> <span class="n">Args</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">auto</span> <span class="n">Default</span> <span class="o">=</span> <span class="n">ToolChain</span><span class="o">::</span><span class="n">getTargetAndModeFromProgramName</span><span class="p">(</span><span class="n">ProgramName</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Function <code>getTargetAndModeFromProgramName</code> is defined in <code>llvm/tools/clang/lib/Driver/ToolChain.cpp</code>.</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">166
+167
+168
+169
+</pre></td><td class="code"><pre><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span>
+<span class="n">ToolChain</span><span class="o">::</span><span class="n">getTargetAndModeFromProgramName</span><span class="p">(</span><span class="n">StringRef</span> <span class="n">PN</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">ProgName</span> <span class="o">=</span> <span class="n">normalizeProgramName</span><span class="p">(</span><span class="n">PN</span><span class="p">);</span>
+  <span class="k">const</span> <span class="n">DriverSuffix</span> <span class="o">*</span><span class="n">DS</span> <span class="o">=</span> <span class="n">parseDriverSuffix</span><span class="p">(</span><span class="n">ProgName</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The function <code>parseDriverSuffix</code> tries hard to infer the driver mode in many different ways but eventually calls <code>FindDriverSuffix</code>.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+</pre></td><td class="code"><pre><span class="k">const</span> <span class="n">DriverSuffix</span> <span class="o">*</span><span class="nf">parseDriverSuffix</span><span class="p">(</span><span class="n">StringRef</span> <span class="n">ProgName</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Try to infer frontend type and default target from the program name by</span>
+  <span class="c1">// comparing it against DriverSuffixes in order.</span>
+
+  <span class="c1">// If there is a match, the function tries to identify a target as prefix.</span>
+  <span class="c1">// E.g. "x86_64-linux-clang" as interpreted as suffix "clang" with target</span>
+  <span class="c1">// prefix "x86_64-linux". If such a target prefix is found, it may be</span>
+  <span class="c1">// added via -target as implicit first argument.</span>
+  <span class="k">const</span> <span class="n">DriverSuffix</span> <span class="o">*</span><span class="n">DS</span> <span class="o">=</span> <span class="n">FindDriverSuffix</span><span class="p">(</span><span class="n">ProgName</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">DS</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Try again after stripping any trailing version number:</span>
+    <span class="c1">// clang++3.5 -&gt; clang++</span>
+    <span class="n">ProgName</span> <span class="o">=</span> <span class="n">ProgName</span><span class="p">.</span><span class="n">rtrim</span><span class="p">(</span><span class="s">"0123456789."</span><span class="p">);</span>
+    <span class="n">DS</span> <span class="o">=</span> <span class="n">FindDriverSuffix</span><span class="p">(</span><span class="n">ProgName</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">DS</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Try again after stripping trailing -component.</span>
+    <span class="c1">// clang++-tot -&gt; clang++</span>
+    <span class="n">ProgName</span> <span class="o">=</span> <span class="n">ProgName</span><span class="p">.</span><span class="n">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ProgName</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="sc">'-'</span><span class="p">));</span>
+    <span class="n">DS</span> <span class="o">=</span> <span class="n">FindDriverSuffix</span><span class="p">(</span><span class="n">ProgName</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">DS</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+</pre></td><td class="code"><pre><span class="k">const</span> <span class="n">DriverSuffix</span> <span class="o">*</span><span class="nf">FindDriverSuffix</span><span class="p">(</span><span class="n">StringRef</span> <span class="n">ProgName</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// A list of known driver suffixes. Suffixes are compared against the</span>
+  <span class="c1">// program name in order. If there is a match, the frontend type is updated as</span>
+  <span class="c1">// necessary by applying the ModeFlag.</span>
+  <span class="k">static</span> <span class="k">const</span> <span class="n">DriverSuffix</span> <span class="n">DriverSuffixes</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="p">{</span><span class="s">"clang"</span><span class="p">,</span> <span class="nb">nullptr</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang++"</span><span class="p">,</span> <span class="s">"--driver-mode=g++"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang-c++"</span><span class="p">,</span> <span class="s">"--driver-mode=g++"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang-cc"</span><span class="p">,</span> <span class="nb">nullptr</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang-cpp"</span><span class="p">,</span> <span class="s">"--driver-mode=cpp"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang-g++"</span><span class="p">,</span> <span class="s">"--driver-mode=g++"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang-gcc"</span><span class="p">,</span> <span class="nb">nullptr</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"clang-cl"</span><span class="p">,</span> <span class="s">"--driver-mode=cl"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"cc"</span><span class="p">,</span> <span class="nb">nullptr</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"cpp"</span><span class="p">,</span> <span class="s">"--driver-mode=cpp"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"cl"</span><span class="p">,</span> <span class="s">"--driver-mode=cl"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"++"</span><span class="p">,</span> <span class="s">"--driver-mode=g++"</span><span class="p">},</span>
+      <span class="p">{</span><span class="s">"flang"</span><span class="p">,</span> <span class="s">"--driver-mode=fortran"</span><span class="p">},</span>
+  <span class="p">};</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">llvm</span><span class="o">::</span><span class="n">array_lengthof</span><span class="p">(</span><span class="n">DriverSuffixes</span><span class="p">);</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ProgName</span><span class="p">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">DriverSuffixes</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">Suffix</span><span class="p">))</span>
+      <span class="k">return</span> <span class="o">&amp;</span><span class="n">DriverSuffixes</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+  <span class="k">return</span> <span class="nb">nullptr</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+What all this means? It means that if we invoke the driver as <code>flang</code> it will configure itself in Fortran mode. We are not seeing it in this chapter, but when the driver is in Fortran mode it adds a few extra libraries that are required at runtime by Fortran programs.
+</p>
+
+<h3>Analysis of the command line</h3>
+
+<p>
+Let's go back to <code>BuildCompilation</code>. At some point the arguments of the driver are processed and a set of inputs is constructed.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">669
+670
+671
+</pre></td><td class="code"><pre>  <span class="c1">// Construct the list of inputs.</span>
+  <span class="n">InputList</span> <span class="n">Inputs</span><span class="p">;</span>
+  <span class="n">BuildInputs</span><span class="p">(</span><span class="n">C</span><span class="o">-&gt;</span><span class="n">getDefaultToolChain</span><span class="p">(),</span> <span class="o">*</span><span class="n">TranslatedArgs</span><span class="p">,</span> <span class="n">Inputs</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The function <code>BuildInputs</code> is a bit complicated basically because, even if we know the mode of the driver, we allow passing inputs of different kind (source, objects, archives, etc.) or if they are source code, of different languages. This means that an invocation like <code>flang -c myfileA.c myfileB.f90</code> the driver must compile <code>myfileA.c</code> as a C file and <code>myfileB.f90</code> as a Fortran file. This is done using the extension file. Sadly things are not that easy as there are positional flags, like -x, that can override the meaning of the later files (so no checking of the extension occurs), but we do not need to know so much detail. The function that checks the extension is in <code>Types.cpp</code> and is called <code>lookupTypeForExtension</code>. It is a bit long to paste it all so I shortened it a bit.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Types.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="n">types</span><span class="o">::</span><span class="n">ID</span> <span class="n">types</span><span class="o">::</span><span class="n">lookupTypeForExtension</span><span class="p">(</span><span class="n">llvm</span><span class="o">::</span><span class="n">StringRef</span> <span class="n">Ext</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="n">llvm</span><span class="o">::</span><span class="n">StringSwitch</span><span class="o">&lt;</span><span class="n">types</span><span class="o">::</span><span class="n">ID</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Ext</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"c"</span><span class="p">,</span> <span class="n">TY_C</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"C"</span><span class="p">,</span> <span class="n">TY_CXX</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"F"</span><span class="p">,</span> <span class="n">TY_F_FixedForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"f"</span><span class="p">,</span> <span class="n">TY_PP_F_FixedForm</span><span class="p">)</span>
+           <span class="c1">// (.. omitted ..)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"for"</span><span class="p">,</span> <span class="n">TY_PP_F_FixedForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"FOR"</span><span class="p">,</span> <span class="n">TY_PP_F_FixedForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"fpp"</span><span class="p">,</span> <span class="n">TY_F_FixedForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"FPP"</span><span class="p">,</span> <span class="n">TY_F_FixedForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"f90"</span><span class="p">,</span> <span class="n">TY_PP_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"f95"</span><span class="p">,</span> <span class="n">TY_PP_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"f03"</span><span class="p">,</span> <span class="n">TY_PP_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"f08"</span><span class="p">,</span> <span class="n">TY_PP_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"F90"</span><span class="p">,</span> <span class="n">TY_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"F95"</span><span class="p">,</span> <span class="n">TY_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"F03"</span><span class="p">,</span> <span class="n">TY_F_FreeForm</span><span class="p">)</span>
+           <span class="p">.</span><span class="n">Case</span><span class="p">(</span><span class="s">"F08"</span><span class="p">,</span> <span class="n">TY_F_FreeForm</span><span class="p">)</span>
+           <span class="c1">// (.. omitted ..)</span></code></pre></figure>
+
+<p>
+For the case we care, which is basically Fortran, we see that there is a plethora of extensions assumed to be Fortran. Files with <code>.f</code> are not to be preprocessed, while files with <code>.F</code> are to be preprocessed. All the cases are there to accomodate names that historically have been given to Fortran files, including those that encode the Fortran version like <code>.f95</code> or <code>.f03</code>. <code>BuildInputs</code> in <code>Driver.cpp</code>, above, will build a list of pairs 〈input file, file type〉 that encodes the type of input we found. 
+</p>
+
+<h3>It's time to take action</h3>
+
+<p>
+With the list of inputs built in <code>BuildInputs</code> it is time to build the actions that the driver has to do, based on the arguments of the command line. This is done in the function <code>BuildActions</code>. A first step of this function is determine the final phase of the driver. As mentioned above the driver has to do more or less steps depending on the options.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="n">Driver</span><span class="o">::</span><span class="n">BuildActions</span><span class="p">(</span><span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">,</span> <span class="n">DerivedArgList</span> <span class="o">&amp;</span><span class="n">Args</span><span class="p">,</span>
+                          <span class="k">const</span> <span class="n">InputList</span> <span class="o">&amp;</span><span class="n">Inputs</span><span class="p">,</span> <span class="n">ActionList</span> <span class="o">&amp;</span><span class="n">Actions</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="n">Arg</span> <span class="o">*</span><span class="n">FinalPhaseArg</span><span class="p">;</span>
+  <span class="n">phases</span><span class="o">::</span><span class="n">ID</span> <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">getFinalPhase</span><span class="p">(</span><span class="n">Args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">FinalPhaseArg</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Function <code>getFinalPhase</code> uses the arguments in the command line to determine which is the last phase to perform. For instance if there is the <code>-c</code> option, it only assembles while if there is the <code>-S</code> option it runs only up to the backend (for the generation of the assembly). There are several other flags that impact the final phase.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+</pre></td><td class="code"><pre><span class="c1">// Determine which compilation mode we are in. We look for options which</span>
+<span class="c1">// affect the phase, starting with the earliest phases, and record which</span>
+<span class="c1">// option we used to determine the final phase.</span>
+<span class="n">phases</span><span class="o">::</span><span class="n">ID</span> <span class="n">Driver</span><span class="o">::</span><span class="n">getFinalPhase</span><span class="p">(</span><span class="k">const</span> <span class="n">DerivedArgList</span> <span class="o">&amp;</span><span class="n">DAL</span><span class="p">,</span>
+                                 <span class="n">Arg</span> <span class="o">**</span><span class="n">FinalPhaseArg</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="n">Arg</span> <span class="o">*</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="nb">nullptr</span><span class="p">;</span>
+  <span class="n">phases</span><span class="o">::</span><span class="n">ID</span> <span class="n">FinalPhase</span><span class="p">;</span>
+
+  <span class="c1">// -{E,EP,P,M,MM} only run the preprocessor.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">CCCIsCPP</span><span class="p">()</span> <span class="o">||</span> <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_E</span><span class="p">))</span> <span class="o">||</span>
+      <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT__SLASH_EP</span><span class="p">))</span> <span class="o">||</span>
+      <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_M</span><span class="p">,</span> <span class="n">options</span><span class="o">::</span><span class="n">OPT_MM</span><span class="p">))</span> <span class="o">||</span>
+      <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT__SLASH_P</span><span class="p">)))</span> <span class="p">{</span>
+    <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">phases</span><span class="o">::</span><span class="n">Preprocess</span><span class="p">;</span>
+
+    <span class="c1">// --precompile only runs up to precompilation.</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">((</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT__precompile</span><span class="p">)))</span> <span class="p">{</span>
+    <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">phases</span><span class="o">::</span><span class="n">Precompile</span><span class="p">;</span>
+
+    <span class="c1">// -{fsyntax-only,-analyze,emit-ast} only run up to the compiler.</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">((</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_fsyntax_only</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_module_file_info</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_verify_pch</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_rewrite_objc</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_rewrite_legacy_objc</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT__migrate</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT__analyze</span><span class="p">,</span>
+                                        <span class="n">options</span><span class="o">::</span><span class="n">OPT__analyze_auto</span><span class="p">))</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_emit_ast</span><span class="p">)))</span> <span class="p">{</span>
+    <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">phases</span><span class="o">::</span><span class="n">Compile</span><span class="p">;</span>
+
+    <span class="c1">// -S only runs up to the backend.</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">((</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_S</span><span class="p">)))</span> <span class="p">{</span>
+    <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">phases</span><span class="o">::</span><span class="n">Backend</span><span class="p">;</span>
+
+    <span class="c1">// -c compilation only runs up to the assembler.</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">((</span><span class="n">PhaseArg</span> <span class="o">=</span> <span class="n">DAL</span><span class="p">.</span><span class="n">getLastArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_c</span><span class="p">)))</span> <span class="p">{</span>
+    <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">phases</span><span class="o">::</span><span class="n">Assemble</span><span class="p">;</span>
+
+    <span class="c1">// Otherwise do everything.</span>
+  <span class="p">}</span> <span class="k">else</span>
+    <span class="n">FinalPhase</span> <span class="o">=</span> <span class="n">phases</span><span class="o">::</span><span class="n">Link</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">FinalPhaseArg</span><span class="p">)</span>
+    <span class="o">*</span><span class="n">FinalPhaseArg</span> <span class="o">=</span> <span class="n">PhaseArg</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">FinalPhase</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Back to <code>BuildActions</code>, now we can actually build the actions required for each input file.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2455
+2456
+2457
+2458
+2459
+2460
+2461
+</pre></td><td class="code"><pre>  <span class="n">llvm</span><span class="o">::</span><span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">phases</span><span class="o">::</span><span class="n">ID</span><span class="p">,</span> <span class="n">phases</span><span class="o">::</span><span class="n">MaxNumberOfPhases</span><span class="o">&gt;</span> <span class="n">PL</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="n">I</span> <span class="o">:</span> <span class="n">Inputs</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">types</span><span class="o">::</span><span class="n">ID</span> <span class="n">InputType</span> <span class="o">=</span> <span class="n">I</span><span class="p">.</span><span class="n">first</span><span class="p">;</span>
+    <span class="k">const</span> <span class="n">Arg</span> <span class="o">*</span><span class="n">InputArg</span> <span class="o">=</span> <span class="n">I</span><span class="p">.</span><span class="n">second</span><span class="p">;</span>
+
+    <span class="n">PL</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span>
+    <span class="n">types</span><span class="o">::</span><span class="n">getCompilationPhases</span><span class="p">(</span><span class="n">InputType</span><span class="p">,</span> <span class="n">PL</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The required compilation phases will depend on the input type, so this is again defined in <code>Types.cpp</code>. Generally preprocessed files have their own preprocessing phase but Fortran files can be preprocessed at the same time as they are compiled (in a step that we will see later, called the "upper part" of the Fortran compiler). In fact, Fortran files, line 298-301, go through a different sequence of phases compared to other inputs: <code>FortranFrontEnd</code>, then <code>Compile</code>, then <code>Backend</code>.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Types.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+</pre></td><td class="code"><pre><span class="kt">void</span> <span class="n">types</span><span class="o">::</span><span class="n">getCompilationPhases</span><span class="p">(</span><span class="n">ID</span> <span class="n">Id</span><span class="p">,</span> <span class="n">llvm</span><span class="o">::</span><span class="n">SmallVectorImpl</span><span class="o">&lt;</span><span class="n">phases</span><span class="o">::</span><span class="n">ID</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">P</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Id</span> <span class="o">!=</span> <span class="n">TY_Object</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Delegate preprocessing to the "upper" part of Fortran compiler,</span>
+    <span class="c1">// preprocess for other preprocessable inputs</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">getPreprocessedType</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span> <span class="o">!=</span> <span class="n">TY_INVALID</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isFortran</span><span class="p">(</span><span class="n">Id</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Preprocess</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">getPrecompiledType</span><span class="p">(</span><span class="n">Id</span><span class="p">)</span> <span class="o">!=</span> <span class="n">TY_INVALID</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Precompile</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">onlyPrecompileType</span><span class="p">(</span><span class="n">Id</span><span class="p">))</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">onlyAssembleType</span><span class="p">(</span><span class="n">Id</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">isFortran</span><span class="p">(</span><span class="n">Id</span><span class="p">))</span> <span class="p">{</span>
+          <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">FortranFrontend</span><span class="p">);</span>
+          <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Compile</span><span class="p">);</span>
+          <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Backend</span><span class="p">);</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+          <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Compile</span><span class="p">);</span>
+          <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Backend</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+      <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Assemble</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">onlyPrecompileType</span><span class="p">(</span><span class="n">Id</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">P</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">phases</span><span class="o">::</span><span class="n">Link</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">assert</span><span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="n">P</span><span class="p">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="s">"Not enough phases in list"</span><span class="p">);</span>
+  <span class="n">assert</span><span class="p">(</span><span class="n">P</span><span class="p">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="n">phases</span><span class="o">::</span><span class="n">MaxNumberOfPhases</span> <span class="o">&amp;&amp;</span> <span class="s">"Too many phases in list"</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Back to <code>BuildActions</code> again, now that we know the phases that the input has to perform, it is time to construct an action for each phase. When we are linking, all inputs will end in the Link phase, so we queue these phases aside and then we create a final action for them (after the loop). If not linking, a step generates some output that we will add to our list of actions.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// Build the pipeline for this file.</span>
+    <span class="n">Action</span> <span class="o">*</span><span class="n">Current</span> <span class="o">=</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">InputAction</span><span class="o">&gt;</span><span class="p">(</span><span class="o">*</span><span class="n">InputArg</span><span class="p">,</span> <span class="n">InputType</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">SmallVectorImpl</span><span class="o">&lt;</span><span class="n">phases</span><span class="o">::</span><span class="n">ID</span><span class="o">&gt;::</span><span class="n">iterator</span> <span class="n">i</span> <span class="o">=</span> <span class="n">PL</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">e</span> <span class="o">=</span> <span class="n">PL</span><span class="p">.</span><span class="n">end</span><span class="p">();</span>
+         <span class="n">i</span> <span class="o">!=</span> <span class="n">e</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">phases</span><span class="o">::</span><span class="n">ID</span> <span class="n">Phase</span> <span class="o">=</span> <span class="o">*</span><span class="n">i</span><span class="p">;</span>
+
+      <span class="c1">// We are done if this step is past what the user requested.</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">Phase</span> <span class="o">&gt;</span> <span class="n">FinalPhase</span><span class="p">)</span>
+        <span class="k">break</span><span class="p">;</span>
+
+      <span class="c1">// Queue linker inputs.</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">Phase</span> <span class="o">==</span> <span class="n">phases</span><span class="o">::</span><span class="n">Link</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">assert</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">e</span> <span class="o">&amp;&amp;</span> <span class="s">"linking must be final compilation step."</span><span class="p">);</span>
+        <span class="n">LinkerInputs</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">Current</span><span class="p">);</span>
+        <span class="n">Current</span> <span class="o">=</span> <span class="nb">nullptr</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+
+      <span class="c1">// Otherwise construct the appropriate action.</span>
+      <span class="k">auto</span> <span class="o">*</span><span class="n">NewCurrent</span> <span class="o">=</span> <span class="n">ConstructPhaseAction</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">Args</span><span class="p">,</span> <span class="n">Phase</span><span class="p">,</span> <span class="n">Current</span><span class="p">);</span>
+      <span class="c1">// (.. omitted ..)</span>
+      <span class="n">Current</span> <span class="o">=</span> <span class="n">NewCurrent</span><span class="p">;</span>
+      <span class="c1">// (.. omitted ..)</span>
+   <span class="p">}</span>
+
+   <span class="c1">// If we ended with something, add to the output list.</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">Current</span><span class="p">)</span>
+     <span class="n">Actions</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">Current</span><span class="p">);</span>
+
+  <span class="c1">// Add a link action if necessary.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">LinkerInputs</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">Action</span> <span class="o">*</span><span class="n">LA</span> <span class="o">=</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">LinkJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">LinkerInputs</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_Image</span><span class="p">);</span>
+    <span class="c1">// (.. omitted ..)</span>
+    <span class="n">Actions</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">LA</span><span class="p">);</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>
+Each action, except the <code>InputAction</code> that receives the input argument and its type, is built in <code>ConstructPhaseAction</code> using the previous phase and the output type it generates. Note that this function does not handle a <code>Link</code> phase as it handled in <code>BuildActions</code> (see code above wehre a <code>LinkJobAction</code> is built). Again this is a long function so let's see a shortened version of it.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="n">Action</span> <span class="o">*</span><span class="n">Driver</span><span class="o">::</span><span class="n">ConstructPhaseAction</span><span class="p">(</span><span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">,</span> <span class="k">const</span> <span class="n">ArgList</span> <span class="o">&amp;</span><span class="n">Args</span><span class="p">,</span>
+                                     <span class="n">phases</span><span class="o">::</span><span class="n">ID</span> <span class="n">Phase</span><span class="p">,</span> <span class="n">Action</span> <span class="o">*</span><span class="n">Input</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Preprocess</span><span class="o">:</span> <span class="p">{</span>
+    <span class="n">types</span><span class="o">::</span><span class="n">ID</span> <span class="n">OutputTy</span><span class="p">;</span>
+    <span class="c1">// (.. omitted ..)</span>
+        <span class="n">OutputTy</span> <span class="o">=</span> <span class="n">types</span><span class="o">::</span><span class="n">getPreprocessedType</span><span class="p">(</span><span class="n">OutputTy</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">PreprocessJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">OutputTy</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">FortranFrontend</span><span class="o">:</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">FortranFrontendJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span>
+                                               <span class="n">types</span><span class="o">::</span><span class="n">TY_LLVM_IR</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Compile</span><span class="o">:</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">Args</span><span class="p">.</span><span class="n">hasArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_fsyntax_only</span><span class="p">))</span>
+      <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">CompileJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_Nothing</span><span class="p">);</span>
+    <span class="c1">// (.. omitted ..)</span>
+    <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">CompileJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_LLVM_BC</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Backend</span><span class="o">:</span> <span class="p">{</span>
+    <span class="c1">// (.. omitted ..)</span>
+    <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">BackendJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_PP_Asm</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Assemble</span><span class="o">:</span>
+    <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">AssembleJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">Input</span><span class="p">),</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_Object</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="c1">// (.. omitted ..)</span>
+<span class="err">}</span></code></pre></figure>
+
+<p>
+If we recall the set of phases for C/C++ we have that first they are Preprocess (<code>.c</code> → <code>.i</code> or for C++ <code>.cpp</code> → <code>.ii</code>), then, Compile (<code>.i</code>/<code>.ii</code> → <code>.bc</code>), then Backend (<code>.bc</code> → <code>.s</code>) and then Assemble (<code>.s</code> → <code>.o</code>). A <code>.bc</code> file is a LLVM bitcode file which is a binary representation of the LLVM IR (represented in the code above as <code>types::TY_LLVM_BC)</code>. But as we saw above, a Fortran file follows a slightly different process: FortranFrontend (<code>.f</code>/<code>.F</code> → <code>.llvm</code>), Compile (<code>.llvm</code> → <code>.bc</code>), Backend (<code>.bc</code> → <code>.s</code>) and Assemble (<code>.s</code> → <code>.o</code>). A .llvm file is the textual representation of the LLVM IR and can represent exactly the same as a .bc file (but note that the backend step only consumes <code>.bc</code> files). These actions are defined in <code>llvm/tools/clang/include/clang/Action.h</code> and in general they are very thin classes that inherit from the <code>Action</code> class.
+</p>
+
+<h3>Jobs for everyone</h3>
+
+<p>
+Now function <code>BuildActions</code> ends and we go back to <code>BuildCompilation</code>. The code now proceeds to <code>BuildJobs</code>. It's main purpose is to build one or more jobs for each action.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="n">Driver</span><span class="o">::</span><span class="n">BuildJobs</span><span class="p">(</span><span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">Action</span> <span class="o">*</span><span class="n">A</span> <span class="o">:</span> <span class="n">C</span><span class="p">.</span><span class="n">getActions</span><span class="p">())</span> <span class="p">{</span>
+    <span class="c1">// (.. omitted ..)</span>
+    <span class="n">BuildJobsForAction</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">.</span><span class="n">getDefaultToolChain</span><span class="p">(),</span>
+                       <span class="cm">/*BoundArch*/</span> <span class="n">StringRef</span><span class="p">(),</span>
+                       <span class="cm">/*AtTopLevel*/</span> <span class="nb">true</span><span class="p">,</span>
+                       <span class="cm">/*MultipleArchs*/</span> <span class="n">ArchNames</span><span class="p">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span>
+                       <span class="cm">/*LinkingOutput*/</span> <span class="n">LinkingOutput</span><span class="p">,</span> <span class="n">CachedResults</span><span class="p">,</span>
+                       <span class="cm">/*TargetDeviceOffloadKind*/</span> <span class="n">Action</span><span class="o">::</span><span class="n">OFK_None</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="c1">// (.. omitted ..)</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+There is a bit of complexity here because the driver caches invocation of the same inputs more than once (to be honest I fail to see a non-obvious example beyond repeating the same input in the command line, maybe this happens in offloading contexts that are very out of the scope of this post). So <code>BuildJobsForAction</code> calls <code>BuildJobsForActionNoCache</code> and in practice the two functions do the same, the former does caching and calls the latter if the result has not been cached yet. The name job is a bit misleading here because these two functions return an <code>InputInfo</code> object which basically is a tuple containing the original file that motivated the creation of the input, the associated action and the type of the file (e.g.: object, Fortran free-form source, C code preprocessed, etc.). That said, at the end of <code>BuildJobsForActionNoCache</code>, the function <code>Tool::ConstructJob</code> is invoked. So now let's try to spell out this function because it does so many things at once. Fortunately, for us, most of the complexity is caused by extra steps required by offloading which we do not care at all.
+</p>
+
+<p>
+It may not be obvious from what we have seen so far, but because of the way we built the actions, each action has a reference to another action that represents its inputs. For instance, when linking, there will be just a single (top-level) <code>LinkJobAction</code> action that will have as inputs all the objects built by some <code>AssembleJobAction</code> action. So this function traverses this graph starting from the final actions towards its inputs. Recall that the for every input there is at least one <code>InputAction</code> from them (we created it in <code>BuildActions</code> above), so this is where we stop the graph traversal: we simply return an <code>InputInfo</code> using the current <code>Action</code> (an <code>InputAction</code>) and the argument in the command line that motivated the creation of this <code>InputAction</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">InputInfo</span> <span class="n">Driver</span><span class="o">::</span><span class="n">BuildJobsForActionNoCache</span><span class="p">(</span>
+    <span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">,</span> <span class="k">const</span> <span class="n">Action</span> <span class="o">*</span><span class="n">A</span><span class="p">,</span> <span class="k">const</span> <span class="n">ToolChain</span> <span class="o">*</span><span class="n">TC</span><span class="p">,</span> <span class="n">StringRef</span> <span class="n">BoundArch</span><span class="p">,</span>
+    <span class="kt">bool</span> <span class="n">AtTopLevel</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">MultipleArchs</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">LinkingOutput</span><span class="p">,</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">Action</span> <span class="o">*</span><span class="p">,</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">InputInfo</span><span class="o">&gt;</span> <span class="o">&amp;</span><span class="n">CachedResults</span><span class="p">,</span>
+    <span class="n">Action</span><span class="o">::</span><span class="n">OffloadKind</span> <span class="n">TargetDeviceOffloadKind</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+
+  <span class="c1">// (.. omitted ..))</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="k">const</span> <span class="n">InputAction</span> <span class="o">*</span><span class="n">IA</span> <span class="o">=</span> <span class="n">dyn_cast</span><span class="o">&lt;</span><span class="n">InputAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">A</span><span class="p">))</span> <span class="p">{</span>
+    <span class="c1">// (.. omitted ..))</span>
+    <span class="k">return</span> <span class="n">InputInfo</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Input</span><span class="p">,</span> <span class="cm">/* BaseInput = */</span> <span class="s">""</span><span class="p">);</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>
+From now on all the actions are going to be <code>JobAction</code> which is a common class for actions that use a tool to do its job (in contrast to <code>InputAction</code>). Thus we need some tool to generate the output of this action (which may be the input of another action). This is done using a class called <code>ToolSelector</code>. An object of class <code>ToolSelector</code> is created passing the <code>JobAction</code> and the <code>ToolChain</code> (and a couple more of flags we don't mind now).
+</p>
+
+<p>
+Then we ask that object for a tool suitable for the current action using the Inputs of this <code>JobAction</code> (they will be other <code>Action</code>s) to give us a suitable <code>Tool</code>. This function can use a function from the <code>ToolChain</code> class called <code>SelectTool</code> which returns the tool suitable for an action. But before it does this, <code>ToolSelector::getTool</code> attempts to collapse several actions in a single tool. For example, <code>cc1</code> (the C/C++ compiler proper) can genrate directly object files from C input files. So it does not make sense to do <code>.c</code> → <code>.i</code>, then <code>.i</code> → <code>.bc</code>, <code>.bc</code> → <code>.s</code> and then <code>.s</code> → <code>.o</code> if the tool can actually do <code>.c</code> → <code>.o</code> in a single invocation. When the function <code>ToolSelector::getTool</code> combines the action (like in the case of C/C++) it also updates the <code>Inputs</code>, so for the case of <code>Assembly</code> (<code>.s</code> → <code>.o</code>) actions in C/C++ the inputs where <code>Backend</code> actions (<code>.bc</code> → <code>.s</code>) but now they are the <code>InputAction</code> (the <code>.c</code>/<code>.cpp</code> source files in the command line).
+</p>
+
+<p>
+In the case we care the most, Fortran, <code>ToolSelector::getTool</code> does not combine anything as the flang frontend will just take a <code>.F</code>/<code>.f</code> and generate a <code>.llvm</code> (textual LLVM IR).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="k">const</span> <span class="n">ActionList</span> <span class="o">*</span><span class="n">Inputs</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">A</span><span class="o">-&gt;</span><span class="n">getInputs</span><span class="p">();</span>
+
+  <span class="k">const</span> <span class="n">JobAction</span> <span class="o">*</span><span class="n">JA</span> <span class="o">=</span> <span class="n">cast</span><span class="o">&lt;</span><span class="n">JobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">A</span><span class="p">);</span>
+  <span class="n">ToolSelector</span> <span class="nf">TS</span><span class="p">(</span><span class="n">JA</span><span class="p">,</span> <span class="o">*</span><span class="n">TC</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">isSaveTempsEnabled</span><span class="p">(),</span> <span class="n">embedBitcodeInObject</span><span class="p">());</span>
+  <span class="k">const</span> <span class="n">Tool</span> <span class="o">*</span><span class="n">T</span> <span class="o">=</span> <span class="n">TS</span><span class="p">.</span><span class="n">getTool</span><span class="p">(</span><span class="n">Inputs</span><span class="p">,</span> <span class="n">CollapsedOffloadActions</span><span class="p">);</span></code></pre></figure>
+
+<p>
+Once we have a suitable tool for the action we can build jobs for the inputs. We do this recursively invoking <code>BuildJobsForAction</code>. This will compute the jobs of the actions previous to this one (the inputs to the current action). Note that <code>SubJobAtTopLevel</code> for the kind of actions we care will always evaluate as false. This is because when linking only the Link action is top level. When compiling only (<code>-c</code> option) more than one <code>Assemble</code> action can be <code>TopLevel</code> (depending on the number of <code>.c</code> files in the input).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">Action</span> <span class="o">*</span><span class="n">Input</span> <span class="o">:</span> <span class="o">*</span><span class="n">Inputs</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Treat dsymutil and verify sub-jobs as being at the top-level too, they</span>
+    <span class="c1">// shouldn't get temporary output names.</span>
+    <span class="c1">// FIXME: Clean this up.</span>
+    <span class="kt">bool</span> <span class="n">SubJobAtTopLevel</span> <span class="o">=</span>
+        <span class="n">AtTopLevel</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">isa</span><span class="o">&lt;</span><span class="n">DsymutilJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">A</span><span class="p">)</span> <span class="o">||</span> <span class="n">isa</span><span class="o">&lt;</span><span class="n">VerifyJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">A</span><span class="p">));</span>
+    <span class="n">InputInfos</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">BuildJobsForAction</span><span class="p">(</span>
+        <span class="n">C</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">TC</span><span class="p">,</span> <span class="n">BoundArch</span><span class="p">,</span> <span class="n">SubJobAtTopLevel</span><span class="p">,</span> <span class="n">MultipleArchs</span><span class="p">,</span> <span class="n">LinkingOutput</span><span class="p">,</span>
+        <span class="n">CachedResults</span><span class="p">,</span> <span class="n">A</span><span class="o">-&gt;</span><span class="n">getOffloadingDeviceKind</span><span class="p">()));</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>
+Once we have built the jobs of the inputs of our task we can create the job of the current task (now that we have the tool).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">      <span class="n">T</span><span class="o">-&gt;</span><span class="n">ConstructJob</span><span class="p">(</span>
+          <span class="n">C</span><span class="p">,</span> <span class="o">*</span><span class="n">JA</span><span class="p">,</span> <span class="n">Result</span><span class="p">,</span> <span class="n">InputInfos</span><span class="p">,</span>
+          <span class="n">C</span><span class="p">.</span><span class="n">getArgsForToolChain</span><span class="p">(</span><span class="n">TC</span><span class="p">,</span> <span class="n">BoundArch</span><span class="p">,</span> <span class="n">JA</span><span class="o">-&gt;</span><span class="n">getOffloadingDeviceKind</span><span class="p">()),</span>
+          <span class="n">LinkingOutput</span><span class="p">);</span></code></pre></figure>
+
+<p>&lt;p.
+This will construct each tool individually. There are classes for each possible tool: <code>Clang</code> (for cc1), <code>ClangAs</code> (for cc1as) and <code>FlangFrontend</code> (for flang). These are defined in <code>llvm/tools/clang/lib/Driver/Tools.cpp</code>. We’ll get back to them later.
+&lt;/p&gt;</p>
+
+<p>
+After the jobs have been built, <code>BuildJobsForActionNoCache</code>, <code>BuildJobsForAction</code> and <code>BuildJobs</code> do a few more of uninteresting bookkeeping but in practical terms they are done. So we go back to <code>BuildCompilation</code>. Building the jobs is the last thing it does, so we're back to the driver. As a reminder where we started.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">456
+457
+458
+459
+460
+</pre></td><td class="code"><pre>  <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Compilation</span><span class="o">&gt;</span> <span class="n">C</span><span class="p">(</span><span class="n">TheDriver</span><span class="p">.</span><span class="n">BuildCompilation</span><span class="p">(</span><span class="n">argv</span><span class="p">));</span>
+  <span class="kt">int</span> <span class="n">Res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">SmallVector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="k">const</span> <span class="n">Command</span> <span class="o">*&gt;</span><span class="p">,</span> <span class="mi">4</span><span class="o">&gt;</span> <span class="n">FailingCommands</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">C</span><span class="p">.</span><span class="n">get</span><span class="p">())</span>
+    <span class="n">Res</span> <span class="o">=</span> <span class="n">TheDriver</span><span class="p">.</span><span class="n">ExecuteCompilation</span><span class="p">(</span><span class="o">*</span><span class="n">C</span><span class="p">,</span> <span class="n">FailingCommands</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now, the built compilation is executed in <code>ExecuteCompilation</code>. It basically executes the jobs we created when building the compilation.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">Driver</span><span class="o">::</span><span class="n">ExecuteCompilation</span><span class="p">(</span>
+    <span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">,</span>
+    <span class="n">SmallVectorImpl</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="k">const</span> <span class="n">Command</span> <span class="o">*&gt;&gt;</span> <span class="o">&amp;</span><span class="n">FailingCommands</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// Just print if -### was present.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">C</span><span class="p">.</span><span class="n">getArgs</span><span class="p">().</span><span class="n">hasArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT__HASH_HASH_HASH</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">C</span><span class="p">.</span><span class="n">getJobs</span><span class="p">().</span><span class="n">Print</span><span class="p">(</span><span class="n">llvm</span><span class="o">::</span><span class="n">errs</span><span class="p">(),</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="c1">// If there were errors building the compilation, quit now.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Diags</span><span class="p">.</span><span class="n">hasErrorOccurred</span><span class="p">())</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="c1">// Set up response file names for each command, if necessary</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="n">Job</span> <span class="o">:</span> <span class="n">C</span><span class="p">.</span><span class="n">getJobs</span><span class="p">())</span>
+    <span class="n">setUpResponseFiles</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">Job</span><span class="p">);</span>
+
+  <span class="n">C</span><span class="p">.</span><span class="n">ExecuteJobs</span><span class="p">(</span><span class="n">C</span><span class="p">.</span><span class="n">getJobs</span><span class="p">(),</span> <span class="n">FailingCommands</span><span class="p">);</span>
+  <span class="c1">// (.. omitted ..)</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+And the compilation has fully completed!
+</p>
+
+<h2>A tool for every task</h2>
+
+<p>
+Above we mentioned that every <code>JobAction</code> invokes a tool to generate its output using the inputs. How does this really work?
+</p>
+
+<h3>Toolchain</h3>
+
+<p>
+We have mentioned several times above the class <code>ToolChain</code>. Objects of this class know how to invoke the tools in every environment. The toolchain depends on the target which in LLVM is represented using a triple. The triple is loosely based on the GNU triple as used by the GNU toolchain. For instance a triple like <code>x86_64-pc-linux-gnu</code> uses a Linux toolchain while a triple like <code>x86_64-apple-darwin16.6.0</code> uses a Darwin toolchain style. When it comes to tools, usually only the assembler and the linker change, the tools provided by LLVM (like cc1 or the flang front end) are not configurable. That said, toolchains may have different defaults or require different configurations. All this information is encoded in the <code>ToolChain</code> class.
+</p>
+
+<p>
+We stated above that when creating the jobs for an action we need a tool. <code>ToolSelector::getTool</code> calls <code>ToolChain::SelectTool</code> to do this. By default it prioritizes <code>cc1</code> or <code>cc1as</code> if it can process the input specified, otherwise it falls back to <code>ToolChain::getTool</code> that can be overriden by the <code>ToolChain</code>.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">347
+348
+349
+350
+351
+352
+353
+</pre></td><td class="code"><pre><span class="n">Tool</span> <span class="o">*</span><span class="n">ToolChain</span><span class="o">::</span><span class="n">SelectTool</span><span class="p">(</span><span class="k">const</span> <span class="n">JobAction</span> <span class="o">&amp;</span><span class="n">JA</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">getDriver</span><span class="p">().</span><span class="n">ShouldUseClangCompiler</span><span class="p">(</span><span class="n">JA</span><span class="p">))</span> <span class="k">return</span> <span class="n">getClang</span><span class="p">();</span>
+  <span class="n">Action</span><span class="o">::</span><span class="n">ActionClass</span> <span class="n">AC</span> <span class="o">=</span> <span class="n">JA</span><span class="p">.</span><span class="n">getKind</span><span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">AC</span> <span class="o">==</span> <span class="n">Action</span><span class="o">::</span><span class="n">AssembleJobClass</span> <span class="o">&amp;&amp;</span> <span class="n">useIntegratedAs</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">getClangAs</span><span class="p">();</span>
+  <span class="k">return</span> <span class="n">getTool</span><span class="p">(</span><span class="n">AC</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The base <code>ToolChain</code> class provides the following <code>getTool</code> implementation. The few <code>ToolChain</code> that override this function forward to the base implementation if they do not have to provide specific behaviour.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+</pre></td><td class="code"><pre><span class="n">Tool</span> <span class="o">*</span><span class="n">ToolChain</span><span class="o">::</span><span class="n">getTool</span><span class="p">(</span><span class="n">Action</span><span class="o">::</span><span class="n">ActionClass</span> <span class="n">AC</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">AC</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">AssembleJobClass</span><span class="o">:</span>
+    <span class="k">return</span> <span class="n">getAssemble</span><span class="p">();</span>
+
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">LinkJobClass</span><span class="o">:</span>
+    <span class="k">return</span> <span class="n">getLink</span><span class="p">();</span>
+
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">InputClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">BindArchClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">OffloadClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">LipoJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">DsymutilJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">VerifyDebugInfoJobClass</span><span class="o">:</span>
+    <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Invalid tool kind."</span><span class="p">);</span>
+
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">CompileJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">PrecompileJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">PreprocessJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">AnalyzeJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">MigrateJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">VerifyPCHJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">BackendJobClass</span><span class="o">:</span>
+    <span class="k">return</span> <span class="n">getClang</span><span class="p">();</span>
+
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">OffloadBundlingJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">OffloadUnbundlingJobClass</span><span class="o">:</span>
+    <span class="k">return</span> <span class="n">getOffloadBundler</span><span class="p">();</span>
+
+  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">FortranFrontendJobClass</span><span class="o">:</span>
+    <span class="k">return</span> <span class="n">getFlangFrontend</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Invalid tool kind."</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h3>Flang frontend</h3>
+
+<p>
+Recall that when the input is a Fortran file, the phase for the action is a <code>FortranFrontend</code> which generates a <code>FortranFrontendJobAction</code> and this one uses the tool specified in <code>ToolChain::getFlangFrontend</code>.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">231
+232
+233
+234
+235
+</pre></td><td class="code"><pre><span class="n">Tool</span> <span class="o">*</span><span class="n">ToolChain</span><span class="o">::</span><span class="n">getFlangFrontend</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">FlangFrontend</span><span class="p">)</span>
+    <span class="n">FlangFrontend</span><span class="p">.</span><span class="n">reset</span><span class="p">(</span><span class="k">new</span> <span class="n">tools</span><span class="o">::</span><span class="n">FlangFrontend</span><span class="p">(</span><span class="o">*</span><span class="k">this</span><span class="p">));</span>
+  <span class="k">return</span> <span class="n">FlangFrontend</span><span class="p">.</span><span class="n">get</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+This is the tool that will execute the Fortran front end phases. It is defined in <code>Tools.h</code>.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Tools.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+</pre></td><td class="code"><pre><span class="k">class</span> <span class="nc">LLVM_LIBRARY_VISIBILITY</span> <span class="n">FlangFrontend</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Tool</span> <span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">FlangFrontend</span><span class="p">(</span><span class="k">const</span> <span class="n">ToolChain</span> <span class="o">&amp;</span><span class="n">TC</span><span class="p">)</span>
+      <span class="o">:</span> <span class="n">Tool</span><span class="p">(</span><span class="s">"flang:frontend"</span><span class="p">,</span>
+             <span class="s">"Fortran frontend to LLVM"</span><span class="p">,</span> <span class="n">TC</span><span class="p">,</span>
+             <span class="n">RF_Full</span><span class="p">)</span> <span class="p">{}</span>
+
+  <span class="kt">bool</span> <span class="n">hasGoodDiagnostics</span><span class="p">()</span> <span class="k">const</span> <span class="k">override</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">true</span><span class="p">;</span> <span class="p">}</span>
+  <span class="kt">bool</span> <span class="n">hasIntegratedAssembler</span><span class="p">()</span> <span class="k">const</span> <span class="k">override</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">false</span><span class="p">;</span> <span class="p">}</span>
+  <span class="kt">bool</span> <span class="n">hasIntegratedCPP</span><span class="p">()</span> <span class="k">const</span> <span class="k">override</span> <span class="p">{</span> <span class="k">return</span> <span class="nb">false</span><span class="p">;</span> <span class="p">}</span>
+
+  <span class="kt">void</span> <span class="n">ConstructJob</span><span class="p">(</span><span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">,</span> <span class="k">const</span> <span class="n">JobAction</span> <span class="o">&amp;</span><span class="n">JA</span><span class="p">,</span>
+                    <span class="k">const</span> <span class="n">InputInfo</span> <span class="o">&amp;</span><span class="n">Output</span><span class="p">,</span> <span class="k">const</span> <span class="n">InputInfoList</span> <span class="o">&amp;</span><span class="n">Inputs</span><span class="p">,</span>
+                    <span class="k">const</span> <span class="n">llvm</span><span class="o">::</span><span class="n">opt</span><span class="o">::</span><span class="n">ArgList</span> <span class="o">&amp;</span><span class="n">TCArgs</span><span class="p">,</span>
+                    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">LinkingOutput</span><span class="p">)</span> <span class="k">const</span> <span class="k">override</span><span class="p">;</span>
+<span class="p">};</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The function <code>ConstructJob</code> (that is effectively called from <code>BuildJobsForActionNoCache</code> as we saw above) is a very long function, but the key elements of it is that it adds to the compilation a couple of commands.
+</p>
+
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Tools.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="n">FlangFrontend</span><span class="o">::</span><span class="n">ConstructJob</span><span class="p">(</span><span class="n">Compilation</span> <span class="o">&amp;</span><span class="n">C</span><span class="p">,</span> <span class="k">const</span> <span class="n">JobAction</span> <span class="o">&amp;</span><span class="n">JA</span><span class="p">,</span>
+                         <span class="k">const</span> <span class="n">InputInfo</span> <span class="o">&amp;</span><span class="n">Output</span><span class="p">,</span> <span class="k">const</span> <span class="n">InputInfoList</span> <span class="o">&amp;</span><span class="n">Inputs</span><span class="p">,</span>
+                         <span class="k">const</span> <span class="n">ArgList</span> <span class="o">&amp;</span><span class="n">Args</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">LinkingOutput</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="c1">// (.. omit ..)</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">UpperExec</span> <span class="o">=</span> <span class="n">Args</span><span class="p">.</span><span class="n">MakeArgString</span><span class="p">(</span><span class="n">getToolChain</span><span class="p">().</span><span class="n">GetProgramPath</span><span class="p">(</span><span class="s">"flang1"</span><span class="p">));</span>
+  <span class="c1">// (.. omit ..)</span>
+  <span class="n">C</span><span class="p">.</span><span class="n">addCommand</span><span class="p">(</span><span class="n">llvm</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Command</span><span class="o">&gt;</span><span class="p">(</span><span class="n">JA</span><span class="p">,</span> <span class="o">*</span><span class="k">this</span><span class="p">,</span> <span class="n">UpperExec</span><span class="p">,</span> <span class="n">UpperCmdArgs</span><span class="p">,</span> <span class="n">Inputs</span><span class="p">));</span>
+  <span class="c1">// (.. omit ..)</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">LowerExec</span> <span class="o">=</span> <span class="n">Args</span><span class="p">.</span><span class="n">MakeArgString</span><span class="p">(</span><span class="n">getToolChain</span><span class="p">().</span><span class="n">GetProgramPath</span><span class="p">(</span><span class="s">"flang2"</span><span class="p">));</span>
+  <span class="c1">// (.. omit ..)</span>
+  <span class="n">C</span><span class="p">.</span><span class="n">addCommand</span><span class="p">(</span><span class="n">llvm</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Command</span><span class="o">&gt;</span><span class="p">(</span><span class="n">JA</span><span class="p">,</span> <span class="o">*</span><span class="k">this</span><span class="p">,</span> <span class="n">LowerExec</span><span class="p">,</span> <span class="n">LowerCmdArgs</span><span class="p">,</span> <span class="n">Inputs</span><span class="p">));</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Basically the execution of the <code>FlangFrontend</code> entails running two programs, called <code>flang1</code> and <code>flang2</code>. Now it is a bit early to explain what they do but basically <code>flang1</code> (upper Fortran) parses the Fortran code and generates an intermediate representation that is handed to <code>flang2</code> (lower Fortran). <code>flang2</code> is the responsible to generate the LLVM IR output.
+</p>
+
+<h2>Overall workflow</h2>
+
+<p>
+The option -### of the driver can be used to see the commands that it would invoke (in <code>ExecuteCompilation</code>). If we retake our <code>test.f90</code> from the last chapter, we can ask flang what commands it wil execute.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>flang -### <span class="nt">-o</span> <span class="nb">test </span>test.f90
+clang version 4.0.1 <span class="o">(</span>https://github.com/flang-compiler/clang.git 17f442716e8e6a5a642be5bd9e4f86b1aaf2f372<span class="o">)</span> <span class="o">(</span>https://github.com/llvm-mirror/llvm.git c8fccc53ed66d505898f8850bcc690c977a7c9a7<span class="o">)</span>
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: <span class="nb">install</span>/bin
+ <span class="s2">"install/bin/flang1"</span> <span class="s2">"test.f90"</span> <span class="s2">"-opt"</span> <span class="s2">"0"</span> <span class="s2">"-terse"</span> <span class="s2">"1"</span> <span class="s2">"-inform"</span> <span class="s2">"warn"</span> <span class="s2">"-nohpf"</span> <span class="s2">"-nostatic"</span> <span class="s2">"-y"</span> <span class="s2">"129"</span> <span class="s2">"2"</span> <span class="s2">"-inform"</span> <span class="s2">"warn"</span> <span class="s2">"-x"</span> <span class="s2">"19"</span> <span class="s2">"0x400000"</span> <span class="s2">"-quad"</span> <span class="s2">"-x"</span> <span class="s2">"59"</span> <span class="s2">"4"</span> <span class="s2">"-x"</span> <span class="s2">"15"</span> <span class="s2">"2"</span> <span class="s2">"-x"</span> <span class="s2">"49"</span> <span class="s2">"0x400004"</span> <span class="s2">"-x"</span> <span class="s2">"51"</span> <span class="s2">"0x20"</span> <span class="s2">"-x"</span> <span class="s2">"57"</span> <span class="s2">"0x4c"</span> <span class="s2">"-x"</span> <span class="s2">"58"</span> <span class="s2">"0x10000"</span> <span class="s2">"-x"</span> <span class="s2">"124"</span> <span class="s2">"0x1000"</span> <span class="s2">"-tp"</span> <span class="s2">"px"</span> <span class="s2">"-x"</span> <span class="s2">"57"</span> <span class="s2">"0xfb0000"</span> <span class="s2">"-x"</span> <span class="s2">"58"</span> <span class="s2">"0x78031040"</span> <span class="s2">"-x"</span> <span class="s2">"47"</span> <span class="s2">"0x08"</span> <span class="s2">"-x"</span> <span class="s2">"48"</span> <span class="s2">"4608"</span> <span class="s2">"-x"</span> <span class="s2">"49"</span> <span class="s2">"0x100"</span> <span class="s2">"-stdinc"</span> <span class="s2">"install/bin/../include:/usr/local/include:install/bin/../lib/clang/4.0.1/include:/usr/include/x86_64-linux-gnu:/include:/usr/include"</span> <span class="s2">"-def"</span> <span class="s2">"unix"</span> <span class="s2">"-def"</span> <span class="s2">"__unix"</span> <span class="s2">"-def"</span> <span class="s2">"__unix__"</span> <span class="s2">"-def"</span> <span class="s2">"linux"</span> <span class="s2">"-def"</span> <span class="s2">"__linux"</span> <span class="s2">"-def"</span> <span class="s2">"__linux__"</span> <span class="s2">"-def"</span> <span class="s2">"__NO_MATH_INLINES"</span> <span class="s2">"-def"</span> <span class="s2">"__LP64__"</span> <span class="s2">"-def"</span> <span class="s2">"__x86_64"</span> <span class="s2">"-def"</span> <span class="s2">"__x86_64__"</span> <span class="s2">"-def"</span> <span class="s2">"__LONG_MAX__=9223372036854775807L"</span> <span class="s2">"-def"</span> <span class="s2">"__SIZE_TYPE__=unsigned long int"</span> <span class="s2">"-def"</span> <span class="s2">"__PTRDIFF_TYPE__=long int"</span> <span class="s2">"-def"</span> <span class="s2">"__THROW="</span> <span class="s2">"-def"</span> <span class="s2">"__extension__="</span> <span class="s2">"-def"</span> <span class="s2">"__amd_64__amd64__"</span> <span class="s2">"-def"</span> <span class="s2">"__k8"</span> <span class="s2">"-def"</span> <span class="s2">"__k8__"</span> <span class="s2">"-def"</span> <span class="s2">"__PGLLVM__"</span> <span class="s2">"-freeform"</span> <span class="s2">"-vect"</span> <span class="s2">"48"</span> <span class="s2">"-y"</span> <span class="s2">"54"</span> <span class="s2">"1"</span> <span class="s2">"-x"</span> <span class="s2">"70"</span> <span class="s2">"0x40000000"</span> <span class="s2">"-y"</span> <span class="s2">"163"</span> <span class="s2">"0xc0000000"</span> <span class="s2">"-x"</span> <span class="s2">"189"</span> <span class="s2">"0x10"</span> <span class="s2">"-stbfile"</span> <span class="s2">"/tmp/test-82de19.stb"</span> <span class="s2">"-modexport"</span> <span class="s2">"/tmp/test-82de19.cmod"</span> <span class="s2">"-modindex"</span> <span class="s2">"/tmp/test-82de19.cmdx"</span> <span class="s2">"-output"</span> <span class="s2">"/tmp/test-82de19.ilm"</span>
+ <span class="s2">"install/bin/flang2"</span> <span class="s2">"/tmp/test-82de19.ilm"</span> <span class="s2">"-ieee"</span> <span class="s2">"1"</span> <span class="s2">"-x"</span> <span class="s2">"6"</span> <span class="s2">"0x100"</span> <span class="s2">"-x"</span> <span class="s2">"42"</span> <span class="s2">"0x400000"</span> <span class="s2">"-y"</span> <span class="s2">"129"</span> <span class="s2">"4"</span> <span class="s2">"-x"</span> <span class="s2">"129"</span> <span class="s2">"0x400"</span> <span class="s2">"-fn"</span> <span class="s2">"test.f90"</span> <span class="s2">"-opt"</span> <span class="s2">"0"</span> <span class="s2">"-terse"</span> <span class="s2">"1"</span> <span class="s2">"-inform"</span> <span class="s2">"warn"</span> <span class="s2">"-y"</span> <span class="s2">"129"</span> <span class="s2">"2"</span> <span class="s2">"-inform"</span> <span class="s2">"warn"</span> <span class="s2">"-x"</span> <span class="s2">"51"</span> <span class="s2">"0x20"</span> <span class="s2">"-x"</span> <span class="s2">"119"</span> <span class="s2">"0xa10000"</span> <span class="s2">"-x"</span> <span class="s2">"122"</span> <span class="s2">"0x40"</span> <span class="s2">"-x"</span> <span class="s2">"123"</span> <span class="s2">"0x1000"</span> <span class="s2">"-x"</span> <span class="s2">"127"</span> <span class="s2">"4"</span> <span class="s2">"-x"</span> <span class="s2">"127"</span> <span class="s2">"17"</span> <span class="s2">"-x"</span> <span class="s2">"19"</span> <span class="s2">"0x400000"</span> <span class="s2">"-x"</span> <span class="s2">"28"</span> <span class="s2">"0x40000"</span> <span class="s2">"-x"</span> <span class="s2">"120"</span> <span class="s2">"0x10000000"</span> <span class="s2">"-x"</span> <span class="s2">"70"</span> <span class="s2">"0x8000"</span> <span class="s2">"-x"</span> <span class="s2">"122"</span> <span class="s2">"1"</span> <span class="s2">"-x"</span> <span class="s2">"125"</span> <span class="s2">"0x20000"</span> <span class="s2">"-quad"</span> <span class="s2">"-x"</span> <span class="s2">"59"</span> <span class="s2">"4"</span> <span class="s2">"-tp"</span> <span class="s2">"px"</span> <span class="s2">"-x"</span> <span class="s2">"120"</span> <span class="s2">"0x1000"</span> <span class="s2">"-x"</span> <span class="s2">"124"</span> <span class="s2">"0x1400"</span> <span class="s2">"-y"</span> <span class="s2">"15"</span> <span class="s2">"2"</span> <span class="s2">"-x"</span> <span class="s2">"57"</span> <span class="s2">"0x3b0000"</span> <span class="s2">"-x"</span> <span class="s2">"58"</span> <span class="s2">"0x48000000"</span> <span class="s2">"-x"</span> <span class="s2">"49"</span> <span class="s2">"0x100"</span> <span class="s2">"-astype"</span> <span class="s2">"0"</span> <span class="s2">"-x"</span> <span class="s2">"183"</span> <span class="s2">"4"</span> <span class="s2">"-x"</span> <span class="s2">"121"</span> <span class="s2">"0x800"</span> <span class="s2">"-x"</span> <span class="s2">"54"</span> <span class="s2">"0x10"</span> <span class="s2">"-x"</span> <span class="s2">"70"</span> <span class="s2">"0x40000000"</span> <span class="s2">"-x"</span> <span class="s2">"249"</span> <span class="s2">"40"</span> <span class="s2">"-x"</span> <span class="s2">"124"</span> <span class="s2">"1"</span> <span class="s2">"-y"</span> <span class="s2">"163"</span> <span class="s2">"0xc0000000"</span> <span class="s2">"-x"</span> <span class="s2">"189"</span> <span class="s2">"0x10"</span> <span class="s2">"-y"</span> <span class="s2">"189"</span> <span class="s2">"0x4000000"</span> <span class="s2">"-x"</span> <span class="s2">"183"</span> <span class="s2">"0x10"</span> <span class="s2">"-stbfile"</span> <span class="s2">"/tmp/test-82de19.stb"</span> <span class="s2">"-asm"</span> <span class="s2">"/tmp/test-82de19.ll"</span>
+ <span class="s2">"install/bin/clang-4.0"</span> <span class="s2">"-cc1"</span> <span class="s2">"-triple"</span> <span class="s2">"x86_64-unknown-linux-gnu"</span> <span class="s2">"-emit-obj"</span> <span class="s2">"-mrelax-all"</span> <span class="s2">"-disable-free"</span> <span class="s2">"-main-file-name"</span> <span class="s2">"test.f90"</span> <span class="s2">"-mrelocation-model"</span> <span class="s2">"static"</span> <span class="s2">"-mthread-model"</span> <span class="s2">"posix"</span> <span class="s2">"-mdisable-fp-elim"</span> <span class="s2">"-fmath-errno"</span> <span class="s2">"-masm-verbose"</span> <span class="s2">"-mconstructor-aliases"</span> <span class="s2">"-munwind-tables"</span> <span class="s2">"-fuse-init-array"</span> <span class="s2">"-target-cpu"</span> <span class="s2">"x86-64"</span> <span class="s2">"-dwarf-column-info"</span> <span class="s2">"-debugger-tuning=gdb"</span> <span class="s2">"-resource-dir"</span> <span class="s2">"install/bin/../lib/clang/4.0.1"</span> <span class="s2">"-fdebug-compilation-dir"</span> <span class="s2">"test"</span> <span class="s2">"-ferror-limit"</span> <span class="s2">"19"</span> <span class="s2">"-fmessage-length"</span> <span class="s2">"190"</span> <span class="s2">"-fobjc-runtime=gcc"</span> <span class="s2">"-fdiagnostics-show-option"</span> <span class="s2">"-fcolor-diagnostics"</span> <span class="s2">"-o"</span> <span class="s2">"/tmp/test-bcb4ec.o"</span> <span class="s2">"-x"</span> <span class="s2">"ir"</span> <span class="s2">"/tmp/test-82de19.ll"</span>
+ <span class="s2">"/usr/bin/ld"</span> <span class="s2">"--hash-style=both"</span> <span class="s2">"--eh-frame-hdr"</span> <span class="s2">"-m"</span> <span class="s2">"elf_x86_64"</span> <span class="s2">"-dynamic-linker"</span> <span class="s2">"/lib64/ld-linux-x86-64.so.2"</span> <span class="s2">"-o"</span> <span class="s2">"test"</span> <span class="s2">"/usr/lib/gcc/x86_64-linux-gnu/6.3.0/../../../x86_64-linux-gnu/crt1.o"</span> <span class="s2">"/usr/lib/gcc/x86_64-linux-gnu/6.3.0/../../../x86_64-linux-gnu/crti.o"</span> <span class="s2">"/usr/lib/gcc/x86_64-linux-gnu/6.3.0/crtbegin.o"</span> <span class="s2">"-L/usr/lib/gcc/x86_64-linux-gnu/6.3.0"</span> <span class="s2">"-L/usr/lib/gcc/x86_64-linux-gnu/6.3.0/../../../x86_64-linux-gnu"</span> <span class="s2">"-L/lib/x86_64-linux-gnu"</span> <span class="s2">"-L/lib/../lib64"</span> <span class="s2">"-L/usr/lib/x86_64-linux-gnu"</span> <span class="s2">"-L/usr/lib/gcc/x86_64-linux-gnu/6.3.0/../../.."</span> <span class="s2">"-Linstall/bin/../lib"</span> <span class="s2">"-L/lib"</span> <span class="s2">"-L/usr/lib"</span> <span class="s2">"/tmp/test-bcb4ec.o"</span> <span class="s2">"-lflangmain"</span> <span class="s2">"-lflang"</span> <span class="s2">"-lflangrti"</span> <span class="s2">"-lompstub"</span> <span class="s2">"-lm"</span> <span class="s2">"-lrt"</span> <span class="s2">"-lpthread"</span> <span class="s2">"-lgcc"</span> <span class="s2">"--as-needed"</span> <span class="s2">"-lgcc_s"</span> <span class="s2">"--no-as-needed"</span> <span class="s2">"-lc"</span> <span class="s2">"-lgcc"</span> <span class="s2">"--as-needed"</span> <span class="s2">"-lgcc_s"</span> <span class="s2">"--no-as-needed"</span> <span class="s2">"/usr/lib/gcc/x86_64-linux-gnu/6.3.0/crtend.o"</span> <span class="s2">"/usr/lib/gcc/x86_64-linux-gnu/6.3.0/../../../x86_64-linux-gnu/crtn.o"</span></code></pre></figure>
+
+<p>
+Wow, that is barely readable. But we can filter the output using grep. I annotate every invocation with its action.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>flang -### <span class="nt">-o</span> <span class="nb">test </span>test.f90  2&gt;&amp;1  | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"^ </span><span class="se">\"</span><span class="s2">[^</span><span class="se">\"</span><span class="s2">]</span><span class="se">\+\"</span><span class="s2">"</span>
+ <span class="s2">"install/bin/flang1"</span>     <span class="c">#             [FortranFrontEnd]</span>
+ <span class="s2">"install/bin/flang2"</span>     <span class="c"># .f/F → .ll [FortranFrontEnd]</span>
+ <span class="s2">"install/bin/clang-4.0"</span>  <span class="c"># .ll → .o   [Compile+Backend+Assemble]</span>
+ <span class="s2">"/usr/bin/ld"</span>            <span class="c"># .o → (exe) [Link)</span></code></pre></figure>
+
+<p>
+The first two commands (flang1 and flang2) are due to the <code>FortranFrontendJobAction</code>. The invocation for <code>clang-4.0</code> is caused by the collapsing the phases of <code>Assemble</code> (<code>.ll</code> → <code>.bc</code>) and <code>Backend</code> (<code>.bc</code> → <code>.s</code>) and Assemble (<code>.s</code> → <code>.o</code>) into a single step (<code>.ll</code> → <code>.o</code>). A way to disable the collapsing of phases is using the flag <code>-save-temps</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>flang -### <span class="nt">-o</span> <span class="nb">test </span>test.f90 <span class="nt">-save-temps</span> 2&gt;&amp;1  | <span class="nb">grep</span> <span class="nt">-o</span> <span class="s2">"^ </span><span class="se">\"</span><span class="s2">[^</span><span class="se">\"</span><span class="s2">]</span><span class="se">\+\"</span><span class="s2">"</span> 
+ <span class="s2">"install/bin/flang1"</span>       <span class="c">#             [FortranFrontEnd]  </span>
+ <span class="s2">"install/bin/flang2"</span>       <span class="c"># .f/F → .ll [FortranFrontEnd]</span>
+ <span class="s2">"install/bin/clang-4.0"</span>    <span class="c"># .ll → .bc  [Compile]</span>
+ <span class="s2">"install/bin/clang-4.0"</span>    <span class="c"># .bc → .s   [Backend]</span>
+ <span class="s2">"install/bin/clang-4.0"</span>    <span class="c"># .s → .o    [Assemble]</span>
+ <span class="s2">"/usr/bin/ld"</span>              <span class="c"># .o → (exe) [Link]</span></code></pre></figure>
+
+<p>
+Well, this post is too long already. In the next chapter we will see what flang1 does.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/06/17/walk-through-flang-part-1/">&laquo; Walk-through flang – Part 1</a>
+
+
+  <a class="next" href="/2017/07/29/walk-through-flang-part-3/">Walk-through flang – Part 3 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 8</title>
+  <meta name="description" content="In the last installment of this series we started to look at the AST and the symbol table by examining the compiler dumps of these two data structures. In this chapter we are going to explore a bit more the AST for the control flow statements.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2018/12/22/walk-through-flang-part-8/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 8">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2018/12/22/walk-through-flang-part-8/">
+  <meta property="og:description" content="In the last installment of this series we started to look at the AST and the symbol table by examining the compiler dumps of these two data structures. In this chapter we are going to explore a bit more the AST for the control flow statements.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 8">
+  <meta name="twitter:description" content="In the last installment of this series we started to look at the AST and the symbol table by examining the compiler dumps of these two data structures. In this chapter we are going to explore a bit...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 8</h1>
+    
+    <p class="post-meta"><time datetime="2018-12-22T20:17:39+00:00" itemprop="datePublished">Dec 22, 2018</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last installment of this series we started to look at the AST and the symbol table by examining the compiler dumps of these two data structures. In this chapter we are going to explore a bit more the AST for the control flow statements.</p>
+
+<!--more-->
+
+<h2>Statement descriptor</h2>
+
+<p>
+At the end of the previous installment we learnt about the Statement Descriptor (<code>STD</code>). STDs allow us to order the ASTs that represent statements (the ordering is required to make sure we don't alter the semantics of the program). An AST node that represents a statement is linked to an STD and each STD is linked back to that AST. An STD includes extra information about what other STD precede or follow it.
+</p>
+
+<p>
+We can dump all the STDs passing <code>-Hq,5,2</code> to flang. Because the second argument is a bitmask, we can use <code>-Hq,5,3</code> to print both the symtab and the STD (they will be emitted in this order).
+</p>
+
+<p>
+For instance, the function of the last chapter
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">ADD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">ADD</span><span class="w">
+
+    </span><span class="n">ADD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="w">
+</span><span class="k">END</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+has the following STD information
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:4      label:0    ()  ast:16   
+      add = a + b
+std:    2.  lineno:5      label:0    ()  ast:17   
+      end</code></pre></figure>
+
+<p>
+The field <code>std</code> is the identifier of the STD (the number of the identifier itself does not convey any order). <code>lineno</code> represents the line of the statement. The field <code>label</code> is used for labeled statements, see later. Finally <code>ast</code> is the AST identifier. The AST identifier can be matched in the AST dump (that we can obtain passing <code>-Hq,4,256</code> to flang).
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">...
+assign      hshlk/std:    1  type:integer opt=(0,0)
+aptr:   16  dest:   15  src:   14
+
+end         hshlk/std:    2 opt=(0,0)
+aptr:   17
+...</code></pre></figure>
+
+<p>
+You may be wondering where have the two first statements gone. Well, the truth is that, a compiler only needs to emit code for anything that may have a side-effect (or visible behaviour). The non-executable statements by themselves won't cause any code be emitted (they will impact it, of course): the raw material here are the executable statements.
+</p>
+
+<p>
+Equipped with this tools now we can look a bit more with detail some of the control flow statements of Fortran.
+</p>
+
+<h2>Examples of control flow in Fortran</h2>
+
+<p>
+Due to the long story of Fortran, the language has many colourful features that nowadays are regarded as obsolete or just <em>weird</em>. From a point of view of the evolution of programming languages (PL), Fortran is very interesting. Having been there for so long means that we can see the different trends an ideas in PL design impacting the evolution of the language.
+</p>
+
+<h3>If statement</h3>
+
+<p>
+Consider the following function that computes the absolute value of <code>A</code>
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">MY_ABS</span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="w">
+
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">A</span><span class="w">
+    </span><span class="n">MY_ABS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w">
+</span><span class="k">END</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The statement in line 4 is called an <em>if-statement</em> and it "gates" the execution of the statement <code>A = -A</code>, to the truth value of the expression <code>A &lt; 0</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:4      label:0    ()  ast:14   
+      if (a .lt. 0) then
+std:    2.  lineno:4      label:0    ()  ast:16   
+      a = -a
+std:    3.  lineno:4      label:0    ()  ast:17   
+      endif
+std:    4.  lineno:5      label:0    ()  ast:19   
+      my_abs = a
+std:    5.  lineno:6      label:0    ()  ast:20   
+      end</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">constant    hshlk/std:    0  type:integer opt=(0,0)
+aptr:    2  sptr:  609 (0)
+...
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   12  sptr:  625 (a)
+
+binop       hshlk/std:    0  type:logical  alias:    0  callfg:0 opt=(0,0)
+aptr:   13  lop :   12  rop:    2  optype:23
+
+if-then     hshlk/std:    1 opt=(0,0)
+aptr:   14  ifexpr:   13
+
+unaryop     hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   15  lop :   12  optype:2
+
+assign      hshlk/std:    2  type:integer opt=(0,0)
+aptr:   16  dest:   12  src:   15
+
+endif       hshlk/std:    3 opt=(0,0)
+aptr:   17
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   18  sptr:  626 (my_abs)
+
+assign      hshlk/std:    4  type:integer opt=(0,0)
+aptr:   19  dest:   18  src:   12
+
+end         hshlk/std:    5 opt=(0,0)
+aptr:   20</code></pre></figure>
+
+<p>
+From the two dumps above we can see that the <em>if-statement</em> is represented using an AST (14) of type <code>if-then</code>. The field <code>ifexpr</code> represents the control expression of the <em>if-statement</em>. In this case it is the AST 13 which is a binary operation, <code>binop</code>, (of type 23 representing the "lower than" operation) with expression type <code>logical</code>. The left operand is a reference to the variable <code>a</code>, represented in the AST 12. As we saw in the previous chapter, references to variables are represented with a tree type <code>ident</code>. The right operand is just the constant 0, represented in the AST 2 of type <code>constant</code>.
+</p>
+
+<p>
+The conditionally executed statement <code>A = -A</code> is an <em>assignment-statement</em> represented in the AST 16. Note that the destination is the same AST 2 we used in left operand of the AST 13 above: rarely there is a need to repeat references to the same variable.
+</p>
+
+<p>
+The AST 17 represents the <code>END IF</code> statement. It may come as a surprising thing to you, but flang is not nesting the control flow structures in any way at this level. So to represent the nesting, flang sees itself forced to create <em>regions</em> which are naturally delimited in Fortran using many kinds of <em>end-statement</em>s (in this case a <em>end-if-statement</em>). Because of the parser and semantic checks, these regions will be well-formed and will honour the proper nesting, but nothing in the in-memory representation is explicitly forcing this.
+</p>
+
+<h3>If-then construct</h3>
+
+<p>
+Consider the following function that does an addition or a subtraction depending on a logical parameter.
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">ADD_OR_SUB</span><span class="p">(</span><span class="n">L</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">LOGICAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">L</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">ADD_OR_SUB</span><span class="w">
+
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+        </span><span class="n">ADD_OR_SUB</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="w">
+    </span><span class="k">ELSE</span><span class="w">
+        </span><span class="n">ADD_OR_SUB</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">B</span><span class="w">
+    </span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w">
+</span><span class="k">END</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:5      label:0    ()  ast:13   
+      if (l) then
+std:    2.  lineno:6      label:0    ()  ast:18   
+      add_or_sub = a + b
+std:    3.  lineno:7      label:0    ()  ast:19   
+      else
+std:    4.  lineno:8      label:0    ()  ast:21   
+      add_or_sub = a - b
+std:    5.  lineno:9      label:0    ()  ast:22   
+      endif
+std:    6.  lineno:10     label:0    ()  ast:23   
+      end</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">...
+if-then     hshlk/std:    1 opt=(0,0)
+aptr:   13  ifexpr:   12
+...
+else        hshlk/std:    3 opt=(0,0)
+aptr:   19
+...
+endif       hshlk/std:    5 opt=(0,0)
+aptr:   22</code></pre></figure>
+
+<p>
+Again we need to delimit the regions corresponding to the "then" and the "else" via specific statements. This actually means that flang lowers the <em>if-statement</em> of the previous section as it would lower an <em>if-construct</em> with a single statement in the <em>then</em> part and no <em>else</em> part.
+</p>
+
+<p>
+Let's see what happens a more complex example:
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span><span class="p">(</span><span class="n">L1</span><span class="p">,</span><span class="w"> </span><span class="n">L2</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">LOGICAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">L1</span><span class="p">,</span><span class="w"> </span><span class="n">L2</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="w">
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">L1</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+        </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+        </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="w">
+    </span><span class="k">ELSE</span><span class="w">
+        </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">L2</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+            </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w">
+            </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="w">
+        </span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w">
+    </span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The STDs look like this
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:4      label:0    ()  ast:13   
+      if (l1) then
+std:    2.  lineno:5      label:0    ()  ast:15   
+      a = 1
+std:    3.  lineno:6      label:0    ()  ast:18   
+      b = 3
+std:    4.  lineno:7      label:0    ()  ast:19   
+      else
+std:    5.  lineno:8      label:0    ()  ast:21   
+      if (l2) then
+std:    6.  lineno:9      label:0    ()  ast:23   
+      a = 2
+std:    7.  lineno:10     label:0    ()  ast:25   
+      b = 4
+std:    8.  lineno:11     label:0    ()  ast:26   
+      endif
+std:    9.  lineno:12     label:0    ()  ast:27   
+      endif
+std:   10.  lineno:13     label:0    ()  ast:28   
+      end</code></pre></figure>
+
+<p>
+We can tally the control flow STDs with their ASTs. This time I have indented the dump to make the nesting explicit.
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">...
+if-then     hshlk/std:    1 opt=(0,0)
+aptr:   13  ifexpr:   12
+   ...
+else        hshlk/std:    4 opt=(0,0)
+aptr:   19
+   ...
+   if-then     hshlk/std:    5 opt=(0,0)
+   aptr:   21  ifexpr:   20
+      ...
+   endif       hshlk/std:    8 opt=(0,0)
+   aptr:   26
+endif       hshlk/std:    9 opt=(0,0)
+aptr:   27</code></pre></figure>
+
+<h3>Do-while-statement</h3>
+
+<p>
+Fortran does not have a dedicated while statement but instead it is a special case of the <em>do-statement</em>. Consider the following program that computes the greater common divisor using the Euclid algorithm.
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">GCD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">GCD</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">T</span><span class="w">
+
+    </span><span class="k">DO</span><span class="w"> </span><span class="k">WHILE</span><span class="w"> </span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">
+        </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="w">
+        </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">MOD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+        </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">T</span><span class="w">
+    </span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+
+    </span><span class="n">GCD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">GCD</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Let's dump the STD to see what has happened now:
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:5      label:629  (%L99999)  ast:12   
+%L99999:
+      continue
+std:    2.  lineno:5      label:0    ()  ast:15   
+      if (b .ne. 0) then
+std:    3.  lineno:6      label:0    ()  ast:17   
+      t = b
+std:    4.  lineno:7      label:0    ()  ast:21   
+      b = mod(a,b)
+std:    5.  lineno:8      label:0    ()  ast:22   
+      a = t
+std:    6.  lineno:9      label:0    ()  ast:23   
+      goto 99999
+std:    7.  lineno:9      label:0    ()  ast:25   
+      endif
+std:    8.  lineno:11     label:0    ()  ast:27   
+      gcd = a
+std:    9.  lineno:12     label:0    ()  ast:28   
+      end</code></pre></figure>
+
+<p>
+Take a moment to appreciate what flang did here. It introduced an artificial <em>continue-statement</em> (<code>CONTINUE</code>). The execution of a <em>continue-statement</em> has no effect but flang attached an artificial label <code>%L99999</code> to it. Now we see that our <code>DO WHILE</code> has been replaced by an <em>if-then-statement</em>. The <em>then</em> part of this <em>if-then-statement</em> executes the body of the <code>DO WHILE</code>. Because this is a loop, flang has introduced a <code>GOTO</code> statement back to the label of the <em>continue-statement</em> that it emitted before the loop body.
+</p>
+
+<p>
+So flang has lowered the input above into something like this.
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">GCD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">GCD</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">T</span><span class="w">
+
+    </span><span class="mi">99999</span><span class="p">:</span><span class="w"> </span><span class="k">CONTINUE</span><span class="w">
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+       </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="w">
+       </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">MOD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+       </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">T</span><span class="w">
+       </span><span class="k">GOTO</span><span class="w"> </span><span class="mi">99999</span><span class="w">
+    </span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w">
+
+    </span><span class="n">GCD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">GCD</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p style="padding: 1em; background-color: #eef;">
+This kind of early lowerings come with some tradeoffs. The upside of lowering early is that the construct can be supported using the existing infrastructure for more general constructs. This way, the rest of the compiler does not need to be taught about the new construct. The downside is that sometimes these constructs can be lowered into executable code in a more efficient way. By lowering to existing, more general, constructs we may lose this ability or we are forced to invest some effort to recover the lost information. Also, tooling that needs to work at the source-level (e.g. refactoring tools) may be hindered by these lowerings as now the AST is not representing with enough fidelity what was in the input, so rewriting based on the AST is not possible or it will be impacted by this kind of lowering. A way to mitigate this problem is to annotate in the lowered construct extra information that can be used by source-level processing tools or the code generation phases of the compiler.
+</p>
+
+<h3>Do construct</h3>
+
+<p>
+One of the most important constructs of Fortran is the <em>do-construct</em>. Along with the assignment statement it is probably one of the oldest statements in Fortran. There are two forms of the do-construct: the non-block <em>do-construct</em> and the block one. The block <em>do-construct</em> is delimited by a <em>do-statement</em> and an <em>end-do-statement</em>.
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+   </span><span class="err">...</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>
+The non-block one is delimited using a first <em>do-statement</em> including a label and any statement with the same label. This was a design sensible in the 60s but it is now regarded as deprecated.
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="err">...</span><span class="w">
+</span><span class="nl">50</span><span class="w"> </span><span class="o">&lt;</span><span class="n">last</span><span class="o">-</span><span class="n">statement</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">body</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">loop</span><span class="o">-</span><span class="n">I</span><span class="o">&gt;</span></code></pre></figure>
+
+<p>
+The fun part of non-block constructs is that the label can be shared with more than one loop in a nested way.
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="err">...</span><span class="w">
+  </span><span class="k">DO</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="n">J</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="w">
+  </span><span class="err">...</span><span class="w">
+</span><span class="nl">50</span><span class="w"> </span><span class="o">&lt;</span><span class="n">last</span><span class="o">-</span><span class="n">statement</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">body</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">loop</span><span class="o">-</span><span class="n">J</span><span class="o">-</span><span class="n">but</span><span class="o">-</span><span class="n">also</span><span class="o">-</span><span class="n">ends</span><span class="o">-</span><span class="n">body</span><span class="o">-</span><span class="n">of</span><span class="o">-</span><span class="n">loop</span><span class="o">-</span><span class="n">I</span><span class="o">&gt;</span></code></pre></figure>
+
+<p>
+Because this syntax is a bit awkward in the current world of structured programming, it is not uncommon to use a labeled <code>CONTINUE</code> statement to as the last-statement of a non-block <em>do-construct</em> (in the unlikely case we're forced to use one).
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="err">...</span><span class="w">
+</span><span class="nl">50</span><span class="w"> </span><span class="k">CONTINUE</span></code></pre></figure>
+
+<p>
+The good news are that flang will lower the non-block loops into block ones. Consider the following program that computes the sum of integers 1 to N.
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">SUMMATION</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="w">
+    </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="k">NONE</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">SUMMATION</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">N</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">I</span><span class="p">,</span><span class="w"> </span><span class="n">S</span><span class="w">
+
+    </span><span class="n">S</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w">
+    </span><span class="k">DO</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+    </span><span class="mi">50</span><span class="w"> </span><span class="n">S</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">S</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">I</span><span class="w">
+
+    </span><span class="n">SUMMATION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">S</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">SUMMATION</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:7      label:0    ()  ast:13   
+      s = 0
+std:    2.  lineno:8      label:0    ()  ast:17   
+      do i = 1, n
+std:    3.  lineno:9      label:629  (.L00050)  ast:19   
+.L00050:
+      s = s + i
+std:    4.  lineno:9      label:0    ()  ast:20   
+      enddo
+std:    5.  lineno:11     label:0    ()  ast:22   
+      summation = s
+std:    6.  lineno:12     label:0    ()  ast:23   
+      end</code></pre></figure>
+
+<p>
+The <em>do-construct</em> is a very high-level construct: a loop like <code>DO var = start, end, stride</code> iterates <code>M</code> times where <code>M = (end - start + stride) / stride</code> (if <code>M</code> is negative or zero no iterations happen). Before starting the first iteration, <code>var</code> will be assigned the value of <code>start</code>, and at the end of each iteration<code>var</code> is incremented with the value of <code>stride</code> (which if not specified is 1 and it can be a negative value).
+</p>
+
+<p style="padding: 1em; background-color: #eef;">
+Technically in the Fortran standard, <code>DO WHILE</code> and <code>DO</code> belong to the same <em>do-construct</em> with different <em>loop-control</em> parts. It just makes sense, though, to consider them separately here.
+</p>
+
+<h3>"Do forever"</h3>
+
+<p>
+There is a form of the <em>do-construct</em> that may never end. In practice, this is just a dated form of the <code>DO WHILE</code> because any sensible program written in Fortran will eventually terminate: this means there will be some check inside the loop body that will make the loop terminate. We can rewrite the Euclid algorithm above using this form. The <code>EXIT</code> statement causes the termination of the innermost enclosing loop.
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">GCD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">GCD</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">T</span><span class="w">
+
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+      </span><span class="k">DO</span><span class="w">
+          </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="w">
+          </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">MOD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+          </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">T</span><span class="w">
+          </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">EXIT</span><span class="w">
+      </span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+    </span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w">
+
+    </span><span class="n">GCD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">GCD</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:5      label:0    ()  ast:14   
+      if (b .ne. 0) then
+std:    2.  lineno:6      label:629  (%L99999)  ast:15   
+%L99999:
+      continue
+std:    3.  lineno:6      label:0    ()  ast:17   
+      if (.true.) then
+std:    4.  lineno:7      label:0    ()  ast:19   
+      t = b
+std:    5.  lineno:8      label:0    ()  ast:23   
+      b = mod(a,b)
+std:    6.  lineno:9      label:0    ()  ast:24   
+      a = t
+std:    7.  lineno:10     label:0    ()  ast:25   
+      if (b .ne. 0) then
+std:    8.  lineno:10     label:0    ()  ast:26   
+      goto 99998
+std:    9.  lineno:10     label:0    ()  ast:28   
+      endif
+std:   10.  lineno:11     label:0    ()  ast:29   
+      goto 99999
+std:   11.  lineno:11     label:0    ()  ast:31   
+      endif
+std:   12.  lineno:11     label:631  (%L99998)  ast:32   
+%L99998:
+      continue
+std:   13.  lineno:12     label:0    ()  ast:33   
+      endif
+std:   14.  lineno:14     label:0    ()  ast:35   
+      gcd = a
+std:   15.  lineno:15     label:0    ()  ast:36   
+      end</code></pre></figure>
+
+<p>
+If we look at the STDs of the code above we see that the <code>EXIT</code> statement is lowered to a <code>GOTO</code> branch to a statement right after the loop (in this case the STD <code>12</code>). Note also how the DO "forever" is just implemented as if the user had written <code>DO WHILE (.TRUE.)</code> (check STDs <code>2</code>, <code>3</code> and <code>10</code>).
+</p>
+
+<h4>Curtailing do constructs</h4>
+
+<p>
+It is possible to "curtail" an iteration of a loop using the <code>CYCLE</code> statement. For instance, we use that statement to sum only the positive numbers of a given array.
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">POSITIVE_SUMMATION</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="p">)</span><span class="w">
+    </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="k">NONE</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">POSITIVE_SUMMATION</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">N</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">I</span><span class="w">
+
+    </span><span class="n">S</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w">
+    </span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+        </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">CYCLE</span><span class="w">
+        </span><span class="n">S</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">S</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+    </span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+
+    </span><span class="n">POSITIVE_SUMMATION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">S</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">POSITIVE_SUMMATION</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Flang does the obvious and the cycle becomes a GOTO to an artifically-introduced last statement of the do-construct. Again the <em>continue-statement</em> comes handy to add new statements with no effect only to be able to attach a label.
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">std:    1.  lineno:8      label:0    ()  ast:16   
+      s = 0
+std:    2.  lineno:9      label:0    ()  ast:18   
+      do i = 1, n
+std:    3.  lineno:10     label:0    ()  ast:23   
+      if (a(i) .lt. 0) then
+std:    4.  lineno:10     label:0    ()  ast:24   
+      goto 99999
+std:    5.  lineno:10     label:0    ()  ast:26   
+      endif
+std:    6.  lineno:11     label:0    ()  ast:28   
+      s = s + a(i)
+std:    7.  lineno:11     label:631  (%L99999)  ast:29   
+%L99999:
+      continue
+std:    8.  lineno:12     label:0    ()  ast:30   
+      enddo
+std:    9.  lineno:14     label:0    ()  ast:32   
+      positive_summation = s
+std:   10.  lineno:15     label:0    ()  ast:33   
+      end</code></pre></figure>
+
+<h2>Under the hood</h2>
+<p>
+We've seen several examples of how these statements are represented in the AST and its STDs. Let's dive a bit deeper to see when this happens in flang. We have to understand we are at relatively early steps in the compilation pipeline, the parser is checking our syntax and semantics and if it is correct it will build the appropriate trees.
+</p>
+<p>
+For this post I think it is interesting to look how a <code>DO WHILE</code> is currently lowered. Because this is an involved process, we will focus only on the specific construct itself.
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="k">WHILE</span><span class="w"> </span><span class="p">(</span><span class="n">B</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w">
+   </span><span class="n">T</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="w">
+   </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">MOD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+   </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">T</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>
+We are handling semantic actions. We know from previous chapters that they are split in several files depending on the specific construct recognised by the parser. In the case of Fortran executable statements, most of them are found in the file <code>tools/flang1/flang1exe/semant3.c</code>.
+</p>
+
+<p>
+We will first encounter a <code>DO</code> token. Fortran allows some constructs to have non-numeric labels. These labels precede the keyword (<code>DO</code> in this case) and are followed by a colon. In this case there isn't any construct-name, so flang just remembers this fact.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2896
+2897
+2898
+2899
+2900
+2901
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *	&lt;do construct&gt; ::= DO |
+   */</span>
+  <span class="k">case</span> <span class="n">DO_CONSTRUCT1</span><span class="p">:</span>
+    <span class="n">named_construct</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+We mentioned earlier about non-block constructs, for those a label would follow the DO token. In this case no label follows it, so flang just remembers this fact too.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2887
+2888
+2889
+2890
+2891
+2892
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *      &lt;do begin&gt; ::= &lt;do construct&gt;
+   */</span>
+  <span class="k">case</span> <span class="n">DO_BEGIN2</span><span class="p">:</span>
+    <span class="n">do_label</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+What may follow a <code>&lt;do begin&gt;</code> in the flang parser parlance is called a <code>&lt;loop control&gt;</code> so we will recognise that first. A <code>&lt;loop control&gt;</code> includes several syntaxes but in this case our will be <code>&lt;dowhile&gt; &lt;etmp lp&gt; &lt;expression&gt; )</code>. So we need to first recognise a &lt;dowhile&gt;.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3108
+3109
+3110
+3111
+3112
+3113
+3114
+3115
+3116
+3117
+3118
+3119
+3120
+3121
+3122
+3123
+3124
+3125
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *	&lt;dowhile&gt; ::= &lt;opt comma&gt; WHILE
+   */</span>
+  <span class="k">case</span> <span class="n">DOWHILE1</span><span class="p">:</span>
+    <span class="n">NEED_DOIF</span><span class="p">(</span><span class="n">doif</span><span class="p">,</span> <span class="n">DI_DOWHILE</span><span class="p">);</span>
+    <span class="n">DI_DO_LABEL</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">=</span> <span class="n">do_label</span><span class="p">;</span>
+    <span class="n">doinfo</span> <span class="o">=</span> <span class="n">get_doinfo</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+    <span class="n">doinfo</span><span class="o">-&gt;</span><span class="n">index_var</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* marks doinfo for a DOWHILE */</span>
+    <span class="n">DI_DOINFO</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">=</span> <span class="n">doinfo</span><span class="p">;</span>
+    <span class="n">DI_NAME</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">=</span> <span class="n">named_construct</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">currlab</span><span class="p">)</span>
+      <span class="n">DI_TOP_LABEL</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">=</span> <span class="n">scn</span><span class="p">.</span><span class="n">currlab</span><span class="p">;</span>
+    <span class="k">else</span>
+      <span class="n">scn</span><span class="p">.</span><span class="n">currlab</span> <span class="o">=</span> <span class="n">DI_TOP_LABEL</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">=</span> <span class="n">getlab</span><span class="p">();</span>
+    <span class="n">ast</span> <span class="o">=</span> <span class="n">mk_stmt</span><span class="p">(</span><span class="n">A_CONTINUE</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">add_stmt</span><span class="p">(</span><span class="n">ast</span><span class="p">);</span>
+    <span class="n">direct_loop_enter</span><span class="p">();</span>
+    <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Things have suddenly become much more complicated. <code>NEED_DOIF</code> macro makes sure that the <code>doif</code> variable will contain a fresh new nesting information for the <em>do-construct</em> that we are about to handle. It is called <code>doif</code> because flang uses it both for <em>do-</em> and <em>if-constructs</em>. In the existing style of flang, it is just an identifier that will be used in other macros (in this case prefixed with <code>DI_</code>) to associate information to the do-if nesting. And you can see that in the <code>DI_DO_LABEL</code> where we just keep the <code>do_label</code> we noted earlier (there is none in our input so <code>do_label</code> is just 0 here).
+<p>
+
+<p>
+Function <code>get_doinfo</code> returns a <code>DOINFO</code> pointer. This is used for the specific bits of the do-construct we have encountered. If you wonder about the 1 argument, this is used as the area to get the memory (flang has 30 memory areas and each one has some specific usage and behaviour, area 1 is used for doinfo, but flang creates DOINFOs in other areas too). Setting <code>doinfo-&gt;index_var</code> to zero is used to mean that this <code>do-construct</code> is a <code>DO WHILE</code>. We link then the current <code>doif</code> identifier with the <code>doinfo</code> using <code>DI_DOINFO</code>. We also link the doif with the construct name (which there was none much like the label) using <code>DI_NAME</code>. 
+</p>
+
+<p>
+Now the code checks if the current statement had a label. Before the DO token and even before the construct-name, this do-statement, like any other Fortran statement, can have a label. If it doesn't, and in our case it doesn't, we just get a "compiler created" (i.e. artificial) label by calling <code>getlab</code>. We then remember it as the top level label of this doif using <code>DI_TOP_LABEL</code>. We also bluntly set the label identifier of the scanner, I'm pretty sure there is an (obscure) reason to do this.
+</p>
+
+<p>
+Now we create the <code>CONTINUE</code> statement we saw flang emitted above! The function <code>direct_loop_enter</code> is called to state that we are entering a loop, there is some bookkeeping related to directives (e.g. OpenMP or OpenACC) that is required. This function takes care of it. In our case this function is mostly a no-operation.
+</p>
+
+<p>
+Great, we semantically handled a &lt;dowhile&gt;. Now the next item is <code>&lt;etmp lp&gt;</code>. This is a bit of an odd non-terminal that means "expression temporary and left parenthesis". Because this is not strictly related to statements, it is found in semant2.c.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">531
+532
+533
+534
+535
+536
+537
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *	&lt;etmp lp&gt; ::= (
+   */</span>
+  <span class="k">case</span> <span class="n">ETMP_LP1</span><span class="p">:</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">use_etmps</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">etmp_list</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Basically this is bookkeeping used by the parser to mean "we may have to allocate temporary expressions". After that an &lt;expression&gt; will follow, let's ignore that and presume everything works as expected and then a closing parenthesis. At this point we have recognised the &lt;loop control&gt; of a <code>DO WHILE</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3084
+3085
+3086
+3087
+3088
+3089
+3090
+3091
+3092
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *	&lt;loop control&gt; ::= &lt;dowhile&gt; &lt;etmp lp&gt; &lt;expression&gt; ) |
+   */</span>
+  <span class="k">case</span> <span class="n">LOOP_CONTROL2</span><span class="p">:</span>
+    <span class="n">ast2</span> <span class="o">=</span> <span class="n">gen_logical_if_expr</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="mi">3</span><span class="p">));</span>
+    <span class="n">ast</span> <span class="o">=</span> <span class="n">mk_stmt</span><span class="p">(</span><span class="n">A_IFTHEN</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">A_IFEXPRP</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">ast2</span><span class="p">);</span>
+    <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">ast</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+The function <code>gen_logical_if_expr</code> basically gathers the logical expression found in the parentheses (synthesized during the semantic checking of &lt;expression&gt; above). Now we create the if-then statement using <code>mk_stmt</code> (the second argument is the type which there is none for a control statement like this one, so we just set it to 0). This gives us an incomplete if-then statement node so we set its <code>IFEXPR</code> attribute using the macro <code>A_IFEXPRP</code> with the logical expression. Finally, new statement is now set as the AST attribute of <code>&lt;loop control&gt;</code> itself, this is done by <code>SST_ASTP</code>.
+</p>
+
+<p>
+Now a <code>&lt;loop control&gt;</code> has been recognized so we're done with the &lt;control stmt&gt;
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1832
+1833
+1834
+1835
+1836
+1837
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *      &lt;control stmt&gt; ::= &lt;do begin&gt; &lt;loop control&gt; |
+   */</span>
+  <span class="k">case</span> <span class="n">CONTROL_STMT7</span><span class="p">:</span>
+    <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">SST_ASTG</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="mi">2</span><span class="p">)));</span>
+    <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+The code above just keeps the AST of <code>&lt;loop control&gt;</code> (in our case an <code>A_IFTHEN</code>) in <code>&lt;control stmt&gt;</code>. These are almost top level-statements from the point of view of the parser, except for a few things.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1305
+1306
+1307
+1308
+1309
+1310
+1311
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *      &lt;statement&gt; ::= &lt;nii&gt; &lt;nim&gt; &lt;control stmt&gt; |
+   */</span>
+  <span class="k">case</span> <span class="n">STATEMENT6</span><span class="p">:</span>
+    <span class="n">prevphase</span> <span class="o">=</span> <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span><span class="p">;</span>
+    <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">SST_ASTG</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="mi">3</span><span class="p">)));</span>
+    <span class="k">goto</span> <span class="n">executable_shared</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+If you wonder about <code>&lt;nii&gt;</code> and <code>&lt;nim&gt;</code> above, they just mean "not inside interface" and "not inside module" (certainly a <code>DO WHILE</code> can't appear directly in those contexts). This semantic action just forwards the AST in control <code>&lt;control stmt&gt;</code> into the &lt;statement&gt; itself. Finally <code>executable_shared</code> performs common stuff for statements, including adding it to the STD list.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1554
+1555
+1556
+1557
+1558
+1559
+1560
+1561
+1562
+1563
+1564
+</pre></td><td class="code"><pre>  <span class="nl">executable_shared:</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_EXEC</span><span class="p">;</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">temps_reset</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+  <span class="cm">/* fall thru to 'statement_shared' */</span>
+
+  <span class="n">statement_shared</span><span class="o">:</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="n">ast</span> <span class="o">=</span> <span class="n">SST_ASTG</span><span class="p">(</span><span class="n">LHS</span><span class="p">)))</span> <span class="p">{</span>
+      <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">add_stmt</span><span class="p">(</span><span class="n">ast</span><span class="p">);</span>
+      <span class="n">SST_ASTG</span><span class="p">(</span><span class="n">LHS</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Ok, so what has happened is that now we have just added an <code>if-then-statement</code> in the STD. Then the statements making up the body of the <code>DO WHILE</code> will be added too and eventually we will reach the <em>end-do-statement</em>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1862
+1863
+1864
+1865
+1866
+1867
+1868
+1869
+1870
+1871
+1872
+</pre></td><td class="code"><pre>  <span class="cm">/*
+   *      &lt;control stmt&gt; ::= ENDDO &lt;construct name&gt; |
+   */</span>
+  <span class="k">case</span> <span class="n">CONTROL_STMT9</span><span class="p">:</span>
+  <span class="n">share_do</span><span class="o">:</span>
+    <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">doif_depth</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">error</span><span class="p">(</span><span class="mi">104</span><span class="p">,</span> <span class="n">ERR_Severe</span><span class="p">,</span> <span class="n">gbl</span><span class="p">.</span><span class="n">lineno</span><span class="p">,</span> <span class="s">"- mismatched ENDDO"</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>
+      <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">add_stmt</span><span class="p">(</span><span class="n">mk_stmt</span><span class="p">(</span><span class="n">A_ENDDO</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Here the construct name can be empty (and in our input it is). First we check if <code>doif_depth</code> is not zero: if it is then this is a stray end-do-statement that does not follow any <em>if-then-statement</em> or <em>do-statement</em>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1873
+1874
+1875
+1876
+1877
+1878
+1879
+1880
+1881
+1882
+1883
+1884
+1885
+1886
+1887
+</pre></td><td class="code"><pre>    <span class="n">doif</span> <span class="o">=</span> <span class="n">sem</span><span class="p">.</span><span class="n">doif_depth</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">currlab</span> <span class="o">&amp;&amp;</span> <span class="n">DI_DO_LABEL</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">==</span> <span class="n">scn</span><span class="p">.</span><span class="n">currlab</span><span class="p">)</span>
+      <span class="cm">/*
+       * the enddo is labeled and the label matches the do label.
+       */</span>
+      <span class="p">;</span>
+    <span class="k">else</span> <span class="nf">if</span> <span class="p">((</span><span class="n">DI_ID</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">!=</span> <span class="n">DI_DO</span> <span class="o">&amp;&amp;</span> <span class="n">DI_ID</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">!=</span> <span class="n">DI_DOWHILE</span> <span class="o">&amp;&amp;</span>
+              <span class="n">DI_ID</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">!=</span> <span class="n">DI_DOCONCURRENT</span><span class="p">)</span> <span class="o">||</span> <span class="n">DI_DO_LABEL</span><span class="p">(</span><span class="n">doif</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">error</span><span class="p">(</span><span class="mi">104</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">gbl</span><span class="p">.</span><span class="n">lineno</span><span class="p">,</span> <span class="s">"- mismatched ENDDO"</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>
+      <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">DI_NAME</span><span class="p">(</span><span class="n">doif</span><span class="p">)</span> <span class="o">!=</span> <span class="n">named_construct</span><span class="p">)</span>
+      <span class="n">err307</span><span class="p">(</span><span class="s">"DO [CONCURRENT|WHILE] and ENDDO"</span><span class="p">,</span> <span class="n">DI_NAME</span><span class="p">(</span><span class="n">doif</span><span class="p">),</span>
+              <span class="n">named_construct</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Now we check if this <em>end-do-statement</em> actually finishes a <em>do-construct</em>: it could well be that the input is an <em>if-then-statement</em> followed by and <em>end-do-statement</em>. The <code>doif</code> data structure is used for <code>if-then-statement</code> and <code>do-statement</code>, so we need to check if this ends a (plain) <code>DO</code>, a <code>DO WHILE</code> or a <code>DO CONCURRENT</code>. In our case it will be a <code>DO WHILE</code>. Note that in our input <code>DI_DO_LABEL(doif)</code> is going to be zero (and no label can be zero in Fortran) so the first check won't trigger. Note also that the first check may look a bit weak but it is correct because <code>DI_DO_LABEL</code> only concerns to non-block <em>do-constructs</em> (and never to <em>if-then-statement</em>s). After this check we verify that if the <code>END DO</code> contains a construct name it matches the one we used in the <em>do-construct</em>, we didn't use any in our input so this branch will be trivially satisfied (both <code>DI_NAME(doif)</code> and <code>named_construct</code> will be 0).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1889
+</pre></td><td class="code"><pre>    <span class="n">do_end</span><span class="p">(</span><span class="n">doinfo</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+The function <code>do_end</code> does a lot of things which are required upon completion of a <em>do-contruct</em>. 
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semutil.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6000
+6001
+6002
+6003
+6004
+6005
+6006
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">DI_DOWHILE</span><span class="p">:</span>
+      <span class="n">ast</span> <span class="o">=</span> <span class="n">mk_stmt</span><span class="p">(</span><span class="n">A_GOTO</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+      <span class="n">A_L1P</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">mk_label</span><span class="p">(</span><span class="n">DI_TOP_LABEL</span><span class="p">(</span><span class="n">orig_doif</span><span class="p">)));</span>
+      <span class="n">RFCNTI</span><span class="p">(</span><span class="n">DI_TOP_LABEL</span><span class="p">(</span><span class="n">orig_doif</span><span class="p">));</span>
+      <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">add_stmt</span><span class="p">(</span><span class="n">ast</span><span class="p">);</span>
+      <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">add_stmt</span><span class="p">(</span><span class="n">mk_stmt</span><span class="p">(</span><span class="n">A_ENDIF</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+      <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+For the particular case of our <code>DO WHILE</code>, we emit the <code>GOTO</code> statement (<code>A_GOTO</code>) that will branch back to the <code>DI_TOP_LABEL</code> of this <em>do-construct</em>. The macro <code>A_L1P</code> is used to set the label of the <code>GOTO</code> (the attribute is called <code>A_L1</code> because some statements have more than one label-reference, like the arithmetic if-statement that has three of them). Note also how we increment the reference counter of the top label (haven't verified it but looks like flang will later remove labels that are defined-but-not-used, so we have to prevent that). The <code>GOTO</code> statement is added to the STD. Finally we create an end-if-statement and we also add it to the STD. This way we keep the AST well-formed by nesting everything as expected.
+</p>
+
+<h2>Summary</h2>
+
+<p>
+This has been another long post but we can summarise it in:
+</p>
+
+<ul>
+<li>Some constructs are lowered into sequences of <em>if-construct</em> and <em>goto-statements</em>.</li>
+<li>Structured programming structures are represented in a flattened way using the natural delimiter statements of Fortran. The in-memory representation does not provide nesting of any form and the proper nesting must be explicitly represented and maintained.</li>
+<li>The do-construct that is not a <code>DO WHILE</code> is lowered preserving the original <em>loop-control</em> part.</li>
+</ul>
+
+<p>
+In the next chapter we will go beyond the AST, and related intermediate representation, and we will start looking at what happens after the initial AST has been formed.
+</p>
+</p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2018/10/05/serverless-framework-a-small-example/">&laquo; Serverless framework: a small example</a>
+
+
+  <a class="next" href="/2019/03/10/fortran-and-modules/">Fortran and modules &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

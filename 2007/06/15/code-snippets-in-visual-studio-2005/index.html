@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Code Snippets in Visual Studio 2005</title>
+  <meta name="description" content="In the developing process of applications that are not as small as the typical &quot;Hello, World!&quot; examples, there are a variety of factors than can lead to important time savings. There&#39;s a lot of documentation out there on how to design and specify application before the coding process starts, but there is a crucial factor on success that is not usually spoken of: the way you manage, create and edit your source files. And of course there are some beautiful software pieces to help developers in that process. They&#39;re called IDEs (Integrated Development Environment). The problem with most of those IDEs is that they offer so many options that you usually have to read a user&#39;s manual to really take the best from them. Ok, this is something normal, you might say. Maybe you&#39;re right, but be honest, how many software user guides have you read in your life? And I&#39;m not talking about the usual RTFM for a linux man page which can be 4 pages long at most. I&#39;m talking about a user&#39;s manual of 500 pages. I haven&#39;t. And that&#39;s the reason today I&#39;ll be talking about a nice feature I found on one of the most powerful IDEs out there (regardless of being from Microsoft): Visual Studio 2005 Code Snippets.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2007/06/15/code-snippets-in-visual-studio-2005/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Code Snippets in Visual Studio 2005">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2007/06/15/code-snippets-in-visual-studio-2005/">
+  <meta property="og:description" content="In the developing process of applications that are not as small as the typical &quot;Hello, World!&quot; examples, there are a variety of factors than can lead to important time savings. There&#39;s a lot of documentation out there on how to design and specify application before the coding process starts, but there is a crucial factor on success that is not usually spoken of: the way you manage, create and edit your source files. And of course there are some beautiful software pieces to help developers in that process. They&#39;re called IDEs (Integrated Development Environment). The problem with most of those IDEs is that they offer so many options that you usually have to read a user&#39;s manual to really take the best from them. Ok, this is something normal, you might say. Maybe you&#39;re right, but be honest, how many software user guides have you read in your life? And I&#39;m not talking about the usual RTFM for a linux man page which can be 4 pages long at most. I&#39;m talking about a user&#39;s manual of 500 pages. I haven&#39;t. And that&#39;s the reason today I&#39;ll be talking about a nice feature I found on one of the most powerful IDEs out there (regardless of being from Microsoft): Visual Studio 2005 Code Snippets.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Code Snippets in Visual Studio 2005">
+  <meta name="twitter:description" content="In the developing process of applications that are not as small as the typical &quot;Hello, World!&quot; examples, there are a variety of factors than can lead to important time savings. There&#39;...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Code Snippets in Visual Studio 2005</h1>
+    
+    <p class="post-meta"><time datetime="2007-06-15T18:52:00+00:00" itemprop="datePublished">Jun 15, 2007</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+        <a href="/tags/programming-tips/">programming tips</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+        <a href="/tags/visual-studio/">visual studio</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the developing process of applications that are not as small as the typical "Hello, World!" examples, there are a variety of factors than can lead to important time savings.</p>
+
+<p>There's a lot of documentation out there on how to design and specify application before the coding process starts, but there is a crucial factor on success that is not usually spoken of: the way you manage, create and edit your source files.</p>
+
+<p>And of course there are some beautiful software pieces to help developers in that process. They're called IDEs (Integrated Development Environment).</p>
+
+<p>The problem with most of those IDEs is that they offer so many options that you usually have to read a user's manual to really take the best from them. Ok, this is something normal, you might say. Maybe you're right, but be honest, how many software user guides have you read in your life? And I'm not talking about the usual RTFM for a linux man page which can be 4 pages long at most. I'm talking about a user's manual of 500 pages. I haven't.</p>
+
+<p>And that's the reason today I'll be talking about a nice feature I found on one of the most powerful IDEs out there (regardless of being from Microsoft): Visual Studio 2005 Code Snippets.</p>
+<!--more-->
+<p>Code Snippets are more than just snippets of code, to start with. It's not a simple code listing to quickly paste into your files, because Code Snippets are smart and adaptative, this is, they can be parametrized. Let's see this in a simple example.</p>
+
+<p>Imagine you want to code a for loop. All those kind of code structures behave the same way: there's an initial condition, an ending condition, a condition modifier so you eventually leave the bucle, and of course the body, the code you want to be executed every time the bucle takes place. And it's not unusual to use an integer variable to manage the counter which controls how many times that piece of code will be executed, for example the index of an array and the size of that array. You would code something like this:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="kt">int</span> <span class="n">length</span> <span class="p">=</span> <span class="n">someArray</span><span class="p">.</span><span class="nf">size</span><span class="p">();</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;</span> <span class="n">length</span><span class="p">;</span> <span class="p">++</span><span class="n">i</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nf">doSomething</span><span class="p">(</span><span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Ok, this is a shot piece of code and it takes about 10 seconds to write it, but it would be better if some IDE feature could help us. This is where Code Snippets come into action. Let's do this exact thing using Code Snippiets.
+</p>
+<ol>
+	<li>Go to the part of the code you want to place the bucle in and press the right mouse button to select the <em>Insert Snippet</em> option. </li>
+	<li>Select the <em>for</em> on the list box.</li>
+	<li>You'll see the basic structure of the code has already been typed for you.</li>
+</ol>
+
+<p><a href="/wp-content/uploads/2008/10/snippets1.png"><img src="/wp-content/uploads/2008/10/snippets1-150x150.png" alt="Inserting a snippet" title="snippets1" width="150" height="150" class="size-thumbnail wp-image-14" /></a>
+<a href="/wp-content/uploads/2008/10/snippets2.png"><img src="/wp-content/uploads/2008/10/snippets2-150x150.png" alt="Inserting a snippet (2)" title="snippets2" width="150" height="150" class="size-thumbnail wp-image-15" /></a>
+<a href="/wp-content/uploads/2008/10/snippets3.png"><img src="/wp-content/uploads/2008/10/snippets3-150x104.png" alt="Inserting a snippet (3)" title="snippets3" width="150" height="104" class="size-thumbnail wp-image-16" /></a></p>
+
+<p>But this is not the end of the story!</p>
+
+<p>With the tab key you can now navigate through the index variable and the ending condition of the bucle to type whatever you want there. Pressing enter will end the snippet wizard, and voilá, you have your for bucle coded, and only the body needs to be filled.</p>
+
+<p>This example is kind of basic and you probably could code this far quicker by hand than by having to press mouse buttons and cursor arrows. You may be right, but as you may have already seen, there are plenty of snippets than can help you really improve your coding speed for all those "always the same" code structures. One good example of it is the property definitions on a C# class.</p>
+
+<p>But code snippets not only can add code to a blank line, they can also sorround existing code to add features on it. Imagine you 've started coding a method and you realize later that there is some kind of exception you should be dealing with. You know what that means, going to the upper part of the code, typing the try {, going down, close the bracket, and probably indenting the bracketed code to have a pretty printed code. Not to mention you should probably have to add a catch or finally clause after, too. This is work that can be tedious and it is not done in 10 seconds as a for bucle. Code Snippets can help us here too.</p>
+<ol>
+   <li>Select the code you want to sorround with a <em>try/finally</em> clause.</li>
+   <li>Click the right mouse button and select <em>Sorround With</em>.</li>
+   <li>Select the <em>tryf</em> snippet.</li>
+</ol>
+
+<p><a href="/wp-content/uploads/2008/10/snippets4.png"><img src="/wp-content/uploads/2008/10/snippets4-150x150.png" alt="Sorrounding with snippets" title="snippets4" width="150" height="150" class="size-thumbnail wp-image-17" /></a>
+<a href="/wp-content/uploads/2008/10/snippets5.png"><img src="/wp-content/uploads/2008/10/snippets5-150x150.png" alt="Sorrounding with snippets (2)" title="snippets5" width="150" height="150" class="size-thumbnail wp-image-18" /></a>
+<a href="/wp-content/uploads/2008/10/snippets6.png"><img src="/wp-content/uploads/2008/10/snippets6-150x150.png" alt="Sorrounding with snippets (3)" title="snippets6" width="150" height="150" class="size-thumbnail wp-image-13" /></a></p>
+
+<p>One of the most interesting things about Code Snippets is that you can create your own for repetitive or tedious tasks you use to code. Let's see how to proceed to create a custom Code Snippet.</p>
+
+<p>To begin with, a Code Snippet is an XML file. It's basic structure is the one following:</p>
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;codesnippets</span> <span class="na">xmlns=</span><span class="s">"http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;codesnippet</span> <span class="na">format=</span><span class="s">"1.0.0"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;header&gt;</span>
+           
+        <span class="nt">&lt;/header&gt;</span>
+        <span class="nt">&lt;snippet&gt;</span>
+            <span class="nt">&lt;code</span> <span class="na">language=</span><span class="s">"CSharp"</span><span class="nt">&gt;</span>
+                <span class="c">&lt;!--[CDATA[MessageBox.Show("Hello World");]]--&gt;</span>
+            <span class="nt">&lt;/code&gt;</span>
+        <span class="nt">&lt;/snippet&gt;</span>
+    <span class="nt">&lt;/codesnippet&gt;</span>
+<span class="nt">&lt;/codesnippets&gt;</span></code></pre></figure>
+
+<p>The element names are pretty self explanatory. You can customize the title of the snippet, and put the static code in a <em>CDATA </em>element, previously defining the language you'll be using.</p>
+
+<p>You can add <em>Literals </em>and <em>Objects </em>to the snippet code too. <em>Literals </em>are pieces of the snippet the programmer will usually want to replace, such as variable names and similar items. <em>Objects </em>are elements that the snippet needs but they usually are objects previously defined in your code that you want the snippet to use, such as specific objects to work with. You'll understand this better with an example.</p>
+
+<p>Let's suppose you want to create a code snippet that checks a specific web request variable to validate against a custom SQL Injection class you've programmed. For simplicity's sake we'll suppose the validation class is already programmed and has a method that does this security feature. In this case, the literal could be the variable name of the web request, and the object could be the SQL Validator class instance you've previously defined in your code.</p>
+
+<p>Both literals and objects are defined inside the Declarations node in the snippet XML as follows:</p>
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;declarations&gt;</span>
+    <span class="nt">&lt;literal&gt;</span>
+        <span class="nt">&lt;id&gt;</span>requestName<span class="nt">&lt;/id&gt;</span>
+        <span class="nt">&lt;tooltip&gt;</span>Replace with the variable name of the HTTP Request<span class="nt">&lt;/tooltip&gt;</span>
+        <span class="nt">&lt;default&gt;</span>action<span class="nt">&lt;/default&gt;</span>
+    <span class="nt">&lt;/literal&gt;</span>
+    <span class="nt">&lt;object&gt;</span>
+        <span class="nt">&lt;id&gt;</span>SqlValidator<span class="nt">&lt;/id&gt;</span>
+        <span class="nt">&lt;type&gt;</span>MyProject.Data.Validation.SQLValidator<span class="nt">&lt;/type&gt;</span>
+        <span class="nt">&lt;tooltip&gt;</span>Replace with a SQLValidator object in your application.<span class="nt">&lt;/tooltip&gt;</span>
+        <span class="nt">&lt;default&gt;</span>sqlValidator<span class="nt">&lt;/default&gt;</span>
+    <span class="nt">&lt;/object&gt;</span>
+<span class="nt">&lt;/declarations&gt;</span></code></pre></figure>
+
+<p>As you can see, you can define an identifier, a tooltip and a default value, and in the Object element the class of the object.</p>
+
+<p>Now the only thing you have to do is replace in your code snippet the pieces of code where you want those literals and objects to appear like this:</p>
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;code</span> <span class="na">language=</span><span class="s">"CSharp"</span><span class="nt">&gt;</span>
+        <span class="c">&lt;!--[CDATA[
+            string variableRequested = Request["$requestName$"];
+            if (!$SQLValidator$.Validate(variableRequested))
+            //Insert error handling here
+        --&gt;</span>
+<span class="nt">&lt;/code&gt;</span></code></pre></figure>
+
+<p>So, the final snippet would look like this:</p>
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;codesnippets</span> <span class="na">xmlns=</span><span class="s">"http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;codesnippet</span> <span class="na">format=</span><span class="s">"1.0.0"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;header&gt;</span>
+           
+        <span class="nt">&lt;/header&gt;</span>
+        <span class="nt">&lt;snippet&gt;</span>
+            <span class="nt">&lt;declarations&gt;</span>
+                <span class="nt">&lt;literal&gt;</span>
+                    <span class="nt">&lt;id&gt;</span>requestName<span class="nt">&lt;/id&gt;</span>
+                    <span class="nt">&lt;tooltip&gt;</span>Replace with the variable name of the HTTP Request<span class="nt">&lt;/tooltip&gt;</span>
+                    <span class="nt">&lt;default&gt;</span>action<span class="nt">&lt;/default&gt;</span>
+                <span class="nt">&lt;/literal&gt;</span>
+                <span class="nt">&lt;object&gt;</span>
+                    <span class="nt">&lt;id&gt;</span>SqlValidator<span class="nt">&lt;/id&gt;</span>
+                    <span class="nt">&lt;type&gt;</span>MyProject.Data.Validation.SQLValidator<span class="nt">&lt;/type&gt;</span>
+                    <span class="nt">&lt;tooltip&gt;</span>Replace with a SQLValidator object in your application.<span class="nt">&lt;/tooltip&gt;</span>
+                    <span class="nt">&lt;default&gt;</span>sqlValidator<span class="nt">&lt;/default&gt;</span>
+                <span class="nt">&lt;/object&gt;</span>
+            <span class="nt">&lt;/declarations&gt;</span>
+            <span class="nt">&lt;code</span> <span class="na">language=</span><span class="s">"CSharp"</span><span class="nt">&gt;</span>
+                <span class="c">&lt;!--[CDATA[
+                    string variableRequested = Request["$requestName$"];
+                    if (!$SQLValidator$.Validate(variableRequested))
+                    //Insert error handling here
+                    --&gt;</span>
+            <span class="nt">&lt;/code&gt;</span>
+        <span class="nt">&lt;/snippet&gt;</span>
+    <span class="nt">&lt;/codesnippet&gt;</span>
+<span class="nt">&lt;/codesnippets&gt;</span></code></pre></figure>
+
+<p>Now you just have to copy this snippet in your custom snippet folder (usually in Visual Studio 2005 folder created on My Documents) and you'll be able to use it from the Visual Studio menu as any other one, or use the Code Snipper Manager on the Visual Studio Tools menu.</p>
+
+<p>For more information about Code Snippets you can visit the MSDN page <a href="http://msdn2.microsoft.com/en-us/library/ms165393(VS.80).aspx">http://msdn2.microsoft.com/en-us/library/ms165393(VS.80).aspx</a>.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2007/06/15/think-in-geek/">&laquo; Think in Geek!</a>
+
+
+  <a class="next" href="/2007/06/17/nike-ipod/">Nike + iPod &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

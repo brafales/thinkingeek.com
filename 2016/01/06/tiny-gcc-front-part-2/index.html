@@ -1,0 +1,2307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 2</title>
+  <meta name="description" content="The previous installment of this series was all about the syntax and the semantics of the tiny language. In this chapter we will start implementing a front end for tiny in GCC. The journey will be long but rewarding. Let&#39;s get started.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/01/06/tiny-gcc-front-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/01/06/tiny-gcc-front-part-2/">
+  <meta property="og:description" content="The previous installment of this series was all about the syntax and the semantics of the tiny language. In this chapter we will start implementing a front end for tiny in GCC. The journey will be long but rewarding. Let&#39;s get started.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 2">
+  <meta name="twitter:description" content="The previous installment of this series was all about the syntax and the semantics of the tiny language. In this chapter we will start implementing a front end for tiny in GCC. The journey will be ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2016-01-06T09:13:34+00:00" itemprop="datePublished">Jan 6, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/gcc/">gcc</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/tiny/">tiny</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+The previous installment of this series was all about the syntax and the semantics of the tiny language. In this chapter we will start implementing a front end for tiny in GCC. The journey will be long but rewarding. Let's get started.
+</p>
+<!--more-->
+
+<h2>GCC</h2>
+
+<p>
+GCC is that ubiquitous compiler available in most UNIXs but mainly in GNU/Linux distributions. GCC is a big and old project, it started in 1987, and has been used as the system C compiler for many systems. Currently it supports several other programming languages including C++, Fortran, Ada and Go.
+</p>
+
+<p>
+GCC has been written mostly in C but now some parts of it are (slowly) being migrated to C++. The compiler itself is one of these parts. This means that in its current state gcc is probably 80% C code compiled using C++. The dialect of C++ that can be used is C++03.
+</p>
+
+<h2>Initial setup</h2>
+
+<p>
+Since we are going to do development on GCC we will not use the source from a release but from their repository. GCC still uses Subversion for their development which is a bit unwieldy for local tracking of changes. Fortunately they have a read-only git mirror. This will do for local development.
+</p>
+
+<p>
+Let's clone the gcc repository into a <code>gcc-src</code> directory. This directory is the <em>source tree</em>. This will take a while but only has to be done once.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>git clone git://gcc.gnu.org/git/gcc.git gcc-src
+Cloning into <span class="s1">'gcc-src'</span>...</code></pre></figure>
+
+<p>
+The next step is make sure we fulfill the requirements of GCC. The easiest way to do this is invoking a script found inside the <code>contrib</code> directory. Run it from the top level directory of the source tree.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>gcc-src
+<span class="nv">$ </span>./contrib/download_prerequisites
+... downloading stuff ...</code></pre></figure>
+
+<p>
+This will add many files that ideally you want git to ignore them. In my case I added the following lines to the existing <code>gcc-src/.gitignore</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">gmp
+gmp-4.3.2
+gmp-4.3.2.tar.bz2
+isl
+isl-0.15
+isl-0.15.tar.bz2
+mpc
+mpc-0.8.1
+mpc-0.8.1.tar.gz
+mpfr
+mpfr-2.4.2
+mpfr-2.4.2.tar.bz2</code></pre></figure>
+
+<p>
+Let's create a branch and switch to it, where we will develop the tiny frontend.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>git checkout <span class="nt">-b</span> tiny
+Switched to a new branch <span class="s1">'tiny'</span></code></pre></figure>
+
+<p>
+Now create a directory sibling to that of gcc, we will use it to build gcc. This directory is the <em>build tree</em>.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span>  ..           <span class="c"># leave source tree</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>gcc-build</code></pre></figure>
+
+<p>
+Now let's configure a minimal gcc with just C and C++ (C++ is required for GCC itself).
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>gcc-build
+<span class="nv">$ </span>../gcc-src/configure <span class="nt">--prefix</span><span class="o">=</span><span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span>/../gcc-install <span class="nt">--enable-languages</span><span class="o">=</span>c,c++</code></pre></figure>
+
+<p>
+And make an initial build of the whole GCC. This step may take several minutes depending on your specific machine. The flag to <code>-jN</code> will use all the cpus of your system.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make <span class="nt">-j</span><span class="si">$(</span>getconf _NPROCESSORS_ONLN<span class="si">)</span>
+... tons of gibberish ...</code></pre></figure>
+
+<p>
+Finally let's install it.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make <span class="nb">install</span></code></pre></figure>
+
+<p>
+The compiler will be installed in a directory <code>gcc-install</code>, as a sibling of <code>gcc</code> and <code>gcc-build</code>.
+</p>
+
+<h2>Structure of GCC</h2>
+
+<p>
+GCC is huge. Period.
+</p>
+
+<p>
+You may not be used to handle big projects. Ok, don't get scared. There are tools to help you. From full fledged IDEs like Eclipse to simpler (yet effective) tools like <code>ctags</code>. Use them!
+</p>
+
+<p>
+In the source tree (<code>gcc-src</code>) we will find several directories. The most interesting one for us is <code>gcc</code> (i.e. <code>gcc-src/gcc</code>). The other directories are supporting libraries for gcc itself or runtime libraries required to run programs created with gcc (for instance <code>libgomp</code> or <code>libasan</code>). We are not going to use them, except, maybe <code>libcpp</code>. <code>libcpp</code> is mainly used to implement the C/C++ preprocessor in gcc but also provides location tracking support in gcc, more on this in another post. The GCC internals manual has the <a href="https://gcc.gnu.org/onlinedocs/gccint/Top-Level.html">full list</a>.
+</p>
+
+<p>
+There are a few more directories in <code>gcc-src/gcc</code>. Directory <code>config</code> contains all the target-specific bits. In gcc <em>target</em> means «the environment for which we are generating code». In <code>config</code> you will find one subdirectory for architecture supported. If you are interested in this part of the compiler you may want to check <code>config/moxie</code>, it is small enough for a newcomer. Do not forget to check their <a href="http://moxielogic.org/blog/">great blog</a>.
+</p>
+
+<p>
+There is also one directory per language supported in <code>gcc-src/gcc</code>: <code>c</code> (C), <code>cp</code> (C++), <code>fortran</code>, <code>go</code>, <code>java</code>, <code>jit</code> (libgccjit), <code>lto</code> (Link Time Optimization), <code>objc</code> (Objective-C) and <code>objcp</code> (Objective-C++). Some of these frontends are not real programming languages (like jit or lto). They are <em>front ends</em> in the sense of <em>inputs</em> to the compiler: <code>libgccjit</code> uses as input the result of calling a JIT library, <code>lto</code> uses as input the streamed-to-disk intermediate representation of GCC, etc. There is also a <code>c-family</code> directory that contains common parts of C, C++, Objective-C and Objective-C++. Like before, the <a href="https://gcc.gnu.org/onlinedocs/gccint/Subdirectories.html">full list</a> can be found in the GCC internals manual.
+</p>
+
+<p>
+Adding a new front end is just a matter of creating a new directory in <code>gcc-src/gcc</code>. Do not worry if this stuff seems complex at first, there are plenty of other front ends that can be read as an example. In particular the <code>jit</code> and <code>go</code> front ends are relatively simple to be used as examples. Let's get down to it.
+</p>
+
+<h2>Initial boilerplate</h2>
+
+<p>
+We first need to create a <code>tiny</code> directory inside <code>gcc-src/gcc</code>. All our files will go there. no file outside of it will be changed.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>gcc-src/gcc
+<span class="nv">$ </span><span class="nb">mkdir </span>tiny</code></pre></figure>
+
+<p>
+The next step is telling GCC configure that we are going to build GCC with tiny support. This will fail. Do not worry, this is expected.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>gcc-build
+<span class="nv">$ </span>../gcc-src/configure <span class="nt">--prefix</span><span class="o">=</span><span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span>/../gcc-install <span class="nt">--enable-languages</span><span class="o">=</span>c,c++,tiny
+...
+The following requested languages could not be built: tiny
+Supported languages are: c,c,c++,fortran,go,java,jit,lto,objc,obj-c++</code></pre></figure>
+
+<p>
+This is because GCC does not expect to have all the front ends available in a source tree. Rather than downloading the whole code of a release, you can download the gcc base and then add extra languages if you want.
+</p>
+
+<p>
+Now, before we can proceed we will have to add some more files in <code>gcc-src/gcc/tiny</code>.
+</p>
+
+<p>
+First we will add a <code>config-lang.in</code> file. This is a fragment of configure script. This file names the language (tiny in our case) and sets the name of the compiler (more on this below). It also specifies which languages are required to compile this front end. In our case we will use C++, so the command line option <code>--enable-languages</code> will require <code>c++</code> if we want to build <code>tiny</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="c"># gcc-src/gcc/config/config-lang.in
+</span><span class="nv">language</span><span class="o">=</span><span class="s2">"tiny"</span>
+
+<span class="nv">compilers</span><span class="o">=</span><span class="s2">"tiny1</span><span class="se">\$</span><span class="s2">(exeext)"</span>
+
+<span class="nv">target_libs</span><span class="o">=</span><span class="s2">""</span>
+
+<span class="nv">gtfiles</span><span class="o">=</span><span class="s2">"</span><span class="se">\$</span><span class="s2">(srcdir)/tiny/tiny1.cc"</span>
+
+<span class="c"># We will write the tiny FE in C++
+</span><span class="nv">lang_requires_boot_languages</span><span class="o">=</span>c++
+
+<span class="c"># Do not build by default
+</span><span class="nv">build_by_default</span><span class="o">=</span><span class="s2">"no"</span></code></pre></figure>
+
+<p>
+Option <code>compilers</code> is the name of the compiler. Why is that? Because <code>gcc</code> is just a driver that internally calls the real compiler that will compile our code. Our <em>real compiler</em> will be called <code>tiny1</code> (the suffix 1 is due to historical reasons in the UNIX tradition). Option <code>gtfiles</code> is used to specify which files have to be scanned for the GCC own garbage collector mechanism. We will not use much of this for the moment.
+</p>
+
+<p>
+Another file that we will need is <code>lang-specs.h</code>. This is a fragment of C header file. This file tells the gcc driver how and when to invoke the tiny1 compiler. In our case we want that files ended with <code>.tiny</code> are compiled with tiny1. These two lines will do. Just believe me here. If you want to understand what is going on, you can find more information in the file <code>gcc-src/gcc/gcc.c</code> and in <a href="https://gcc.gnu.org/onlinedocs/gcc/Spec-Files.html">GCC manual about spec files</a>.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cm">/* gcc-src/gcc/config/lang-specs.in */</span>
+<span class="p">{</span><span class="s">".tiny"</span><span class="p">,</span>  <span class="s">"@tiny"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span>
+<span class="p">{</span><span class="s">"@tiny"</span><span class="p">,</span>  <span class="s">"tiny1 %i %(cc1_options) %{!fsyntax-only:%(invoke_as)}"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span></code></pre></figure>
+
+<p>
+The first line redirects <code>.tiny</code> files to <code>@tiny</code> specification. The second file states that tiny1 has to be invoked with the input file, <code>%i</code>. The next option states to use the content of variable <code>cc1_options</code>, <code>%(cc1_options)</code>. This is actually for the C compiler, but it has lots of useful defaults that will be handy for tiny. For instance it will make sure optimitzation options like <code>-Ox</code> and generic options like <code>-fXXX</code> are passed if specified. Finally if the user did not specify <code>-fsyntax-only</code>, we will invoke the assembler in order to generate the object, <code>%{!fsyntax-only:%(invoke_as)}</code>. Both variables <code>cc1_options</code> and <code>invoke_as</code> are defined in <code>gcc-src/gcc/gcc.c</code>. In particular <code>cc1_options</code> is probably overkill for tiny, but this way we avoid for now having to write our own.
+</p>
+
+<p>
+A third file that will be required is <code>Make-lang.in</code>. This is another fragment of Makefile and will be used by the Makefile in <code>gcc-src/gcc</code> to build the tiny frontend. This file is a bit longer because it has to implement several goals. There is a first group of goals related to the driver (more on this below) and tiny1 and a second set, much larger, related to the frontend directory. Goals in this second group are of the form <code>tiny.<em>target</em></code>.
+</p>
+
+<p>
+Recall that <code>gcc</code> is the generic driver of GCC and when passed a <code>.tiny</code> file will invoke tiny1. This would work. But we want a <code>gcctiny</code> driver (similar to <code>gcc</code>, <code>g++</code>, <code>gfortran</code>) specific of our language. We only have to write a very small file for our gcctiny driver, the rest of the code is shared among drivers.
+</p>
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+</pre></td><td class="code"><pre><span class="nv">GCCTINY_INSTALL_NAME</span> <span class="o">:=</span> <span class="nf">$(</span><span class="nb">shell</span> <span class="nb">echo </span>gcctiny|sed <span class="s1">'</span><span class="nv">$(program_transform_name)</span><span class="s1">'</span><span class="nf">)</span>
+<span class="nv">GCCTINY_TARGET_INSTALL_NAME</span> <span class="o">:=</span> <span class="nv">$(target_noncanonical)</span>-<span class="nf">$(</span><span class="nb">shell</span> <span class="nb">echo </span>gcctiny|sed <span class="s1">'</span><span class="nv">$(program_transform_name)</span><span class="s1">'</span><span class="nf">)</span>
+
+<span class="nl">tiny</span><span class="o">:</span> <span class="nf">tiny1$(exeext)</span>
+
+<span class="nl">.PHONY</span><span class="o">:</span> <span class="nf">tiny</span>
+
+<span class="c"># Driver
+</span>
+<span class="nv">GCCTINY_OBJS</span> <span class="o">=</span> <span class="se">\</span>
+   <span class="nv">$(GCC_OBJS)</span> <span class="se">\</span>
+   tiny/tinyspec.o <span class="se">\</span>
+   <span class="nv">$(END)</span>
+
+<span class="nl">gcctiny$(exeext)</span><span class="o">:</span> <span class="nf">$(GCCTINY_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a $(LIBDEPS)</span>
+	+<span class="nv">$(LINKER)</span> <span class="nv">$(ALL_LINKERFLAGS)</span> <span class="nv">$(LDFLAGS)</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="se">\</span>
+	  <span class="nv">$(GCCTINY_OBJS)</span> <span class="nv">$(EXTRA_GCC_OBJS)</span> libcommon-target.a <span class="se">\</span>
+	  <span class="nv">$(EXTRA_GCC_LIBS)</span> <span class="nv">$(LIBS)</span>
+
+<span class="c"># The compiler proper
+</span>
+<span class="nv">tiny_OBJS</span> <span class="o">=</span> <span class="se">\</span>
+    tiny/tiny1.o <span class="se">\</span>
+    <span class="nv">$(END)</span>
+
+<span class="nl">tiny1$(exeext)</span><span class="o">:</span> <span class="nf">attribs.o $(tiny_OBJS) $(BACKEND) $(LIBDEPS)</span>
+	+<span class="nv">$(LLINKER)</span> <span class="nv">$(ALL_LINKERFLAGS)</span> <span class="nv">$(LDFLAGS)</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="se">\</span>
+	      attribs.o <span class="nv">$(tiny_OBJS)</span> <span class="nv">$(BACKEND)</span> <span class="nv">$(LIBS)</span> <span class="nv">$(BACKENDLIBS)</span>
+
+<span class="nl">tiny.all.cross</span><span class="o">:</span>
+
+<span class="nl">tiny.start.encap</span><span class="o">:</span> <span class="nf">gcctiny$(exeext)</span>
+<span class="nl">tiny.rest.encap</span><span class="o">:</span>
+
+<span class="nl">tiny.install-common</span><span class="o">:</span> <span class="nf">installdirs</span>
+	<span class="p">-</span><span class="nb">rm</span> <span class="nt">-f</span> <span class="nv">$(DESTDIR)$(bindir)</span>/<span class="nv">$(GCCTINY_INSTALL_NAME)$(exeext)</span>
+	<span class="nv">$(INSTALL_PROGRAM)</span> gcctiny<span class="nv">$(exeext)</span> <span class="nv">$(DESTDIR)$(bindir)</span>/<span class="nv">$(GCCTINY_INSTALL_NAME)$(exeext)</span>
+	<span class="nb">rm</span> <span class="nt">-f</span> <span class="nv">$(DESTDIR)$(bindir)</span>/<span class="nv">$(GCCTINY_TARGET_INSTALL_NAME)$(exeext)</span><span class="p">;</span> <span class="se">\</span>
+	<span class="o">(</span> <span class="nb">cd</span> <span class="nv">$(DESTDIR)$(bindir)</span> <span class="o">&amp;&amp;</span> <span class="se">\</span>
+      <span class="nv">$(LN)</span> <span class="nv">$(GCCTINY_INSTALL_NAME)$(exeext)</span> <span class="nv">$(GCCTINY_TARGET_INSTALL_NAME)$(exeext)</span> <span class="o">)</span><span class="p">;</span> <span class="se">\</span>
+
+<span class="c"># Required goals, they still do nothing
+</span><span class="nl">tiny.install-man</span><span class="o">:</span>
+<span class="nl">tiny.install-info</span><span class="o">:</span>
+<span class="nl">tiny.install-pdf</span><span class="o">:</span>
+<span class="nl">tiny.install-plugin</span><span class="o">:</span>
+<span class="nl">tiny.install-html</span><span class="o">:</span>
+<span class="nl">tiny.info</span><span class="o">:</span>
+<span class="nl">tiny.dvi</span><span class="o">:</span>
+<span class="nl">tiny.pdf</span><span class="o">:</span>
+<span class="nl">tiny.html</span><span class="o">:</span>
+<span class="nl">tiny.man</span><span class="o">:</span>
+<span class="nl">tiny.mostlyclean</span><span class="o">:</span>
+<span class="nl">tiny.clean</span><span class="o">:</span>
+<span class="nl">tiny.distclean</span><span class="o">:</span>
+<span class="nl">tiny.maintainer-clean</span><span class="o">:</span>
+
+<span class="c"># make uninstall
+</span><span class="nl">tiny.uninstall</span><span class="o">:</span>
+	<span class="p">-</span><span class="nb">rm</span> <span class="nt">-f</span> gcctiny<span class="nv">$(exeext)</span> tiny1<span class="nv">$(exeext)</span>
+	<span class="p">-</span><span class="nb">rm</span> <span class="nt">-f</span> <span class="nv">$(tiny_OBJS)</span>
+
+<span class="c"># Used for handling bootstrap
+</span><span class="nl">tiny.stage1</span><span class="o">:</span> <span class="nf">stage1-start</span>
+	<span class="p">-</span><span class="nb">mv </span>tiny/<span class="k">*</span><span class="nv">$(objext)</span> stage1/tiny
+<span class="nl">tiny.stage2</span><span class="o">:</span> <span class="nf">stage2-start</span>
+	<span class="p">-</span><span class="nb">mv </span>tiny/<span class="k">*</span><span class="nv">$(objext)</span> stage2/tiny
+<span class="nl">tiny.stage3</span><span class="o">:</span> <span class="nf">stage3-start</span>
+	<span class="p">-</span><span class="nb">mv </span>tiny/<span class="k">*</span><span class="nv">$(objext)</span> stage3/tiny
+<span class="nl">tiny.stage4</span><span class="o">:</span> <span class="nf">stage4-start</span>
+	<span class="p">-</span><span class="nb">mv </span>tiny/<span class="k">*</span><span class="nv">$(objext)</span> stage4/tiny
+<span class="nl">tiny.stageprofile</span><span class="o">:</span> <span class="nf">stageprofile-start</span>
+	<span class="p">-</span><span class="nb">mv </span>tiny/<span class="k">*</span><span class="nv">$(objext)</span> stageprofile/tiny
+<span class="nl">tiny.stagefeedback</span><span class="o">:</span> <span class="nf">stagefeedback-start</span>
+	<span class="p">-</span><span class="nb">mv </span>tiny/<span class="k">*</span><span class="nv">$(objext)</span> stagefeedback/tiny
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Lines 1 and 2 define two variables that take the string gcctiny and apply some sed transformation that is kept in the Makefile and determined at configure time. This is used only for cross compilers so it is of little importance now. This will be used during install. In addition of installing gcctiny, a <em>target</em>-gcctiny will be installed as well. If you have x86-64 machine it will probably be something like <code>x86_64-pc-linux-gnu-gcctiny</code>.
+</p>
+
+<p>
+Line 4 is a Makefile rule that says that the tiny goal requires building <code>tiny1$(exeext)</code>. <code>exeext</code> is a Makefile variable that the configure sets as empty in Linux but it is set to <code>.exe</code> in Windows, you will see it used everywhere a binary is mentioned.
+</p>
+
+<p>
+Lines 8 to 19 are related to our gcctiny driver. Lines 10 to 13 we specify all the <code>.o</code> files required to build gcctiny. We list them in a variable called <code>GCCTINY_OBJS</code>. <code>GCC_OBJS</code> is a variable from <code>gcc-src/gcc/Makefile</code> that contains all the <code>.o</code> files required by gcc. This set is not complete to get a driver. So we add a <code>tinyspec.o</code> extra with a few definitions inside. More on this later. Lines 15 to 18 are the link command to build our gcctiny driver. No need to mess with that one, it works fine and most front ends use a similar command.
+</p>
+
+<p>
+Lines 20 to 29 are related to tiny1. The real compiler. We follow a similar structure here. <code>tiny_OBJS</code> is a list of <code>.o</code> files of our compiler. Due to the way the makefile in <code>gcc-src/gcc</code> works, this variable has to be called <code><em>lang</em>_OBJS</code> (in our case <code><em>lang</em></code> is tiny). Lines 26 to 28 are the link command to link tiny1. Again another command line taken from existing front ends that seems to work fine. No need to mess with that one either.
+</p>
+
+<p>
+Now come a bunch of rules some of them do nothing, some of them do something. In line 35, this rule installs the <code>gcctiny</code> driver and makes a (hard) link to <code><em>target</em>-gcctiny</code> in <code>bindir</code>. In this rule, variable <code>INSTALL_PROGRAM</code> is the <code>install</code> program (used obviously to install files), variable <code>bindir</code> is <code>gcc-install/bin</code>. The variable $(DESTDIR) is used only during <code>make install</code> to, temporarily, install files into another location before moving them to the final location (this is mostly useful for sysadmins and system packagers). Most of the time <code>DESTDIR</code> will be empty. Lines 59 to 61 implement the uninstall rule, that is invoked if during <code>make uninstall</code>. Finally lines 63 to 75 implement some logic required for the gcc bootstraping.
+</p>
+
+<p>
+Great, we are half way. Now we need some code. Our current <code>Make-lang.in</code> mentions two files <code>tinyspec.o</code> and <code>tiny1.o </code>that have to be generated somehow. We will have to provide a <code>tinyspec.cc</code> and a <code>tiny1.cc</code>.
+</p>
+
+<p>
+<code>tinyspec.cc</code> has to implement two functions and a variable.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="nf">lang_specific_driver</span> <span class="p">(</span><span class="k">struct</span> <span class="nc">cl_decoded_option</span> <span class="o">**</span> <span class="cm">/* in_decoded_options */</span><span class="p">,</span>
+		      <span class="kt">unsigned</span> <span class="kt">int</span> <span class="o">*</span> <span class="cm">/* in_decoded_options_count */</span><span class="p">,</span>
+		      <span class="kt">int</span> <span class="o">*</span> <span class="cm">/*in_added_libraries */</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">}</span>
+
+<span class="cm">/* Called before linking.  Returns 0 on success and -1 on failure.  */</span>
+<span class="kt">int</span>
+<span class="nf">lang_specific_pre_link</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="cm">/* Not used for Tiny.  */</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Number of extra output files that lang_specific_pre_link may generate.  */</span>
+<span class="kt">int</span> <span class="n">lang_specific_extra_outfiles</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* Not used for Tiny.  */</span></code></pre></figure>
+
+<p>
+Some front ends may require changing the flags before they are passed to the driver. This is what the function <code>lang_specific_driver</code>. In our case it will do nothing because we do not have to change anything. So we will leave it empty. Function <code>lang_specific_pre_link</code> is called right before linking and can be used to do some extra steps and abort if they fail. This is not our case either. Finally the variable <code>lang_specific_extra_outfiles</code> is required to add some extra outfiles in the linking step. Only the Java front end seems to need this. We do not need it either, so it will be left as zero.
+</p>
+
+<p>
+Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not in position to fully understand yet. So just trust me here.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+</pre></td><td class="code"><pre><span class="cp">#include "config.h"
+#include "system.h"
+#include "coretypes.h"
+#include "target.h"
+#include "tree.h"
+#include "gimple-expr.h"
+#include "diagnostic.h"
+#include "opts.h"
+#include "fold-const.h"
+#include "gimplify.h"
+#include "stor-layout.h"
+#include "debug.h"
+#include "convert.h"
+#include "langhooks.h"
+#include "langhooks-def.h"
+#include "common/common-target.h"
+</span>
+<span class="cm">/* Language-dependent contents of a type.  */</span>
+
+<span class="k">struct</span> <span class="nc">GTY</span> <span class="p">(())</span> <span class="n">lang_type</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">dummy</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* Language-dependent contents of a decl.  */</span>
+
+<span class="k">struct</span> <span class="nc">GTY</span> <span class="p">(())</span> <span class="n">lang_decl</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">dummy</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* Language-dependent contents of an identifier.  This must include a
+   tree_identifier.  */</span>
+
+<span class="k">struct</span> <span class="nc">GTY</span> <span class="p">(())</span> <span class="n">lang_identifier</span>
+<span class="p">{</span>
+  <span class="k">struct</span> <span class="nc">tree_identifier</span> <span class="n">common</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* The resulting tree type.  */</span>
+
+<span class="k">union</span> <span class="n">GTY</span> <span class="p">((</span><span class="n">desc</span> <span class="p">(</span><span class="s">"TREE_CODE (&amp;%h.generic) == IDENTIFIER_NODE"</span><span class="p">),</span>
+	    <span class="n">chain_next</span> <span class="p">(</span><span class="s">"CODE_CONTAINS_STRUCT (TREE_CODE (&amp;%h.generic), "</span>
+			<span class="s">"TS_COMMON) ? ((union lang_tree_node *) TREE_CHAIN "</span>
+			<span class="s">"(&amp;%h.generic)) : NULL"</span><span class="p">)))</span> <span class="n">lang_tree_node</span>
+<span class="p">{</span>
+  <span class="k">union</span> <span class="n">tree_node</span> <span class="n">GTY</span> <span class="p">((</span><span class="n">tag</span> <span class="p">(</span><span class="s">"0"</span><span class="p">),</span> <span class="n">desc</span> <span class="p">(</span><span class="s">"tree_node_structure (&amp;%h)"</span><span class="p">)))</span> <span class="n">generic</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="nc">lang_identifier</span> <span class="n">GTY</span> <span class="p">((</span><span class="n">tag</span> <span class="p">(</span><span class="s">"1"</span><span class="p">)))</span> <span class="n">identifier</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* We don't use language_function.  */</span>
+
+<span class="k">struct</span> <span class="nc">GTY</span> <span class="p">(())</span> <span class="n">language_function</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">dummy</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="cm">/* Language hooks.  */</span>
+
+<span class="k">static</span> <span class="kt">bool</span>
+<span class="nf">tiny_langhook_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="cm">/* NOTE: Newer versions of GCC use only:
+           build_common_tree_nodes (false);
+     See Eugene's comment in the comments section. */</span>
+  <span class="n">build_common_tree_nodes</span> <span class="p">(</span><span class="nb">false</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+
+  <span class="cm">/* I don't know why this has to be done explicitly.  */</span>
+  <span class="n">void_list_node</span> <span class="o">=</span> <span class="n">build_tree_list</span> <span class="p">(</span><span class="n">NULL_TREE</span><span class="p">,</span> <span class="n">void_type_node</span><span class="p">);</span>
+
+  <span class="n">build_common_builtin_nodes</span> <span class="p">();</span>
+
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">tiny_langhook_parse_file</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Hello gcctiny!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="n">tree</span>
+<span class="nf">tiny_langhook_type_for_mode</span> <span class="p">(</span><span class="k">enum</span> <span class="n">machine_mode</span> <span class="n">mode</span><span class="p">,</span> <span class="kt">int</span> <span class="n">unsignedp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">float_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">float_type_node</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">double_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">double_type_node</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">intQI_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">unsigned_intQI_type_node</span> <span class="o">:</span> <span class="n">intQI_type_node</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">intHI_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">unsigned_intHI_type_node</span> <span class="o">:</span> <span class="n">intHI_type_node</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">intSI_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">unsigned_intSI_type_node</span> <span class="o">:</span> <span class="n">intSI_type_node</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">intDI_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">unsigned_intDI_type_node</span> <span class="o">:</span> <span class="n">intDI_type_node</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">intTI_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">unsigned_intTI_type_node</span> <span class="o">:</span> <span class="n">intTI_type_node</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">unsigned_type_node</span> <span class="o">:</span> <span class="n">integer_type_node</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">long_integer_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">long_unsigned_type_node</span> <span class="o">:</span> <span class="n">long_integer_type_node</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">long_long_integer_type_node</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">unsignedp</span> <span class="o">?</span> <span class="n">long_long_unsigned_type_node</span>
+		     <span class="o">:</span> <span class="n">long_long_integer_type_node</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">COMPLEX_MODE_P</span> <span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">complex_float_type_node</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">complex_float_type_node</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">complex_double_type_node</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">complex_double_type_node</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">complex_long_double_type_node</span><span class="p">))</span>
+	<span class="k">return</span> <span class="n">complex_long_double_type_node</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">complex_integer_type_node</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">unsignedp</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">complex_integer_type_node</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="cm">/* gcc_unreachable */</span>
+  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="n">tree</span>
+<span class="nf">tiny_langhook_type_for_size</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">bits</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">,</span>
+			     <span class="kt">int</span> <span class="n">unsignedp</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_unreachable</span> <span class="p">();</span>
+  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* Record a builtin function.  We just ignore builtin functions.  */</span>
+
+<span class="k">static</span> <span class="n">tree</span>
+<span class="nf">tiny_langhook_builtin_function</span> <span class="p">(</span><span class="n">tree</span> <span class="n">decl</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">decl</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">bool</span>
+<span class="nf">tiny_langhook_global_bindings_p</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_unreachable</span> <span class="p">();</span>
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="n">tree</span>
+<span class="nf">tiny_langhook_pushdecl</span> <span class="p">(</span><span class="n">tree</span> <span class="n">decl</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_unreachable</span> <span class="p">();</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="n">tree</span>
+<span class="nf">tiny_langhook_getdecls</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cp">#undef LANG_HOOKS_NAME
+#define LANG_HOOKS_NAME "Tiny"
+</span>
+<span class="cp">#undef LANG_HOOKS_INIT
+#define LANG_HOOKS_INIT tiny_langhook_init
+</span>
+<span class="cp">#undef LANG_HOOKS_PARSE_FILE
+#define LANG_HOOKS_PARSE_FILE tiny_langhook_parse_file
+</span>
+<span class="cp">#undef LANG_HOOKS_TYPE_FOR_MODE
+#define LANG_HOOKS_TYPE_FOR_MODE tiny_langhook_type_for_mode
+</span>
+<span class="cp">#undef LANG_HOOKS_TYPE_FOR_SIZE
+#define LANG_HOOKS_TYPE_FOR_SIZE tiny_langhook_type_for_size
+</span>
+<span class="cp">#undef LANG_HOOKS_BUILTIN_FUNCTION
+#define LANG_HOOKS_BUILTIN_FUNCTION tiny_langhook_builtin_function
+</span>
+<span class="cp">#undef LANG_HOOKS_GLOBAL_BINDINGS_P
+#define LANG_HOOKS_GLOBAL_BINDINGS_P tiny_langhook_global_bindings_p
+</span>
+<span class="cp">#undef LANG_HOOKS_PUSHDECL
+#define LANG_HOOKS_PUSHDECL tiny_langhook_pushdecl
+</span>
+<span class="cp">#undef LANG_HOOKS_GETDECLS
+#define LANG_HOOKS_GETDECLS tiny_langhook_getdecls
+</span>
+<span class="k">struct</span> <span class="nc">lang_hooks</span> <span class="n">lang_hooks</span> <span class="o">=</span> <span class="n">LANG_HOOKS_INITIALIZER</span><span class="p">;</span>
+
+<span class="cp">#include "gt-tiny-tiny1.h"
+#include "gtype-tiny.h"</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+That is a lot of stuff. First a bunch of includes that will be necessary. There is a bit of chaos in gcc headers, so it make take some tries until one figures the right list and its order of includes. Then language dependent definitions come, we need none of them, so they are almost empty. The <code>GTY (())</code> mark is used for the GCC garbage collector, we can ignore that for now.
+</p>
+
+<p>
+Thsi file includes a number of <code>language hooks</code>. Language hooks are functions that can be overriden by the front end in order to implement language specific behaviour. Due to the C heritage of GCC this is implemented using macros. In line 187 the variable lang_hooks contains a LANG_HOOKS_INITIALIZER which in turn expands all the LANG_HOOKS_x of GCC. GCC provides default language hooks (defined in <code>langhooks.c</code> and described in <code>langhooks.h</code>). We can override them by undefining the associated macro and defining it to our specific function. Here we see some sensible defaults. If they fall short for some reason, we can always extend them at a later point.
+</p>
+
+<p>
+Compilation of files starts by calling the hook <code>LANG_HOOKS_PARSE_FILE</code>. Or current code just prints a greeting and nothing else, see line 76. It will be enough to verify if things are working so far.
+</p>
+
+<p>
+At the end of the file we include two extra headers <code>gt-tiny-tiny1.h</code> and <code>gtype-tiny.h</code> that have the routines automatically generated for the GCC garbage collector. If you recall the variable <code>gtfiles</code> in <code>config-lang.in</code> above, that variable mentions <code>tiny1.cc</code>. A tool called <code>gengtype</code> scans the files in <code>gtfiles</code> and using those <code>GTY</code> marks generates two headers with some functions that we have to include. The GCC internal manual has more <a href="https://gcc.gnu.org/onlinedocs/gccint/Type-Information.html">information about the memory management</a>.
+</p>
+
+<h3>Current layout</h3>
+
+<p>
+Our <code>gcc-src/gcc/tiny</code> directory now looks like this.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">gcc-src/gcc/tiny
+├── config-lang.in
+├── lang-specs.h
+├── Make-lang.in
+├── tiny1.cc
+└── tinyspec.cc</code></pre></figure>
+
+<h2>Hello gcctiny</h2>
+
+<p>
+By default gcc bootstraps itself. This means that gcc is compiled three times, in three steps called stages. In stage1 the system compiler is used. In stage2 the compiler compiled in stage1 is used to compile gcc. Likewise in stage3 the compiler compiled in stage2 is used to compile gcc. Assuming that the system compiler works correctly, all the objects generated in stage2 and stage3 should be identical. This is actually verified during a bootstrap. This is an excellent way to early detect problems in the compiler, but slows down development. This is why we will disable it when developing the front end. When we test the compiler we can reenable it again.
+</p>
+
+<p>
+Now we can try again with the configure but this time we will disable the bootstrap, using <code>--disable-bootstrap</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd </span>gcc-build
+<span class="nv">$ </span>../gcc-src/configure <span class="nt">--prefix</span><span class="o">=</span><span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span>/../gcc-install <span class="nt">--disable-bootstrap</span> <span class="nt">--enable-languages</span><span class="o">=</span>c,c++,tiny
+<span class="nv">$ </span>make <span class="nt">-j</span><span class="si">$(</span>getconf _NPROCESSORS_ONLN<span class="si">)</span>
+... tons of gibberish ...
+<span class="nv">$ </span>make <span class="nb">install</span></code></pre></figure>
+
+<p>
+A gcctiny and its corresponding target should now be in <code>gcc-install/bin</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">ls</span> <span class="nt">-1</span> gcc-install/bin/<span class="k">*</span>tiny<span class="k">*</span>
+gcc-install/bin/gcctiny
+gcc-install/bin/x86_64-pc-linux-gnu-gcctiny</code></pre></figure>
+
+<p>
+Nice. Let's make a smoke test. First let's create an empty <code>test.tiny</code>. We need this because the driver checks for the existence of the input file for us.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">touch </span>test.tiny
+<span class="nv">$ </span>gcc-install/bin/gcctiny <span class="nt">-c</span> test.tiny
+Hello gcctiny!</code></pre></figure>
+
+<p>
+Yay! I have passed the flag <code>-c</code> to avoid linking otherwise we would get an undefined error since there is no main function yet.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcc-install/bin/gcctiny  test.tiny
+Hello gcctiny!
+/usr/lib/x86_64-linux-gnu/crt1.o: In <span class="k">function</span> <span class="sb">`</span>_start<span class="s1">':
+(.text+0x20): undefined reference to `main'</span>
+collect2: error: ld returned 1 <span class="nb">exit </span>status</code></pre></figure>
+
+<p>
+If you want to see what is going on, just pass <code>-v</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+</pre></td><td class="code"><pre>$ gcc-install/bin/gcctiny -c -v test.tiny
+Using built-in specs.
+COLLECT_GCC=gcc-install/bin/gcctiny
+Target: x86_64-pc-linux-gnu
+Configured with: ../gcc-src/configure --prefix=/home/roger/soft/gcc/gcc-blog/gcc-build/../gcc-install --disable-bootstrap --enable-languages=c,c++,tiny
+Thread model: posix
+gcc version 6.0.0 20160105 (experimental) (GCC) 
+COLLECT_GCC_OPTIONS='-c' '-v' '-mtune=generic' '-march=x86-64'
+ /home/roger/soft/gcc/gcc-blog/gcc-install/bin/../libexec/gcc/x86_64-pc-linux-gnu/6.0.0/tiny1 test.tiny -quiet -dumpbase test.tiny -mtune=generic -march=x86-64 -auxbase test -version -o /tmp/ccsptWhB.s
+Tiny (GCC) version 6.0.0 20160105 (experimental) (x86_64-pc-linux-gnu)
+	compiled by GNU C version 5.3.1 20151219, GMP version 4.3.2, MPFR version 2.4.2, MPC version 0.8.1, isl version 0.15
+GGC heuristics: --param ggc-min-expand=30 --param ggc-min-heapsize=4096
+Tiny (GCC) version 6.0.0 20160105 (experimental) (x86_64-pc-linux-gnu)
+	compiled by GNU C version 5.3.1 20151219, GMP version 4.3.2, MPFR version 2.4.2, MPC version 0.8.1, isl version 0.15
+GGC heuristics: --param ggc-min-expand=30 --param ggc-min-heapsize=4096
+Hello gcctiny!
+COLLECT_GCC_OPTIONS='-c' '-v' '-mtune=generic' '-march=x86-64'
+ as -v --64 -o test.o /tmp/ccsptWhB.s
+GNU assembler version 2.25.90 (x86_64-linux-gnu) using BFD version (GNU Binutils for Debian) 2.25.90.20151209
+COMPILER_PATH=/home/roger/soft/gcc/gcc-blog/gcc-install/bin/../libexec/gcc/x86_64-pc-linux-gnu/6.0.0/:/home/roger/soft/gcc/gcc-blog/gcc-install/bin/../libexec/gcc/
+LIBRARY_PATH=/home/roger/soft/gcc/gcc-blog/gcc-install/bin/../lib/gcc/x86_64-pc-linux-gnu/6.0.0/:/home/roger/soft/gcc/gcc-blog/gcc-install/bin/../lib/gcc/:/home/roger/soft/gcc/gcc-blog/gcc-install/bin/../lib/gcc/x86_64-pc-linux-gnu/6.0.0/../../../../lib64/:/lib/x86_64-linux-gnu/:/lib/../lib64/:/usr/lib/x86_64-linux-gnu/:/home/roger/soft/gcc/gcc-blog/gcc-install/bin/../lib/gcc/x86_64-pc-linux-gnu/6.0.0/../../../:/lib/:/usr/lib/
+COLLECT_GCC_OPTIONS='-c' '-v' '-mtune=generic' '-march=x86-64'
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In line 9 tiny1 is being called. You can see some extra flags that are added because of <code>cc1_options</code> used in the <code>lang-specs.h</code>. In line 18 the assembler is invoked to generate the <code>.o</code> file. Since our frontend did nothing but print a message (line 16), the net effect is the same as compiling an empty file.
+</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+We have now completed a basic step for our tiny front end. So we can start doing real work with it but this will be in the next chapter. That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/05/tiny-gcc-front-part-1/">&laquo; A tiny GCC front end – Part 1</a>
+
+
+  <a class="next" href="/2016/01/08/tiny-gcc-front-part-3/">A tiny GCC front end – Part 3 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

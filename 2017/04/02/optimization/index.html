@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Whose is this optimization?</title>
+  <meta name="description" content="Today we will toy around a very simple optimization in clang and discuss a bit about separation of concerns when optimizing code.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/04/02/optimization/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Whose is this optimization?">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/04/02/optimization/">
+  <meta property="og:description" content="Today we will toy around a very simple optimization in clang and discuss a bit about separation of concerns when optimizing code.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Whose is this optimization?">
+  <meta name="twitter:description" content="Today we will toy around a very simple optimization in clang and discuss a bit about separation of concerns when optimizing code.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Whose is this optimization?</h1>
+    
+    <p class="post-meta"><time datetime="2017-04-02T10:39:10+00:00" itemprop="datePublished">Apr 2, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Today we will toy around a very simple optimization in clang and discuss a bit about separation of concerns when optimizing code.
+</p>
+
+<!--more-->
+
+<h2>clang</h2>
+
+<p>
+<a href="http://clang.llvm.org">clang</a> is a C/C++ front end mostly used in the LLVM project. It is designed as a library and offers many services in that new trend of <em>compiler as a service</em> that has been popular in the last years: compilers have shifted from being monolithic pieces of software with narrow purposes to libraries offering language and compilation services with broader applicability. clang itself <a href="http://clang.llvm.org/docs/Tooling.html">is not an exception</a>. There is a whole ecosystem of <a href="http://clang.llvm.org/docs/ClangTools.html">tools</a> built around it.
+</p>
+
+<p>
+One of the most common use cases of clang is as a C++ compiler. As a front end it closely follows the C++ standard and it is often used as testbed for new proposals. clang itself does not generate code that can be executed. Instead, clang generates LLVM IR which is then handed to the LLVM framework for the purpose of generating code. The LLVM infrastructure is able to optimize the LLVM IR so in principle a front end does not have to be concerned with optimization, or does it?
+</p>
+
+<h2>constexpr</h2>
+
+<p>
+C++11 introduced many new features, one of them was <code>constexpr</code>. In C++03 and C99, the <code>const</code> keyword conflates two meanings: something that is constant in compile time but also something that may be stored in constant memory. C++03 requires in some contexts constant expressions, this is, expressions that can be evaluated by the compiler (before even running the program being compiled). To do this it allowed the use of some variables (basically integral types) initialized with constant expressions and declared as <code>const</code> in constant expressions.
+</p>
+<p>
+This fell short for some cases where we may want the compiler to compute something more elaborated. C++11 solves this problem by introducing the keyword <code>constexpr</code> which basically means that the entity can be used in a constant expression. This was extended to functions and member functions as well. If the context requires a constant expression, the compiler is mandated to evaluate the constant expression and this may imply calling <code>constexpr</code> functions.
+</p>
+
+<p>
+C++11 was prudent in the specification of constexpr functions and they are really constrained. They can only contain a single return whose expression must be possible to evaluate at compile time. They can contain other declarations like typedefs, though. The expression in the return can include calls to other constexpr functions including the current one, recursively. These restrictions made the implementation of the constexpr feature relatively simple.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// C++11: constexpr Fibonacci</span>
+<span class="k">constexpr</span> <span class="kt">int</span> <span class="nf">fib1</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="o">?</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">fib1</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">fib1</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+C++14 relaxed the constraints imposed in constexpr functions and it allows constexpr functions to be more general, including other statements than just a return statement. This makes the implementation a bit more complicated because it means that an interpreter must be added to our front end which <em>executes</em> the body of a <code>constexpr</code> function.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// C++14: constexpr Fibonacci</span>
+<span class="k">constexpr</span> <span class="kt">int</span> <span class="nf">fib2</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">n_1</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">n</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">n_1</span> <span class="o">+</span> <span class="n">n_2</span><span class="p">;</span>
+    <span class="n">n_2</span> <span class="o">=</span> <span class="n">n_1</span><span class="p">;</span>
+    <span class="n">n_1</span> <span class="o">=</span> <span class="n">ret</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// C++14: The two functions evaluate the same (at least for n==10 :)</span>
+<span class="k">static_assert</span><span class="p">(</span><span class="n">fib1</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="o">==</span> <span class="n">fib2</span><span class="p">(</span><span class="mi">10</span><span class="p">));</span></code></pre></figure>
+
+<h2>Non constant expression context</h2>
+
+<p>
+It is obvious that in C++11/C++14 inside a constant expression context, function calls to constexpr will have to be evaluated. What about other non constant expressions contexts where we call a constexpr function with all arguments as constant expressions? Will the compiler care?
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="nf">test1</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">fib1</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">test2</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">fib2</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Let's check <a href="https://godbolt.org/g/tdNzYc">two popular C++ compilers</a>. We see that GCC generates the same code for both cases but clang decides to call <code>fib1</code> even if we know already that the result is 89.
+</p>
+
+<p>
+This is a bit surprising and we may wonder whether we may want clang to generate a similar code. Before doing anything, we need to understand what is going on. GCC front end seems to be knowing that the two functions return 89. We can see this by using <code>-fdump-tree-original</code> which will dump the representation that is going to be passed to the rest of the compiler.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ g++ -c -std=c++14 -O fib.cc -fdump-tree-original
+$ cat fib.cc.003t.original  # some lines omitted for brevity
+;; Function int test1() (null)
+;; enabled by -tree-original
+
+
+&lt;&lt;cleanup_point return &lt;retval&gt; = 89&gt;&gt;;
+
+
+;; Function int test2() (null)
+;; enabled by -tree-original
+
+
+&lt;&lt;cleanup_point return &lt;retval&gt; = 89&gt;&gt;;</code></pre></figure>
+
+<p>
+We can do a similar thing in clang, by showing us the generated LLVM IR.
+</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="err">$</span> <span class="err">clang</span> <span class="err">-std</span><span class="p">=</span><span class="k">c</span><span class="err">++</span><span class="m">14</span> <span class="err">-O</span> <span class="err">-S</span> <span class="err">-o-</span> <span class="err">-emit-llvm</span> <span class="err">-Xclang</span> <span class="err">-disable-llvm-passes</span> <span class="err">fib</span><span class="p">.</span><span class="k">cc</span> <span class="err">#</span> <span class="err">some</span> <span class="err">lines</span> <span class="err">omitted</span> <span class="err">for</span> <span class="err">brevity</span>
+<span class="c1">; Function Attrs: uwtable</span>
+<span class="c1">; Function Attrs: uwtable</span>
+<span class="k">define</span> <span class="kt">i32</span> <span class="vg">@_Z5test2v</span><span class="p">()</span> <span class="vg">#0</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="nv">%call</span> <span class="p">=</span> <span class="k">call</span> <span class="kt">i32</span> <span class="vg">@_Z4fib2i</span><span class="p">(</span><span class="kt">i32</span> <span class="m">10</span><span class="p">)</span>
+  <span class="k">ret</span> <span class="kt">i32</span> <span class="nv">%call</span>
+<span class="p">}</span>
+<span class="c1">; Function Attrs: uwtable</span>
+<span class="k">define</span> <span class="kt">i32</span> <span class="vg">@_Z5test1v</span><span class="p">()</span> <span class="vg">#0</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="nv">%call</span> <span class="p">=</span> <span class="k">call</span> <span class="kt">i32</span> <span class="vg">@_Z4fib1i</span><span class="p">(</span><span class="kt">i32</span> <span class="m">10</span><span class="p">)</span>
+  <span class="k">ret</span> <span class="kt">i32</span> <span class="nv">%call</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+clang simply has not evaluated the constexpr function call in either case.
+</p>
+
+<p style="background-color: #efe; padding: 1em;">
+<strong>Important!</strong> There is nothing wrong in what clang is doing. It does not have to evaluate the constexpr function call at all as it does not appear in the context of a constant expression.
+</p>
+
+<p>
+When we compared the two compilers, why the clang generated code still calls <code>fib1</code> while it has been able to simplify the call to <code>fib2</code> as 89? The reason is that LLVM has not optimized the recursive function <code>fib1</code>, it might be too complicated for the existing optimizers. On the other hand, the non-recursive function <code>fib2</code> is likely more amenable to optimization and the compiler infers that the whole call will simply be 89.
+</p>
+
+<h2>Where to do the fix?</h2>
+
+<p>
+We can either attempt to improve LLVM or clang.
+</p>
+
+<p>
+Improving LLVM:
+</p>
+<ul>
+<li>Pro: A larger set of users (not only C++ front ends like clang) may benefit from it.</li>
+<li>Con: It may be harder to implement.</li>
+<li>Con: It may be easy to come up with a C++ case that will fail to optimize.</li>
+</ul>
+
+<p>
+Improving clang:
+</p>
+<ul>
+<li>Con: Makes the C++ front end slower as we're evaluating function calls that we did not evaluate before.</li>
+<li>Pro: No matter how crazy is the <code>constexpr</code> function, as long as it is valid we will evaluate it.</li>
+<li>Con: Only C++ benefits from it.</li>
+</ul>
+
+<h2>Changing clang</h2>
+
+<p>
+So as a proof of concept I decided to change clang. I basically hacked some changes in <code>CGExpr.cpp</code> and <code>CGCall.cpp</code>. These two files handle the code generation (i.e. LLVM IR actually) for expressions and function calls respectively. If we are calling a <code>constexpr</code> function, I added an attempt to evaluate the expression as a constant. If the evaluation succeeds I thread a <code>llvm::Constant*</code> so when the final call is about to be emitted, the constant value is used instead. I gated this to optimization levels higher than <code>-O0</code>.
+</p>
+
+<p style="background-color: #fee; padding: 1em;">
+Don't take this as a serious change for clang. It is just a proof of concept and while <code>check-clang</code> did not report regressions because of this, it must be tested more thoroughly.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/lib/CodeGen/CGExpr.cpp b/lib/CodeGen/CGExpr.cpp
+index 1a95eb1045..acd07eb341 100644
+</span><span class="gd">--- a/lib/CodeGen/CGExpr.cpp
+</span><span class="gi">+++ b/lib/CodeGen/CGExpr.cpp
+</span><span class="p">@@ -3901,8 +3901,19 @@</span> RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
+   if (E-&gt;getCallee()-&gt;getType()-&gt;isBlockPointerType())
+     return EmitBlockCallExpr(E, ReturnValue);
+ 
+<span class="gi">+  llvm::Constant *ConstValue = nullptr;
++  if (CGM.getCodeGenOpts().OptimizationLevel &gt; 0)
++    if (auto *DRE =
++            dyn_cast&lt;DeclRefExpr&gt;(E-&gt;getCallee()-&gt;IgnoreParenImpCasts())) {
++      if (auto FD = dyn_cast&lt;FunctionDecl&gt;(DRE-&gt;getDecl())) {
++        Expr::EvalResult Result;
++        if (FD-&gt;isConstexpr() &amp;&amp; E-&gt;EvaluateAsRValue(Result, getContext()))
++          ConstValue = CGM.EmitConstantValue(Result.Val, E-&gt;getType(), this);
++      }
++    }
++
+</span>   if (const auto *CE = dyn_cast&lt;CXXMemberCallExpr&gt;(E))
+    return EmitCXXMemberCallExpr(CE, ReturnValue);
+
+@@ -3923,14 +3934,14 @@ RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
+     return EmitCXXPseudoDestructorExpr(callee.getPseudoDestructorExpr());
+   }
+ 
+<span class="gd">-  return EmitCall(E-&gt;getCallee()-&gt;getType(), callee, E, ReturnValue);
+</span><span class="gi">+  return EmitCall(E-&gt;getCallee()-&gt;getType(), callee, E, ReturnValue, ConstValue);
+</span> }</code></pre></figure>
+
+<p>
+Note that we are only handling regular function calls of the form <code>f(x)</code> and not calls to member functions (that might be constexpr as well) like <code>a.b(x)</code>. I will discuss below why the latter case is more complex and does not fit really well here.
+</p>
+
+<p>
+We simply use the constant when the call would be emitted instead.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/lib/CodeGen/CGCall.cpp b/lib/CodeGen/CGCall.cpp
+index e56fe2c1c1..8a794ff229 100644
+</span><span class="gd">--- a/lib/CodeGen/CGCall.cpp
+</span><span class="gi">+++ b/lib/CodeGen/CGCall.cpp
+</span><span class="p">@@ -3713,11 +3713,16 @@</span> RValue CodeGenFunction::EmitCall(const CGFunctionInfo &amp;CallInfo,
+                                  const CGCallee &amp;Callee,
+                                  ReturnValueSlot ReturnValue,
+                                  const CallArgList &amp;CallArgs,
+<span class="gi">+                                 llvm::Constant* ConstValue,
+</span>                                  llvm::Instruction **callOrInvoke) {
+   // FIXME: We no longer need the types from CallArgs; lift up and simplify.
+ 
+   assert(Callee.isOrdinary());
+ 
+<span class="gi">+  // If we already know the value of this function call, just use it.
++  if (ConstValue)
++      return RValue::get(ConstValue);
++</span></code></pre></figure>
+
+<p>
+After these changes (and a few others to get everything compiling again) we get what we expected:
+</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="err">$</span> <span class="err">clang</span> <span class="err">-std</span><span class="p">=</span><span class="k">c</span><span class="err">++</span><span class="m">14</span> <span class="err">-S</span> <span class="err">-o-</span> <span class="err">-emit-llvm</span> <span class="err">-Xclang</span> <span class="err">-disable-llvm-passes</span> <span class="err">fib</span><span class="p">.</span><span class="k">cc</span> <span class="err">-O1</span> <span class="err">-v</span>
+<span class="c1">; Some limes omitted for brevity</span>
+<span class="c1">; Function Attrs: nounwind uwtable</span>
+<span class="k">define</span> <span class="kt">i32</span> <span class="vg">@_Z5test1v</span><span class="p">()</span> <span class="vg">#0</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="k">ret</span> <span class="kt">i32</span> <span class="m">89</span>
+<span class="p">}</span>
+<span class="c1">; Function Attrs: nounwind uwtable</span>
+<span class="k">define</span> <span class="kt">i32</span> <span class="vg">@_Z5test2v</span><span class="p">()</span> <span class="vg">#0</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="k">ret</span> <span class="kt">i32</span> <span class="m">89</span>
+<span class="p">}</span></code></pre></figure>
+
+<h3>Member function calls</h3>
+
+<p>
+Constructors and a special members like constructors can be <code>constexpr</code>. But these cases can't really be optimized as easily, the reason is that the implicit parameter (the object pointed by <code>this</code>) should be evaluatable at constant time. When this happens, though, clang already does a good job for them.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+  <span class="k">constexpr</span> <span class="n">A</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="o">:</span> <span class="n">x</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+<span class="p">};</span>
+<span class="kt">int</span> <span class="nf">foo1</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">x</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">foo2</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">constexpr</span> <span class="n">A</span> <span class="n">a</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">a</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="c1">; clang -std=c++14 -S -o- -emit-llvm -Xclang -disable-llvm-passes test.cc -O0</span>
+<span class="k">define</span> <span class="kt">i32</span> <span class="vg">@_Z4foo1v</span><span class="p">()</span> <span class="vg">#0</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="c1">; Not sure why this temporary is needed but</span>
+  <span class="c1">; likely LLVM will optimize it away.</span>
+  <span class="nv">%ref.tmp</span> <span class="p">=</span> <span class="k">alloca</span> <span class="nv">%struct.A</span><span class="p">,</span> <span class="k">align</span> <span class="m">4</span>
+  <span class="k">call</span> <span class="kt">void</span> <span class="vg">@_ZN1AC2Ei</span><span class="p">(</span><span class="nv">%struct.A</span><span class="p">*</span> <span class="nv">%ref.tmp</span><span class="p">,</span> <span class="kt">i32</span> <span class="m">3</span><span class="p">)</span>
+  <span class="k">ret</span> <span class="kt">i32</span> <span class="m">4</span>
+<span class="p">}</span>
+<span class="c1">; Function Attrs: noinline nounwind uwtable</span>
+<span class="k">define</span> <span class="kt">i32</span> <span class="vg">@_Z4foo2v</span><span class="p">()</span> <span class="vg">#1</span> <span class="p">{</span>
+<span class="nl">entry:</span>
+  <span class="k">ret</span> <span class="kt">i32</span> <span class="m">4</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2>Does this make sense?</h2>
+
+<p>
+While this change looks like a low hanging fruit I'm not sure it makes much sense. clang was never designed to be a front end that optimizes its output. Doing that would have some value as it would free LLVM of some optimization work. But if the same optimization can be done in LLVM the benefit is much higher as all clients (including clang) will take advantage of it. Also, C++14 gives much more freedom when writing <code>constexpr</code> functions, without requiring recursion. This means that the LLVM IR generated by clang will be much simpler and then LLVM may optimize it much easier. All in all, this change might be a marginal improvement for users that cannot use C++14.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/03/19/exploring-aarch64-assembler-chapter-7/">&laquo; Exploring AArch64 assembler – Chapter 7</a>
+
+
+  <a class="next" href="/2017/04/17/arm-assembler-raspberry-pi-chapter-27/">ARM assembler in Raspberry Pi – Chapter 27 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

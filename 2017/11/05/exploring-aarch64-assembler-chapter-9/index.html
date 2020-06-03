@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Exploring AArch64 assembler – Chapter 9</title>
+  <meta name="description" content="In chapter 6 we saw conditional branches and we ended commenting that they can be used to implement higher control constructs. In this chapter we will see a few of them.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/11/05/exploring-aarch64-assembler-chapter-9/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Exploring AArch64 assembler – Chapter 9">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/11/05/exploring-aarch64-assembler-chapter-9/">
+  <meta property="og:description" content="In chapter 6 we saw conditional branches and we ended commenting that they can be used to implement higher control constructs. In this chapter we will see a few of them.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Exploring AArch64 assembler – Chapter 9">
+  <meta name="twitter:description" content="In chapter 6 we saw conditional branches and we ended commenting that they can be used to implement higher control constructs. In this chapter we will see a few of them.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Exploring AArch64 assembler – Chapter 9</h1>
+    
+    <p class="post-meta"><time datetime="2017-11-05T18:30:54+00:00" itemprop="datePublished">Nov 5, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/aarch64/">AArch64</a>
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In chapter 6 we saw conditional branches and we ended commenting that they can be used to implement higher control constructs. In this chapter we will see a few of them.
+<!--more--></p>
+
+<h2>If-statement</h2>
+
+<p>
+It may be at this point rather obvious how to implement an if-statement construct. Given a structure of the form
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+  </span><span class="n">S1</span><span class="w">
+</span><span class="k">ELSE</span><span class="w">
+  </span><span class="n">S2</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span></code></pre></figure>
+
+<p>
+our code may look like
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* Evaluate condition E and update flags */
+b&lt;inverse-condition&gt; else_label
+  S1
+  b end_if
+else_label: 
+  S2
+end_if:</code></pre></figure>
+
+<p>
+It can be done the other way around.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* Evaluate condition E and update flags */
+b&lt;condition&gt; then_label
+  S2
+  b end_if
+then_label: 
+  S1
+end_if:</code></pre></figure>
+
+<h3>How to evaluate conditions?</h3>
+
+<p>
+Conditions in most programming languages are explicitly given a boolean type (e.g. <code>bool</code> in C++, <code>LOGICAL</code> in Fortran) or an integer type with a restricted set of values (e.g. 0 or 1 in C). Several programming languages implicitly define a conversion from regular integers to condition expressions. For instance in C, an expression <code>e</code> of type integer or pointer when used in a condition is the same as evaluating the condition <code>e != 0</code> (which will give a <code>0</code> or <code>1</code> value). C++ defines the same conversion but the resulting type is <code>bool</code> so it can be <code>true</code> or <code>false</code>. Fortran does not have any of these conversions so the operand will always be required.
+</p>
+
+<p>
+For expressions of the form <code>e1 ⊕ e2</code> where ⊕ is a relational operator like &lt;, &gt;, &le;, &ge;, etc. We can use the instruction <code>cmp</code> followed by a <code>b.cond</code> with the relevant condition.
+<p>
+
+<p>
+Evaluation of conditional expressions may be impacted by the language specification. Some programming languages implement conditionally evaluated logical operators (also called short-circuit evaluation). This makes these operators non-strict and closer to if-statements than the mathematical definition of the logical operators. Some other programming languages are strict in the definition of the logical operators, which means they evaluate all the operands and then apply the logical operation. C and C++ use short-circuit evaluation which means an expression like <code>e1 &amp;&amp; e2</code> will only evaluate <code>e2</code> if <code>e1</code> is true. Similarly in an expression like <code>e1 || e2</code>, <code>e2</code> is evaluated only if <code>e1</code> is false (having to use "if" in the definition of these operators is what makes them "conditionally evaluated"). This means that in practice a C/C++ code like the following
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">e1</span> <span class="o">&amp;&amp;</span> <span class="n">e2</span><span class="p">)</span>
+  <span class="n">S1</span><span class="p">;</span>
+<span class="k">else</span>
+  <span class="n">S2</span></code></pre></figure>
+
+
+<p>
+is implemented like
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">e1</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">e2</span><span class="p">)</span>
+    <span class="n">S1</span>
+  <span class="k">else</span>
+    <span class="n">S2</span>  
+<span class="p">}</span>
+<span class="k">else</span>
+  <span class="n">S2</span></code></pre></figure>
+
+
+<p>
+of course doing exactly the above would be ridiculous, so in practice looks more like this (in C/C++ again, though not very nice).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">e1</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">e2</span><span class="p">)</span>
+     <span class="n">S1</span>
+  <span class="k">else</span>
+     <span class="k">goto</span> <span class="n">else_block</span><span class="o">:</span>
+<span class="p">}</span>
+<span class="k">else</span>
+<span class="p">{</span>
+   <span class="nl">else_block:</span>
+      <span class="n">S2</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+We can simplify this further to make it closer to assembly (I'm adding a few redundant C/C++ labels below for clarity)
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="nl">if_start:</span>
+  <span class="n">check_e1</span><span class="o">:</span> <span class="k">if</span> <span class="p">(</span><span class="n">e1</span><span class="p">)</span> <span class="k">goto</span> <span class="n">check_e2</span>
+  <span class="k">goto</span> <span class="n">else_block</span><span class="p">;</span>
+  <span class="n">check_e2</span><span class="o">:</span> <span class="k">if</span> <span class="p">(</span><span class="n">e2</span><span class="p">)</span> <span class="k">goto</span> <span class="n">then_block</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">else_block</span><span class="p">;</span>
+<span class="n">then_block</span><span class="o">:</span>
+  <span class="n">S1</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">if_end</span><span class="p">;</span>
+<span class="n">else_block</span><span class="o">:</span>
+  <span class="n">S2</span><span class="p">;</span>
+<span class="n">if_end</span><span class="o">:</span></code></pre></figure>
+
+
+<p>
+Do we always have to implement C/C++ logical operations like this? Not really, only if we're unsure that unconditionally evaluating the second operand may be different than conditionally evaluating it. For instance a case like
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">a</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="k">if</span> <span class="p">((</span><span class="mi">5</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">a</span> <span class="o">&lt;</span> <span class="mi">25</span><span class="p">))</span>
+<span class="p">{</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+it won't harm to evaluate both operands so we can avoid a few branches and actually evaluate it as if the code had been (note a single <code>&amp;</code> which means bitwise operation that always evaluates the two operands).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">((</span><span class="mi">5</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">a</span> <span class="o">&lt;</span> <span class="mi">25</span><span class="p">))</span>
+<span class="p">{</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+but in a case like
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="mi">10</span> <span class="o">/</span> <span class="n">p</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">))</span>
+<span class="p">{</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+We don't really want to evaluate <code>((10 / p) &gt; 5)</code> when <code>p == 0</code>. The same strategy is used for <code>||</code> in which sometimes we can evaluate it as <code>|</code>.
+</p>
+
+<p>
+The following table shows some examples. Take these as suggestions, cleverer sequences can be used in some circumstances.
+</p>
+
+<table>
+
+<thead>
+<tr>
+<th>Condition to evaluate (C/C++)</th>
+<th>Instruction sequence</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>e1&nbsp;&lt;&nbsp;e2</code></td>
+<td><p>Direct translation</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e1, e2
+b.lt true_case
+   </code></pre></figure>
+
+   <p>If we want to evaluate <code>!(e1 &lt; e2)</code>.
+   <small>This is the same as <code>e1 &gt;= e2</code> when <code>false_case</code> is the <code>true_case</code>.</small>
+   </p>   
+   
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e1, e2
+b.ge false_case
+   </code></pre></figure>
+
+   <p>If we can reverse the operands <code>e2 &gt; e1</code></p>   
+   
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e2, e1
+b.gt true_case</code></pre></figure>
+
+<p>If we can reverse the operands <code>!(e2 &gt; e1)</code>.
+<small>This is the same as <code>e1 &lt;= e2</code> when <code>false_case</code> is the <code>true_case</code>.</small>
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e2, e1
+b.le false_case</code></pre></figure>
+
+<p>
+&lt;/td&gt;
+&lt;/tr&gt;
+
+<tr>
+<td><code>e1&nbsp;&amp;&amp;&nbsp;e2</code></td>
+<td>
+<p>Direct translation</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e1, #0
+b.ne check_e2
+check_e2:
+  cmp e2, #0
+  b.ne false_case
+true_case:
+  ...</code></pre></figure>
+
+<p>Without short-cut evaluation (i.e. <code>e1 &amp; e2</code>)</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">tst e1, e2       // update flags with the
+                 // result of bitwise-and(e1, e2)
+b.eq false_case
+true_case:
+   ...</code></pre></figure>
+
+<p>The <code>tst</code> instruction computes the bitwise and of the two register operands, updates the condition flags based on the result of that operation. The result itself, though, is discarded.
+</p>
+</td>
+</tr>
+
+<tr>
+<td><code>e1&nbsp;||&nbsp;e2</code></td>
+<td>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e1, #0
+b.eq check_e2
+check_e2:
+  cmp e2, #0
+  b.eq false_case
+true_case:
+  ...</code></pre></figure>
+
+
+<p>
+<p>Without short-cut evaluation (i.e. <code>e1 | e2</code>)</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">orr x1, e1, e2 // x1 = bitwise-or(e1, e2)
+cmp x1, #0
+b.eq false_case:
+true_case:
+  ...</code></pre></figure>
+
+&lt;/td&gt;
+&lt;/tr&gt;
+
+
+<tr>
+<td>
+<code>!e</code>
+</td>
+<td>
+<p>For the less common case when <code>e</code> is already a boolean, just compare it with 0.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e1, #0
+b.ne false_case
+true_case:
+  ...</code></pre></figure>
+
+<p>
+But usually <code>!</code> can be implemented by just evaluating the opposite condition. For instance <code>!(e1 &lt; e2)</code> can be evaluated as <code>e1 &gt;= e2</code>.
+</p>
+<p>
+In some other cases like !(e1 &amp;&amp; e2) we can use De Morgan rules to evaluate it like <code>!e1 || !e2</code>. This is mostly useful for cases like <code>!((e11 &lt; e12) &amp;&amp; (e21 &lt; e22))</code> where propagating the ! inside the expression is beneficial as this just becomes <code>(e11 &gt;= e12) || (e21 &gt;= e22)</code>
+<tr>
+
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+
+<h2>Conditional assignment</h2>
+
+<p>
+A common idiom, in C/C++ is the following
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+In Fortran there is a shorthand syntax for this case
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">A</span><span class="p">)</span><span class="w"> </span><span class="n">X</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">E</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Or more generally, in C/C++
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">if</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="n">e1</span><span class="p">;</span>
+<span class="k">else</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="n">e2</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Which in C/C++ can be written more compactly as
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">x</span> <span class="o">=</span> <span class="n">a</span> <span class="o">?</span> <span class="n">e1</span> <span class="o">:</span> <span class="n">e2</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+In many circumstances <code>e1</code> and <code>e2</code> are such that it is correct to rewrite the general case as
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">x</span> <span class="o">=</span> <span class="n">e2</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="n">e1</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+or the opposite form
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">x</span> <span class="o">=</span> <span class="n">e1</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">a</span><span class="p">)</span>
+  <span class="n">x</span> <span class="o">=</span> <span class="n">e2</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+If we can write the code in one of the two forms above, and given that this case is relatively common, AArch64 has specific support for it.
+</p>
+
+<p>
+The instruction <code>csel rdest, rsource1, rsource2, cond</code> sets the value of the destination register <code>rdest</code> to <code>rsource1</code> if the condition <code>cond</code> is true, otherwise it is set to <code>rsource2</code>. <code>csel</code> stands for conditional selection/
+<p>
+
+<p>
+For instance, a typical <code>max</code> operation looks like this in C.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">m</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="o">?</span> <span class="n">a</span> <span class="o">:</span> <span class="n">b</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+with csel we can implement the code above as
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp x0, x1           // compare x0 and x1
+csel x2, x0, x1, gt  // x2 ← if x0 &gt; x1 
+                     //      then       x0 
+                     //      otherwise  x1</code></pre></figure>
+
+
+<p>
+which is handy because it avoids a branch.
+</p>
+
+<h2>Loop constructs</h2>
+
+<p>
+To implement a loop construct of the form
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">while</span> <span class="p">(</span><span class="n">E</span><span class="p">)</span>
+  <span class="n">S</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+we can do
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="nl">loop_check:</span> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">E</span><span class="p">)</span> <span class="k">goto</span> <span class="n">loop_end</span><span class="p">;</span>
+  <span class="n">S</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">loop_check</span><span class="p">;</span>
+<span class="n">loop_end</span><span class="o">:</span></code></pre></figure>
+
+
+<p>
+Usually inverting the flow is a bit better
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="nl">loop_start:</span> <span class="k">goto</span> <span class="n">loop_check</span><span class="p">;</span>
+<span class="n">loop_body</span><span class="o">:</span>
+  <span class="n">S</span><span class="p">;</span>
+<span class="n">loop_check</span><span class="o">:</span> <span class="k">if</span> <span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="k">goto</span> <span class="n">loop_body</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+This has the added benefit that if we remove the initial branch to <code>loop_check</code>, this is the equivalent to the C <code>do-while</code> loop or the Pascal <code>repeat-until</code>.
+</p>
+
+<p>
+While we can use regular branches and comparison instructions to implement loops, AArch64 provides a couple of specialized instructions for some common circumstances: <code>cbnz</code> and <code>cbz</code>. They conditionally branch to some label if a given register is non-zero or zero respectively. This is useful for loops like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">i</span> <span class="o">=</span> <span class="p">...;</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">{</span>
+ <span class="n">S</span><span class="p">;</span>
+ <span class="n">i</span><span class="o">--</span><span class="p">;</span>
+<span class="p">}</span> </code></pre></figure>
+
+
+<p>
+because we can now implement them as
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">                     // Assume "i" is in x0
+b loop_check
+loop_body:
+  S
+  sub x0, x0, #1     // x0 ← x0 - 1
+loop_check:
+  cbnz x0, loop_body // branch to loop_body if x0 != 0</code></pre></figure>
+
+
+<p>
+Similarly for <code>cbz</code>. That said, for this particular example it is possible to use subs instruction that acts like <code>sub</code> but also updates the condition flags. So we can write
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">// Assume "i" is in x0
+add x0, x0, #1     // We need to compensate the subs below
+b loop_check
+loop_body:
+  S
+loop_check:
+  subs x0, x0, #1  // x0 ← x0 - 1 and update condition flags
+  b.ne loop_body   // branch to loop_body if x0 != 0</code></pre></figure>
+
+
+<p>
+So <code>cbnz</code> and <code>cbz</code> can be more useful when a register being zero is a condition and its computation cannot update the flags (or doing that would require adding an extra <code>cmp</code>). We have not seen pointers yet, but a common scenario is traversing a linked list ended by a null pointer.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">singly_linked_list</span> <span class="p">{</span>
+  <span class="k">struct</span> <span class="nc">singly_linked_list</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">some_data</span><span class="p">;</span>
+<span class="p">}</span> <span class="o">*</span><span class="n">list</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="n">it</span> <span class="o">=</span> <span class="n">list</span><span class="p">;</span>
+<span class="k">while</span> <span class="p">(</span><span class="n">it</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">it</span><span class="o">-&gt;</span><span class="n">some_data</span><span class="o">++</span><span class="p">;</span>
+  <span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Because a null pointer is represented usually with all zeros after <code>it = it-&gt;next</code> we can use <code>cbnzr</code> without having to do <code>cmp</code> + <code>b.ne</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">// Assume x0 is "list" and x1 is "it"
+mov x1, x0
+b loop_check:
+loop_body:
+  ldr w2, [x1, #8]    // w2 ← *(x1 + 8) [32-bit load]
+                      // this loads it-&gt;some_data into w2
+  add w2, w2, #1      // w2 ← w2 + 1
+  str w2, [x1, #8]    // *(x1 + 8) ← w2 [32-bit store]
+                      // this updates it-&gt;some_data
+  ldr x1, [x1]        // x1 ← *x1
+                      // this loads it-&gt;next into x1
+loop_check:
+  cbnz x1, loop_body  // branch to loop_body if x1 != NULL
+loop_end:</code></pre></figure>
+
+
+<h2>Fibonacci (using a loop)</h2>
+
+<p>
+In chapter 8 we made a function that recursively computed the Fibonacci numbers. Today we are going to see how to compute them using a loop. We will reuse the same main function and only change the <code>fibonacci</code> function itself.
+</p>
+
+<p>
+As a reminder of the fibonacci function is actually a sequence of numbers F<sub>i</sub> defined by the following recurrence:
+</p>
+<ul>
+<li>F<sub>0</sub> = 0</li>
+<li>F<sub>1</sub> = 1</li>
+<li>F<sub>n</sub> = F<sub>n-1</sub> + F<sub>n-2</sub>, where n &gt; 1</li>
+</ul>
+
+<p>
+To compute the current element we only need the previous two elements, we don't really need to strictly follow the mathematical definition doing a recursive function call, like we did in chapter 8. Results for <code>fibonacci(0)</code> and <code>fibonacci(1)</code> will be immediately solved, no need to loop. Any other fibonacci(n) can be computed by repeatedly computing <code>n - 1</code> previous Fibonacci numbers.
+</p>
+
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+</pre></td><td class="code"><pre>fibonacci:
+    // fibonacci(n) -&gt; result
+    //   n is 32-bit and will be passed in w0
+    //   result is 64-bit and will be returned in x0
+    mov w3, w0          // w3 ← w0
+    cmp w3, #1          // compare w3 and 1 and update the flags
+    b.le simple_case    // jump to simple_case if w3 &lt;= 1
+    sub w3, w3, #1      // w3 ← w3 - 1
+    mov x1, #0          // x1 ← 0
+    mov x2, #1          // x1 ← 1
+    b loop_check        // branch to loop_check
+loop_body:
+    add x0, x1, x2      // x0 ← x1 + x2
+    mov x1, x2          // x1 ← x2
+    mov x2, x0          // x2 ← x0
+    sub w3, w3, #1      // w3 ← w3 - 1
+loop_check:
+    cbnz w3, loop_body  // branch to loop_body if w3 != 0
+
+    b fibonacci_end     // branch to fibonacci_end
+simple_case:
+    sxtw x0, w0         // x0 ← ExtendSigned32To64(w0)
+
+fibonacci_end:
+    ret
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+As in the recursive version of this function, cases 0 and 1 are handled specially. We first keep w0 into w3, line 65, and then we compare w3 with 1, line 66. If the flags are such that <code>w3 &le; 1</code> then we branch to the <code>simple_case</code> which the only thing it does is extending <code>w0</code> into <code>x0</code>, line 82. If the fibonacci number to compute is not 0 or 1, then we have to compute the <code>n - 1</code> earlier ones. So we have to decrease <code>w3</code> by 1, line 68. In register <code>x1</code> we will have <code>fibonacci(n-2)</code> and in x2 we will have fibonacci(n-1). The two initially known ones are 0 and 1 respectively (this is, for <code>fibonacci(2)</code>), lines 69-70.
+</p>
+<p>
+Now everything is set for the loop, so we jump to the check, line 71. The loop check uses <code>cbnz</code> with <code>w3</code>, line 78. Once <code>w3</code> becomes zero means that we do not have to compute any other fibonacci number, so cbnz will branch back to <code>loop_body</code> only when <code>w3</code> is not 0.
+</p>
+
+<p>
+The loop body simply computes the current fibonacci by adding <code>x1</code> and <code>x2</code> (recall, x1 is <code>fibonacci(n-2)</code> and x2 is <code>fibonacci(n-1)</code>) and leaving the result in <code>x0</code>, line 73. Now we need to prepare the next iteration of the loop: <code>x2</code> (which is <code>fibonacci(n-1)</code>) will be <code>fibonacci(n-2)</code> in the next iteration, so we put it in <code>x1</code>, line 74. Similarly, <code>x0</code> (which is <code>fibonacci(n)</code>) will be <code>fibonacci(n-1)</code> in the next iteration, so we put it <code>x2</code>, line 75.
+</p>
+
+<p>
+At this point one fibonacci number has been computed, so one less to compute. So we decrease <code>w3</code> by one, line 76. Now the loop_check is executed which will iterate if needed. Once we leave the loop, we still need to skip the <code>simple_case</code>, line 80.
+</p>
+
+
+<p>
+To test this, just take the code in chapter 8 and replace the recursive function with the iterative function.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ ./fibo 
+Please type a number: 12↴
+Fibonacci number 12 is 144
+$ ./fibo 
+Please type a number: 25↴
+Fibonacci number 25 is 75025
+$ ./fibo 
+Please type a number: 40↴
+Fibonacci number 40 is 102334155</code></pre></figure>
+
+
+<p>
+Yay! :)
+</p>
+
+<p>
+This is all for today.
+</p>
+</p></p></tr></p></td></tr></p></td></tr></p></td></tr></tbody></table></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/10/07/walk-through-flang-part-5/">&laquo; Walk-through flang – Part 5</a>
+
+
+  <a class="next" href="/2017/11/19/simple-memory-pool/">A very simple memory pool in C++11 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

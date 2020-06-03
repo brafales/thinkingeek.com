@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A simple plugin for GCC – Part 2</title>
+  <meta name="description" content="In the last post we set up everything in order to write a GCC plugin. Before we can go on we need to understand a bit how GCC compiles your files.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/08/16/simple-plugin-gcc-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A simple plugin for GCC – Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/08/16/simple-plugin-gcc-part-2/">
+  <meta property="og:description" content="In the last post we set up everything in order to write a GCC plugin. Before we can go on we need to understand a bit how GCC compiles your files.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A simple plugin for GCC – Part 2">
+  <meta name="twitter:description" content="In the last post we set up everything in order to write a GCC plugin. Before we can go on we need to understand a bit how GCC compiles your files.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A simple plugin for GCC – Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2015-08-16T20:07:37+00:00" itemprop="datePublished">Aug 16, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the last post we set up everything in order to write a GCC plugin. Before we can go on we need to understand a bit how GCC compiles your files.
+</p>
+<!--more-->
+
+<h2>How to compile a file</h2>
+
+<p>
+For a lot of people, compilers are a bit like operating systems: magical. But they do not have to be!
+</p>
+<p>
+When you do <code>g++ -o my_program my_file.cc</code> to compile a file, there are lots of steps involved in order to end with a <code>my_program</code> that you can run:
+
+<ul>
+	<li>The <em>compiler</em> parses your C++ file <code>my_file.cc</code> and emits assembler code, usually in a temporary file</li>
+        <li>The <em>assembler</em> takes the assembler code and generates an object code file (a <code>.o</code> or <code>.obj</code> file)</li>
+	<li>The <em>linker</em> takes all object code files and puts them all together to generate an executable file <code>my_program</code> that you can run</li>
+</ul>
+
+<p>
+All these steps are performed by a tool that knows everything about the compilation process called the <em>driver</em>. In our case the driver is <code>g++</code>.
+</p>
+
+<p>
+<code>g++</code> invokes internally the compiler. The C++ compiler is called, for historical reasons, <code>cc1</code>. You can retrieve the path of the actual C++ compiler by calling <code>g++ -print-prog-name=cc1</code>. The compiler parses the code, optimizes it and then emits assembler code. This assembler is then linked using your system assembler (usually <a href="https://sourceware.org/binutils/docs/as/">GNU as</a>). This generates an object code file (a file ended in <code>.o</code> or <code>.obj</code>). These files are finally gathered by the linker (usually <a href="https://sourceware.org/binutils/docs/ld/Overview.html#Overview">GNU ld</a>) to generate an executable (or a shared library in the case of our plugin).
+</p>
+
+<p>
+When writing plugins we are interested only about the compiler itself. What does exactly the compiler do?
+</p>
+<ul>
+	<li>Parse the code and verify that is valid according to the rules of the source language, in our case C++</li>
+        <li>Represent the input code in a more abstract way but respecting the semantics of the source language</li>
+        <li>Analyze (and reason) about that representation in order to transform it (preserving the semantics) into a better version of it, this is commonly called <em>code optimization</em> although a more appropiate name would be <em>code improvement</em></li>
+        <li>Once the representation is considered optimized enough, emit assembler code from it</li>
+</ul>
+
+<h3>Intermediate representation</h3>
+
+<p>
+The representation used by a compiler is commonly called the <em>intermediate representation</em> and is an abstract way of representing the program that is amenable for analysis and optimizations.
+</p>
+
+<p>
+The process of compilation is at its core a process of <em>lowering</em>. It starts from a very high level representation (the source code) with very high level semantics (i.e. meaning) in their syntax. The compiler progressively lowers the level of the language, by translating and materializing the high level concepts to lower level concepts. Finally, the lowest level is represented by the assembler code which is just a very thin syntactic layer on top of machine code.
+</p>
+
+<p>
+Most compilers do not use a single representation for the compilation process (and even if they do at the level of the representation in memory) it is progressively lowered as well. GCC uses two main intermediate representations called GIMPLE and RTL. GIMPLE is used for language independent optimizations and RTL for platform-specific optimization and code-generation. In addition to these two intermediate representations, the front end (the part of the compiler that directly handles the source code) may use other intermediate representations. For C and C++, the front ends use a representation called GENERIC. The front end of a programming language implemented in GCC can use any intermediate representation at early steps but then it has to lower it to GIMPLE. GIMPLE is supposed to be general enough to be able to accommodate the semantics of any programming language.
+</p>
+
+<h3>Passes of the compiler</h3>
+
+<p>
+The lowering process performed by a compiler is usually defined by passes (or phases). Each pass computes just one thing or transforms the code in some specific way. This way, if needed, passes can be executed as many times as needed. For instance, it is not unusual that a transformation phase breaks some invariant of the compiler during the transformation. A pass run right after the transformation pass can then be used to restore the invariant property.
+</p>
+
+<h3>The control flow graph</h3>
+
+<p>
+Most programming languages feature some form of control structures like <code>if</code>, <code>while</code>, <code>for</code>, etc. Working with them is a bit unwieldy and it is easier to abstract them away by using a structure called the <em>control flow graph</em>.
+</p>
+
+<p>
+A control flow graph is a graph where nodes, called <em>basic blocks</em>, represent sequences of code that run consecutively as a whole (i.e. the program flow cannot change inside a basic block). Basic blocks have edges connecting them according the the control flow. For instance, an <em>if-statement</em> will have three basic blocks: a first one that evaluates the <em>condition</em> and two more representing the <em>then</em> and the <em>else</em> cases. There are two outgoing edges from the <em>condition</em> basic block to the <em>then</em> and <em>else</em> blocks and two outgoing edges from the <em>then</em> and the <em>else</em> block to the basic block after the whole if-statement. Similarly, a loop will have an outgoing edge from the last block of the loop body to the condition block of the loop (these edges are called <em>latches</em>).
+</p>
+
+<h2>Let's draw the CFG</h2>
+
+<p>
+In order to make this post less abstract, let's modify our plugin so it prints the control flow graph using the <a href="http://www.graphviz.org/">Graphviz</a> syntax, a very simple language to draw graphs.
+</p>
+
+<p>
+First we need to change the initialization of our plugin so it registers a callback and a new pass.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">plugin_init</span><span class="p">(</span><span class="k">struct</span> <span class="nc">plugin_name_args</span> <span class="o">*</span><span class="n">plugin_info</span><span class="p">,</span>
+                <span class="k">struct</span> <span class="nc">plugin_gcc_version</span> <span class="o">*</span><span class="n">version</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">plugin_default_version_check</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">gcc_version</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"This GCC plugin is for version "</span> <span class="o">&lt;&lt;</span> <span class="n">GCCPLUGIN_VERSION_MAJOR</span>
+              <span class="o">&lt;&lt;</span> <span class="s">"."</span> <span class="o">&lt;&lt;</span> <span class="n">GCCPLUGIN_VERSION_MINOR</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">register_callback</span><span class="p">(</span><span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">base_name</span><span class="p">,</span>
+                    <span class="cm">/* event */</span> <span class="n">PLUGIN_INFO</span><span class="p">,</span>
+                    <span class="cm">/* callback */</span> <span class="nb">NULL</span><span class="p">,</span>
+                    <span class="cm">/* user_data */</span>
+                    <span class="o">&amp;</span><span class="n">my_gcc_plugin_info</span><span class="p">);</span>
+
+  <span class="c1">// Register the phase right after cfg</span>
+  <span class="k">struct</span> <span class="nc">register_pass_info</span> <span class="n">pass_info</span><span class="p">;</span>
+
+  <span class="n">pass_info</span><span class="p">.</span><span class="n">pass</span> <span class="o">=</span> <span class="k">new</span> <span class="n">my_first_pass</span><span class="p">(</span><span class="n">g</span><span class="p">);</span> <span class="c1">// "g" is a global gcc::context pointer</span>
+  <span class="n">pass_info</span><span class="p">.</span><span class="n">reference_pass_name</span> <span class="o">=</span> <span class="s">"cfg"</span><span class="p">;</span>
+  <span class="n">pass_info</span><span class="p">.</span><span class="n">ref_pass_instance_number</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="n">pass_info</span><span class="p">.</span><span class="n">pos_op</span> <span class="o">=</span> <span class="n">PASS_POS_INSERT_AFTER</span><span class="p">;</span>
+
+  <span class="n">register_callback</span><span class="p">(</span><span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">base_name</span><span class="p">,</span> <span class="n">PLUGIN_PASS_MANAGER_SETUP</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span>
+                    <span class="o">&amp;</span><span class="n">pass_info</span><span class="p">);</span>
+  <span class="n">register_callback</span><span class="p">(</span><span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">base_name</span><span class="p">,</span> <span class="n">PLUGIN_FINISH</span><span class="p">,</span> <span class="n">finish_gcc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+  <span class="n">start_graph</span><span class="p">();</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+In the code above, we start checking the GCC version and then we proceed to register a new pass to the GCC's plugin manager (line 141). The new pass is registered right after the <code>cfg</code> pass, which is the responsible of creating the control flow graph in GCC. Before this phase the CFG is not available. The pass is a class and we create an instance of it at this point (line 136), later we will see the definition of this class.
+</p>
+
+<p>
+We also register a callback that will be called when GCC ends (line 143) we need this to end the graph. We immediately initialize the graph (line 145). Functions <code>start_graph</code> and <code>finish_gcc</code> are defined as follows.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+</pre></td><td class="code"><pre><span class="k">namespace</span> <span class="p">{</span>
+
+<span class="kt">void</span> <span class="n">start_graph</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"digraph cfg {</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">end_graph</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"}</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">finish_gcc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">gcc_data</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">user_data</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">end_graph</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+The only thing these functions do is printing on the standard error the start and end of a directed graph (digraph) in the Graphviz language. Nothing fancy.
+</p>
+
+<p>
+A pass is represented as a class that inherits from a GCC class called <code>opt_pass</code>. Since our class will work on GIMPLE, it will inherit from <code>gimple_opt_pass</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">32
+33
+34
+35
+36
+37
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">my_first_pass</span> <span class="o">:</span> <span class="n">gimple_opt_pass</span>
+<span class="p">{</span>
+  <span class="n">my_first_pass</span><span class="p">(</span><span class="n">gcc</span><span class="o">::</span><span class="n">context</span> <span class="o">*</span> <span class="n">ctx</span><span class="p">)</span> <span class="o">:</span>
+    <span class="n">gimple_opt_pass</span><span class="p">(</span><span class="n">my_first_pass_data</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+  <span class="p">{</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+GCC is currently transitioning from C to C++. In order to not to break much of the existing code, there are some remnants and alternative ways to do the same things. It is expected that this will be progressively migrated to a more full-C++ approach. One of the elements that still retains this old structure is the <code>pass_data</code>, which defines some properties of the pass. We have to define it before the definition of our class, and pass it to the constructor of <code>gimple_opt_pass</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+</pre></td><td class="code"><pre><span class="k">namespace</span> <span class="p">{</span>
+<span class="k">const</span> <span class="n">pass_data</span> <span class="n">my_first_pass_data</span> <span class="o">=</span>
+<span class="p">{</span>
+  <span class="n">GIMPLE_PASS</span><span class="p">,</span>
+  <span class="s">"my_first_pass"</span><span class="p">,</span>	<span class="cm">/* name */</span>
+  <span class="n">OPTGROUP_NONE</span><span class="p">,</span>	<span class="cm">/* optinfo_flags */</span>
+  <span class="n">TV_NONE</span><span class="p">,</span>		<span class="cm">/* tv_id */</span>
+  <span class="n">PROP_gimple_any</span><span class="p">,</span>	<span class="cm">/* properties_required */</span>
+  <span class="mi">0</span><span class="p">,</span>			<span class="cm">/* properties_provided */</span>
+  <span class="mi">0</span><span class="p">,</span>			<span class="cm">/* properties_destroyed */</span>
+  <span class="mi">0</span><span class="p">,</span>			<span class="cm">/* todo_flags_start */</span>
+  <span class="mi">0</span>			<span class="cm">/* todo_flags_finish */</span>
+<span class="p">};</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Lots of these fields do not make sense now since they are very internal to the pass manager itself. For now we can leave as they are.
+</p>
+
+<p>
+The virtual method <code>execute</code> (line 49) of a pass will be called by GCC for each function being compiled. The function itself is received as a pointer of type <code>function</code>. At this point we can start emitting the control flow graph of the function in Graphviz syntax.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+</pre></td><td class="code"><pre>  <span class="k">virtual</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">execute</span><span class="p">(</span><span class="n">function</span> <span class="o">*</span> <span class="n">fun</span><span class="p">)</span> <span class="k">override</span>
+  <span class="p">{</span>
+    <span class="n">basic_block</span> <span class="n">bb</span><span class="p">;</span>
+
+    <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"subgraph fun_"</span> <span class="o">&lt;&lt;</span> <span class="n">fun</span> <span class="o">&lt;&lt;</span> <span class="s">" {</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+    <span class="n">FOR_ALL_BB_FN</span><span class="p">(</span><span class="n">bb</span><span class="p">,</span> <span class="n">fun</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">gimple_bb_info</span> <span class="o">*</span><span class="n">bb_info</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">bb</span><span class="o">-&gt;</span><span class="n">il</span><span class="p">.</span><span class="n">gimple</span><span class="p">;</span>
+
+      <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"bb_"</span> <span class="o">&lt;&lt;</span> <span class="n">fun</span> <span class="o">&lt;&lt;</span> <span class="s">"_"</span> <span class="o">&lt;&lt;</span> <span class="n">bb</span><span class="o">-&gt;</span><span class="n">index</span> <span class="o">&lt;&lt;</span> <span class="s">"[label=</span><span class="se">\"</span><span class="s">"</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">bb</span><span class="o">-&gt;</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"ENTRY: "</span>
+                  <span class="o">&lt;&lt;</span> <span class="n">function_name</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+                  <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">LOCATION_FILE</span><span class="p">(</span><span class="n">fun</span><span class="o">-&gt;</span><span class="n">function_start_locus</span><span class="p">)</span> <span class="o">?</span> <span class="o">:</span> <span class="s">"&lt;unknown&gt;"</span><span class="p">)</span>
+                  <span class="o">&lt;&lt;</span> <span class="s">":"</span> <span class="o">&lt;&lt;</span> <span class="n">LOCATION_LINE</span><span class="p">(</span><span class="n">fun</span><span class="o">-&gt;</span><span class="n">function_start_locus</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">bb</span><span class="o">-&gt;</span><span class="n">index</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"EXIT: "</span>
+                  <span class="o">&lt;&lt;</span> <span class="n">function_name</span><span class="p">(</span><span class="n">fun</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+                  <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">LOCATION_FILE</span><span class="p">(</span><span class="n">fun</span><span class="o">-&gt;</span><span class="n">function_end_locus</span><span class="p">)</span> <span class="o">?</span> <span class="o">:</span> <span class="s">"&lt;unknown&gt;"</span><span class="p">)</span> <span class="o">&lt;&lt;</span>
+                  <span class="s">":"</span> <span class="o">&lt;&lt;</span> <span class="n">LOCATION_LINE</span><span class="p">(</span><span class="n">fun</span><span class="o">-&gt;</span><span class="n">function_end_locus</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="n">print_gimple_seq</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="n">bb_info</span><span class="o">-&gt;</span><span class="n">seq</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\"</span><span class="s">];</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+      <span class="n">edge</span> <span class="n">e</span><span class="p">;</span>
+      <span class="n">edge_iterator</span> <span class="n">ei</span><span class="p">;</span>
+
+      <span class="n">FOR_EACH_EDGE</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">ei</span><span class="p">,</span> <span class="n">bb</span><span class="o">-&gt;</span><span class="n">succs</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">basic_block</span> <span class="n">dest</span> <span class="o">=</span> <span class="n">e</span><span class="o">-&gt;</span><span class="n">dest</span><span class="p">;</span>
+        <span class="n">std</span><span class="o">::</span>
+        <span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"bb_"</span> <span class="o">&lt;&lt;</span> <span class="n">fun</span> <span class="o">&lt;&lt;</span> <span class="s">"_"</span> <span class="o">&lt;&lt;</span> <span class="n">bb</span><span class="o">-&gt;</span><span class="n">index</span> <span class="o">&lt;&lt;</span> <span class="s">" -&gt; bb_"</span> <span class="o">&lt;&lt;</span> <span class="n">fun</span> <span class="o">&lt;&lt;</span>
+             <span class="s">"_"</span> <span class="o">&lt;&lt;</span> <span class="n">dest</span><span class="o">-&gt;</span><span class="n">index</span> <span class="o">&lt;&lt;</span> <span class="s">";</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"}</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+    <span class="c1">// Nothing special todo</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+For each function, we will emit a subgraph for it. In order to avoid name clashes, we will name the subgraph using the address of <code>fun</code> (e.g. we will emit things like <code>subgraph fun_0x1234 {</code>). Then we proceed to iterate each of the basic blocks of the function. GCC provides a handy macro for this called <code>FOR_ALL_BB_FN(bb, fun)</code> that will iterate for all the basic blocks <code>bb</code> of the function <code>fun</code> (line 45). Once we have the basic block we want its gimple basic block info <code>gimple_bb_info</code> (line 47).
+</p>
+
+<p>
+Each basic block in a function has an index starting from 0. There are two special basic blocks: 0 and 1. The basic block number 0 is the entry of the function and the basic block number 1 is the exit of the function. These basic blocks exist for every function (even if it is empty). They exist because they make the analysis much more regular: there is always a single entry and a single exit block for every function rather than several exits, or entries (the latter would be terrible!). These two basic blocks do not have code inside, so we handle them in a special way, clearly labeling them as <code>ENTRY</code> and <code>EXIT</code> respectively. We complete the label with the location of the beginning and exit of the function respectively (lines 50 to 63).
+</p>
+
+<p>
+All other blocks have their content simply dumped. GCC provides several debugging functions and here we just call <code>print_gimple_seq</code> because the code of a basic block is a gimple sequence (<code>gimple_seq</code>). Every element of a <code>gimple_seq</code> is a gimple statement (<code>gimple_stmt</code>) but we will not be handling them today. Gimple statements are printed in a pseudo-C syntax, so it is easy for the compiler writer to see what is going on (line 66).
+</p>
+
+<p>
+Basic blocks have outgoing and ingoing edges. In order to draw the graph it is enough to use the outgoing edges (or the ingoing edges, but not both unless we want repeated arrows). Similar to the iterator of basic blocks, there is a macro to iterate the edges of a basic block (line 63). We iterate the successors of the current basic block bb, <code>bb-&gt;succs</code>, and then we emit an edge from the current basic block to the target basic block. Two things to note here: the Graphviz syntax does not care if a node has not yet been defined when defining an edge (this is important when we have forward edges) and the names of the nodes are global to the graph, this is why our nodes (see lines 43 and 77) are of the form <code>bb_</code>&lt;&lt;fun&gt;&gt;<code>_</code>&lt;&lt;index&gt;&gt;.
+</p>
+
+<p>
+The pass class still needs another method, but we will give it a bogus implementation for now.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">88
+89
+90
+91
+92
+93
+94
+</pre></td><td class="code"><pre>  <span class="k">virtual</span> <span class="n">my_first_pass</span> <span class="o">*</span><span class="n">clone</span><span class="p">()</span> <span class="k">override</span>
+  <span class="p">{</span>
+    <span class="c1">// We do not clone ourselves</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="err">}</span><span class="p">;</span>
+<span class="err">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Finally, to complete the code, there are some required headers and declarations at the beginning of the file.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+</pre></td><td class="code"><pre><span class="cp">#include &lt;iostream&gt;
+</span>
+<span class="c1">// This is the first gcc header to be included</span>
+<span class="cp">#include "gcc-plugin.h"
+#include "plugin-version.h"
+</span>
+<span class="cp">#include "tree-pass.h"
+#include "context.h"
+#include "basic-block.h"
+#include "gimple-pretty-print.h"
+</span>
+<span class="c1">// We must assert that this plugin is GPL compatible</span>
+<span class="kt">int</span> <span class="n">plugin_is_GPL_compatible</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="k">struct</span> <span class="nc">plugin_info</span> <span class="n">my_gcc_plugin_info</span> <span class="o">=</span>
+<span class="p">{</span> <span class="s">"1.0"</span><span class="p">,</span> <span class="s">"This is a very simple plugin"</span> <span class="p">};</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<h3>Testing the plugin</h3>
+
+<p>
+Before we can test the plugin, we need to make sure the Graphviz package is installed in our system (in most Linux distributions the package is just called <code>graphviz</code>). We will be using the tool dot. Make sure you have it available.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>dot <span class="nt">-V</span>
+dot - graphviz version 2.38.0 <span class="o">(</span>20140413.2041<span class="o">)</span></code></pre></figure>
+
+
+<p>
+In order to ease testing, we will change the check rule of our Makefile into this. Note if your system lacks <code>xdg-open</code> or it does not work, call the appropiate PDF viewer (usually <code>evince</code> or <code>okular</code>).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="nl">check</span><span class="o">:</span> <span class="nf">warn_unused.so test.cc</span>
+	<span class="nv">$(CXX)</span> <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> test.cc <span class="nt">-o</span> /dev/null 2&gt; test.dot
+	dot <span class="nt">-Tpdf</span> test.dot <span class="o">&gt;</span> test.pdf
+	xdg-open test.pdf</code></pre></figure>
+
+
+<p>
+By changing <code>test.cc</code> we will generate a <code>test.pdf</code> containing a <em>forest</em> of control flow graphs, one for each function in the code. As an example, let's consider a very simplified version of the famous <a href="https://en.wikipedia.org/wiki/Fizz_buzz">Fizz buzz</a>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">fizz</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">buzz</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">fizzbuzz</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">print_number</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">);</span>
+
+<span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">bool</span> <span class="n">div_3</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="kt">bool</span> <span class="n">div_5</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">div_3</span> <span class="o">&amp;&amp;</span> <span class="n">div_5</span><span class="p">)</span>
+            <span class="n">fizzbuzz</span><span class="p">();</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">div_3</span><span class="p">)</span>
+            <span class="n">fizz</span><span class="p">();</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">div_5</span><span class="p">)</span>
+            <span class="n">buzz</span><span class="p">();</span>
+        <span class="k">else</span>
+            <span class="n">print_number</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Let's run <code>make check</code>
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>/some/path/gcc-install/bin/g++ <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> test.cc <span class="nt">-o</span> /dev/null 2&gt; test.dot
+dot <span class="nt">-Tpdf</span> test.dot <span class="o">&gt;</span> test.pdf
+xdg-open test.pdf</code></pre></figure>
+
+
+<p>
+You should see something like this:
+</p>
+
+<img src="/wp-content/uploads/2015/08/test.png" alt="test" width="549" height="982" class="aligncenter size-full wp-image-2122" />
+
+<p>
+You may want to try this fancier version (only the <code>test</code> function is shown below, the remainder of the source code is the same).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">bool</span> <span class="n">div_3</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="kt">bool</span> <span class="n">div_5</span> <span class="o">=</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="cp">#define BITMAP2(x, y) ((x) | ((y) &lt;&lt; 1))
+</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="n">BITMAP2</span><span class="p">(</span><span class="n">div_3</span><span class="p">,</span> <span class="n">div_5</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">case</span> <span class="n">BITMAP2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span> <span class="c1">// 3</span>
+                <span class="n">fizz</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">BITMAP2</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="c1">// 5</span>
+                <span class="n">buzz</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="n">BITMAP2</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span> <span class="c1">// 15</span>
+                <span class="n">fizzbuzz</span><span class="p">();</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="nl">default:</span>
+                <span class="n">print_number</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+        <span class="p">}</span>
+
+<span class="cp">#undef BITMAP2
+</span>    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+You should something like this
+</p>
+
+<img src="/wp-content/uploads/2015/08/test1.png" alt="test" width="1113" height="808" class="aligncenter size-full wp-image-2124" />
+
+<h3>Next steps</h3>
+
+<p>
+Now it is a great moment to test with different codes and get familiar with the shapes of the CFG. Next time we will address our original intent of writing a GCC plugin: emitting a diagnostic for unused result of functions returning class types with trivial destructors.
+</p>
+
+<p>
+You can find the supporting code for this post <a href="https://github.com/rofirrim/gcc-plugins/tree/master/blog_02">here</a>. Make sure you fix the <code>GCCDIR</code> variable in the <code>Makefile</code>.
+</p>
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/08/16/a-simple-plugin-for-gcc-part-1/">&laquo; A simple plugin for GCC – Part 1</a>
+
+
+  <a class="next" href="/2015/08/17/simple-plugin-gcc-part-3/">A simple plugin for GCC – Part 3 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

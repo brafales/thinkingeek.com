@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>ARM assembler in Raspberry Pi – Chapter 17</title>
+  <meta name="description" content="In chapter 10 we saw the basics to call a function. In this chapter we will cover more topics related to functions.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2013/11/20/arm-assembler-raspberry-pi-chapter-17/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="ARM assembler in Raspberry Pi – Chapter 17">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2013/11/20/arm-assembler-raspberry-pi-chapter-17/">
+  <meta property="og:description" content="In chapter 10 we saw the basics to call a function. In this chapter we will cover more topics related to functions.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="ARM assembler in Raspberry Pi – Chapter 17">
+  <meta name="twitter:description" content="In chapter 10 we saw the basics to call a function. In this chapter we will cover more topics related to functions.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">ARM assembler in Raspberry Pi – Chapter 17</h1>
+    
+    <p class="post-meta"><time datetime="2013-11-20T21:53:19+00:00" itemprop="datePublished">Nov 20, 2013</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/raspberry-pi/">Raspberry Pi</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In chapter 10 we saw the basics to call a function. In this chapter we will cover more topics related to functions.</p>
+
+<!--more-->
+
+<h2>Passing data to functions</h2>
+
+<p>We already know how to call a function and pass them parameters. We also know how to return data from a function. Nevertheless, there are some issues which we have not fully solved yet.</p>
+
+<ul>
+    <li>Passing large amounts of data</li>
+    <li>Returning more than one piece of data</li>
+</ul>
+
+<p>There are several ways to tackle this problem, but most of them involve pointers. Pointers are dreaded by many people, who do not fully understand them, but they are a crucial part in the way computers work. That said, most of the troubles with pointers are actually related to <em>dynamic memory</em> rather than the pointers themselves. We will not consider dynamic memory here.</p>
+
+<h2>So what is a pointer?</h2>
+
+<p>A pointer is some location in the memory the contents of which are simply an address of the memory.</p>
+
+<p>This definition may be confusing, but we have already been using pointers in previous chapters. It is just that we did not name them this way. We usually talked about <em>addresses</em> and/or labels in the assembler. Consider this very simple program:</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* first_pointer.s */
+
+.data
+
+.align 4
+number_1  : .word 3
+
+.text
+.globl main
+
+main:
+    ldr r0, pointer_to_number    /* r0 ← &amp;number */
+    ldr r0, [r0]                 /* r0 ← *r0. So r0 ← number_1 */
+
+    bx lr
+
+pointer_to_number: .word number_1</code></pre></figure>
+
+<p>As you can see, I deliberatedly used the name <code>pointer_to_number</code> to express the fact that this location in memory is actually a pointer. It is a pointer to <code>number_1</code> because it holds its address.</p>
+
+<p>Imagine we add another number, let’s call it <code>number_2</code> and want <code>pointer_to_number</code> to be able to point to <code>number_2</code>, this is, contain the address of <code>number_2</code> as well. Let’s make a first attempt.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">.data
+
+.align 4
+number_1  : .word 3
+number_2  : .word 4
+
+.text
+.globl main
+
+main:
+    ldr r1, address_of_number_2  /* r1 ← &amp;number_2 */
+    str r1, pointer_to_number    /* pointer_to_number ← r1, this is pointer_to_number ← &amp;number_2 */
+
+    bx lr
+
+pointer_to_number: .word number_1
+address_of_number_2: .word number_2</code></pre></figure>
+
+<p>But if you run this you will get a rude <code>Segmentation fault</code>. We cannot actually modify <code>pointer_to_number</code> because, even if it is a location of memory that contains an address (and it would contain another address after the store) it is not in the <code>data</code> section, but in the <code>text</code> section. So this is a statically defined pointer, whose value (i.e. the address it contains) cannot change. So, how can we have a pointer that can change? Well, we will have to put it in the <code>data</code> section, where we usually put all the data of our program.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+</pre></td><td class="code"><pre>.data
+.align 4
+number_1  : .word 3
+number_2  : .word 4
+pointer_to_number: .word 0
+
+.text
+.globl main
+
+
+main:
+    ldr r0, addr_of_pointer_to_number
+                             /* r0 ← &amp;pointer_to_number */
+
+    ldr r1, addr_of_number_2 /* r1 ← &amp;number_2 */
+
+    str r1, [r0]             /* *r0 ← r1.
+                                This is actually
+                                  pointer_to_number ← &amp;number_2 */
+
+    ldr r1, [r0]             /* r1 ← *r0.
+                                This is actually
+                                  r1 ← pointer_to_number
+                                Since pointer_to_number has the value &amp;number_2
+                                then this is like
+                                  r1 ← &amp;number_2
+                             */
+
+
+    ldr r0, [r1]             /* r0 ← *r1
+                                Since r1 had as value &amp;number_2
+                                then this is like
+                                   r0 ← number_2
+                             */
+
+    bx lr
+
+addr_of_number_1: .word number_1
+addr_of_number_2: .word number_2
+addr_of_pointer_to_number: .word pointer_to_number
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>From this last example several things should be clear. We have static pointers to <code>number_1</code>, <code>number_2</code> and <code>pointer_to_number</code> (respectively called <code>addr_of_number_1</code>, <code>addr_of_number_2</code> and <code>addr_of_pointer_to_number</code>). Note that <code>addr_of_pointer_to_number</code> is actually a pointer to a pointer! Why these pointers are statically defined? Well, we can name locations of memory (i.e. addresses) using labels (this way we do not have to really know the exact address and at the same time we can use a descriptive name). These locations of memory, named through labels, will never change during the execution of the program so they are somehow predefined before the program starts. This why the addresses of <code>number_1</code>, <code>number_2</code> and <code>addr_of_pointer_to_number</code> are statically defined and stored in a part of the program that cannot change (the <code>.text</code> section cannot be modified when the program runs).</p>
+
+<p>This means that accessing to <code>pointer_to_number</code> using <code>addr_of_pointer_to_number</code> involves using a pointer to a pointer. Nothing fancy here, a pointer to a pointer is just a location of memory that contains the address of another location of memory that we know is a pointer too.</p>
+
+<p>The program simply loads the value 4, stored in <code>number_2</code> using <code>pointer_to_number</code>. We first load the address of the pointer (this is, the pointer to the pointer, but the <em>address of the pointer</em> may be clearer) into <code>r0</code> in line 13. Then we do the same with the address of <code>number_2</code>, storing it in <code>r1</code>, line 16. Then in line 18 we update the value <code>pointer_to_number</code> (remember, the value of a pointer will always be an address) with the address of <code>number_2</code>. In line 22 we actually get the value of <code>pointer_to_number</code> loading it into <code>r1</code>. I insist again: the value of <code>pointer_to_number</code> is an address, so now r1 contains an address. This is the reason why in line 31 we load into <code>r0</code> the value of the in <code>r1</code>.</p>
+
+<h2>Passing large amounts of data</h2>
+
+<p>When we pass data to functions we follow the conventions defined in the AAPCS. We try to fill the first 4 registers r0 to r3. If more data is expected we must use the stack. This means that if we were to pass a big chunk of data to a function we may end spending a lot of time just preparing the call (setting registers r0 to r3 and then pushing all the data on top of the stack, and remember, in reverse order!) than running the code of the function itself.</p>
+
+<p>There are several cases when this situation arises. In a language like C, all parameters are passed by value. This means that the function receives a copy of the value. This way the function may freely modify this value and the caller will not see any changes in it. This may seem inefficient but from a productivity point of view, a function that does not cause any side effect to its inputs may be regarded as easier to understand than one that does.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">A</span>
+<span class="p">{</span> 
+  <span class="c1">// big structure</span>
+<span class="p">};</span>
+
+<span class="c1">// This function computes a 'thing_t' using a 'struct A'</span>
+<span class="n">thing_t</span> <span class="nf">compute_something</span><span class="p">(</span><span class="k">struct</span> <span class="n">A</span><span class="p">);</span>
+
+<span class="kt">void</span> <span class="nf">my_code</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">struct</span> <span class="n">A</span> <span class="n">a</span><span class="p">;</span>
+  <span class="n">thing_t</span> <span class="n">something</span><span class="p">;</span>
+
+  <span class="n">a</span> <span class="o">=</span> <span class="p">...;</span>
+  <span class="n">something</span> <span class="o">=</span> <span class="n">compute_something</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+  <span class="c1">// a is unchanged here!</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Note that in C, array types are not passed by value but this is by design: there are no array values in C although there are array types (you may need to repeat to yourself this last sentence several times before fully understanding it ;)</p>
+
+<p>If our function is going to modify the parameter and we do not want to see the changes after the call, there is little that we can do. We have to invest some time in the parameter passing.</p>
+
+<p>But what if our function does not actually modify the data? Or, what if we are interested in the changes the function did? Or even better, what if the parameter being modified is actually another output of the function?</p>
+
+<p>Well, all these scenarios involve pointers.</p>
+
+<h2>Passing a big array by value</h2>
+
+<p>Consider an array of 32-bit integers and we want to sum all the elements. Our array will be in memory, it is just a contiguous sequence of 32-bit integers. We want to pass, somehow, the array
+to the function (together with the length of the array if the length may not be constant), sum all the integers and return the sum. Note that in this case the function does not modify the array it just reads it.</p>
+
+<p>Let’s make a function <code>sum_array_value</code> that must have the array of integers passed by value. The first parameter, in <code>r0</code> will be the number of items of the integer array. Registers <code>r1</code> to <code>r3</code> may (or may not) have value depending on the number of items in the array. So the first three elements must be handled differently. Then, if there are still items left, they must be loaded from the stack.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+</pre></td><td class="code"><pre>sum_array_value : 
+    push {r4, r5, r6, r7, lr}
+
+    /* We have passed all the data by value */
+
+    /* r4 will hold the sum so far */
+    mov r4, #0      /* r4 ← 0 */
+    /* In r0 we have the number of items of the array */
+
+    cmp r0, #1            /* r0 - #1 and update cpsr */
+    blt .Lend_of_sum_array  /* if r0 &lt; 1 branch to end_of_sum_array */
+    add r4, r4, r1        /* add the first item */
+
+    cmp r0, #2            /* r0 - #2 and update cpsr */
+    blt .Lend_of_sum_array  /* if r0 &lt; 2 branch to end_of_sum_array */
+    add r4, r4, r2        /* add the second item */
+
+    cmp r0, #3            /* r0 - #3 and update cpsr */
+    blt .Lend_of_sum_array  /* if r0 &lt; 3 branch to end_of_sum_array */
+    add r4, r4, r3        /* add the third item */
+
+    /* 
+     The stack at this point looks like this
+       |                | (lower addresses)
+       |                |
+       | r4             |  ← sp points here
+       | r5             |  ← this is sp + 4
+       | r6             |  ← this is sp + 8
+       | r7             |  ← preserve 8 byte alignment, this is sp + 12
+       | lr             |  ← this is sp + 12
+       | big_array[3]   |  ← this is sp + 20 (we want r5 to point here)
+       | big_array[4]   |
+       |     ...        |
+       | big_array[255] |
+       |                | 
+       |                | (higher addresses)
+    
+    keep in r5 the address where the stack-passed portion of the array starts */
+    add r5, sp, #20 /* r5 ← sp + 20 */
+
+    /* in register r3 we will count how many items we have read
+       from the stack. */
+    mov r3, #0
+
+    /* in the stack there will always be 3 less items because
+       the first 3 were already passed in registers
+       (recall that r0 had how many items were in the array) */
+    sub r0, r0, #3
+
+    b .Lcheck_loop_sum_array
+    .Lloop_sum_array:
+      ldr r6, [r5, r3, LSL #2]       /* r6 ← *(r5 + r3 * 4) load
+                                        the array item r3 from the stack */
+      add r4, r4, r6                 /* r4 ← r4 + r6
+                                        accumulate in r4 */
+      add r3, r3, #1                 /* r3 ← r3 + 1 
+                                        move to the next item */
+    .Lcheck_loop_sum_array:
+      cmp r3, r0           /* r0 - r3 and update cpsr */
+      blt .Lloop_sum_array   /* if r3 &lt; r0  branch to loop_sum_array */
+
+  .Lend_of_sum_array:
+    mov r0, r4  /* r0 ← r4, to return the value of the sum */
+    pop {r4, r5, r6, r7, lr}
+
+    bx lr
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>The function is not particularly complex except for the special handling of the first 3 items (stored in <code>r1</code> to <code>r3</code>) and that we have to be careful when locating inside the stack the array. Upon entering the function the items of the array passed through the stack are laid out consecutively starting from <code>sp</code>. The <code>push</code> instruction at the beginning pushes onto the stack four registers (<code>r4</code>, <code>r5</code>, <code>r6</code> and <code>lr</code>) so our array is now in <code>sp + 16</code> (see lines 30 and 38). Besides of these details, we just loop the items of the array and accumulate the sum in the register <code>r4</code>. Finally, we move <code>r4</code> into <code>r0</code> for the return value of the function.</p>
+
+<p>In order to call this function we have to put an array into the stack. Consider the following program.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+</pre></td><td class="code"><pre>.data
+
+.align 4
+
+big_array :
+.word 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
+.word 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41
+.word 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61
+.word 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81
+.word 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100
+.word 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116
+.word 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132
+.word 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148
+.word 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164
+.word 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180
+.word 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196
+.word 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212
+.word 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228
+.word 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244
+.word 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+
+.align 4
+
+message: .asciz "The sum of 0 to 255 is %d\n"
+
+.text
+.globl main
+
+sum_array_value :
+   /* code shown above */
+
+main:
+    push {r4, r5, r6, r7, r8, lr}
+    /* we will not use r8 but we need to keep the function 8-byte aligned */
+
+    ldr r4, address_of_big_array
+
+    /* Prepare call */
+
+    mov r0, #256  /* Load in the first parameter the number of items 
+                     r0 ← 256
+                     */
+
+    ldr r1, [r4]     /* load in the second parameter the first item of the array */
+    ldr r2, [r4, #4] /* load in the third parameter the second item of the array */
+    ldr r3, [r4, #8] /* load in the fourth parameter the third item of the array */
+
+    /* before pushing anything in the stack keep its position */
+    mov r7, sp
+
+    /* We cannot use more registers, now we have to push them onto the stack
+       (in reverse order) */
+    mov r5, #255   /* r5 ← 255
+                      This is the last item position
+                      (note that the first would be in position 0) */
+
+    b .Lcheck_pass_parameter_loop
+    .Lpass_parameter_loop:
+
+      ldr r6, [r4, r5, LSL #2]  /* r6 ← *(r4 + r5 * 4).
+                                   loads the item in position r5 into r6. Note that
+                                   we have to multiply by 4 because this is the size
+                                   of each item in the array */
+      push {r6}                 /* push the loaded value to the stack */
+      sub r5, r5, #1            /* we are done with the current item,
+                                   go to the previous index of the array */
+    .Lcheck_pass_parameter_loop:
+      cmp r5, #2                /* compute r5 - #2 and update cpsr */
+      bne .Lpass_parameter_loop   /* if r5 != #2 branch to pass_parameter_loop */
+
+    /* We are done, we have passed all the values of the array,
+       now call the function */
+    bl sum_array_value
+
+    /* restore the stack position */
+    mov sp, r7
+
+    /* prepare the call to printf */
+    mov r1, r0                  /* second parameter, the sum itself */
+    ldr r0, address_of_message  /* first parameter, the message */
+    bl printf
+
+    pop {r4, r5, r6, r7, r8, lr}
+    bx lr
+
+address_of_big_array : .word big_array
+address_of_message : .word message
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>In line 40 we start preparing the call to <code>sum_array_value</code>. The first parameter, passed in register <code>r0</code>, is the number of items of this array (in the example hardcoded to 256 items). Then we pass the first three items of the array in registers <code>r1</code> to <code>r3</code>. Remaining items must be passed on the stack. Remember that in a stack the last item pushed will be the first popped, so if we want our array be laid in the same order we have to push it backwards. So we start from the last item, line 53, and then we load every item and push it onto the stack. Once all the elements have been pushed onto the stack we can call <code>sum_array_value</code> (line 73).</p>
+
+<p>An important caveat when manipulating the stack in this way is that it is very important to restore it and leave it in the same state as it was before preparing the call. This is the reason we keep <code>sp</code> in <code>r7</code> in line 49 and we restore it right after the call in line 76. Forgetting to do this will make further operations on the stack push data onto the wrong place or pop from the stack wrong data. Keeping the stack synched is essential when calling functions.</p>
+
+<h2>Passing a big array by reference</h2>
+
+<p>Now you are probably thinking that passing a big array through the stack (along with all the boilerplate that this requires) to a function that does not modify it, is, to say the least, wasteful.</p>
+
+<p>Note that, when the amount of data is small, registers r0 to r3 are usually enough, so pass by value is affordable. Passing some data in the stack is fine too, but passing big structures on the stack may harm the performance (especially if our function is being called lots of times).</p>
+
+<p>Can we do better? Yes. Instead of passing copies of the values of the array, would it be possible to pass the address to the array? The answer is, again, yes. This is the concept of <em>pass by reference</em>. When we pass by value, the value of the data passed is somehow copied (either in a register or a stack). Here we will pass a <em>reference</em> (i.e. an address) to the data. So now we are done by just passing the number of items and then the address of the array, and let the function use this address to perform its computation.</p>
+
+<p>Consider the following program, which also sums an array of integers but now passing the array by reference.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+</pre></td><td class="code"><pre>.data
+
+.align 4
+
+big_array :
+  /* Same as above */
+
+.align 4
+
+message: .asciz "The sum of 0 to 255 is %d\n"
+
+.text
+.globl main
+
+sum_array_ref :
+    /* Parameters: 
+           r0  Number of items
+           r1  Address of the array
+    */
+    push {r4, r5, r6, lr}
+
+    /* We have passed all the data by reference */
+
+    /* r4 will hold the sum so far */
+    mov r4, #0      /* r4 ← 0 */
+    mov r5, #0      /* r5 ← 0 */
+
+    b .Lcheck_loop_array_sum
+    .Lloop_array_sum:
+      ldr r6, [r1, r5, LSL #2]   /* r6 ← *(r1 + r5 * 4) */
+      add r4, r4, r6             /* r4 ← r4 + r6 */
+      add r5, r5, #1             /* r5 ← r5 + 1 */
+    .Lcheck_loop_array_sum:
+      cmp r5, r0                 /* r5 - r0 and update cpsr */
+      bne .Lloop_array_sum       /* if r5 != r0 go to .Lloop_array_sum */
+
+    mov r0, r4  /* r0 ← r4, to return the value of the sum */
+    pop {r4, r5, r6, lr}
+
+    bx lr
+
+
+main:
+    push {r4, lr}
+    /* we will not use r4 but we need to keep the function 8-byte aligned */
+
+    mov r0, #256
+    ldr r1, address_of_big_array
+
+    bl sum_array_ref
+
+    /* prepare the call to printf */
+    mov r1, r0                  /* second parameter, the sum itself */
+    ldr r0, address_of_message  /* first parameter, the message */
+    bl printf
+
+    pop {r4, lr}
+    bx lr
+
+address_of_big_array : .word big_array
+address_of_message : .word message
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Now the code is much simpler as we avoid copying the values of the array in the stack. We simply pass the address of the array as the second parameter of the function and
+then we use it to access the array and compute the sum. Much simpler, isn’t it?</p>
+
+<h2>Modifying data through pointers</h2>
+
+<p>We saw at the beginning of the post that we could modify data through pointers. If we pass a pointer to a function we can let the function modify it as well. Imagine a function that takes an integer and increments its. We could do this by returning the value, for instance.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">increment:
+    add r0, r0, #1  /* r0 ← r0 + 1 */</code></pre></figure>
+
+<p>This takes the first parameter (in <code>r0</code>) increments it and returns it (recall that we return integers in <code>r0</code>).</p>
+
+<p>An alternative approach, could be receiving a pointer to some data and let the function increment the data at the position defined by the pointer.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">increment_ptr:
+  ldr r1, [r0]      /* r1 ← *r0 */
+  add r1, r1, #1    /* r1 ← r1 + 1 */
+  str r1, [r0]      /* *r0 ← r1 */</code></pre></figure>
+
+<p>For a more elaborated example, let’s retake the array code but this time instead of computing the sum of all the values, we will multiply each item by two and keep it in the same array. To prove that we have modified it, we will also print each item.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+</pre></td><td class="code"><pre>/* double_array.s */
+
+.data
+
+.align 4
+big_array :
+ /* Same as above */
+
+.align 4
+message: .asciz "Item at position %d has value %d\n"
+
+.text
+.globl main
+
+double_array : 
+    /* Parameters: 
+           r0  Number of items
+           r1  Address of the array
+    */
+    push {r4, r5, r6, lr}
+
+    mov r4, #0      /* r4 ← 0 */
+
+    b .Lcheck_loop_array_double
+    .Lloop_array_double:
+      ldr r5, [r1, r4, LSL #2]   /* r5 ← *(r1 + r4 * 4) */
+      mov r5, r5, LSL #1         /* r5 ← r5 * 2 */
+      str r5, [r1, r4, LSL #2]   /* *(r1 + r4 * 4) ← r5 */
+      add r4, r4, #1             /* r4 ← r4 + 1 */
+    .Lcheck_loop_array_double:
+      cmp r4, r0                 /* r4 - r0 and update cpsr */
+      bne .Lloop_array_double    /* if r4 != r0 go to .Lloop_array_double */
+
+    pop {r4, r5, r6, lr}
+
+    bx lr
+    
+print_each_item:
+    push {r4, r5, r6, r7, r8, lr} /* r8 is unused */
+
+    mov r4, #0      /* r4 ← 0 */
+    mov r6, r0      /* r6 ← r0. Keep r0 because we will overwrite it */
+    mov r7, r1      /* r7 ← r1. Keep r1 because we will overwrite it */
+
+
+    b .Lcheck_loop_print_items
+    .Lloop_print_items:
+      ldr r5, [r7, r4, LSL #2]   /* r5 ← *(r7 + r4 * 4) */
+
+      /* Prepare the call to printf */
+      ldr r0, address_of_message /* first parameter of the call to printf below */
+      mov r1, r4      /* second parameter: item position */
+      mov r2, r5      /* third parameter: item value */
+      bl printf       /* call printf */
+
+      add r4, r4, #1             /* r4 ← r4 + 1 */
+    .Lcheck_loop_print_items:
+      cmp r4, r6                 /* r4 - r6 and update cpsr */
+      bne .Lloop_print_items       /* if r4 != r6 goto .Lloop_print_items */
+
+    pop {r4, r5, r6, r7, r8, lr}
+    bx lr
+
+main:
+    push {r4, lr}
+    /* we will not use r4 but we need to keep the function 8-byte aligned */
+
+    /* first call print_each_item */
+    mov r0, #256                   /* first_parameter: number of items */
+    ldr r1, address_of_big_array   /* second parameter: address of the array */
+    bl print_each_item             /* call to print_each_item */
+
+    /* call to double_array */
+    mov r0, #256                   /* first_parameter: number of items */
+    ldr r1, address_of_big_array   /* second parameter: address of the array */
+    bl double_array               /* call to double_array */
+
+    /* second call print_each_item */
+    mov r0, #256                   /* first_parameter: number of items */
+    ldr r1, address_of_big_array   /* second parameter: address of the array */
+    bl print_each_item             /* call to print_each_item */
+
+    pop {r4, lr}
+    bx lr
+
+address_of_big_array : .word big_array
+address_of_message : .word message
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>If you run this program you will see that the items of the array have been effectively doubled.</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">...
+Item at position 248 has value 248
+Item at position 249 has value 249
+Item at position 250 has value 250
+Item at position 251 has value 251
+Item at position 252 has value 252
+Item at position 253 has value 253
+Item at position 254 has value 254
+Item at position 255 has value 255
+Item at position 0 has value 0
+Item at position 1 has value 2
+Item at position 2 has value 4
+Item at position 3 has value 6
+Item at position 4 has value 8
+Item at position 5 has value 10
+Item at position 6 has value 12
+Item at position 7 has value 14
+Item at position 8 has value 16
+Item at position 9 has value 18
+...</code></pre></figure>
+
+<h2>Returning more than one piece of data</h2>
+
+<p>Functions, per the AAPCS convention, return their values in register <code>r0</code> (and <code>r1</code> if the returned item is 8 bytes long). We can return more than one thing if we just pass a pointer to some storage (possibly in the stack) as a parameter to the function. More on this topic in a next chapter.</p>
+
+<p>That’s all for today.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2013/11/15/create-temporary-zip-file-send-response-rails/">&laquo; Create a temporary zip file to send as response in Rails</a>
+
+
+  <a class="next" href="/2014/02/12/check-progress-mysql-database-import/">Check progress of a mysql database import &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

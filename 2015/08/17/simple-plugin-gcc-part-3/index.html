@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A simple plugin for GCC – Part 3</title>
+  <meta name="description" content="In the last chapter, we extended our plugin so it was possible to visualize the control flow graph of a function. In this chapter we will reach our goal to warn unused results of function calls.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/08/17/simple-plugin-gcc-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A simple plugin for GCC – Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/08/17/simple-plugin-gcc-part-3/">
+  <meta property="og:description" content="In the last chapter, we extended our plugin so it was possible to visualize the control flow graph of a function. In this chapter we will reach our goal to warn unused results of function calls.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A simple plugin for GCC – Part 3">
+  <meta name="twitter:description" content="In the last chapter, we extended our plugin so it was possible to visualize the control flow graph of a function. In this chapter we will reach our goal to warn unused results of function calls.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A simple plugin for GCC – Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2015-08-17T23:41:24+00:00" itemprop="datePublished">Aug 17, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the last chapter, we extended our plugin so it was possible to visualize the control flow graph of a function. In this chapter we will reach our goal to warn unused results of function calls.
+</p>
+<!--more-->
+
+<h2>GIMPLE</h2>
+
+<p>
+In the previous part, we saw that compilers may use several intermediate representations during the lowering process. Our pass is a GIMPLE pass so it uses GIMPLE as the intermediate representation. If you check the graphs in the previous part, you will see that there is code in the nodes of the graph: this code is represented using GIMPLE. GIMPLE is a simplified representation that, except for function calls, has at most three operands (actually it can have four operands because of a special case of the conditional operator, but nevermind). This means that a statement like <code>a = b * c + d;</code> becomes the sequence <code>T1 = b * c; a = T1 + d;</code>. If you check the control flow graph drawn, you will see that these temporaries in GCC are usually of the form <code>D.nnnn</code>, but their exact name is actually unimportant (as long as it is used correctly into the simplified code, of course).
+</p>
+
+<p>
+GIMPLE represents the program code using a set of <a href="https://gcc.gnu.org/onlinedocs/gccint/GIMPLE-instruction-set.html#GIMPLE-instruction-set">GIMPLE statements</a>. Each GIMPLE statement has a kind which denotes what it represent. Each kind of GIMPLE has a different number of operands. In this post will focus on two statements: <code>GIMPLE_ASSIGN</code> and <code>GIMPLE_CALL</code>.
+</p>
+<p>
+A statement of kind <code>GIMPLE_ASSIGNMENT</code> is used to represent statements like the following ones
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">a = b ⊕ c;
+a = b;</code></pre></figure>
+
+<p>
+Here <code>⊕</code> represents a binary operation like addition, subtraction, multiplication, etc. The second form <code>a = b;</code> corresponds to the copy of a value. The operands <code>b</code> and <code>c</code> are called the right hand side (RHS) of the assignment, while the operand <code>a</code> is called the left hand side (LHS) of the assignment.
+</p>
+
+<p>
+A statement of kind <code>GIMPLE_CALL</code> represent calls for two forms as well.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">a = F(x0, x1, ..., xN)
+F(x0, x1, ..., xN)</code></pre></figure>
+
+<p>
+Where <code>F</code> is something that can be called: the name of a function or a variable that denotes a pointer to function. The operand <code>a</code> is the left hand side of the call, and may be omitted for the cases where the result is unused. Operands <code>x0</code>, <code>x1</code>, ..., <code>xN</code> are the <em>arguments</em> of the function call. It is possible to have zero arguments in a call of the form <code>a = F()</code> or <code>F()</code>. In the second form, either the function does not return anything (i.e. is void in C/C++) or its value is unused.
+</p>
+
+<h2>Control flow graph of a call with unused results</h2>
+
+<p>
+Let's take again our phase from the previous chapter to draw the associated graph to the code we used to motivate this series of posts. Let me repeat it below.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="o">*</span><span class="n">addr</span><span class="p">;</span>
+<span class="p">};</span>
+ 
+<span class="n">A</span> <span class="nf">build_A</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+ 
+<span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">build_A</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Its associated CFG looks like this.
+</p>
+
+<p><img src="/wp-content/uploads/2015/08/cfg_test.png" alt="cfg_test" width="263" height="322" class="aligncenter size-full wp-image-2144" /></p>
+
+<p>
+Besides the ENTRY and EXIT, there is only a single basic block in function <code>g</code>. It contains two statements: a <code>GIMPLE_CALL</code> followed by another statement that simply does <code>return</code> (its kind is <code>GIMPLE_RETURN</code> but we will not care about it now). As you can see, the left hand side of the GIMPLE_CALL is still there.
+</p>
+
+<h3>A class with user-declared destructor</h3>
+
+<p>
+Before we continue, let's make two more tests to better understand what is going on. First add a user-declared destructor to class <code>A</code>, the rest of the code is left untouched.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="o">*</span><span class="n">addr</span><span class="p">;</span>
+    <span class="o">~</span><span class="n">A</span><span class="p">();</span>
+<span class="p">};</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The control flow graph looks like this.
+</p>
+
+<p><img src="/wp-content/uploads/2015/08/cfg_test3.png" alt="cfg_test3" width="529" height="378" class="aligncenter size-full wp-image-2146" /></p>
+
+<p>
+This is much more complicated, the compiler must call the destructor of A with the temporary created (it also tags the call to build_A as using <a href="https://en.wikipedia.org/wiki/Return_value_optimization">return value optimization</a> but we do not care about this now). The statement with that <code>CLOBBER</code> thing is the way that GCC uses to know that the value of the variable is undefined at this point, this statement is actually a <code>GIMPLE_ASSIGN</code>.
+</p>
+
+<h3>The function returns a non-class type</h3>
+
+<p>
+Now, remove the user-declared destructor but let's change function <code>build_A</code> to return a pointer to <code>A</code> (rather than a <code>A</code>), the rest of the code is left untouched.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+</pre></td><td class="code"><pre><span class="n">A</span><span class="o">*</span> <span class="nf">build_A</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Now the control flow graph looks like this.</p>
+
+<p><img src="/wp-content/uploads/2015/08/cfg_test2.png" alt="cfg_test2" width="224" height="322" class="aligncenter size-full wp-image-2145" /></p>
+
+<p>
+Hey! Where did the <code>lhs</code> of the function call go?
+</p>
+
+<p>
+Well, the fun fact is that GCC uses the absence of the left hand side of a function call marked as <code>warn_unused_result</code> to determine if the warning must be emitted or not. You can verify that if you add <code>__attribute__((warn_unused_result))</code> at the beginning of the declaration of <code>build_A</code>: the warning is emitted for the last of three cases. Note that for the second case (where the destructor must be called) it is arguable if we want a diagnostic, at the moment let's assume we do not want it. So we want a diagnostic for the first case: when the destructor of a class is trivial and implies no code.
+</p>
+
+<h3>Making sure the result is not used</h3>
+
+<p>
+While we may tolerate false negatives (i.e. not emitting a warning where it may make sense to emit it) we cannot accept false positives (the warning diagnoses something that does not happen). This means that we have to somehow be sure that the result is actually not used. Note that the left hand side of the call will not be a variable created by the user but a temporary variable created by the compiler. GCC calls them <em>artificial declarations</em>. To make sure that the temporary variable is not used at all (just written) we will have to verify all the statements in our function. We can do that by traversing the basic blocks. To simplify the process, we will structure it in two steps. The first step will gather the artificial variables that are a left hand side of a function call and put them in a set, but it may happen that the variable is actually used, so when this happens, it will be removed from the set. The second step, will traverse the code again and emit a diagnostic for all the places where the function returns an unused value and the function is marked with the attribute <code>warn_unused_result</code>. This strategy can be improved but as a start is probably enough.
+</p>
+
+<p>
+Let's start laying out this strategy, we can begin with the code from part 2 (though this time I renamed the class from <code>my_first_pass</code> to <code>warn_unused_result_cxx</code>).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+</pre></td><td class="code"><pre><span class="k">namespace</span>
+<span class="p">{</span>
+<span class="k">const</span> <span class="n">pass_data</span> <span class="n">warn_unused_result_cxx_data</span> <span class="o">=</span> 
+<span class="p">{</span>
+  <span class="n">GIMPLE_PASS</span><span class="p">,</span>
+  <span class="s">"warn_unused_result_cxx"</span><span class="p">,</span> <span class="cm">/* name */</span>
+  <span class="n">OPTGROUP_NONE</span><span class="p">,</span>             <span class="cm">/* optinfo_flags */</span>
+  <span class="n">TV_NONE</span><span class="p">,</span>                   <span class="cm">/* tv_id */</span>
+  <span class="n">PROP_gimple_any</span><span class="p">,</span>           <span class="cm">/* properties_required */</span>
+  <span class="mi">0</span><span class="p">,</span>                         <span class="cm">/* properties_provided */</span>
+  <span class="mi">0</span><span class="p">,</span>                         <span class="cm">/* properties_destroyed */</span>
+  <span class="mi">0</span><span class="p">,</span>                         <span class="cm">/* todo_flags_start */</span>
+  <span class="mi">0</span>                          <span class="cm">/* todo_flags_finish */</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">warn_unused_result_cxx</span> <span class="o">:</span> <span class="n">gimple_opt_pass</span>
+<span class="p">{</span>
+  <span class="n">warn_unused_result_cxx</span><span class="p">(</span><span class="n">gcc</span><span class="o">::</span><span class="n">context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+    <span class="o">:</span> <span class="n">gimple_opt_pass</span><span class="p">(</span><span class="n">warn_unused_result_cxx_data</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+  <span class="p">{</span>
+  <span class="p">}</span>
+
+  <span class="k">virtual</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">execute</span><span class="p">(</span><span class="n">function</span> <span class="o">*</span><span class="n">fun</span><span class="p">)</span> <span class="k">override</span>
+  <span class="p">{</span>
+    <span class="c1">// This phase has two steps, first we remove redundant LHS from GIMPLE_CALLs</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;</span> <span class="n">unused_lhs</span> <span class="o">=</span> <span class="n">gather_unused_lhs</span><span class="p">(</span><span class="n">fun</span><span class="p">);</span>
+    <span class="n">warn_unused_result_lhs</span><span class="p">(</span><span class="n">unused_lhs</span><span class="p">,</span> <span class="n">fun</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">virtual</span> <span class="n">warn_unused_result_cxx</span><span class="o">*</span> <span class="n">clone</span><span class="p">()</span> <span class="k">override</span>
+  <span class="p">{</span>
+    <span class="c1">// We do not clone ourselves</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+After the usual <code>pass_data</code> structure we find the actual definition of our pass. Now the execute method (lines 62 to 69) basically performs the two steps that I mentioned above: first we gather unused left hand sides (line 65) and then we will use this information to emit the warning (line 66).
+</p>
+
+<p>
+Let's see the implementation of <code>gather_unused_lhs</code>
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+</pre></td><td class="code"><pre>  <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;</span> <span class="n">gather_unused_lhs</span><span class="p">(</span><span class="n">function</span><span class="o">*</span> <span class="n">fun</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;</span> <span class="n">potential_unused_lhs</span><span class="p">;</span>
+
+    <span class="n">basic_block</span> <span class="n">bb</span><span class="p">;</span>
+    <span class="n">FOR_ALL_BB_FN</span><span class="p">(</span><span class="n">bb</span><span class="p">,</span> <span class="n">fun</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">gimple_stmt_iterator</span> <span class="n">gsi</span><span class="p">;</span>
+      <span class="k">for</span> <span class="p">(</span><span class="n">gsi</span> <span class="o">=</span> <span class="n">gsi_start_bb</span> <span class="p">(</span><span class="n">bb</span><span class="p">);</span> <span class="o">!</span><span class="n">gsi_end_p</span> <span class="p">(</span><span class="n">gsi</span><span class="p">);</span> <span class="n">gsi_next</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">gsi</span><span class="p">))</span>
+      <span class="p">{</span>
+        <span class="n">gimple</span> <span class="n">stmt</span> <span class="o">=</span> <span class="n">gsi_stmt</span> <span class="p">(</span><span class="n">gsi</span><span class="p">);</span>
+
+        <span class="k">switch</span> <span class="p">(</span><span class="n">gimple_code</span><span class="p">(</span><span class="n">stmt</span><span class="p">))</span>
+        <span class="p">{</span>
+          <span class="k">case</span> <span class="n">GIMPLE_CALL</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="n">tree</span> <span class="n">lhs</span> <span class="o">=</span> <span class="n">gimple_call_lhs</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="n">insert_potentially_unused_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">lhs</span><span class="p">);</span>
+
+              <span class="kt">unsigned</span> <span class="n">nargs</span> <span class="o">=</span> <span class="n">gimple_call_num_args</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nargs</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+              <span class="p">{</span>
+                <span class="n">tree</span> <span class="n">arg</span> <span class="o">=</span> <span class="n">gimple_call_arg</span><span class="p">(</span><span class="n">stmt</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+                <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
+              <span class="p">}</span>
+              <span class="k">break</span><span class="p">;</span>
+
+            <span class="p">}</span>
+          <span class="k">case</span> <span class="n">GIMPLE_ASSIGN</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="n">tree</span> <span class="n">lhs</span> <span class="o">=</span> <span class="n">gimple_assign_lhs</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">lhs</span><span class="p">);</span>
+
+              <span class="n">tree</span> <span class="n">rhs1</span> <span class="o">=</span> <span class="n">gimple_assign_rhs1</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">rhs1</span><span class="p">);</span>
+
+              <span class="n">tree</span> <span class="n">rhs2</span> <span class="o">=</span> <span class="n">gimple_assign_rhs2</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="k">if</span> <span class="p">(</span><span class="n">rhs2</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+                <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">rhs2</span><span class="p">);</span>
+
+              <span class="n">tree</span> <span class="n">rhs3</span> <span class="o">=</span> <span class="n">gimple_assign_rhs3</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="k">if</span> <span class="p">(</span><span class="n">rhs3</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+                <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">rhs3</span><span class="p">);</span>
+
+              <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">break</span><span class="p">;</span>
+          <span class="nl">default:</span>
+            <span class="c1">// do nothing</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+This seems a lot of code but basically we just traverse each basic block of the function (line 122). For each basic block we iterate each of its statements, using a GIMPLE statement iterator (<code>gimple_stmt_iterator</code>). Each GIMPLE statement (<code>gimple_stmt</code>) is then obtained from the iterator (line 127). As we mentioned above, there are several kinds of GIMPLE statements, so we will have to process them case by case. The kind of the GIMPLE statement is called in GCC lingo the GIMPLE code, so we get the gimple code and jump to the appropiate case (lines 129, 131 and 145).
+</p>
+
+<p>
+When we find a function call (i.e. a <code>GIMPLE_CALL</code>) we will want to check if its left hand side is actually a temporary variable introduced by the compiler. If it is we will keep it in the set <code>potential_unused_lhs</code> (lines 119 and 134). We call this set, potential because at this point we are not 100% sure that the variable is actually unused. Function <code>insert_potentially_unused_lhs</code> does this check and if it succeeds it inserts the left hand side into <code>potential_unused_lhs_set</code>. We will see below its implementation.
+</p>
+
+<p>
+If a potentially unused left hand side happens to be used later, we will have to remove it from the potentially unused set, because now it is not potentially unused: it is actually used! The variable may be used in any operand, so we will call <code>erase_if_used_lhs</code> for every operand. If the operand happens to be a previously potentially unused, we will remove it from the set. We will see below its implementation.
+</p>
+
+<p>
+For function calls, this function has to be called for each argument of the function call (lines 136 to 141). For assignment operations (lines 147 to 159) we will call this function for every operand of the assignment: the left hand side and its (up to three) right hand sides.
+</p>
+
+<p>
+The second step of our process involves emitting the warning. We do this in the function warn_unused_result_lhs.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+</pre></td><td class="code"><pre>  <span class="kt">void</span> <span class="nf">warn_unused_result_lhs</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;&amp;</span> <span class="n">unused_lhs</span><span class="p">,</span> <span class="n">function</span> <span class="o">*</span><span class="n">fun</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">basic_block</span> <span class="n">bb</span><span class="p">;</span>
+    <span class="n">FOR_ALL_BB_FN</span><span class="p">(</span><span class="n">bb</span><span class="p">,</span> <span class="n">fun</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">gimple_stmt_iterator</span> <span class="n">gsi</span><span class="p">;</span>
+      <span class="k">for</span> <span class="p">(</span><span class="n">gsi</span> <span class="o">=</span> <span class="n">gsi_start_bb</span> <span class="p">(</span><span class="n">bb</span><span class="p">);</span> <span class="o">!</span><span class="n">gsi_end_p</span> <span class="p">(</span><span class="n">gsi</span><span class="p">);</span> <span class="n">gsi_next</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">gsi</span><span class="p">))</span>
+      <span class="p">{</span>
+        <span class="n">gimple</span> <span class="n">stmt</span> <span class="o">=</span> <span class="n">gsi_stmt</span> <span class="p">(</span><span class="n">gsi</span><span class="p">);</span>
+
+        <span class="k">switch</span> <span class="p">(</span><span class="n">gimple_code</span><span class="p">(</span><span class="n">stmt</span><span class="p">))</span>
+        <span class="p">{</span>
+          <span class="k">case</span> <span class="n">GIMPLE_CALL</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="n">tree</span> <span class="n">lhs</span> <span class="o">=</span> <span class="n">gimple_call_lhs</span><span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+              <span class="k">if</span> <span class="p">(</span><span class="n">unused_lhs</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">lhs</span><span class="p">)</span> <span class="o">!=</span> <span class="n">unused_lhs</span><span class="p">.</span><span class="n">end</span><span class="p">())</span>
+              <span class="p">{</span>
+                <span class="c1">// Deliberately similar to the code in tree-cfg.c</span>
+                <span class="n">tree</span> <span class="n">fdecl</span> <span class="o">=</span> <span class="n">gimple_call_fndecl</span> <span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+                <span class="n">tree</span> <span class="n">ftype</span> <span class="o">=</span> <span class="n">gimple_call_fntype</span> <span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+
+                <span class="k">if</span> <span class="p">(</span><span class="n">lookup_attribute</span> <span class="p">(</span><span class="s">"warn_unused_result"</span><span class="p">,</span> <span class="n">TYPE_ATTRIBUTES</span> <span class="p">(</span><span class="n">ftype</span><span class="p">)))</span>
+                <span class="p">{</span>
+                  <span class="n">location_t</span> <span class="n">loc</span> <span class="o">=</span> <span class="n">gimple_location</span> <span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+
+                  <span class="k">if</span> <span class="p">(</span><span class="n">fdecl</span><span class="p">)</span>
+                    <span class="n">warning_at</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">OPT_Wunused_result</span><span class="p">,</span>
+                        <span class="s">"ignoring return value of %qD, "</span>
+                        <span class="s">"declared with attribute warn_unused_result"</span><span class="p">,</span>
+                        <span class="n">fdecl</span><span class="p">);</span>
+                  <span class="k">else</span>
+                    <span class="n">warning_at</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">OPT_Wunused_result</span><span class="p">,</span>
+                        <span class="s">"ignoring return value of function "</span>
+                        <span class="s">"declared with attribute warn_unused_result"</span><span class="p">);</span>
+                <span class="p">}</span>
+              <span class="p">}</span>
+              <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+          <span class="nl">default:</span>
+            <span class="c1">// Do nothing</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+You should identify a pretty similar structure, but in this case we only care about function calls, so is there only a case, all other GIMPLE statements are ignored. For a function call we get its left hand side (line 189) and verify if it is in the set of (actually) <code>unused_lhs</code>. This set has been computed in the first step of our process, and now all the potentially unused are actually unused.
+</p>
+
+<p>
+The next lines of code are deliberately identical to the lines of code found in a real pass of GCC itself. That pass is the one responsible for emitting the diagnostic for <code>warn_unused_result</code>. We just use the same code: we get the function declaration (<code>fdecl</code>, line 193) from the function call and its type (<code>ftype</code>, line 194). We then make sure that we have to emit the diagnostic, by querying the type if it has the attribute <code>warn_unused_result</code> (line 196). If it does, then we emit the warning. The code in GCC verifies that the function declaration exists. This is so because this attribute could potentially be attached to pointer functions (and there is not a function for them). The diagnostic is emitted calling the GCC function <code>warning_at</code>, which requires the location of the statement (computed in line 198), a flag for the option (OPT_Wunused_result is the variable related to the GCC command-line parameter <code>-Wunused-result</code>, which happens to be enabled by default), and the message of the diagnostic (lines 200 to 208).
+</p>
+
+<p>
+Now we can proceed to see the implementation of <code>insert_potentially_unused_lhs</code> and <code>erase_if_used_lhs</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+</pre></td><td class="code"><pre>  <span class="k">static</span> <span class="kt">void</span> <span class="nf">insert_potentially_unused_lhs</span><span class="p">(</span>
+      <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;&amp;</span> <span class="n">potential_unused_lhs</span><span class="p">,</span>
+      <span class="n">tree</span> <span class="n">t</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+      <span class="k">return</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">TREE_CODE</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="n">VAR_DECL</span>
+        <span class="o">&amp;&amp;</span> <span class="n">DECL_ARTIFICIAL</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">potential_unused_lhs</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+You will have already noticed but, <code>potential_unused_lhs</code> is a set of <code>tree</code>s. What is a <code>tree</code>? Well, for historical reasons probably (or maybe by design) there is a fundamental <code>tree</code> type that is used for almost anything inside GCC. It is structure that can hold many things: declarations, statements, expressions, types, etc. GIMPLE statements are not <code>tree</code>s but their operands are. So when we request the left hand side of a GIMPLE_CALL we get a tree. This tree type is actually another representation named in GCC as GENERIC. Due to the simplified nature of GIMPLE, though, tree operands are usually rather simple and do not carry a lot of complexity.
+</p>
+
+<p>
+If our left hand side (recall, a <code>tree</code>) is NULL we do not have to do anything (line 81). Similar to the GIMPLE code, trees also have a code that is retrieved using the macro <code>TREE_CODE</code> (these macros are a witness of the story of GCC, initially written in C, I assume that they will be eventually replaced by C++ inline functions). If the code of the left hand side is a <code>VAR_DECL</code>, and this means it is a variable, we will verify, using the macro <code>DECL_ARTIFICIAL</code>, if it is an <em>artificial variable</em> created by the compiler (lines 84 and 85). If all these checks succeed, we will insert the tree into our <code>potential_unused_lhs</code> set (line 87).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+</pre></td><td class="code"><pre>  <span class="k">static</span> <span class="kt">void</span> <span class="nf">erase_if_used_lhs</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;&amp;</span> <span class="n">potential_unused_lhs</span><span class="p">,</span>
+      <span class="n">tree</span> <span class="n">t</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+      <span class="k">return</span><span class="p">;</span>
+
+    <span class="k">switch</span> <span class="p">(</span><span class="n">TREE_CODE</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="k">case</span> <span class="n">VAR_DECL</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">DECL_ARTIFICIAL</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>                                             <span class="c1">// unnecessary</span>
+            <span class="o">&amp;&amp;</span> <span class="n">potential_unused_lhs</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">!=</span> <span class="n">potential_unused_lhs</span><span class="p">.</span><span class="n">end</span><span class="p">())</span> <span class="c1">// unnecessary</span>
+        <span class="p">{</span>
+          <span class="n">potential_unused_lhs</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="k">case</span> <span class="n">COMPONENT_REF</span><span class="p">:</span>
+        <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span> <span class="n">TREE_OPERAND</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="nl">default:</span>
+        <span class="p">{</span>
+          <span class="c1">// Do nothing</span>
+          <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In this function we will remove the variable declaration from the potential_unused_lhs set if it happens to be used. A trivial case is when the verified operand is an artificial VAR_DECL and happens to be in the <code>potential_unused_lhs</code> set. If it is we remove it from the set (note that for this case we could have just done <code>potential_unused_lhs.erase(t)</code> without having to check if anything about <code>t</code>, I wrote it this way for the sake of the exposition).
+</p>
+
+<p>
+The second case, about COMPONENT_REF is there to solve this case.
+</p>
+
+<figure class="highlight"><pre><code class="language-c--" data-lang="c++"><span class="n">some_function</span><span class="p">(</span> <span class="n">build_A</span><span class="p">().</span><span class="n">addr</span> <span class="p">);</span></code></pre></figure>
+
+<p>
+In GIMPLE this will look like
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">T1 = build_A();
+some_function( T1.addr )</code></pre></figure>
+
+<p>
+When examining the function arguments of the call to some_function, we would not realize that <code>T1</code> is actually used because the argument is <code>T1.addr</code> (not as simple as <code>T1</code>). In this case we just call ourselves recursively with the left hand side of the "." (line 107). The left hand side can be retrieved using the macro <code>TREE_OPERAND(tree, child_number)</code>. In our case, the left hand side is found in the first children (counting from zero), thus <code>TREE_OPERAND(t, 0)</code>.
+
+
+<h2>Testing our plugin</h2>
+
+<p>
+Let's first change the check goal in the Makefile.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="nl">check</span><span class="o">:</span> <span class="nf">warn_unused.so test.cc</span>
+	<span class="nv">$(CXX)</span> <span class="nt">-c</span> <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> test.cc</code></pre></figure>
+
+
+<p>
+Our <code>test.cc</code> will have the following code.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span> <span class="n">A</span> <span class="nf">foo</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="nf">h</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">m</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+
+<span class="kt">void</span> <span class="nf">test_foo</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">foo</span><span class="p">();</span> <span class="c1">// must be diagnosed</span>
+
+    <span class="n">h</span><span class="p">(</span><span class="n">foo</span><span class="p">());</span> <span class="c1">// do not diagnose</span>
+
+    <span class="kt">int</span> <span class="n">z</span> <span class="o">=</span> <span class="n">foo</span><span class="p">().</span><span class="n">y</span><span class="p">;</span> <span class="c1">// do not diagnose</span>
+
+    <span class="n">foo</span><span class="p">().</span><span class="n">y</span><span class="p">;</span> <span class="c1">// arguable, but if diagnosed OK</span>
+
+    <span class="n">m</span><span class="p">(</span><span class="n">foo</span><span class="p">().</span><span class="n">y</span><span class="p">);</span> <span class="c1">// do not diagnose</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="nc">B</span>
+<span class="p">{</span>
+    <span class="o">~</span><span class="n">B</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span> <span class="n">B</span> <span class="nf">bar</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="nf">test_bar</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">bar</span><span class="p">();</span> <span class="c1">// do not diagnose</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Now we are ready to test it. Only two diagnostics should appear.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make check
+/home/roger/soft/gcc/gcc-5.2/bin/g++ <span class="nt">-c</span> <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> test.cc
+test.cc: In <span class="k">function</span> ‘void test_foo<span class="o">()</span>’:
+test.cc:13:10: warning: ignoring <span class="k">return </span>value of ‘A foo<span class="o">()</span>’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     foo<span class="o">()</span><span class="p">;</span> // must be diagnosed
+          ^
+test.cc:19:8: warning: ignoring <span class="k">return </span>value of ‘A foo<span class="o">()</span>’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     foo<span class="o">()</span>.y<span class="p">;</span> // arguable, but <span class="k">if </span>diagnosed OK
+        ^</code></pre></figure>
+
+
+<p>
+Woohoo!!
+</p>
+
+
+<h3>A minor bug remains</h3>
+
+<p>
+If we add the following function at the end of our <code>test.cc</code>
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span> <span class="nf">quux</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">foo</span><span class="p">();</span> <span class="c1">// do not diagnose</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+it is diagnosed
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">test.cc: In <span class="k">function</span> ‘A quux<span class="o">()</span>’:
+test.cc:38:16: warning: ignoring <span class="k">return </span>value of ‘A foo<span class="o">()</span>’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     <span class="k">return </span>foo<span class="o">()</span><span class="p">;</span>
+                ^</code></pre></figure>
+
+
+<p>
+This happens because we are not handling <code>GIMPLE_RETURN</code> in <code>gather_unused_lhs</code>. There is a missing case.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+</pre></td><td class="code"><pre>  <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;</span> <span class="n">gather_unused_lhs</span><span class="p">(</span><span class="n">function</span><span class="o">*</span> <span class="n">fun</span><span class="p">)</span>
+  <span class="p">{</span>
+          <span class="p">...</span> 
+          <span class="k">case</span> <span class="n">GIMPLE_RETURN</span><span class="p">:</span>
+            <span class="p">{</span>
+              <span class="n">erase_if_used_lhs</span><span class="p">(</span><span class="n">potential_unused_lhs</span><span class="p">,</span>
+                  <span class="n">gimple_return_retval</span><span class="p">(</span><span class="n">as_a</span><span class="o">&lt;</span><span class="n">greturn</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">stmt</span><span class="p">)));</span>
+              <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+           <span class="nl">default:</span>
+            <span class="c1">// do nothing</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+      <span class="err">}</span>
+    <span class="err">}</span>
+
+    <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;</span> <span class="n">unused_lhs</span><span class="p">(</span> <span class="n">potential_unused_lhs</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">unused_lhs</span><span class="p">;</span>
+  <span class="err">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+We simply call erase_if_used_lhs to the returned expression of this <code>GIMPLE_RETURN</code>. The <code>as_a&lt;greturn*&gt;</code> is just a cast required for these nodes (why such castings are not required for other nodes, I do not know, probably due to historical reasons again).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make check
+/home/roger/soft/gcc/gcc-5.2/bin/g++ <span class="nt">-c</span> <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> test.cc
+test.cc: In <span class="k">function</span> ‘void test_foo<span class="o">()</span>’:
+test.cc:13:10: warning: ignoring <span class="k">return </span>value of ‘A foo<span class="o">()</span>’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     foo<span class="o">()</span><span class="p">;</span> // must be diagnosed
+          ^
+test.cc:19:8: warning: ignoring <span class="k">return </span>value of ‘A foo<span class="o">()</span>’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     foo<span class="o">()</span>.y<span class="p">;</span> // arguable, but <span class="k">if </span>diagnosed OK
+        ^</code></pre></figure>
+
+
+<p>
+Woohoo!!
+</p>
+
+<p>
+Well, it's been a long trip but now we have got a glimpse of writing GCC plugins and the GCC internals. You can find lots of information about the GCC internals in the <a href="https://gcc.gnu.org/onlinedocs/gccint/">GCC Internals Manual</a>. Unfortunately it is not always up-to-date, so you will still have to check the code of GCC, but you already have it from the part 1, just check the files found in the <code>gcc</code> subdir inside <code>gcc-5.2.0</code>. You will definitely want to use <a href="http://ctags.sourceforge.net/">ctags</a> or a similar tool when reading the GCC code.
+</p>
+
+<p>
+You can see the full code for this post <a href="https://github.com/rofirrim/gcc-plugins/tree/master/blog_03">here</a>.
+</p>
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/08/16/simple-plugin-gcc-part-2/">&laquo; A simple plugin for GCC – Part 2</a>
+
+
+  <a class="next" href="/2015/11/14/toying-gcc-jit-part-1/">Toying with GCC JIT – Part 1 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

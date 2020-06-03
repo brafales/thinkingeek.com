@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fortran and modules</title>
+  <meta name="description" content="Recently the committee that is preparing the next standard of C++, known as C++20, approved the inclusion of modules. Modules are good™ but they pose some interesting challenges to implementors and users. In this post I will ruminate a bit about what challenges have impacted Fortran.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2019/03/10/fortran-and-modules/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fortran and modules">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2019/03/10/fortran-and-modules/">
+  <meta property="og:description" content="Recently the committee that is preparing the next standard of C++, known as C++20, approved the inclusion of modules. Modules are good™ but they pose some interesting challenges to implementors and users. In this post I will ruminate a bit about what challenges have impacted Fortran.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fortran and modules">
+  <meta name="twitter:description" content="Recently the committee that is preparing the next standard of C++, known as C++20, approved the inclusion of modules. Modules are good™ but they pose some interesting challenges to implementors and...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fortran and modules</h1>
+    
+    <p class="post-meta"><time datetime="2019-03-10T11:24:08+00:00" itemprop="datePublished">Mar 10, 2019</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <!-- wp:paragraph -->
+<p>Recently the committee that is preparing the next standard of C++, known as C++20, approved the inclusion of modules. Modules are good™ but they pose some interesting challenges to implementors and users. In this post I will ruminate a bit about what challenges have impacted Fortran.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:more -->
+<!--more-->
+<!-- /wp:more -->
+
+<!-- wp:heading -->
+<h2>Program units</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>With my colleagues, I often claim that Fortran is an interesting case study in programming language evolution. Fortran was initially created in 1957 and since its standardisation it has evolved a lot. These 60 years have left lots of scars in the language in form of quirky syntaxes and awkward constructs. This, of course, at the eyes of today designs: they probably made a lot of sense when they were proposed.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Fortran had to evolve from a model of "bunch of statements that make up a program" into a more structured system with a program plus subroutines and functions (this happened in <span style="font-variant: small-caps;">Fortran</span> 66). This was done by defining "program units", namely the<em> main program</em> unit, <em>subroutine</em> program unit, <em>function</em> program unit and a <em>block data</em> program unit (too long to explain here its purpose). A <span style="font-variant: small-caps;">Fortran</span> 66 program is then a collection of one main program unit with zero or more of the other program unit kinds.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>This model works well but was designed in a way that program units were independent of each other. This wasn't a problem in <span style="font-variant: small-caps;">Fortran</span> 66 and 77 because the language stablished conceptually simple communication mechanisms between the program units: either global variables (via a thing called <em>common</em> blocks) and parameters that were always passed by reference to the data element being passed. This lack of information precluded basic things like checking that the arguments to a call are appropiate for the function or subroutine being called.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>These limiting factors, along with probably a desire to have better modularisation capabilities, led the addition of a new program-unit called <em>module</em> in Fortran 90. Modules came with many good features: they allowed grouping functions and subroutines that had related purposes in a module. They also allowed declaring global variables without relying on the, effective yet fragile, mechanism of common blocks. Another important feature of Fortran 90 was the introduction of <em>explicit interfaces</em>. Functions could now be declared to have an interface and typechecking was possible. Not only that, it also allowed passing more complex data-types like pointers or arrays whose size can be queried at runtime (<span style="font-variant: small-caps;">Fortran</span> 77 didn't have a standard notion of pointer and arrays were more limited).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Modules brought Fortran 90 to a more modern world. Later, in Fortran 2008, they were extended with another program unit called <em>submodule</em>. The original modules of Fortran 90 forced the programmer to implement everything in a single module. This made a bit difficult for users to further modularise the module implementation. We won't be discussing submodules today. If you've followed C++20 modules, Fortran submodules are similar to C++20's <em>module implementation partitions</em> (interfaces cannot be partitioned in Fortran).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2>How modules work</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Modules have two parts. A <em>module specification</em> part and a <em>module subprogram</em> part. The specification part states what this module has to <em>offer</em> (this is non-standard terminology). It can be, publicly, offered to the users of the module or privately to the current module. The subprogram part is used to implement the functions and subroutines, collectively known as the <em>module procedures</em>, offered by the module.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Program units, including module subprograms, can <em>use</em> modules. This brings the names (of functions, subroutines, variables, types, etc.) of what the module publicly offers into the current program unit. Because Fortran scoping is mostly flat, clashes may arise between different modules offering the same names. It is possible to restrict the set of names used and even to rename them to avoid collisions.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>This is an example of the definition of a module that implements a function that offers a constant named <code>version</code> and a function named <code>add</code> that adds two numbers.</p>
+<!-- /wp:paragraph -->
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">MODULE</span><span class="w"> </span><span class="n">BASIC_CALCULUS</span><span class="w">
+     </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="k">NONE</span><span class="w">
+     </span><span class="kt">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="k">PARAMETER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">VERSION</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+  </span><span class="k">CONTAINS</span><span class="w">
+     </span><span class="kt">INTEGER</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">ADD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w"> </span><span class="k">RESULT</span><span class="p">(</span><span class="n">R</span><span class="p">)</span><span class="w">   
+        </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">R</span><span class="w">
+        </span><span class="n">R</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="w">
+     </span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">ADD</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">MODULE</span><span class="w"> </span><span class="n">BASIC_CALCULUS</span></code></pre></figure>
+
+<!-- wp:paragraph -->
+<p>Once this module has been defined, another program unit can use it.</p>
+<!-- /wp:paragraph -->
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">DOUBLE_NUMBER</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="w"> </span><span class="k">RESULT</span><span class="p">(</span><span class="n">D</span><span class="p">)</span><span class="w">
+  </span><span class="k">USE</span><span class="w"> </span><span class="n">BASIC_CALCULUS</span><span class="w"> </span><span class="c1">! This would bring the names VERSION and ADD</span><span class="w">
+                     </span><span class="c1">! into scope</span><span class="w">
+  </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="k">NONE</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">D</span><span class="w">
+  </span><span class="n">D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ADD</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="n">DOUBLE_NUMBER</span></code></pre></figure>
+
+<!-- wp:heading -->
+<h2>Files? What files?</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>So far we haven't discussed how we physically represent our Fortran program. Seems reasonable that we will want to use files (there are not many alternatives that may work for Fortran here, truth be told).</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>One option is to have our program in a single file. This works for small programs. The only constraint we have to fulfill is that the modules appear before in the file, as I mentioned above.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Turns out that for most interesting Fortran programs, a single file is untenable. So developers split them in many files. This is nothing special actually and it works. A file usually contains one or more program units. If we ignore for a moment the <code>INCLUDE</code> line (which is what hinders using other things than files, say a database of program units), a program unit is to be entirely contained in a single file. This includes modules, of course.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>If we want to be able to write Fortran programs using several files, our Fortran compiler (actually the compiler and linker, dubbed <em>translator</em> in the Fortran standard) must support this scenario of separate compilation. This leads to two interesting facts: a) we need to be able to tell what the module is offering at the point where we use it b) modules enforce an order, not only within a file between module definitions and its users but also between files that define modules and files that use those modules.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>The issue b) above is nowadays deemed a build system concern. See this very interesting document by Kitware, the creators of CMake, <a href="https://mathstuf.fedorapeople.org/fortran-modules/fortran-modules.html">explaining their approach to address this</a>. Most of the complexity arises from the fact that if we change a file that defines a module we want to recompile all its users. Also, we can only tell what modules are defined by a source file after we process (scan/parse) it in some form, this could be obscured even more by the usage of a preprocessor (which the Fortran standard does not specify but many vendors support). So the build system is forced to do some sort of two-pass process.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p> Issue a) is definitely a concern fo the compiler.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2>The module interface</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>We can name "what the module has to offer" as the <em>module interface</em>. This module interface must be available every time we use a module.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Fortran compilers, in order to support separate compilation, store the module interface in an ancillary file. Often with the extension <code>.mod</code>. So a file containing <code>basic_calculus</code> module above, not only produces a file with compiled code (i.e. a <code>file.o</code> file) but also a <code>basic_calculus.mod</code> file. This file will must be available when another program unit (in the same file or in another file) uses the module <code>basic_calculus</code>.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3} -->
+<h3>What goes in the module interface?</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>This is where things get a bit thorny both for Fortran compiler implementors and Fortran users: the standard does not define a format for the modules.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>It may well be sensibly argued that the standard does not have to dictate a specific format. And I agree. Unfortunately the industry hasn't come together to define a common Fortran module format. Ever.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>This means that each Fortran vendor provides their own module interface format (sometimes in binary form, sometimes in textual form). Some of these formats are incompatible between vendors and even incompatible between different compiler versions of the same vendor.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Is this a problem? Fortran is mostly used in the HPC community. In that community it is not uncommon to rebuild all software components from source, so in principle this wouldn't be a major problem. Unfortunately this complicates distribution of proprietary software in binary forms (usually optimised libraries). If a vendor wants to provide a Fortran module for its software component it will have to provide one version for every supported compiler. And this is unfortunate because it may happen that newer versions of compilers may become unusable just because they can't read old module files.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Other programming languages can get away with this interoperability issue because of a number of reasons. Either the module interface is standardised or else there is only one vendor/implementation.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>I hope C++20 doesn't do this mistake again and major vendors agree on a common module interface format.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading {"level":3} -->
+<h3>Where is the module interface?</h3>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>Another problem when solving a) is to define a way to find the module interface. Most programming languages specify a filesystem layout that supports modularisation. For instance files implementing modules must have specific names or be found in specific directory names.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>Fortran does not define any of this. Vendors usually provide a way to specify where the module interface files have to be created. They also provide a way to tell the compiler where it can find the modules. That said, this is more a problem for build systems because Fortran has a global namespace (i.e. no hierarchy) for modules, so the compiler implementation is pretty straightforward here.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:heading -->
+<h2>Summary</h2>
+<!-- /wp:heading -->
+
+<!-- wp:paragraph -->
+<p>I think modules have been a good feature for Fortran even if they come with lots of challenges for the ecosystem. The standard sets very little constraints and I think the standard is fine in this regard.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>However, I wish vendors had proposed a more constrained behaviour (e.g in some <em>de facto</em> Standard) which still fulfills the Standard requirements. Say, for example, a module must be implemented in a <em>module source file</em> with a specific file name pattern or directory layout) and no other program units appear in a module source file. Also I wish vendors had agreed on a common module interface format which can be generated and consumed efficiently by any Fortran translator.</p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
+<p>I assume the niche status of Fortran, basically limited to HPC, is what does not motivate vendors to collaborate and push forward common strategies that foster interoperability. I'm sure that would make the Fortran ecosystem thrive but I also see that from an economical point of view it may not be worth the investment.</p>
+<!-- /wp:paragraph -->
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2018/12/22/walk-through-flang-part-8/">&laquo; Walk-through flang – Part 8</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

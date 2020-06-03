@@ -1,0 +1,2128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Simple guide to configure xmonad, dzen2 and conky</title>
+  <meta name="description" content="I&#39;ll guide you through the different steps I took to install a working desktop environment in Debian using xmonad, conky and dzen2. The final result of this configuration should look like this: xmonad with dzen2 and conky">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2011/11/21/simple-guide-configure-xmonad-dzen2-conky/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Simple guide to configure xmonad, dzen2 and conky">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2011/11/21/simple-guide-configure-xmonad-dzen2-conky/">
+  <meta property="og:description" content="I&#39;ll guide you through the different steps I took to install a working desktop environment in Debian using xmonad, conky and dzen2. The final result of this configuration should look like this: xmonad with dzen2 and conky">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Simple guide to configure xmonad, dzen2 and conky">
+  <meta name="twitter:description" content="I&#39;ll guide you through the different steps I took to install a working desktop environment in Debian using xmonad, conky and dzen2. The final result of this configuration should look like this:...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Simple guide to configure xmonad, dzen2 and conky</h1>
+    
+    <p class="post-meta"><time datetime="2011-11-21T14:39:44+00:00" itemprop="datePublished">Nov 21, 2011</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/haskell/">haskell</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/linux/">linux</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/xmonad/">xmonad</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+I'll guide you through the different steps I took to install a working desktop environment in Debian using xmonad, conky and dzen2.
+</p>
+<p>
+The final result of this configuration should look like this:
+</p>
+<figure>
+<img src="/wp-content/uploads/2011/11/2011-11-21-141251_3120x1050_scrot-300x101.png" alt="xmonad with dzen2 and conky" width="300" height="101" class="size-medium wp-image-194" />
+<figcaption>xmonad with dzen2 and conky</figcaption>
+</figure>
+<!--more-->
+<h2>Installing the prerequisites</h2>
+<p>
+The first thing you should do is install the Haskell compiler and interpreter (I'm assuming you're using Debian Sid). To do that, use your beloved aptitude package manager:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>aptitude <span class="nb">install </span>ghc6</code></pre></figure>
+
+</p>
+<p>
+To install Xmonad I recommend using the Haskell package manager cabal:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>aptitude <span class="nb">install </span>cabal</code></pre></figure>
+
+</p>
+<p>
+After cabal is installed, you'll have to update the package list by running <em>cabal update</em>. However, when doing this, cabal might tell you that there is newer version of the package manager to be installed. Follow the on screen instructions and upgrade to the latest cabal:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">cabal <span class="nb">install </span>cabal-install</code></pre></figure>
+
+</p>
+<p>
+This will install the latest cabal into your home directory. From now on, make sure that <em>/home/&lt;your_username&gt;/.cabal/bin</em> is on the path to be using this newly installed cabal build. Run <em>cabal update</em> again to have the package list updated.
+</p>
+<h2>Installing Xmonad</h2>
+<p>
+Installing xmonad is as easy as running <em>cabal install xmonad</em>. This will try to download, compile and install xmonad and all the prerequisites. However, you may have some compile errors. This is because to compile Xmonad you need to have some development libraries installed. Typically you'll need <em>libx11-dev</em>, <em>libxinerama-dev</em> and <em>libxext-dev</em>, among others. To install those dependencies just look for them in the apt respositories and install them using aptitude or apt-get:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>aptitude <span class="nb">install </span>libx11-dev libxinerama-dev libxext-dev</code></pre></figure>
+
+</p>
+<p>
+After installing xmonad, is recommended you also install <em>xmonad-contrib</em>, which includes some extra functionalities to Xmonad tant we will find useful later. Note that to install xmonad-contrib you'll need to install the <em>xft</em> development libraries, too:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">sudo </span>aptitude <span class="nb">install </span>libxft-dev
+cabal <span class="nb">install </span>xmonad-contrib</code></pre></figure>
+
+</p>
+<p>
+Ok, with this steps you already have a fully functional xmonad version installed and ready to be run. We will need to add some eye candy to it now, however, to make it more usable. If you want to have it a try now, though, to see if everything works as expected, just edit your <em>~/.xsession</em> file to make it look like this:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">exec </span>xmonad</code></pre></figure>
+
+</p>
+<p>
+And now just start your X with <em>startx</em> (or make your display manager to use the default session). You should see... nothing. If everything worked fine, an empty X screen will be shown. Type <em>Alt+Shift+Enter</em> and an <em>xterm</em> should appear occupying the entire screen.
+</p>
+<h2>Installing conky and dzen2</h2>
+<p>
+Again, you can install both those packages from source or via the package manager. I'll show you how to install the latest versions from source.
+</p>
+<h3>Installing conky</h3>
+<p>
+Download the source tarball (at the time of the writing 1.8.1 was the latest version) from <a href="http://sourceforge.net/projects/conky/files/conky/">sourceforge</a> and decompress it wherever you want:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">tar </span>xvzf conky-1.8.1.tar.gz</code></pre></figure>
+
+</p>
+<p>
+Now run the typical commands to configure and install the package:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">./configure
+make
+<span class="nb">sudo </span>make <span class="nb">install</span></code></pre></figure>
+
+</p>
+<p>
+Note that you might need to install additional development libraries to configure and compile conky with all its bells and whistles, like <em>libxdamage-dev</em>, <em>libmpd-dev</em> and others. Do so with aptitude.
+</p>
+<h3>Installing dzen2</h3>
+<p>
+Download the latest source tarball (0.8.5 at the time of writing) from the <a href="https://sites.google.com/site/gotmor/dzen#Download">official home page</a> and uncompress it wherever you want:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">tar </span>xvzf dzen2-latest.tar.gz</code></pre></figure>
+
+</p>
+<p>
+And then just compile and install it (have a look at the README if you want to add xft and xinerama support to it):
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">make
+<span class="nb">sudo </span>make <span class="nb">install</span></code></pre></figure>
+
+</p>
+<h2>The funny part begins: configuring xmonad and putting it all together</h2>
+<p>
+First of all, let me clarify some concepts. We will use xmonad as the Window Manager, dzen2 as the status bar and conky as a system data provider. Some people prefer to use <em>xmobar</em> instead of dzen2 + conky.
+</p>
+<p>
+First of all, let me give credits to the resources I've used to craft xmonad the way I wanted:
+<ul>
+        <li><em>kveras</em> at Github gave me the overall skeleton of the configuration. Make sure to check his <a href="https://github.com/kveras/configs">configs</a> repository to have a look at his configs.</li>
+        <li><a href="http://haskell.org/haskellwiki/Xmonad/Config_archive/John_Goerzen's_Configuration">Haskell Wiki</a> xmonad Config Archive, which provided some insights.</li>
+</ul>
+</p>
+<p>
+Xmonad configuration is done via a file in the <em>.xmonad</em> user folder called <em>xmonad.hs</em>. This file is Haskell code, and having a slight understanding of the Haskell syntax is recommended, although I managed to make this one without really having much Haskell knowledge.
+</p>
+<p>
+Basically when you configure xmonad what you're really doing is compiling it with the options you pass to it, via that configuration file. There are several things (AFAIK) that can be configured:
+<ul>
+<li>The default terminal</li>
+<li>The workspaces</li>
+<li>The keybindings</li>
+<li>The mod key</li>
+<li>The Layout Hook</li>
+<li>The Manage Hook</li>
+<li>The Log Hook</li>
+<li>Window border options</li>
+</ul>
+The way everything is tied together is done when calling the main method of the configuration file:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">main</span> <span class="o">=</span> <span class="kr">do</span>
+    <span class="n">xmonad</span> <span class="o">$</span> <span class="n">defaultConfig</span>
+      <span class="p">{</span> <span class="n">terminal</span>            <span class="o">=</span> <span class="n">myTerminal</span>
+      <span class="p">,</span> <span class="n">workspaces</span>          <span class="o">=</span> <span class="n">myWorkspaces</span>
+      <span class="p">,</span> <span class="n">keys</span>                <span class="o">=</span> <span class="n">keys</span>
+      <span class="p">,</span> <span class="n">modMask</span>             <span class="o">=</span> <span class="n">modMask</span>
+      <span class="p">,</span> <span class="n">layoutHook</span>          <span class="o">=</span> <span class="n">layoutHook</span>
+      <span class="p">,</span> <span class="n">manageHook</span>          <span class="o">=</span> <span class="n">manageHook</span>
+      <span class="p">,</span> <span class="n">logHook</span>             <span class="o">=</span> <span class="n">myLogHook</span>
+      <span class="p">,</span> <span class="n">normalBorderColor</span>   <span class="o">=</span> <span class="n">colorNormalBorder</span>
+      <span class="p">,</span> <span class="n">focusedBorderColor</span>  <span class="o">=</span> <span class="n">colorFocusedBorder</span>
+      <span class="p">,</span> <span class="n">borderWidth</span>         <span class="o">=</span> <span class="mi">2</span>
+<span class="p">}</span></code></pre></figure>
+
+</p>
+<p>
+In that main method you use the defaultConfig and pass a list of the different parameters you want to customize. I'll explain briefly every configuration aspect.
+</p>
+<h3>The default terminal</h3>
+<p>
+xmonad has a special function that is intended to be used to spawn a terminal. As a daily Linux programmer this is probably very useful. With the terminal parameter, then, you can specify the program that xmonad will launch when this action is invoked. Assigning this variable to the program name (assuming it's in the path) is enough for it to work:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">myTerminal</span> <span class="o">=</span> <span class="s">"gnome-terminal"</span></code></pre></figure>
+
+</p>
+<h3>The workspaces</h3>
+<p>
+xmonad allows you to group your windows into <em>workspaces</em>. The concept of workspace is very similar to the virtual desktops we have in Gnome, or the Spaces we have in Mac OS X. Each window will belong to a workspace, each workspace has a name and it's own configuration, and one and only one workspace can be active (and shown) on one screen at the same time.
+</p>
+<p>
+In the workspaces variable, we'll tell xmonad our default list of workspaces we want to work with, in a form of a string list. In my configuration I've preceded every workspace name with a number:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">myWorkspaces</span> <span class="o">=</span> <span class="p">[</span><span class="s">"1:main"</span><span class="p">,</span><span class="s">"2:web"</span><span class="p">,</span><span class="s">"3:vim"</span><span class="p">,</span><span class="s">"4:chat"</span><span class="p">,</span><span class="s">"5:music"</span><span class="p">,</span> <span class="s">"6:gimp"</span><span class="p">]</span></code></pre></figure>
+
+</p>
+<h3>The keybindings</h3>
+<p>
+Key binding is a crucial part of the configuration. One of the goals of xmonad is being able to do all window management without having to use the mouse, so your hands are always on the keyboard. Choosing a good key layout is then very important, and having a look at all the things you can do in xmonad is important, too, so you can check what you think it may be more useful to you. The key binding configuration is a bit strange in haskell, and I don't entirely understand it myself, but I'll try to guide you through the basics. Basically you have 3 modifiers: the <em>windows</em> key, <em>ctrl</em>, <em>shift</em> and <em>alt</em> (in fact I think you can deifne any key as a valid modifier, but those are the most used). You then configure pair of key-action, telling xmonad what should it do when certain keys are pressed. Those pairs have this syntax:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_Return</span>   <span class="p">),</span> <span class="n">spawn</span> <span class="o">$</span> <span class="kt">XMonad</span><span class="o">.</span><span class="n">terminal</span> <span class="n">conf</span><span class="p">)</span></code></pre></figure>
+
+<p>
+The first part tells xmonad the key press, while the second the action to be performed. The key press is expressed in the form of <em>modifier-key</em>. The modifiers can be chained, so you can assign some action when more than a modifier is pressed. In the example, we have <em>modMask .|. shiftMask, xK_Return</em>. This line means <em>press the modKey and the shift key, and then the return key</em>. As you can see, the operator to chain modifiers is <em>.|.</em>. When you want a key binding without modifier, you put a <em>0</em> instead. For instance, to bind a key to print the screen, you could use something like this: <em>((0, xK_Print), spawn "scrot -e 'mv $f ~/screenshots/'")</em>. This command tells xmonad to run the <em>scrot</em> program when the <em>Print Screen</em> key is pressed.
+</p>
+<p>
+Some xmonad actions require a special attention: those used to manipulate the windows and the workspaces. I'll tell you the most used ones (at least in the default configurations).
+<ul>
+<li><em>sendMessage nextLayout</em> is used to tell xmonad to switch to the next layout in the current workspace</li>
+<li><em>setLayout $ XMonad.layoutHook conf</em> will reset the current layout to the default one of the current workspace</li>
+<li><em>sendMessage ToggleStruts</em> is used to switch between struts mode on and off. If I'm not mistaken, struts are margins put between windows (which by default are not shown)</li>
+<li><em>windows W.focusDown</em> sets the focused window to the next window in the stack, allowing you to navigate the focus through different windows</li>
+<li><em>windows W.focusUp</em> does the same as above but in the reverse order</li>
+<li><em>windows W.swapDown</em> will swap the current window to the space occupied by the next window on the stack, useful to move windows between the different positions on the workspace</li>
+<li><em>windows W.swapUp</em>, again, does the same as above in the reverse order</li>
+<li><em>windows W.swapMaster</em> is very useful: it will put the focused window into the main space of the current layout (which is usually bigger than the other frames)</li>
+<li><em>sendMessage Shrink</em> is used to shrink the size of the main frame size</li>
+<li><em>sendMessage Expand</em>, on the other side, is used to expand the main frame size</li>
+<li><em>sendMessage (IncMasterN number)</em> will increase the number of panes of the master pane by the given number (which can be a positive or negative integer)</li>
+<li><em>nextWS</em> will switch to the next workspace</li>
+<li><em>prevWS</em> will switch to the previous workspace</li>
+<li><em>shiftToNext</em> will move the focused windo to the next workspace</li>
+<li><em>shiftToPrev</em> will move the focused window to the previous workspace</li>
+<li><em>W.shift workspace</em> will put the focused window to the selected workspace</li>
+<li><em>W.view workspace</em> will put the selected workspace as the workspace of the screen</li>
+</ul>
+</p>
+<p>
+Here's how the entire keys variable is assigned:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">keys'</span> <span class="n">conf</span><span class="o">@</span><span class="p">(</span><span class="kt">XConfig</span> <span class="p">{</span><span class="kt">XMonad</span><span class="o">.</span><span class="n">modMask</span> <span class="o">=</span> <span class="n">modMask</span><span class="p">})</span> <span class="o">=</span> <span class="kt">M</span><span class="o">.</span><span class="n">fromList</span> <span class="o">$</span>
+    <span class="p">[</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_p</span>        <span class="p">),</span> <span class="n">runOrRaisePrompt</span> <span class="n">largeXPConfig</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_Return</span>   <span class="p">),</span> <span class="n">spawn</span> <span class="o">$</span> <span class="kt">XMonad</span><span class="o">.</span><span class="n">terminal</span> <span class="n">conf</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_F2</span>       <span class="p">),</span> <span class="n">spawn</span> <span class="s">"gmrun"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_c</span>        <span class="p">),</span> <span class="n">kill</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_l</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"slock"</span><span class="p">)</span>
+    <span class="c1">-- Programs</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="n">xK_Print</span>    <span class="p">),</span> <span class="n">spawn</span> <span class="s">"scrot -e 'mv $f ~/screenshots/'"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>		            <span class="n">xK_o</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"chromium-browser"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_m</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"nautilus --no-desktop --browser"</span><span class="p">)</span>
+    <span class="c1">-- Media Keys</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff12</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"amixer -q sset Headphone toggle"</span><span class="p">)</span>        <span class="c1">-- XF86AudioMute</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff11</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"amixer -q sset Headphone 5%-"</span><span class="p">)</span>   <span class="c1">-- XF86AudioLowerVolume</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff13</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"amixer -q sset Headphone 5%+"</span><span class="p">)</span>   <span class="c1">-- XF86AudioRaiseVolume</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff14</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"rhythmbox-client --play-pause"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff17</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"rhythmbox-client --next"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff16</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"rhythmbox-client --previous"</span><span class="p">)</span>
+
+    <span class="c1">-- layouts</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_space</span>    <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">NextLayout</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_space</span>    <span class="p">),</span> <span class="n">setLayout</span> <span class="o">$</span> <span class="kt">XMonad</span><span class="o">.</span><span class="n">layoutHook</span> <span class="n">conf</span><span class="p">)</span>          <span class="c1">-- reset layout on current desktop to default</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_b</span>        <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">ToggleStruts</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_n</span>        <span class="p">),</span> <span class="n">refresh</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_Tab</span>      <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusDown</span><span class="p">)</span>                         <span class="c1">-- move focus to next window</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_j</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusDown</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_k</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusUp</span>  <span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_j</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">swapDown</span><span class="p">)</span>                          <span class="c1">-- swap the focused window with the next window</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_k</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">swapUp</span><span class="p">)</span>                            <span class="c1">-- swap the focused window with the previous window</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_Return</span>   <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">swapMaster</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_t</span>        <span class="p">),</span> <span class="n">withFocused</span> <span class="o">$</span> <span class="n">windows</span> <span class="o">.</span> <span class="kt">W</span><span class="o">.</span><span class="n">sink</span><span class="p">)</span>              <span class="c1">-- Push window back into tiling</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_h</span>        <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">Shrink</span><span class="p">)</span>                          <span class="c1">-- %! Shrink a master area</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_l</span>        <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">Expand</span><span class="p">)</span>                          <span class="c1">-- %! Expand a master area</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_comma</span>    <span class="p">),</span> <span class="n">sendMessage</span> <span class="p">(</span><span class="kt">IncMasterN</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_period</span>   <span class="p">),</span> <span class="n">sendMessage</span> <span class="p">(</span><span class="kt">IncMasterN</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+
+
+    <span class="c1">-- workspaces</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">controlMask</span><span class="p">,</span>   <span class="n">xK_Right</span>     <span class="p">),</span> <span class="n">nextWS</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>     <span class="n">xK_Right</span>     <span class="p">),</span> <span class="n">shiftToNext</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">controlMask</span><span class="p">,</span>   <span class="n">xK_Left</span>      <span class="p">),</span> <span class="n">prevWS</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>     <span class="n">xK_Left</span>      <span class="p">),</span> <span class="n">shiftToPrev</span><span class="p">)</span>
+    
+    <span class="c1">-- quit, or restart</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_q</span>        <span class="p">),</span> <span class="n">io</span> <span class="p">(</span><span class="n">exitWith</span> <span class="kt">ExitSuccess</span><span class="p">))</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_q</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"killall conky dzen2 &amp;&amp; /home/brafales/.cabal/bin/xmonad --recompile &amp;&amp; /home/brafales/.cabal/bin/xmonad --restart"</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="o">++</span>
+    <span class="c1">-- mod-[1..9] %! Switch to workspace N</span>
+    <span class="c1">-- mod-shift-[1..9] %! Move client to workspace N</span>
+    <span class="p">[((</span><span class="n">m</span> <span class="o">.|.</span> <span class="n">modMask</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">windows</span> <span class="o">$</span> <span class="n">f</span> <span class="n">i</span><span class="p">)</span>
+        <span class="o">|</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">zip</span> <span class="p">(</span><span class="kt">XMonad</span><span class="o">.</span><span class="n">workspaces</span> <span class="n">conf</span><span class="p">)</span> <span class="p">[</span><span class="n">xK_1</span> <span class="o">..</span> <span class="n">xK_9</span><span class="p">]</span>
+        <span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="p">[(</span><span class="kt">W</span><span class="o">.</span><span class="n">greedyView</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="kt">W</span><span class="o">.</span><span class="n">shift</span><span class="p">,</span> <span class="n">shiftMask</span><span class="p">)]]</span>
+    <span class="o">++</span>
+
+    <span class="c1">--</span>
+    <span class="c1">-- mod-{w,e,r}, Switch to physical/Xinerama screens 1, 2, or 3</span>
+    <span class="c1">-- mod-shift-{w,e,r}, Move client to screen 1, 2, or 3</span>
+    <span class="c1">--</span>
+    <span class="p">[((</span><span class="n">m</span> <span class="o">.|.</span> <span class="n">modMask</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="n">screenWorkspace</span> <span class="n">sc</span> <span class="o">&gt;&gt;=</span> <span class="n">flip</span> <span class="n">whenJust</span> <span class="p">(</span><span class="n">windows</span> <span class="o">.</span> <span class="n">f</span><span class="p">))</span>
+        <span class="o">|</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sc</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">zip</span> <span class="p">[</span><span class="n">xK_w</span><span class="p">,</span> <span class="n">xK_e</span><span class="p">,</span> <span class="n">xK_r</span><span class="p">]</span> <span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="p">]</span>
+        <span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="p">[(</span><span class="kt">W</span><span class="o">.</span><span class="n">view</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="kt">W</span><span class="o">.</span><span class="n">shift</span><span class="p">,</span> <span class="n">shiftMask</span><span class="p">)]]</span></code></pre></figure>
+
+<h3>The mod key</h3>
+<p>
+The mod key is the default key xmonad uses to prepend all the keybindings (usually). Some users configure it to <em>alt</em>, others to <em>ctrl</em>, others to the <em>windows key</em>. It's up to you. In my config I have it configured to the windows key:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">modMask'</span> <span class="o">::</span> <span class="kt">KeyMask</span>
+<span class="n">modMask'</span> <span class="o">=</span> <span class="n">mod4Mask</span></code></pre></figure>
+
+</p>
+<h3>The Layout Hook</h3>
+<p>
+The layout hook is used to manage the layouts of the workspaces. xmonad is very configurable regarding the layouts you can use. By default, the windows are tiled by using half the screen (vertically) for the main frame, and equally sized horizontal windows for the other frames, but you can set it up however you want.
+</p>
+<p>
+The syntax to configure the layouts is simple, you concatenate which layout you want to use for each workspace, leaving the last one as the default one:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">layoutHook'</span>  <span class="o">=</span>  <span class="n">onWorkspaces</span> <span class="p">[</span><span class="s">"1:main"</span><span class="p">,</span><span class="s">"5:music"</span><span class="p">]</span> <span class="n">customLayout</span> <span class="o">$</span> 
+                <span class="n">onWorkspaces</span> <span class="p">[</span><span class="s">"6:gimp"</span><span class="p">]</span> <span class="n">gimpLayout</span> <span class="o">$</span> 
+                <span class="n">onWorkspaces</span> <span class="p">[</span><span class="s">"4:chat"</span><span class="p">]</span> <span class="n">imLayout</span> <span class="o">$</span>
+                <span class="n">customLayout2</span></code></pre></figure>
+
+<p>
+What's not so easy is to configure those variables we used (customLayout, gimpLayout, imLayout, etc.), but you get the idea: you can configure each workspace to have its own layout, which is very useful. Here's my <em>customLayout</em> variable so you can see how a layout is configured:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">customLayout</span> <span class="o">=</span> <span class="n">avoidStruts</span> <span class="o">$</span> <span class="n">tiled</span> <span class="o">|||</span> <span class="kt">Mirror</span> <span class="n">tiled</span> <span class="o">|||</span> <span class="kt">Full</span> <span class="o">|||</span> <span class="n">simpleFloat</span>
+  <span class="kr">where</span>
+    <span class="n">tiled</span>   <span class="o">=</span> <span class="kt">ResizableTall</span> <span class="mi">1</span> <span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="kt">[]</span></code></pre></figure>
+
+<p>
+What I'm doing here is using <em>avoidstruts</em> to have a layout without margins between windows, and then passing a list of the different available layouts for the workspace, separated by the <em>|||</em> operator. This means that the default layout will be <em>tiled</em>, then <em>Mirror tiled</em>, etc. In this case, what Mirror does is swap the type of split, from vertical to horizontal. After that, I tell the config what I mean by <em>tiled</em>, in this case <em>ResizableTall 1 (2/200) (1/2) []</em>. What this means is to use the layout <em>ResizableTall</em> with 1 master window, the size of each resizing step, the width of the master panel and the slaves window height. You can check the full documentation for ResizableTall in the <a href="http://xmonad.org/xmonad-docs/xmonad-contrib/XMonad-Layout-ResizableTile.html">XMonad.Layout.ResizableTile</a> documentation page.
+</p>
+<p>
+The same way we've used ResizableTall for this customlayout, lots of extensions exist in xmonad that do all sorts of layout positioning.
+</p>
+<h3>The Manage Hook</h3>
+<p>
+The manage hook handles how new windows are positioned by default. xmonad allows you to put some windows into their own workspace, or in its own mode. This way, for example, you can have all Firefox windows to open in the "2:web" workspace, or have special program windows not to be tiled, but floated instead.
+</p>
+<p>
+While I still don't fully understand all the configuration options, this is a typical line to configure a manage hook:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"1:main"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myDev</span>    <span class="p">]</span> <span class="c1">-- move dev to main</span></code></pre></figure>
+
+</p>
+<p>
+What we're doing with this line is tell xmonad that all windows which has a <em>classname</em> included in the <em>myDev</em> list must be shifted to the "1:main" workspace. I don't know all the criteria you can use to identify a window, but the most used ones are the className and the role. You can check those X properties using the program <em>xprop</em> and clicking on the desired window.
+</p>
+<p>
+Here's my whole manage hook configuration:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">manageHook'</span> <span class="o">::</span> <span class="kt">ManageHook</span>
+<span class="n">manageHook'</span> <span class="o">=</span> <span class="p">(</span><span class="n">composeAll</span> <span class="o">.</span> <span class="n">concat</span> <span class="o">$</span>
+    <span class="p">[</span> <span class="p">[</span><span class="n">resource</span>     <span class="o">=?</span> <span class="n">r</span>            <span class="o">--&gt;</span> <span class="n">doIgnore</span>            <span class="o">|</span>   <span class="n">r</span>   <span class="o">&lt;-</span> <span class="n">myIgnores</span><span class="p">]</span> <span class="c1">-- ignore desktop</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"1:main"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myDev</span>    <span class="p">]</span> <span class="c1">-- move dev to main</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"2:web"</span>    <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myWebs</span>   <span class="p">]</span> <span class="c1">-- move webs to main</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"3:vim"</span>    <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myVim</span>    <span class="p">]</span> <span class="c1">-- move webs to main</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>	 <span class="s">"4:chat"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myChat</span>   <span class="p">]</span> <span class="c1">-- move chat to chat</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"5:music"</span>  <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myMusic</span>  <span class="p">]</span> <span class="c1">-- move music to music</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"6:gimp"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myGimp</span>   <span class="p">]</span> <span class="c1">-- move img to div</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doCenterFloat</span>       <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myFloats</span> <span class="p">]</span> <span class="c1">-- float my floats</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">name</span>         <span class="o">=?</span> <span class="n">n</span>            <span class="o">--&gt;</span> <span class="n">doCenterFloat</span>       <span class="o">|</span>   <span class="n">n</span>   <span class="o">&lt;-</span> <span class="n">myNames</span>  <span class="p">]</span> <span class="c1">-- float my names</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">isFullscreen</span>                 <span class="o">--&gt;</span> <span class="n">myDoFullFloat</span>                           <span class="p">]</span>
+    <span class="p">])</span> 
+
+    <span class="kr">where</span>
+
+        <span class="n">role</span>      <span class="o">=</span> <span class="n">stringProperty</span> <span class="s">"WM_WINDOW_ROLE"</span>
+        <span class="n">name</span>      <span class="o">=</span> <span class="n">stringProperty</span> <span class="s">"WM_NAME"</span>
+
+        <span class="c1">-- classnames</span>
+        <span class="n">myFloats</span>  <span class="o">=</span> <span class="p">[</span><span class="s">"Smplayer"</span><span class="p">,</span><span class="s">"MPlayer"</span><span class="p">,</span><span class="s">"VirtualBox"</span><span class="p">,</span><span class="s">"Xmessage"</span><span class="p">,</span><span class="s">"XFontSel"</span><span class="p">,</span><span class="s">"Downloads"</span><span class="p">,</span><span class="s">"Nm-connection-editor"</span><span class="p">]</span>
+        <span class="n">myWebs</span>    <span class="o">=</span> <span class="p">[</span><span class="s">"Firefox"</span><span class="p">,</span><span class="s">"Google-chrome"</span><span class="p">,</span><span class="s">"Chromium"</span><span class="p">,</span> <span class="s">"Chromium-browser"</span><span class="p">]</span>
+        <span class="n">myMovie</span>   <span class="o">=</span> <span class="p">[</span><span class="s">"Boxee"</span><span class="p">,</span><span class="s">"Trine"</span><span class="p">]</span>
+        <span class="n">myMusic</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Rhythmbox"</span><span class="p">,</span><span class="s">"Spotify"</span><span class="p">]</span>
+        <span class="n">myChat</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Pidgin"</span><span class="p">,</span><span class="s">"Buddy List"</span><span class="p">]</span>
+        <span class="n">myGimp</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Gimp"</span><span class="p">]</span>
+        <span class="n">myDev</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"gnome-terminal"</span><span class="p">]</span>
+        <span class="n">myVim</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Gvim"</span><span class="p">]</span>
+
+        <span class="c1">-- resources</span>
+        <span class="n">myIgnores</span> <span class="o">=</span> <span class="p">[</span><span class="s">"desktop"</span><span class="p">,</span><span class="s">"desktop_window"</span><span class="p">,</span><span class="s">"notify-osd"</span><span class="p">,</span><span class="s">"stalonetray"</span><span class="p">,</span><span class="s">"trayer"</span><span class="p">]</span>
+
+        <span class="c1">-- names</span>
+        <span class="n">myNames</span>   <span class="o">=</span> <span class="p">[</span><span class="s">"bashrun"</span><span class="p">,</span><span class="s">"Google Chrome Options"</span><span class="p">,</span><span class="s">"Chromium Options"</span><span class="p">]</span>
+
+        <span class="c1">-- a trick for fullscreen but stil allow focusing of other WSs</span>
+        <span class="n">myDoFullFloat</span> <span class="o">::</span> <span class="kt">ManageHook</span>
+        <span class="n">myDoFullFloat</span> <span class="o">=</span> <span class="n">doF</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusDown</span> <span class="o">&lt;+&gt;</span> <span class="n">doFullFloat</span></code></pre></figure>
+
+<h3>The Log Hook</h3>
+<p>
+The log hook is what xmonad uses to tell us information about itself. Usually this hook is used in conjunction with other modules such as <em>xmobar</em> or, in my case, <em>dzen2</em>. It tells us info about the status of the different workspaces, selected windows, etcetera. When configuring this hook, you usually pipe its result to the pipe you want to use to show the info.
+</p>
+<p>
+The log hook is also very customizable, you can select colors and icons to be shown. The <a href="http://xmonad.org/xmonad-docs/xmonad-contrib/XMonad-Hooks-DynamicLog.html#v:dynamicLogWithPP">documentation page for dynamicLogWithPP</a> shows you all the options. In my configuration, because I use dzen2 as a status bar, I also use some helpers for the colors:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">myLogHook</span> <span class="o">::</span> <span class="kt">Handle</span> <span class="o">-&gt;</span> <span class="kt">X</span> <span class="nb">()</span>
+<span class="n">myLogHook</span> <span class="n">h</span> <span class="o">=</span> <span class="n">dynamicLogWithPP</span> <span class="o">$</span> <span class="n">defaultPP</span>
+    <span class="p">{</span>
+        <span class="n">ppCurrent</span>           <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#ebac54"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppVisible</span>           <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"white"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppHidden</span>            <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"white"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppHiddenNoWindows</span>   <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#7b7b7b"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppUrgent</span>            <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#ff0000"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppWsSep</span>             <span class="o">=</span>   <span class="s">" "</span>
+      <span class="p">,</span> <span class="n">ppSep</span>               <span class="o">=</span>   <span class="s">"  |  "</span>
+      <span class="p">,</span> <span class="n">ppLayout</span>            <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#ebac54"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span>
+                                <span class="p">(</span><span class="nf">\</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span>
+                                    <span class="s">"ResizableTall"</span>             <span class="o">-&gt;</span>      <span class="s">"^i("</span> <span class="o">++</span> <span class="n">myBitmapsDir</span> <span class="o">++</span> <span class="s">"/tall.xbm)"</span>
+                                    <span class="s">"Mirror ResizableTall"</span>      <span class="o">-&gt;</span>      <span class="s">"^i("</span> <span class="o">++</span> <span class="n">myBitmapsDir</span> <span class="o">++</span> <span class="s">"/mtall.xbm)"</span>
+                                    <span class="s">"Full"</span>                      <span class="o">-&gt;</span>      <span class="s">"^i("</span> <span class="o">++</span> <span class="n">myBitmapsDir</span> <span class="o">++</span> <span class="s">"/full.xbm)"</span>
+                                    <span class="s">"Simple Float"</span>              <span class="o">-&gt;</span>      <span class="s">"~"</span>
+                                    <span class="kr">_</span>                           <span class="o">-&gt;</span>      <span class="n">x</span>
+                                <span class="p">)</span>
+      <span class="p">,</span> <span class="n">ppTitle</span>             <span class="o">=</span>   <span class="p">(</span><span class="s">" "</span> <span class="o">++</span><span class="p">)</span> <span class="o">.</span> <span class="n">dzenColor</span> <span class="s">"white"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">dzenEscape</span>
+      <span class="p">,</span> <span class="n">ppOutput</span>            <span class="o">=</span>   <span class="n">hPutStrLn</span> <span class="n">h</span>
+    <span class="p">}</span></code></pre></figure>
+
+</p>
+<p>
+As you can see, I can set the colors for the different workspace statuses, and some icons to be able to know which is the current workspace layout. The last line is very important, as it's the line that outputs the results to wherever we choose.
+</p>
+<h3>dzen2 and conky</h3>
+<p>
+As I told you at the beginning, I'm using dzen2 as a status bar, and conky to get some fancy system information. To configure this, we have to tell xmonad to spawn the dzen2 and conky processes at the beginning. This can be done inside the main method, and here's how it looks like in my configuration:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="n">myXmonadBar</span> <span class="o">=</span> <span class="s">"dzen2 -x '1440' -y '0' -h '24' -w '640' -ta 'l' -fg '#FFFFFF' -bg '#1B1D1E'"</span>
+<span class="n">myStatusBar</span> <span class="o">=</span> <span class="s">"conky -c /home/my_user/.xmonad/.conky_dzen | dzen2 -x '2080' -w '1040' -h '24' -ta 'r' -bg '#1B1D1E' -fg '#FFFFFF' -y '0'"</span>
+<span class="n">main</span> <span class="o">=</span> <span class="kr">do</span>
+    <span class="n">dzenLeftBar</span> <span class="o">&lt;-</span> <span class="n">spawnPipe</span> <span class="n">myXmonadBar</span>
+    <span class="n">dzenRightBar</span> <span class="o">&lt;-</span> <span class="n">spawnPipe</span> <span class="n">myStatusBar</span>
+    <span class="n">xmonad</span> <span class="o">$</span> <span class="n">defaultConfig</span>
+      <span class="p">{</span> <span class="n">terminal</span>            <span class="o">=</span> <span class="n">myTerminal</span>
+      <span class="p">,</span> <span class="n">workspaces</span>          <span class="o">=</span> <span class="n">myWorkspaces</span>
+      <span class="p">,</span> <span class="n">keys</span>                <span class="o">=</span> <span class="n">keys'</span>
+      <span class="p">,</span> <span class="n">modMask</span>             <span class="o">=</span> <span class="n">modMask'</span>
+      <span class="p">,</span> <span class="n">layoutHook</span>          <span class="o">=</span> <span class="n">layoutHook'</span>
+      <span class="p">,</span> <span class="n">manageHook</span>          <span class="o">=</span> <span class="n">manageHook'</span>
+      <span class="p">,</span> <span class="n">logHook</span>             <span class="o">=</span> <span class="n">myLogHook</span> <span class="n">dzenLeftBar</span> <span class="o">&gt;&gt;</span> <span class="n">fadeInactiveLogHook</span> <span class="mh">0xdddddddd</span>
+      <span class="p">,</span> <span class="n">normalBorderColor</span>   <span class="o">=</span> <span class="n">colorNormalBorder</span>
+      <span class="p">,</span> <span class="n">focusedBorderColor</span>  <span class="o">=</span> <span class="n">colorFocusedBorder</span>
+      <span class="p">,</span> <span class="n">borderWidth</span>         <span class="o">=</span> <span class="mi">2</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Notice that I use two different bars. I'll use the left one for xmonad info and the right one for system info. What's most important here are the coordinates and size of the bars, and also the configuration file for conky. After spawning the processes, in the main method we tell xmonad to use the <em>dzenLeftBar</em> pipe to output the log info.
+</p>
+<p>
+The right bar is piped to use the conky output, as configured in the <em>.conky_dzen</em> configuration. Conky has lots of options, covered in the <a href="http://conky.sourceforge.net/variables.html">Conky Objects</a> documentation page. Here's my config:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">background yes
+out_to_console yes
+out_to_x no
+# Update interval in seconds
+update_interval 1
+
+TEXT
+^i(/home/my_user/.xmonad/dzen2/cpu.xbm) ^fg(\#FFFFFF)${cpu}% ^i(/home/my_user/.xmonad/dzen2/mem.xbm) ^fg(\#FFFFFF)${memperc}% ^fg(\#ebac54) ${if_existing /proc/net/route eth1} ^i(/home/my_user/.xmonad/dzen2/net_wired.xbm) ^fg(\#00aa4a) ^i(/home/my_user/.xmonad/dzen2/net_down_03.xbm)${downspeed eth1} ^fg(\#ff3333) ^i(/home/my_user/.xmonad/dzen2/net_up_03.xbm)${upspeed eth1} ^fg(\#ebac54) ^i(/home/my_user/.xmonad/dzen2/mpd.xbm) ^fg(\#00ffff)${exec rhythmbox-client --print-playing-format "%aa-%at-%tt" | cut -c-70} ^fg(\#ebac54) ^i(/home/my_user/.xmonad/dzen2/volume.xbm) ^fg(\#00ffff)${exec amixer get Headphone | egrep -o "[0-9]+%" | head -1 | egrep -o "[0-9]*"}% ^fg(\#ebac54) ^i(/home/my_user/.xmonad/dzen2/clock.xbm) ^fg(\#FFFFFF) ${time %d %m %Y} ^fg(\#ebac54) ${time %R}</code></pre></figure>
+
+</p>
+<p>
+The important things here are the background line and the out_to_x line, which tell conky to run in the background and not to output the results directly to the X. You can then configure the <em>TEXT</em> variable to display whatever variables you want.
+</p>
+<h3>Putting it all together</h3>
+<p>
+After all the work is done, it's time to finally put it all together. Here's the final configuration file that I currently use and that I've been showing you in this post:
+</p>
+
+<figure class="highlight"><pre><code class="language-haskell" data-lang="haskell"><span class="c1">-- ~/.xmonad/xmonad.hs</span>
+<span class="c1">-- Imports {{{</span>
+<span class="kr">import</span> <span class="nn">XMonad</span>
+<span class="c1">-- Prompt</span>
+<span class="kr">import</span> <span class="nn">XMonad.Prompt</span>
+<span class="kr">import</span> <span class="nn">XMonad.Prompt.RunOrRaise</span> <span class="p">(</span><span class="nf">runOrRaisePrompt</span><span class="p">)</span>
+<span class="kr">import</span> <span class="nn">XMonad.Prompt.AppendFile</span> <span class="p">(</span><span class="nf">appendFilePrompt</span><span class="p">)</span>
+<span class="c1">-- Hooks</span>
+<span class="kr">import</span> <span class="nn">XMonad.Operations</span>
+
+<span class="kr">import</span> <span class="nn">System.IO</span>
+<span class="kr">import</span> <span class="nn">System.Exit</span>
+
+<span class="kr">import</span> <span class="nn">XMonad.Util.Run</span>
+
+
+<span class="kr">import</span> <span class="nn">XMonad.Actions.CycleWS</span>
+
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.ManageDocks</span>
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.ManageHelpers</span>
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.SetWMName</span>
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.DynamicLog</span>
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.UrgencyHook</span>
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.FadeInactive</span>
+<span class="kr">import</span> <span class="nn">XMonad.Hooks.EwmhDesktops</span>
+
+<span class="kr">import</span> <span class="nn">XMonad.Layout.NoBorders</span> <span class="p">(</span><span class="nf">smartBorders</span><span class="p">,</span> <span class="nf">noBorders</span><span class="p">)</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.PerWorkspace</span> <span class="p">(</span><span class="nf">onWorkspace</span><span class="p">,</span> <span class="nf">onWorkspaces</span><span class="p">)</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.Reflect</span> <span class="p">(</span><span class="nf">reflectHoriz</span><span class="p">)</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.IM</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.SimpleFloat</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.Spacing</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.ResizableTile</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.LayoutHints</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.LayoutModifier</span>
+<span class="kr">import</span> <span class="nn">XMonad.Layout.Grid</span>
+
+<span class="kr">import</span> <span class="nn">Data.Ratio</span> <span class="p">((</span><span class="o">%</span><span class="p">))</span>
+
+<span class="kr">import</span> <span class="k">qualified</span> <span class="nn">XMonad.StackSet</span> <span class="k">as</span> <span class="n">W</span>
+<span class="kr">import</span> <span class="k">qualified</span> <span class="nn">Data.Map</span> <span class="k">as</span> <span class="n">M</span>
+
+<span class="c1">--}}}</span>
+
+<span class="c1">-- Config {{{</span>
+<span class="c1">-- Define Terminal</span>
+<span class="n">myTerminal</span>      <span class="o">=</span> <span class="s">"gnome-terminal"</span>
+<span class="c1">-- Define modMask</span>
+<span class="n">modMask'</span> <span class="o">::</span> <span class="kt">KeyMask</span>
+<span class="n">modMask'</span> <span class="o">=</span> <span class="n">mod4Mask</span>
+<span class="c1">-- Define workspaces</span>
+<span class="n">myWorkspaces</span>    <span class="o">=</span> <span class="p">[</span><span class="s">"1:main"</span><span class="p">,</span><span class="s">"2:web"</span><span class="p">,</span><span class="s">"3:vim"</span><span class="p">,</span><span class="s">"4:chat"</span><span class="p">,</span><span class="s">"5:music"</span><span class="p">,</span> <span class="s">"6:gimp"</span><span class="p">]</span>
+<span class="c1">-- Dzen/Conky</span>
+<span class="n">myXmonadBar</span> <span class="o">=</span> <span class="s">"dzen2 -x '1440' -y '0' -h '24' -w '640' -ta 'l' -fg '#FFFFFF' -bg '#1B1D1E'"</span>
+<span class="n">myStatusBar</span> <span class="o">=</span> <span class="s">"conky -c /home/my_user/.xmonad/.conky_dzen | dzen2 -x '2080' -w '1040' -h '24' -ta 'r' -bg '#1B1D1E' -fg '#FFFFFF' -y '0'"</span>
+<span class="n">myBitmapsDir</span> <span class="o">=</span> <span class="s">"/home/my_user/.xmonad/dzen2"</span>
+<span class="c1">--}}}</span>
+<span class="c1">-- Main {{{</span>
+<span class="n">main</span> <span class="o">=</span> <span class="kr">do</span>
+    <span class="n">dzenLeftBar</span> <span class="o">&lt;-</span> <span class="n">spawnPipe</span> <span class="n">myXmonadBar</span>
+    <span class="n">dzenRightBar</span> <span class="o">&lt;-</span> <span class="n">spawnPipe</span> <span class="n">myStatusBar</span>
+    <span class="n">xmonad</span> <span class="o">$</span> <span class="n">defaultConfig</span>
+      <span class="p">{</span> <span class="n">terminal</span>            <span class="o">=</span> <span class="n">myTerminal</span>
+      <span class="p">,</span> <span class="n">workspaces</span>          <span class="o">=</span> <span class="n">myWorkspaces</span>
+      <span class="p">,</span> <span class="n">keys</span>                <span class="o">=</span> <span class="n">keys'</span>
+      <span class="p">,</span> <span class="n">modMask</span>             <span class="o">=</span> <span class="n">modMask'</span>
+      <span class="p">,</span> <span class="n">layoutHook</span>          <span class="o">=</span> <span class="n">layoutHook'</span>
+      <span class="p">,</span> <span class="n">manageHook</span>          <span class="o">=</span> <span class="n">manageHook'</span>
+      <span class="p">,</span> <span class="n">logHook</span>             <span class="o">=</span> <span class="n">myLogHook</span> <span class="n">dzenLeftBar</span> <span class="o">&gt;&gt;</span> <span class="n">fadeInactiveLogHook</span> <span class="mh">0xdddddddd</span>
+      <span class="p">,</span> <span class="n">normalBorderColor</span>   <span class="o">=</span> <span class="n">colorNormalBorder</span>
+      <span class="p">,</span> <span class="n">focusedBorderColor</span>  <span class="o">=</span> <span class="n">colorFocusedBorder</span>
+      <span class="p">,</span> <span class="n">borderWidth</span>         <span class="o">=</span> <span class="mi">2</span>
+<span class="p">}</span>
+<span class="c1">--}}}</span>
+
+
+<span class="c1">-- Hooks {{{</span>
+<span class="c1">-- ManageHook {{{</span>
+<span class="n">manageHook'</span> <span class="o">::</span> <span class="kt">ManageHook</span>
+<span class="n">manageHook'</span> <span class="o">=</span> <span class="p">(</span><span class="n">composeAll</span> <span class="o">.</span> <span class="n">concat</span> <span class="o">$</span>
+    <span class="p">[</span> <span class="p">[</span><span class="n">resource</span>     <span class="o">=?</span> <span class="n">r</span>            <span class="o">--&gt;</span> <span class="n">doIgnore</span>            <span class="o">|</span>   <span class="n">r</span>   <span class="o">&lt;-</span> <span class="n">myIgnores</span><span class="p">]</span> <span class="c1">-- ignore desktop</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"1:main"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myDev</span>    <span class="p">]</span> <span class="c1">-- move dev to main</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"2:web"</span>    <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myWebs</span>   <span class="p">]</span> <span class="c1">-- move webs to main</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"3:vim"</span>    <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myVim</span>    <span class="p">]</span> <span class="c1">-- move webs to main</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>	 <span class="s">"4:chat"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myChat</span>   <span class="p">]</span> <span class="c1">-- move chat to chat</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"5:music"</span>  <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myMusic</span>  <span class="p">]</span> <span class="c1">-- move music to music</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doShift</span>  <span class="s">"6:gimp"</span>   <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myGimp</span>   <span class="p">]</span> <span class="c1">-- move img to div</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">className</span>    <span class="o">=?</span> <span class="n">c</span>            <span class="o">--&gt;</span> <span class="n">doCenterFloat</span>       <span class="o">|</span>   <span class="n">c</span>   <span class="o">&lt;-</span> <span class="n">myFloats</span> <span class="p">]</span> <span class="c1">-- float my floats</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">name</span>         <span class="o">=?</span> <span class="n">n</span>            <span class="o">--&gt;</span> <span class="n">doCenterFloat</span>       <span class="o">|</span>   <span class="n">n</span>   <span class="o">&lt;-</span> <span class="n">myNames</span>  <span class="p">]</span> <span class="c1">-- float my names</span>
+    <span class="p">,</span> <span class="p">[</span><span class="n">isFullscreen</span>                 <span class="o">--&gt;</span> <span class="n">myDoFullFloat</span>                           <span class="p">]</span>
+    <span class="p">])</span> 
+
+    <span class="kr">where</span>
+
+        <span class="n">role</span>      <span class="o">=</span> <span class="n">stringProperty</span> <span class="s">"WM_WINDOW_ROLE"</span>
+        <span class="n">name</span>      <span class="o">=</span> <span class="n">stringProperty</span> <span class="s">"WM_NAME"</span>
+
+        <span class="c1">-- classnames</span>
+        <span class="n">myFloats</span>  <span class="o">=</span> <span class="p">[</span><span class="s">"Smplayer"</span><span class="p">,</span><span class="s">"MPlayer"</span><span class="p">,</span><span class="s">"VirtualBox"</span><span class="p">,</span><span class="s">"Xmessage"</span><span class="p">,</span><span class="s">"XFontSel"</span><span class="p">,</span><span class="s">"Downloads"</span><span class="p">,</span><span class="s">"Nm-connection-editor"</span><span class="p">]</span>
+        <span class="n">myWebs</span>    <span class="o">=</span> <span class="p">[</span><span class="s">"Firefox"</span><span class="p">,</span><span class="s">"Google-chrome"</span><span class="p">,</span><span class="s">"Chromium"</span><span class="p">,</span> <span class="s">"Chromium-browser"</span><span class="p">]</span>
+        <span class="n">myMovie</span>   <span class="o">=</span> <span class="p">[</span><span class="s">"Boxee"</span><span class="p">,</span><span class="s">"Trine"</span><span class="p">]</span>
+        <span class="n">myMusic</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Rhythmbox"</span><span class="p">,</span><span class="s">"Spotify"</span><span class="p">]</span>
+        <span class="n">myChat</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Pidgin"</span><span class="p">,</span><span class="s">"Buddy List"</span><span class="p">]</span>
+        <span class="n">myGimp</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Gimp"</span><span class="p">]</span>
+        <span class="n">myDev</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"gnome-terminal"</span><span class="p">]</span>
+        <span class="n">myVim</span>	  <span class="o">=</span> <span class="p">[</span><span class="s">"Gvim"</span><span class="p">]</span>
+
+        <span class="c1">-- resources</span>
+        <span class="n">myIgnores</span> <span class="o">=</span> <span class="p">[</span><span class="s">"desktop"</span><span class="p">,</span><span class="s">"desktop_window"</span><span class="p">,</span><span class="s">"notify-osd"</span><span class="p">,</span><span class="s">"stalonetray"</span><span class="p">,</span><span class="s">"trayer"</span><span class="p">]</span>
+
+        <span class="c1">-- names</span>
+        <span class="n">myNames</span>   <span class="o">=</span> <span class="p">[</span><span class="s">"bashrun"</span><span class="p">,</span><span class="s">"Google Chrome Options"</span><span class="p">,</span><span class="s">"Chromium Options"</span><span class="p">]</span>
+
+<span class="c1">-- a trick for fullscreen but stil allow focusing of other WSs</span>
+<span class="n">myDoFullFloat</span> <span class="o">::</span> <span class="kt">ManageHook</span>
+<span class="n">myDoFullFloat</span> <span class="o">=</span> <span class="n">doF</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusDown</span> <span class="o">&lt;+&gt;</span> <span class="n">doFullFloat</span>
+<span class="c1">-- }}}</span>
+<span class="n">layoutHook'</span>  <span class="o">=</span>  <span class="n">onWorkspaces</span> <span class="p">[</span><span class="s">"1:main"</span><span class="p">,</span><span class="s">"5:music"</span><span class="p">]</span> <span class="n">customLayout</span> <span class="o">$</span> 
+                <span class="n">onWorkspaces</span> <span class="p">[</span><span class="s">"6:gimp"</span><span class="p">]</span> <span class="n">gimpLayout</span> <span class="o">$</span> 
+                <span class="n">onWorkspaces</span> <span class="p">[</span><span class="s">"4:chat"</span><span class="p">]</span> <span class="n">imLayout</span> <span class="o">$</span>
+                <span class="n">customLayout2</span>
+
+<span class="c1">--Bar</span>
+<span class="n">myLogHook</span> <span class="o">::</span> <span class="kt">Handle</span> <span class="o">-&gt;</span> <span class="kt">X</span> <span class="nb">()</span>
+<span class="n">myLogHook</span> <span class="n">h</span> <span class="o">=</span> <span class="n">dynamicLogWithPP</span> <span class="o">$</span> <span class="n">defaultPP</span>
+    <span class="p">{</span>
+        <span class="n">ppCurrent</span>           <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#ebac54"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppVisible</span>           <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"white"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppHidden</span>            <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"white"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppHiddenNoWindows</span>   <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#7b7b7b"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppUrgent</span>            <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#ff0000"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">pad</span>
+      <span class="p">,</span> <span class="n">ppWsSep</span>             <span class="o">=</span>   <span class="s">" "</span>
+      <span class="p">,</span> <span class="n">ppSep</span>               <span class="o">=</span>   <span class="s">"  |  "</span>
+      <span class="p">,</span> <span class="n">ppLayout</span>            <span class="o">=</span>   <span class="n">dzenColor</span> <span class="s">"#ebac54"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span>
+                                <span class="p">(</span><span class="nf">\</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="kr">case</span> <span class="n">x</span> <span class="kr">of</span>
+                                    <span class="s">"ResizableTall"</span>             <span class="o">-&gt;</span>      <span class="s">"^i("</span> <span class="o">++</span> <span class="n">myBitmapsDir</span> <span class="o">++</span> <span class="s">"/tall.xbm)"</span>
+                                    <span class="s">"Mirror ResizableTall"</span>      <span class="o">-&gt;</span>      <span class="s">"^i("</span> <span class="o">++</span> <span class="n">myBitmapsDir</span> <span class="o">++</span> <span class="s">"/mtall.xbm)"</span>
+                                    <span class="s">"Full"</span>                      <span class="o">-&gt;</span>      <span class="s">"^i("</span> <span class="o">++</span> <span class="n">myBitmapsDir</span> <span class="o">++</span> <span class="s">"/full.xbm)"</span>
+                                    <span class="s">"Simple Float"</span>              <span class="o">-&gt;</span>      <span class="s">"~"</span>
+                                    <span class="kr">_</span>                           <span class="o">-&gt;</span>      <span class="n">x</span>
+                                <span class="p">)</span>
+      <span class="p">,</span> <span class="n">ppTitle</span>             <span class="o">=</span>   <span class="p">(</span><span class="s">" "</span> <span class="o">++</span><span class="p">)</span> <span class="o">.</span> <span class="n">dzenColor</span> <span class="s">"white"</span> <span class="s">"#1B1D1E"</span> <span class="o">.</span> <span class="n">dzenEscape</span>
+      <span class="p">,</span> <span class="n">ppOutput</span>            <span class="o">=</span>   <span class="n">hPutStrLn</span> <span class="n">h</span>
+    <span class="p">}</span>
+
+<span class="c1">-- Layout</span>
+<span class="n">customLayout</span> <span class="o">=</span> <span class="n">avoidStruts</span> <span class="o">$</span> <span class="n">tiled</span> <span class="o">|||</span> <span class="kt">Mirror</span> <span class="n">tiled</span> <span class="o">|||</span> <span class="kt">Full</span> <span class="o">|||</span> <span class="n">simpleFloat</span>
+  <span class="kr">where</span>
+    <span class="n">tiled</span>   <span class="o">=</span> <span class="kt">ResizableTall</span> <span class="mi">1</span> <span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="kt">[]</span>
+
+<span class="n">customLayout2</span> <span class="o">=</span> <span class="n">avoidStruts</span> <span class="o">$</span> <span class="kt">Full</span> <span class="o">|||</span> <span class="n">tiled</span> <span class="o">|||</span> <span class="kt">Mirror</span> <span class="n">tiled</span> <span class="o">|||</span> <span class="n">simpleFloat</span>
+  <span class="kr">where</span>
+    <span class="n">tiled</span>   <span class="o">=</span> <span class="kt">ResizableTall</span> <span class="mi">1</span> <span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="kt">[]</span>
+
+<span class="n">gimpLayout</span>  <span class="o">=</span> <span class="n">avoidStruts</span> <span class="o">$</span> <span class="n">withIM</span> <span class="p">(</span><span class="mf">0.11</span><span class="p">)</span> <span class="p">(</span><span class="kt">Role</span> <span class="s">"gimp-toolbox"</span><span class="p">)</span> <span class="o">$</span>
+              <span class="n">reflectHoriz</span> <span class="o">$</span>
+              <span class="n">withIM</span> <span class="p">(</span><span class="mf">0.15</span><span class="p">)</span> <span class="p">(</span><span class="kt">Role</span> <span class="s">"gimp-dock"</span><span class="p">)</span> <span class="kt">Full</span>
+
+<span class="n">imLayout</span>    <span class="o">=</span> <span class="n">avoidStruts</span> <span class="o">$</span> <span class="n">withIM</span> <span class="p">(</span><span class="mi">1</span><span class="o">%</span><span class="mi">5</span><span class="p">)</span> <span class="p">(</span><span class="kt">And</span> <span class="p">(</span><span class="kt">ClassName</span> <span class="s">"Pidgin"</span><span class="p">)</span> <span class="p">(</span><span class="kt">Role</span> <span class="s">"buddy_list"</span><span class="p">))</span> <span class="kt">Grid</span> 
+<span class="c1">--}}}</span>
+<span class="c1">-- Theme {{{</span>
+<span class="c1">-- Color names are easier to remember:</span>
+<span class="n">colorOrange</span>         <span class="o">=</span> <span class="s">"#FD971F"</span>
+<span class="n">colorDarkGray</span>       <span class="o">=</span> <span class="s">"#1B1D1E"</span>
+<span class="n">colorPink</span>           <span class="o">=</span> <span class="s">"#F92672"</span>
+<span class="n">colorGreen</span>          <span class="o">=</span> <span class="s">"#A6E22E"</span>
+<span class="n">colorBlue</span>           <span class="o">=</span> <span class="s">"#66D9EF"</span>
+<span class="n">colorYellow</span>         <span class="o">=</span> <span class="s">"#E6DB74"</span>
+<span class="n">colorWhite</span>          <span class="o">=</span> <span class="s">"#CCCCC6"</span>
+ 
+<span class="n">colorNormalBorder</span>   <span class="o">=</span> <span class="s">"#CCCCC6"</span>
+<span class="n">colorFocusedBorder</span>  <span class="o">=</span> <span class="s">"#fd971f"</span>
+
+
+<span class="n">barFont</span>  <span class="o">=</span> <span class="s">"terminus"</span>
+<span class="n">barXFont</span> <span class="o">=</span> <span class="s">"inconsolata:size=12"</span>
+<span class="n">xftFont</span> <span class="o">=</span> <span class="s">"xft: inconsolata-14"</span>
+<span class="c1">--}}}</span>
+
+<span class="c1">-- Prompt Config {{{</span>
+<span class="n">mXPConfig</span> <span class="o">::</span> <span class="kt">XPConfig</span>
+<span class="n">mXPConfig</span> <span class="o">=</span>
+    <span class="n">defaultXPConfig</span> <span class="p">{</span> <span class="n">font</span>                  <span class="o">=</span> <span class="n">barFont</span>
+                    <span class="p">,</span> <span class="n">bgColor</span>               <span class="o">=</span> <span class="n">colorDarkGray</span>
+                    <span class="p">,</span> <span class="n">fgColor</span>               <span class="o">=</span> <span class="n">colorGreen</span>
+                    <span class="p">,</span> <span class="n">bgHLight</span>              <span class="o">=</span> <span class="n">colorGreen</span>
+                    <span class="p">,</span> <span class="n">fgHLight</span>              <span class="o">=</span> <span class="n">colorDarkGray</span>
+                    <span class="p">,</span> <span class="n">promptBorderWidth</span>     <span class="o">=</span> <span class="mi">0</span>
+                    <span class="p">,</span> <span class="n">height</span>                <span class="o">=</span> <span class="mi">14</span>
+                    <span class="p">,</span> <span class="n">historyFilter</span>         <span class="o">=</span> <span class="n">deleteConsecutive</span>
+                    <span class="p">}</span>
+ 
+<span class="c1">-- Run or Raise Menu</span>
+<span class="n">largeXPConfig</span> <span class="o">::</span> <span class="kt">XPConfig</span>
+<span class="n">largeXPConfig</span> <span class="o">=</span> <span class="n">mXPConfig</span>
+                <span class="p">{</span> <span class="n">font</span> <span class="o">=</span> <span class="n">xftFont</span>
+                <span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">22</span>
+                <span class="p">}</span>
+<span class="c1">-- }}}</span>
+<span class="c1">-- Key mapping {{{</span>
+<span class="n">keys'</span> <span class="n">conf</span><span class="o">@</span><span class="p">(</span><span class="kt">XConfig</span> <span class="p">{</span><span class="kt">XMonad</span><span class="o">.</span><span class="n">modMask</span> <span class="o">=</span> <span class="n">modMask</span><span class="p">})</span> <span class="o">=</span> <span class="kt">M</span><span class="o">.</span><span class="n">fromList</span> <span class="o">$</span>
+    <span class="p">[</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_p</span>        <span class="p">),</span> <span class="n">runOrRaisePrompt</span> <span class="n">largeXPConfig</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_Return</span>   <span class="p">),</span> <span class="n">spawn</span> <span class="o">$</span> <span class="kt">XMonad</span><span class="o">.</span><span class="n">terminal</span> <span class="n">conf</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_F2</span>       <span class="p">),</span> <span class="n">spawn</span> <span class="s">"gmrun"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_c</span>        <span class="p">),</span> <span class="n">kill</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_l</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"slock"</span><span class="p">)</span>
+    <span class="c1">-- Programs</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="n">xK_Print</span>    <span class="p">),</span> <span class="n">spawn</span> <span class="s">"scrot -e 'mv $f ~/screenshots/'"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>		            <span class="n">xK_o</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"chromium-browser"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_m</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"nautilus --no-desktop --browser"</span><span class="p">)</span>
+    <span class="c1">-- Media Keys</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff12</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"amixer -q sset Headphone toggle"</span><span class="p">)</span>        <span class="c1">-- XF86AudioMute</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff11</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"amixer -q sset Headphone 5%-"</span><span class="p">)</span>   <span class="c1">-- XF86AudioLowerVolume</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff13</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"amixer -q sset Headphone 5%+"</span><span class="p">)</span>   <span class="c1">-- XF86AudioRaiseVolume</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff14</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"rhythmbox-client --play-pause"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff17</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"rhythmbox-client --next"</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span>                          <span class="mh">0x1008ff16</span>  <span class="p">),</span> <span class="n">spawn</span> <span class="s">"rhythmbox-client --previous"</span><span class="p">)</span>
+
+    <span class="c1">-- layouts</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_space</span>    <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">NextLayout</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_space</span>    <span class="p">),</span> <span class="n">setLayout</span> <span class="o">$</span> <span class="kt">XMonad</span><span class="o">.</span><span class="n">layoutHook</span> <span class="n">conf</span><span class="p">)</span>          <span class="c1">-- reset layout on current desktop to default</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_b</span>        <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">ToggleStruts</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_n</span>        <span class="p">),</span> <span class="n">refresh</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_Tab</span>      <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusDown</span><span class="p">)</span>                         <span class="c1">-- move focus to next window</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_j</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusDown</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_k</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">focusUp</span>  <span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_j</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">swapDown</span><span class="p">)</span>                          <span class="c1">-- swap the focused window with the next window</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_k</span>        <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">swapUp</span><span class="p">)</span>                            <span class="c1">-- swap the focused window with the previous window</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_Return</span>   <span class="p">),</span> <span class="n">windows</span> <span class="kt">W</span><span class="o">.</span><span class="n">swapMaster</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_t</span>        <span class="p">),</span> <span class="n">withFocused</span> <span class="o">$</span> <span class="n">windows</span> <span class="o">.</span> <span class="kt">W</span><span class="o">.</span><span class="n">sink</span><span class="p">)</span>              <span class="c1">-- Push window back into tiling</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_h</span>        <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">Shrink</span><span class="p">)</span>                          <span class="c1">-- %! Shrink a master area</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_l</span>        <span class="p">),</span> <span class="n">sendMessage</span> <span class="kt">Expand</span><span class="p">)</span>                          <span class="c1">-- %! Expand a master area</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_comma</span>    <span class="p">),</span> <span class="n">sendMessage</span> <span class="p">(</span><span class="kt">IncMasterN</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_period</span>   <span class="p">),</span> <span class="n">sendMessage</span> <span class="p">(</span><span class="kt">IncMasterN</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)))</span>
+
+
+    <span class="c1">-- workspaces</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">controlMask</span><span class="p">,</span>   <span class="n">xK_Right</span>     <span class="p">),</span> <span class="n">nextWS</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>     <span class="n">xK_Right</span>     <span class="p">),</span> <span class="n">shiftToNext</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">controlMask</span><span class="p">,</span>   <span class="n">xK_Left</span>      <span class="p">),</span> <span class="n">prevWS</span><span class="p">)</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>     <span class="n">xK_Left</span>      <span class="p">),</span> <span class="n">shiftToPrev</span><span class="p">)</span>
+    
+    <span class="c1">-- quit, or restart</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span> <span class="o">.|.</span> <span class="n">shiftMask</span><span class="p">,</span>      <span class="n">xK_q</span>        <span class="p">),</span> <span class="n">io</span> <span class="p">(</span><span class="n">exitWith</span> <span class="kt">ExitSuccess</span><span class="p">))</span>
+    <span class="p">,</span> <span class="p">((</span><span class="n">modMask</span><span class="p">,</span>                    <span class="n">xK_q</span>        <span class="p">),</span> <span class="n">spawn</span> <span class="s">"killall conky dzen2 &amp;&amp; /home/my_user/.cabal/bin/xmonad --recompile &amp;&amp; /home/my_user/.cabal/bin/xmonad --restart"</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="o">++</span>
+    <span class="c1">-- mod-[1..9] %! Switch to workspace N</span>
+    <span class="c1">-- mod-shift-[1..9] %! Move client to workspace N</span>
+    <span class="p">[((</span><span class="n">m</span> <span class="o">.|.</span> <span class="n">modMask</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">windows</span> <span class="o">$</span> <span class="n">f</span> <span class="n">i</span><span class="p">)</span>
+        <span class="o">|</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">zip</span> <span class="p">(</span><span class="kt">XMonad</span><span class="o">.</span><span class="n">workspaces</span> <span class="n">conf</span><span class="p">)</span> <span class="p">[</span><span class="n">xK_1</span> <span class="o">..</span> <span class="n">xK_9</span><span class="p">]</span>
+        <span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="p">[(</span><span class="kt">W</span><span class="o">.</span><span class="n">greedyView</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="kt">W</span><span class="o">.</span><span class="n">shift</span><span class="p">,</span> <span class="n">shiftMask</span><span class="p">)]]</span>
+    <span class="o">++</span>
+
+    <span class="c1">--</span>
+    <span class="c1">-- mod-{w,e,r}, Switch to physical/Xinerama screens 1, 2, or 3</span>
+    <span class="c1">-- mod-shift-{w,e,r}, Move client to screen 1, 2, or 3</span>
+    <span class="c1">--</span>
+    <span class="p">[((</span><span class="n">m</span> <span class="o">.|.</span> <span class="n">modMask</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="n">screenWorkspace</span> <span class="n">sc</span> <span class="o">&gt;&gt;=</span> <span class="n">flip</span> <span class="n">whenJust</span> <span class="p">(</span><span class="n">windows</span> <span class="o">.</span> <span class="n">f</span><span class="p">))</span>
+        <span class="o">|</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">sc</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">zip</span> <span class="p">[</span><span class="n">xK_w</span><span class="p">,</span> <span class="n">xK_e</span><span class="p">,</span> <span class="n">xK_r</span><span class="p">]</span> <span class="p">[</span><span class="mi">0</span><span class="o">..</span><span class="p">]</span>
+        <span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="p">[(</span><span class="kt">W</span><span class="o">.</span><span class="n">view</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="kt">W</span><span class="o">.</span><span class="n">shift</span><span class="p">,</span> <span class="n">shiftMask</span><span class="p">)]]</span>
+
+<span class="c1">--}}}</span>
+<span class="c1">-- vim:foldmethod=marker sw=4 sts=4 ts=4 tw=0 et ai nowrap</span></code></pre></figure>
+
+<p>
+Copy this into your .xmonad folder, assuming you have everything needed, and you should see a desktop similar to the one shown on the image.
+</p>
+<p>
+Feel free to check my <a href="http://github.com/brafales/xmonad-config">GitHub xmonad repository</a> to find updated configuration files.
+</p>
+<p>
+Cheers!
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2011/10/20/iterate-collection-groups/">&laquo; Iterate over a collection in groups, and other things</a>
+
+
+  <a class="next" href="/2011/12/02/creating-job-managers-ubiquo/">Creating your own Job Managers in Ubiquo &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

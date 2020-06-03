@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Limiting the suggestions on jQueryUI Autocomplete widget</title>
+  <meta name="description" content="If you ever used autocomplete.ui plugin from jQuery UI and have an array with lots of suggestions you&#39;ll see that the solutions provided by the plugin are not always satisfactory. You can add a scrollbar to the suggestions box by using a CSS hack, but even with that, you&#39;ll have to render a big HTML that can be annoying on slow machines (mobile devices, for example). I was working on a web site recently that had to be displayed on mobile devices and needed an autocomplete. But the suggestions array was big. A lot. This caused some problems on the mobile devices as they were behaving very slow, and the default plugin configuration doesn&#39;t allow you to specify a maximum number of items to show in the suggesstions box. So I decided to do a dirty hack into the plugin code to add this behaviour, adding a max property to the options to be able to limit the number of suggestions to show. It&#39;s not a perfect solution, because it should be implemented as a subclass or something, but if you need a fast solution, this is the way to go. You can find the code in my GitHub repository fork of jQueryUI. You can check the commit to see the changes I made.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2011/03/29/limiting-the-suggestions-on-jqueryui-autocomplete-widget/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Limiting the suggestions on jQueryUI Autocomplete widget">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2011/03/29/limiting-the-suggestions-on-jqueryui-autocomplete-widget/">
+  <meta property="og:description" content="If you ever used autocomplete.ui plugin from jQuery UI and have an array with lots of suggestions you&#39;ll see that the solutions provided by the plugin are not always satisfactory. You can add a scrollbar to the suggestions box by using a CSS hack, but even with that, you&#39;ll have to render a big HTML that can be annoying on slow machines (mobile devices, for example). I was working on a web site recently that had to be displayed on mobile devices and needed an autocomplete. But the suggestions array was big. A lot. This caused some problems on the mobile devices as they were behaving very slow, and the default plugin configuration doesn&#39;t allow you to specify a maximum number of items to show in the suggesstions box. So I decided to do a dirty hack into the plugin code to add this behaviour, adding a max property to the options to be able to limit the number of suggestions to show. It&#39;s not a perfect solution, because it should be implemented as a subclass or something, but if you need a fast solution, this is the way to go. You can find the code in my GitHub repository fork of jQueryUI. You can check the commit to see the changes I made.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Limiting the suggestions on jQueryUI Autocomplete widget">
+  <meta name="twitter:description" content="If you ever used autocomplete.ui plugin from jQuery UI and have an array with lots of suggestions you&#39;ll see that the solutions provided by the plugin are not always satisfactory. You can add a...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Limiting the suggestions on jQueryUI Autocomplete widget</h1>
+    
+    <p class="post-meta"><time datetime="2011-03-29T09:08:00+00:00" itemprop="datePublished">Mar 29, 2011</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/autocomplete/">autocomplete</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/javascript/">javascript</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/jquery/">jquery</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/jqueryui/">jqueryUI</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+If you ever used <a href="http://jqueryui.com/demos/autocomplete/">autocomplete.ui</a> plugin from <a href="http://jqueryui.com/">jQuery UI</a> and have an array with lots of suggestions you'll see that the solutions provided by the plugin are not always satisfactory. You can add a scrollbar to the suggestions box by using a CSS hack, but even with that, you'll have to render a big HTML that can be annoying on slow machines (mobile devices, for example).
+</p>
+<p>
+I was working on a web site recently that had to be displayed on mobile devices and needed an autocomplete. But the suggestions array was big. A lot. This caused some problems on the mobile devices as they were behaving very slow, and the default plugin configuration doesn't allow you to specify a maximum number of items to show in the suggesstions box.
+</p>
+<p>
+So I decided to do a dirty hack into the plugin code to add this behaviour, adding a <em>max</em> property to the options to be able to limit the number of suggestions to show.
+</p>
+<p>
+It's not a perfect solution, because it should be implemented as a subclass or something, but if you need a fast solution, this is the way to go. You can find the code in my <a href="https://github.com/brafales/jquery-ui/blob/master/ui/jquery.ui.autocomplete.js">GitHub repository fork of jQueryUI</a>. You can check the <a href="https://github.com/brafales/jquery-ui/commit/aa07a7e7604394098bb65abcb1afacb74615e01e">commit</a> to see the changes I made.
+</p>
+<!--more-->
+<p>
+Here's the resulting code file:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="cm">/*
+ * jQuery UI Autocomplete 1.8.10
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Autocomplete
+ *
+ * Depends:
+ *	jquery.ui.core.js
+ *	jquery.ui.widget.js
+ *	jquery.ui.position.js
+ */</span>
+<span class="p">(</span><span class="kd">function</span><span class="p">(</span> <span class="nx">$</span><span class="p">,</span> <span class="kc">undefined</span> <span class="p">)</span> <span class="p">{</span>
+
+<span class="c1">// used to prevent race conditions with remote data sources</span>
+<span class="kd">var</span> <span class="nx">requestIndex</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="nx">$</span><span class="p">.</span><span class="nx">widget</span><span class="p">(</span> <span class="dl">"</span><span class="s2">ui.autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="p">{</span>
+	<span class="na">options</span><span class="p">:</span> <span class="p">{</span>
+		<span class="na">appendTo</span><span class="p">:</span> <span class="dl">"</span><span class="s2">body</span><span class="dl">"</span><span class="p">,</span>
+		<span class="na">delay</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+		<span class="na">minLength</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+		<span class="na">position</span><span class="p">:</span> <span class="p">{</span>
+			<span class="na">my</span><span class="p">:</span> <span class="dl">"</span><span class="s2">left top</span><span class="dl">"</span><span class="p">,</span>
+			<span class="na">at</span><span class="p">:</span> <span class="dl">"</span><span class="s2">left bottom</span><span class="dl">"</span><span class="p">,</span>
+			<span class="na">collision</span><span class="p">:</span> <span class="dl">"</span><span class="s2">none</span><span class="dl">"</span>
+		<span class="p">},</span>
+		<span class="na">source</span><span class="p">:</span> <span class="kc">null</span><span class="p">,</span>
+        <span class="na">max</span><span class="p">:</span> <span class="mi">0</span>
+	<span class="p">},</span>
+
+	<span class="na">pending</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+
+	<span class="na">_create</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nb">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">,</span>
+			<span class="nx">doc</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">[</span> <span class="mi">0</span> <span class="p">].</span><span class="nx">ownerDocument</span><span class="p">,</span>
+			<span class="nx">suppressKeyPress</span><span class="p">;</span>
+
+		<span class="k">this</span><span class="p">.</span><span class="nx">element</span>
+			<span class="p">.</span><span class="nx">addClass</span><span class="p">(</span> <span class="dl">"</span><span class="s2">ui-autocomplete-input</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">attr</span><span class="p">(</span> <span class="dl">"</span><span class="s2">autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">off</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="c1">// TODO verify these actually work as intended</span>
+			<span class="p">.</span><span class="nx">attr</span><span class="p">({</span>
+				<span class="na">role</span><span class="p">:</span> <span class="dl">"</span><span class="s2">textbox</span><span class="dl">"</span><span class="p">,</span>
+				<span class="dl">"</span><span class="s2">aria-autocomplete</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">list</span><span class="dl">"</span><span class="p">,</span>
+				<span class="dl">"</span><span class="s2">aria-haspopup</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">true</span><span class="dl">"</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">bind</span><span class="p">(</span> <span class="dl">"</span><span class="s2">keydown.autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">disabled</span> <span class="o">||</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span> <span class="dl">"</span><span class="s2">readonly</span><span class="dl">"</span> <span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="k">return</span><span class="p">;</span>
+				<span class="p">}</span>
+
+				<span class="nx">suppressKeyPress</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+				<span class="kd">var</span> <span class="nx">keyCode</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ui</span><span class="p">.</span><span class="nx">keyCode</span><span class="p">;</span>
+				<span class="k">switch</span><span class="p">(</span> <span class="nx">event</span><span class="p">.</span><span class="nx">keyCode</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">PAGE_UP</span><span class="p">:</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">_move</span><span class="p">(</span> <span class="dl">"</span><span class="s2">previousPage</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">PAGE_DOWN</span><span class="p">:</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">_move</span><span class="p">(</span> <span class="dl">"</span><span class="s2">nextPage</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">UP</span><span class="p">:</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">_move</span><span class="p">(</span> <span class="dl">"</span><span class="s2">previous</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="c1">// prevent moving cursor to beginning of text field in some browsers</span>
+					<span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">DOWN</span><span class="p">:</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">_move</span><span class="p">(</span> <span class="dl">"</span><span class="s2">next</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="c1">// prevent moving cursor to end of text field in some browsers</span>
+					<span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">ENTER</span><span class="p">:</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">NUMPAD_ENTER</span><span class="p">:</span>
+					<span class="c1">// when menu is open and has focus</span>
+					<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">active</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="c1">// #6055 - Opera still allows the keypress to occur</span>
+						<span class="c1">// which causes forms to submit</span>
+						<span class="nx">suppressKeyPress</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+						<span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+					<span class="p">}</span>
+					<span class="c1">//passthrough - ENTER and TAB both select the current element</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">TAB</span><span class="p">:</span>
+					<span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="nb">self</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">active</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="k">return</span><span class="p">;</span>
+					<span class="p">}</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">select</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="k">case</span> <span class="nx">keyCode</span><span class="p">.</span><span class="na">ESCAPE</span><span class="p">:</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">term</span> <span class="p">);</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">close</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="nl">default</span><span class="p">:</span>
+					<span class="c1">// keypress is triggered before the input value is changed</span>
+					<span class="nx">clearTimeout</span><span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">searching</span> <span class="p">);</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">searching</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+						<span class="c1">// only search if the value has changed</span>
+						<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">term</span> <span class="o">!=</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">()</span> <span class="p">)</span> <span class="p">{</span>
+							<span class="nb">self</span><span class="p">.</span><span class="nx">selectedItem</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+							<span class="nb">self</span><span class="p">.</span><span class="nx">search</span><span class="p">(</span> <span class="kc">null</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+						<span class="p">}</span>
+					<span class="p">},</span> <span class="nb">self</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">delay</span> <span class="p">);</span>
+					<span class="k">break</span><span class="p">;</span>
+				<span class="p">}</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">bind</span><span class="p">(</span> <span class="dl">"</span><span class="s2">keypress.autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="nx">suppressKeyPress</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="nx">suppressKeyPress</span> <span class="o">=</span> <span class="kc">false</span><span class="p">;</span>
+					<span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+				<span class="p">}</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">bind</span><span class="p">(</span> <span class="dl">"</span><span class="s2">focus.autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">disabled</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="k">return</span><span class="p">;</span>
+				<span class="p">}</span>
+
+				<span class="nb">self</span><span class="p">.</span><span class="nx">selectedItem</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+				<span class="nb">self</span><span class="p">.</span><span class="nx">previous</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">();</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">bind</span><span class="p">(</span> <span class="dl">"</span><span class="s2">blur.autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">disabled</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="k">return</span><span class="p">;</span>
+				<span class="p">}</span>
+
+				<span class="nx">clearTimeout</span><span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">searching</span> <span class="p">);</span>
+				<span class="c1">// clicks on the menu (or a button to trigger a search) will cause a blur event</span>
+				<span class="nb">self</span><span class="p">.</span><span class="nx">closing</span> <span class="o">=</span> <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">close</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">_change</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+				<span class="p">},</span> <span class="mi">150</span> <span class="p">);</span>
+			<span class="p">});</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">_initSource</span><span class="p">();</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">response</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nb">self</span><span class="p">.</span><span class="nx">_response</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span> <span class="nb">self</span><span class="p">,</span> <span class="nx">arguments</span> <span class="p">);</span>
+		<span class="p">};</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">menu</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span> <span class="dl">"</span><span class="s2">&lt;ul&gt;&lt;/ul&gt;</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">addClass</span><span class="p">(</span> <span class="dl">"</span><span class="s2">ui-autocomplete</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">appendTo</span><span class="p">(</span> <span class="nx">$</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">appendTo</span> <span class="o">||</span> <span class="dl">"</span><span class="s2">body</span><span class="dl">"</span><span class="p">,</span> <span class="nx">doc</span> <span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+			<span class="c1">// prevent the close-on-blur in case of a "slow" click on the menu (long mousedown)</span>
+			<span class="p">.</span><span class="nx">mousedown</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="c1">// clicking on the scrollbar causes focus to shift to the body</span>
+				<span class="c1">// but we can't detect a mouseup or a click immediately afterward</span>
+				<span class="c1">// so we have to track the next mousedown and close the menu if</span>
+				<span class="c1">// the user clicks somewhere outside of the autocomplete</span>
+				<span class="kd">var</span> <span class="nx">menuElement</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">[</span> <span class="mi">0</span> <span class="p">];</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="nx">$</span><span class="p">(</span> <span class="nx">event</span><span class="p">.</span><span class="nx">target</span> <span class="p">).</span><span class="nx">closest</span><span class="p">(</span> <span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span> <span class="p">).</span><span class="nx">length</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+						<span class="nx">$</span><span class="p">(</span> <span class="nb">document</span> <span class="p">).</span><span class="nx">one</span><span class="p">(</span> <span class="dl">'</span><span class="s1">mousedown</span><span class="dl">'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+							<span class="k">if</span> <span class="p">(</span> <span class="nx">event</span><span class="p">.</span><span class="nx">target</span> <span class="o">!==</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">[</span> <span class="mi">0</span> <span class="p">]</span> <span class="o">&amp;&amp;</span>
+								<span class="nx">event</span><span class="p">.</span><span class="nx">target</span> <span class="o">!==</span> <span class="nx">menuElement</span> <span class="o">&amp;&amp;</span>
+								<span class="o">!</span><span class="nx">$</span><span class="p">.</span><span class="nx">ui</span><span class="p">.</span><span class="nx">contains</span><span class="p">(</span> <span class="nx">menuElement</span><span class="p">,</span> <span class="nx">event</span><span class="p">.</span><span class="nx">target</span> <span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+								<span class="nb">self</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+							<span class="p">}</span>
+						<span class="p">});</span>
+					<span class="p">},</span> <span class="mi">1</span> <span class="p">);</span>
+				<span class="p">}</span>
+
+				<span class="c1">// use another timeout to make sure the blur-event-handler on the input was already triggered</span>
+				<span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+					<span class="nx">clearTimeout</span><span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">closing</span> <span class="p">);</span>
+				<span class="p">},</span> <span class="mi">13</span><span class="p">);</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">menu</span><span class="p">({</span>
+				<span class="na">focus</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span><span class="p">,</span> <span class="nx">ui</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="kd">var</span> <span class="nx">item</span> <span class="o">=</span> <span class="nx">ui</span><span class="p">.</span><span class="nx">item</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span> <span class="dl">"</span><span class="s2">item.autocomplete</span><span class="dl">"</span> <span class="p">);</span>
+					<span class="k">if</span> <span class="p">(</span> <span class="kc">false</span> <span class="o">!==</span> <span class="nb">self</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span> <span class="dl">"</span><span class="s2">focus</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">,</span> <span class="p">{</span> <span class="na">item</span><span class="p">:</span> <span class="nx">item</span> <span class="p">}</span> <span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="c1">// use value to match what will end up in the input, if it was a key event</span>
+						<span class="k">if</span> <span class="p">(</span> <span class="sr">/^key/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">originalEvent</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+							<span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">(</span> <span class="nx">item</span><span class="p">.</span><span class="nx">value</span> <span class="p">);</span>
+						<span class="p">}</span>
+					<span class="p">}</span>
+				<span class="p">},</span>
+				<span class="na">selected</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span><span class="p">,</span> <span class="nx">ui</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="kd">var</span> <span class="nx">item</span> <span class="o">=</span> <span class="nx">ui</span><span class="p">.</span><span class="nx">item</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span> <span class="dl">"</span><span class="s2">item.autocomplete</span><span class="dl">"</span> <span class="p">),</span>
+						<span class="nx">previous</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nx">previous</span><span class="p">;</span>
+
+					<span class="c1">// only trigger when focus was lost (click on menu)</span>
+					<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!==</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">activeElement</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">focus</span><span class="p">();</span>
+						<span class="nb">self</span><span class="p">.</span><span class="nx">previous</span> <span class="o">=</span> <span class="nx">previous</span><span class="p">;</span>
+						<span class="c1">// #6109 - IE triggers two focus events and the second</span>
+						<span class="c1">// is asynchronous, so we need to reset the previous</span>
+						<span class="c1">// term synchronously and asynchronously :-(</span>
+						<span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+							<span class="nb">self</span><span class="p">.</span><span class="nx">previous</span> <span class="o">=</span> <span class="nx">previous</span><span class="p">;</span>
+							<span class="nb">self</span><span class="p">.</span><span class="nx">selectedItem</span> <span class="o">=</span> <span class="nx">item</span><span class="p">;</span>
+						<span class="p">},</span> <span class="mi">1</span><span class="p">);</span>
+					<span class="p">}</span>
+
+					<span class="k">if</span> <span class="p">(</span> <span class="kc">false</span> <span class="o">!==</span> <span class="nb">self</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span> <span class="dl">"</span><span class="s2">select</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">,</span> <span class="p">{</span> <span class="na">item</span><span class="p">:</span> <span class="nx">item</span> <span class="p">}</span> <span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">(</span> <span class="nx">item</span><span class="p">.</span><span class="nx">value</span> <span class="p">);</span>
+					<span class="p">}</span>
+					<span class="c1">// reset the term after the select event</span>
+					<span class="c1">// this allows custom select handling to work properly</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">term</span> <span class="o">=</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">();</span>
+
+					<span class="nb">self</span><span class="p">.</span><span class="nx">close</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">selectedItem</span> <span class="o">=</span> <span class="nx">item</span><span class="p">;</span>
+				<span class="p">},</span>
+				<span class="na">blur</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span><span class="p">,</span> <span class="nx">ui</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="c1">// don't set the value of the text field if it's already correct</span>
+					<span class="c1">// this prevents moving the cursor unnecessarily</span>
+					<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="dl">"</span><span class="s2">:visible</span><span class="dl">"</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+						<span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">()</span> <span class="o">!==</span> <span class="nb">self</span><span class="p">.</span><span class="nx">term</span> <span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="nb">self</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">term</span> <span class="p">);</span>
+					<span class="p">}</span>
+				<span class="p">}</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">zIndex</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">zIndex</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">)</span>
+			<span class="c1">// workaround for jQuery bug #5781 http://dev.jquery.com/ticket/5781</span>
+			<span class="p">.</span><span class="nx">css</span><span class="p">({</span> <span class="na">top</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="na">left</span><span class="p">:</span> <span class="mi">0</span> <span class="p">})</span>
+			<span class="p">.</span><span class="nx">hide</span><span class="p">()</span>
+			<span class="p">.</span><span class="nx">data</span><span class="p">(</span> <span class="dl">"</span><span class="s2">menu</span><span class="dl">"</span> <span class="p">);</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">fn</span><span class="p">.</span><span class="nx">bgiframe</span> <span class="p">)</span> <span class="p">{</span>
+			 <span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">bgiframe</span><span class="p">();</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="na">destroy</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">element</span>
+			<span class="p">.</span><span class="nx">removeClass</span><span class="p">(</span> <span class="dl">"</span><span class="s2">ui-autocomplete-input</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">removeAttr</span><span class="p">(</span> <span class="dl">"</span><span class="s2">autocomplete</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">removeAttr</span><span class="p">(</span> <span class="dl">"</span><span class="s2">role</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">removeAttr</span><span class="p">(</span> <span class="dl">"</span><span class="s2">aria-autocomplete</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">removeAttr</span><span class="p">(</span> <span class="dl">"</span><span class="s2">aria-haspopup</span><span class="dl">"</span> <span class="p">);</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">remove</span><span class="p">();</span>
+		<span class="nx">$</span><span class="p">.</span><span class="nx">Widget</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">destroy</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span> <span class="k">this</span> <span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">_setOption</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">key</span><span class="p">,</span> <span class="nx">value</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="nx">$</span><span class="p">.</span><span class="nx">Widget</span><span class="p">.</span><span class="nx">prototype</span><span class="p">.</span><span class="nx">_setOption</span><span class="p">.</span><span class="nx">apply</span><span class="p">(</span> <span class="k">this</span><span class="p">,</span> <span class="nx">arguments</span> <span class="p">);</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">key</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">source</span><span class="dl">"</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">_initSource</span><span class="p">();</span>
+		<span class="p">}</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">key</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">appendTo</span><span class="dl">"</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">appendTo</span><span class="p">(</span> <span class="nx">$</span><span class="p">(</span> <span class="nx">value</span> <span class="o">||</span> <span class="dl">"</span><span class="s2">body</span><span class="dl">"</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">ownerDocument</span> <span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+		<span class="p">}</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">key</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">disabled</span><span class="dl">"</span> <span class="o">&amp;&amp;</span> <span class="nx">value</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">xhr</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">xhr</span><span class="p">.</span><span class="nx">abort</span><span class="p">();</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="na">_initSource</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nb">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">,</span>
+			<span class="nx">array</span><span class="p">,</span>
+			<span class="nx">url</span><span class="p">;</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">source</span><span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="nx">array</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">source</span><span class="p">;</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">source</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">request</span><span class="p">,</span> <span class="nx">response</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="nx">response</span><span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ui</span><span class="p">.</span><span class="nx">autocomplete</span><span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="nx">array</span><span class="p">,</span> <span class="nx">request</span><span class="p">.</span><span class="nx">term</span><span class="p">)</span> <span class="p">);</span>
+			<span class="p">};</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="k">typeof</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">source</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="nx">url</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">source</span><span class="p">;</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">source</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">request</span><span class="p">,</span> <span class="nx">response</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="nb">self</span><span class="p">.</span><span class="nx">xhr</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="nb">self</span><span class="p">.</span><span class="nx">xhr</span><span class="p">.</span><span class="nx">abort</span><span class="p">();</span>
+				<span class="p">}</span>
+				<span class="nb">self</span><span class="p">.</span><span class="nx">xhr</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+					<span class="na">url</span><span class="p">:</span> <span class="nx">url</span><span class="p">,</span>
+					<span class="na">data</span><span class="p">:</span> <span class="nx">request</span><span class="p">,</span>
+					<span class="na">dataType</span><span class="p">:</span> <span class="dl">"</span><span class="s2">json</span><span class="dl">"</span><span class="p">,</span>
+					<span class="na">autocompleteRequest</span><span class="p">:</span> <span class="o">++</span><span class="nx">requestIndex</span><span class="p">,</span>
+					<span class="na">success</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">data</span><span class="p">,</span> <span class="nx">status</span> <span class="p">)</span> <span class="p">{</span>
+						<span class="k">if</span> <span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">autocompleteRequest</span> <span class="o">===</span> <span class="nx">requestIndex</span> <span class="p">)</span> <span class="p">{</span>
+							<span class="nx">response</span><span class="p">(</span> <span class="nx">data</span> <span class="p">);</span>
+						<span class="p">}</span>
+					<span class="p">},</span>
+					<span class="na">error</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+						<span class="k">if</span> <span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">autocompleteRequest</span> <span class="o">===</span> <span class="nx">requestIndex</span> <span class="p">)</span> <span class="p">{</span>
+							<span class="nx">response</span><span class="p">(</span> <span class="p">[]</span> <span class="p">);</span>
+						<span class="p">}</span>
+					<span class="p">}</span>
+				<span class="p">});</span>
+			<span class="p">};</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="nx">ehis</span><span class="p">.</span><span class="nx">source</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">source</span><span class="p">;</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="na">search</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">value</span><span class="p">,</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="nx">value</span> <span class="o">=</span> <span class="nx">value</span> <span class="o">!=</span> <span class="kc">null</span> <span class="p">?</span> <span class="nx">value</span> <span class="p">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">();</span>
+
+		<span class="c1">// always save the actual value, not the one passed as an argument</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">term</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">();</span>
+
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">value</span><span class="p">.</span><span class="nx">length</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">minLength</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">close</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+		<span class="p">}</span>
+
+		<span class="nx">clearTimeout</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">closing</span> <span class="p">);</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span> <span class="dl">"</span><span class="s2">search</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span> <span class="p">)</span> <span class="o">===</span> <span class="kc">false</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span><span class="p">;</span>
+		<span class="p">}</span>
+
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">_search</span><span class="p">(</span> <span class="nx">value</span> <span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">_search</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">value</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">pending</span><span class="o">++</span><span class="p">;</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">addClass</span><span class="p">(</span> <span class="dl">"</span><span class="s2">ui-autocomplete-loading</span><span class="dl">"</span> <span class="p">);</span>
+
+		<span class="k">this</span><span class="p">.</span><span class="nx">source</span><span class="p">(</span> <span class="p">{</span> <span class="na">term</span><span class="p">:</span> <span class="nx">value</span> <span class="p">},</span> <span class="k">this</span><span class="p">.</span><span class="nx">response</span> <span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">_response</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">content</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">disabled</span> <span class="o">&amp;&amp;</span> <span class="nx">content</span> <span class="o">&amp;&amp;</span> <span class="nx">content</span><span class="p">.</span><span class="nx">length</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="nx">content</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">_normalize</span><span class="p">(</span> <span class="nx">content</span> <span class="p">);</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">_suggest</span><span class="p">(</span> <span class="nx">content</span> <span class="p">);</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span> <span class="dl">"</span><span class="s2">open</span><span class="dl">"</span> <span class="p">);</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+		<span class="p">}</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">pending</span><span class="o">--</span><span class="p">;</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">pending</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">removeClass</span><span class="p">(</span> <span class="dl">"</span><span class="s2">ui-autocomplete-loading</span><span class="dl">"</span> <span class="p">);</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="na">close</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="nx">clearTimeout</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">closing</span> <span class="p">);</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="dl">"</span><span class="s2">:visible</span><span class="dl">"</span><span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">hide</span><span class="p">();</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">deactivate</span><span class="p">();</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span> <span class="dl">"</span><span class="s2">close</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+	
+	<span class="na">_change</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">previous</span> <span class="o">!==</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">()</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span> <span class="dl">"</span><span class="s2">change</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">,</span> <span class="p">{</span> <span class="na">item</span><span class="p">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">selectedItem</span> <span class="p">}</span> <span class="p">);</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="na">_normalize</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">items</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="c1">// assume all items have the right format when the first item is complete</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="nx">items</span><span class="p">.</span><span class="nx">length</span> <span class="o">&amp;&amp;</span> <span class="nx">items</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">label</span> <span class="o">&amp;&amp;</span> <span class="nx">items</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">value</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">items</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="k">return</span> <span class="nx">$</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span> <span class="nx">items</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">item</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">if</span> <span class="p">(</span> <span class="k">typeof</span> <span class="nx">item</span> <span class="o">===</span> <span class="dl">"</span><span class="s2">string</span><span class="dl">"</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">return</span> <span class="p">{</span>
+					<span class="na">label</span><span class="p">:</span> <span class="nx">item</span><span class="p">,</span>
+					<span class="na">value</span><span class="p">:</span> <span class="nx">item</span>
+				<span class="p">};</span>
+			<span class="p">}</span>
+			<span class="k">return</span> <span class="nx">$</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+				<span class="na">label</span><span class="p">:</span> <span class="nx">item</span><span class="p">.</span><span class="nx">label</span> <span class="o">||</span> <span class="nx">item</span><span class="p">.</span><span class="nx">value</span><span class="p">,</span>
+				<span class="na">value</span><span class="p">:</span> <span class="nx">item</span><span class="p">.</span><span class="nx">value</span> <span class="o">||</span> <span class="nx">item</span><span class="p">.</span><span class="nx">label</span>
+			<span class="p">},</span> <span class="nx">item</span> <span class="p">);</span>
+		<span class="p">});</span>
+	<span class="p">},</span>
+
+	<span class="na">_suggest</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">items</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">ul</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span>
+			<span class="p">.</span><span class="nx">empty</span><span class="p">()</span>
+			<span class="p">.</span><span class="nx">zIndex</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">zIndex</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">);</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">_renderMenu</span><span class="p">(</span> <span class="nx">ul</span><span class="p">,</span> <span class="nx">items</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">max</span> <span class="p">);</span>
+		<span class="c1">// TODO refresh should check if the active item is still in the dom, removing the need for a manual deactivate</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">deactivate</span><span class="p">();</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">refresh</span><span class="p">();</span>
+
+		<span class="c1">// size and position menu</span>
+		<span class="nx">ul</span><span class="p">.</span><span class="nx">show</span><span class="p">();</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">_resizeMenu</span><span class="p">();</span>
+		<span class="nx">ul</span><span class="p">.</span><span class="nx">position</span><span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">extend</span><span class="p">({</span>
+			<span class="na">of</span><span class="p">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span>
+		<span class="p">},</span> <span class="k">this</span><span class="p">.</span><span class="nx">options</span><span class="p">.</span><span class="nx">position</span> <span class="p">));</span>
+	<span class="p">},</span>
+
+	<span class="na">_resizeMenu</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">ul</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">;</span>
+		<span class="nx">ul</span><span class="p">.</span><span class="nx">outerWidth</span><span class="p">(</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">max</span><span class="p">(</span>
+			<span class="nx">ul</span><span class="p">.</span><span class="nx">width</span><span class="p">(</span> <span class="dl">""</span> <span class="p">).</span><span class="nx">outerWidth</span><span class="p">(),</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">outerWidth</span><span class="p">()</span>
+		<span class="p">)</span> <span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">_renderMenu</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">ul</span><span class="p">,</span> <span class="nx">items</span><span class="p">,</span> <span class="nx">max</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nb">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+		<span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span> <span class="nx">items</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">index</span><span class="p">,</span> <span class="nx">item</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="nx">max</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">index</span> <span class="o">&lt;</span> <span class="nx">max</span> <span class="p">)</span> <span class="p">{</span>
+			    <span class="nb">self</span><span class="p">.</span><span class="nx">_renderItem</span><span class="p">(</span> <span class="nx">ul</span><span class="p">,</span> <span class="nx">item</span> <span class="p">);</span>
+            <span class="p">}</span>
+		<span class="p">});</span>
+	<span class="p">},</span>
+
+	<span class="na">_renderItem</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">ul</span><span class="p">,</span> <span class="nx">item</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">$</span><span class="p">(</span> <span class="dl">"</span><span class="s2">&lt;li&gt;&lt;/li&gt;</span><span class="dl">"</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">data</span><span class="p">(</span> <span class="dl">"</span><span class="s2">item.autocomplete</span><span class="dl">"</span><span class="p">,</span> <span class="nx">item</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">append</span><span class="p">(</span> <span class="nx">$</span><span class="p">(</span> <span class="dl">"</span><span class="s2">&lt;a&gt;&lt;/a&gt;</span><span class="dl">"</span> <span class="p">).</span><span class="nx">text</span><span class="p">(</span> <span class="nx">item</span><span class="p">.</span><span class="nx">label</span> <span class="p">)</span> <span class="p">)</span>
+			<span class="p">.</span><span class="nx">appendTo</span><span class="p">(</span> <span class="nx">ul</span> <span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">_move</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">direction</span><span class="p">,</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">is</span><span class="p">(</span><span class="dl">"</span><span class="s2">:visible</span><span class="dl">"</span><span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">search</span><span class="p">(</span> <span class="kc">null</span><span class="p">,</span> <span class="nx">event</span> <span class="p">);</span>
+			<span class="k">return</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="k">if</span> <span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">first</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="sr">/^previous/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">direction</span><span class="p">)</span> <span class="o">||</span>
+				<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">last</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="sr">/^next/</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="nx">direction</span><span class="p">)</span> <span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">val</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">term</span> <span class="p">);</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">deactivate</span><span class="p">();</span>
+			<span class="k">return</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">[</span> <span class="nx">direction</span> <span class="p">](</span> <span class="nx">event</span> <span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">widget</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">menu</span><span class="p">.</span><span class="nx">element</span><span class="p">;</span>
+	<span class="p">}</span>
+<span class="p">});</span>
+
+<span class="nx">$</span><span class="p">.</span><span class="nx">extend</span><span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ui</span><span class="p">.</span><span class="nx">autocomplete</span><span class="p">,</span> <span class="p">{</span>
+	<span class="na">escapeRegex</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">value</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">value</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="sr">/</span><span class="se">[</span><span class="sr">-[</span><span class="se">\]</span><span class="sr">{}()*+?.,</span><span class="se">\\</span><span class="sr">^$|#</span><span class="se">\s]</span><span class="sr">/g</span><span class="p">,</span> <span class="dl">"</span><span class="se">\\</span><span class="s2">$&amp;</span><span class="dl">"</span><span class="p">);</span>
+	<span class="p">},</span>
+	<span class="na">filter</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">array</span><span class="p">,</span> <span class="nx">term</span><span class="p">)</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nx">matcher</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">RegExp</span><span class="p">(</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ui</span><span class="p">.</span><span class="nx">autocomplete</span><span class="p">.</span><span class="nx">escapeRegex</span><span class="p">(</span><span class="nx">term</span><span class="p">),</span> <span class="dl">"</span><span class="s2">i</span><span class="dl">"</span> <span class="p">);</span>
+		<span class="k">return</span> <span class="nx">$</span><span class="p">.</span><span class="nx">grep</span><span class="p">(</span> <span class="nx">array</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">matcher</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span> <span class="nx">value</span><span class="p">.</span><span class="nx">label</span> <span class="o">||</span> <span class="nx">value</span><span class="p">.</span><span class="nx">value</span> <span class="o">||</span> <span class="nx">value</span> <span class="p">);</span>
+		<span class="p">});</span>
+	<span class="p">}</span>
+<span class="p">});</span>
+
+<span class="p">}(</span> <span class="nx">jQuery</span> <span class="p">));</span>
+
+<span class="cm">/*
+ * jQuery UI Menu (not officially released)
+ * 
+ * This widget isn't yet finished and the API is subject to change. We plan to finish
+ * it for the next release. You're welcome to give it a try anyway and give us feedback,
+ * as long as you're okay with migrating your code later on. We can help with that, too.
+ *
+ * Copyright 2010, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Menu
+ *
+ * Depends:
+ *	jquery.ui.core.js
+ *  jquery.ui.widget.js
+ */</span>
+<span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">$</span><span class="p">)</span> <span class="p">{</span>
+
+<span class="nx">$</span><span class="p">.</span><span class="nx">widget</span><span class="p">(</span><span class="dl">"</span><span class="s2">ui.menu</span><span class="dl">"</span><span class="p">,</span> <span class="p">{</span>
+	<span class="na">_create</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nb">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">element</span>
+			<span class="p">.</span><span class="nx">addClass</span><span class="p">(</span><span class="dl">"</span><span class="s2">ui-menu ui-widget ui-widget-content ui-corner-all</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">attr</span><span class="p">({</span>
+				<span class="na">role</span><span class="p">:</span> <span class="dl">"</span><span class="s2">listbox</span><span class="dl">"</span><span class="p">,</span>
+				<span class="dl">"</span><span class="s2">aria-activedescendant</span><span class="dl">"</span><span class="p">:</span> <span class="dl">"</span><span class="s2">ui-active-menuitem</span><span class="dl">"</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="nx">$</span><span class="p">(</span> <span class="nx">event</span><span class="p">.</span><span class="nx">target</span> <span class="p">).</span><span class="nx">closest</span><span class="p">(</span> <span class="dl">"</span><span class="s2">.ui-menu-item a</span><span class="dl">"</span> <span class="p">).</span><span class="nx">length</span> <span class="p">)</span> <span class="p">{</span>
+					<span class="k">return</span><span class="p">;</span>
+				<span class="p">}</span>
+				<span class="c1">// temporary</span>
+				<span class="nx">event</span><span class="p">.</span><span class="nx">preventDefault</span><span class="p">();</span>
+				<span class="nb">self</span><span class="p">.</span><span class="nx">select</span><span class="p">(</span> <span class="nx">event</span> <span class="p">);</span>
+			<span class="p">});</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">refresh</span><span class="p">();</span>
+	<span class="p">},</span>
+	
+	<span class="na">refresh</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="kd">var</span> <span class="nb">self</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
+
+		<span class="c1">// don't refresh list items that are already adapted</span>
+		<span class="kd">var</span> <span class="nx">items</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">li:not(.ui-menu-item):has(a)</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">addClass</span><span class="p">(</span><span class="dl">"</span><span class="s2">ui-menu-item</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">role</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">menuitem</span><span class="dl">"</span><span class="p">);</span>
+		
+		<span class="nx">items</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">a</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">addClass</span><span class="p">(</span><span class="dl">"</span><span class="s2">ui-corner-all</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">tabindex</span><span class="dl">"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+			<span class="c1">// mouseenter doesn't work with event delegation</span>
+			<span class="p">.</span><span class="nx">mouseenter</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+				<span class="nb">self</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span> <span class="nx">event</span><span class="p">,</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">parent</span><span class="p">()</span> <span class="p">);</span>
+			<span class="p">})</span>
+			<span class="p">.</span><span class="nx">mouseleave</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+				<span class="nb">self</span><span class="p">.</span><span class="nx">deactivate</span><span class="p">();</span>
+			<span class="p">});</span>
+	<span class="p">},</span>
+
+	<span class="na">activate</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span><span class="p">,</span> <span class="nx">item</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">deactivate</span><span class="p">();</span>
+		<span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">hasScroll</span><span class="p">())</span> <span class="p">{</span>
+			<span class="kd">var</span> <span class="nx">offset</span> <span class="o">=</span> <span class="nx">item</span><span class="p">.</span><span class="nx">offset</span><span class="p">().</span><span class="nx">top</span> <span class="o">-</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">offset</span><span class="p">().</span><span class="nx">top</span><span class="p">,</span>
+				<span class="nx">scroll</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">scrollTop</span><span class="dl">"</span><span class="p">),</span>
+				<span class="nx">elementHeight</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">height</span><span class="p">();</span>
+			<span class="k">if</span> <span class="p">(</span><span class="nx">offset</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+				<span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">scrollTop</span><span class="dl">"</span><span class="p">,</span> <span class="nx">scroll</span> <span class="o">+</span> <span class="nx">offset</span><span class="p">);</span>
+			<span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nx">offset</span> <span class="o">&gt;=</span> <span class="nx">elementHeight</span><span class="p">)</span> <span class="p">{</span>
+				<span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">scrollTop</span><span class="dl">"</span><span class="p">,</span> <span class="nx">scroll</span> <span class="o">+</span> <span class="nx">offset</span> <span class="o">-</span> <span class="nx">elementHeight</span> <span class="o">+</span> <span class="nx">item</span><span class="p">.</span><span class="nx">height</span><span class="p">());</span>
+			<span class="p">}</span>
+		<span class="p">}</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">=</span> <span class="nx">item</span><span class="p">.</span><span class="nx">eq</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">a</span><span class="dl">"</span><span class="p">)</span>
+				<span class="p">.</span><span class="nx">addClass</span><span class="p">(</span><span class="dl">"</span><span class="s2">ui-state-hover</span><span class="dl">"</span><span class="p">)</span>
+				<span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">id</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">ui-active-menuitem</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span><span class="dl">"</span><span class="s2">focus</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">,</span> <span class="p">{</span> <span class="na">item</span><span class="p">:</span> <span class="nx">item</span> <span class="p">});</span>
+	<span class="p">},</span>
+
+	<span class="na">deactivate</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span><span class="p">;</span> <span class="p">}</span>
+
+		<span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">a</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">removeClass</span><span class="p">(</span><span class="dl">"</span><span class="s2">ui-state-hover</span><span class="dl">"</span><span class="p">)</span>
+			<span class="p">.</span><span class="nx">removeAttr</span><span class="p">(</span><span class="dl">"</span><span class="s2">id</span><span class="dl">"</span><span class="p">);</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span><span class="dl">"</span><span class="s2">blur</span><span class="dl">"</span><span class="p">);</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+	<span class="p">},</span>
+
+	<span class="na">next</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">move</span><span class="p">(</span><span class="dl">"</span><span class="s2">next</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">.ui-menu-item:first</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">previous</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">move</span><span class="p">(</span><span class="dl">"</span><span class="s2">prev</span><span class="dl">"</span><span class="p">,</span> <span class="dl">"</span><span class="s2">.ui-menu-item:last</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">first</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">.</span><span class="nx">prevAll</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">).</span><span class="nx">length</span><span class="p">;</span>
+	<span class="p">},</span>
+
+	<span class="na">last</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">.</span><span class="nx">nextAll</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">).</span><span class="nx">length</span><span class="p">;</span>
+	<span class="p">},</span>
+
+	<span class="na">move</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">direction</span><span class="p">,</span> <span class="nx">edge</span><span class="p">,</span> <span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="nx">edge</span><span class="p">));</span>
+			<span class="k">return</span><span class="p">;</span>
+		<span class="p">}</span>
+		<span class="kd">var</span> <span class="nx">next</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">[</span><span class="nx">direction</span> <span class="o">+</span> <span class="dl">"</span><span class="s2">All</span><span class="dl">"</span><span class="p">](</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">).</span><span class="nx">eq</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+		<span class="k">if</span> <span class="p">(</span><span class="nx">next</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">next</span><span class="p">);</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="nx">edge</span><span class="p">));</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="c1">// TODO merge with previousPage</span>
+	<span class="na">nextPage</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">hasScroll</span><span class="p">())</span> <span class="p">{</span>
+			<span class="c1">// TODO merge with no-scroll-else</span>
+			<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">last</span><span class="p">())</span> <span class="p">{</span>
+				<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item:first</span><span class="dl">"</span><span class="p">));</span>
+				<span class="k">return</span><span class="p">;</span>
+			<span class="p">}</span>
+			<span class="kd">var</span> <span class="nx">base</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">.</span><span class="nx">offset</span><span class="p">().</span><span class="nx">top</span><span class="p">,</span>
+				<span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">height</span><span class="p">(),</span>
+				<span class="nx">result</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">).</span><span class="nx">filter</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+					<span class="kd">var</span> <span class="nx">close</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">offset</span><span class="p">().</span><span class="nx">top</span> <span class="o">-</span> <span class="nx">base</span> <span class="o">-</span> <span class="nx">height</span> <span class="o">+</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">height</span><span class="p">();</span>
+					<span class="c1">// TODO improve approximation</span>
+					<span class="k">return</span> <span class="nx">close</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="o">&amp;&amp;</span> <span class="nx">close</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">10</span><span class="p">;</span>
+				<span class="p">});</span>
+
+			<span class="c1">// TODO try to catch this earlier when scrollTop indicates the last page anyway</span>
+			<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">result</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">result</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item:last</span><span class="dl">"</span><span class="p">);</span>
+			<span class="p">}</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">result</span><span class="p">);</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">)</span>
+				<span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">last</span><span class="p">()</span> <span class="p">?</span> <span class="dl">"</span><span class="s2">:first</span><span class="dl">"</span> <span class="p">:</span> <span class="dl">"</span><span class="s2">:last</span><span class="dl">"</span><span class="p">));</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="c1">// TODO merge with nextPage</span>
+	<span class="na">previousPage</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">hasScroll</span><span class="p">())</span> <span class="p">{</span>
+			<span class="c1">// TODO merge with no-scroll-else</span>
+			<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">first</span><span class="p">())</span> <span class="p">{</span>
+				<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item:last</span><span class="dl">"</span><span class="p">));</span>
+				<span class="k">return</span><span class="p">;</span>
+			<span class="p">}</span>
+
+			<span class="kd">var</span> <span class="nx">base</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">active</span><span class="p">.</span><span class="nx">offset</span><span class="p">().</span><span class="nx">top</span><span class="p">,</span>
+				<span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">height</span><span class="p">();</span>
+				<span class="nx">result</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">).</span><span class="nx">filter</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+					<span class="kd">var</span> <span class="nx">close</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">offset</span><span class="p">().</span><span class="nx">top</span> <span class="o">-</span> <span class="nx">base</span> <span class="o">+</span> <span class="nx">height</span> <span class="o">-</span> <span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">height</span><span class="p">();</span>
+					<span class="c1">// TODO improve approximation</span>
+					<span class="k">return</span> <span class="nx">close</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="o">&amp;&amp;</span> <span class="nx">close</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">10</span><span class="p">;</span>
+				<span class="p">});</span>
+
+			<span class="c1">// TODO try to catch this earlier when scrollTop indicates the last page anyway</span>
+			<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nx">result</span><span class="p">.</span><span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+				<span class="nx">result</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item:first</span><span class="dl">"</span><span class="p">);</span>
+			<span class="p">}</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="nx">result</span><span class="p">);</span>
+		<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+			<span class="k">this</span><span class="p">.</span><span class="nx">activate</span><span class="p">(</span><span class="nx">event</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">children</span><span class="p">(</span><span class="dl">"</span><span class="s2">.ui-menu-item</span><span class="dl">"</span><span class="p">)</span>
+				<span class="p">.</span><span class="nx">filter</span><span class="p">(</span><span class="o">!</span><span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="o">||</span> <span class="k">this</span><span class="p">.</span><span class="nx">first</span><span class="p">()</span> <span class="p">?</span> <span class="dl">"</span><span class="s2">:last</span><span class="dl">"</span> <span class="p">:</span> <span class="dl">"</span><span class="s2">:first</span><span class="dl">"</span><span class="p">));</span>
+		<span class="p">}</span>
+	<span class="p">},</span>
+
+	<span class="na">hasScroll</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">height</span><span class="p">()</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">element</span><span class="p">.</span><span class="nx">attr</span><span class="p">(</span><span class="dl">"</span><span class="s2">scrollHeight</span><span class="dl">"</span><span class="p">);</span>
+	<span class="p">},</span>
+
+	<span class="na">select</span><span class="p">:</span> <span class="kd">function</span><span class="p">(</span> <span class="nx">event</span> <span class="p">)</span> <span class="p">{</span>
+		<span class="k">this</span><span class="p">.</span><span class="nx">_trigger</span><span class="p">(</span><span class="dl">"</span><span class="s2">selected</span><span class="dl">"</span><span class="p">,</span> <span class="nx">event</span><span class="p">,</span> <span class="p">{</span> <span class="na">item</span><span class="p">:</span> <span class="k">this</span><span class="p">.</span><span class="nx">active</span> <span class="p">});</span>
+	<span class="p">}</span>
+<span class="p">});</span>
+
+<span class="p">}(</span><span class="nx">jQuery</span><span class="p">));</span></code></pre></figure>
+
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2011/03/11/jquery-bars-plugin/">&laquo; jQuery Bars plugin</a>
+
+
+  <a class="next" href="/2011/04/15/handling-resizing-in-adobe-air-with-html/">Handling resizing in Adobe Air with HTML &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A small Telegram Bot in Go</title>
+  <meta name="description" content="I started using Telegram a few years ago. Most of the time I don’t use it much to have 1 to 1 conversations but rather chat in a small group of friends which I’ve known for a while now. Every now and then, we share some links to Twitter on that group, and unfortunately the Telegram official clients preview mode don’t support previewing Twitter messages with more than one image. Take this test message as an example: This is a test pic.twitter.com/E24MwvjOj0 — Bernat Ràfales (@brafales) May 20, 2017 The moment I link this to a Telegram chat, this is the result: Which is not ideal, as sometimes the message doesn’t make much sense when only one of the images is displayed. Turns out I’ve been learning some Go over the last few months as well, so I wondered if I could write a small Telegram Bot to help me with that. I needed something to which I could send a Twitter link, and gave me back either the default Twitter preview in Telegram, or a custom made one with all the images of the message, in case there were more than one.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/05/21/small-telegram-bot/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A small Telegram Bot in Go">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/05/21/small-telegram-bot/">
+  <meta property="og:description" content="I started using Telegram a few years ago. Most of the time I don’t use it much to have 1 to 1 conversations but rather chat in a small group of friends which I’ve known for a while now. Every now and then, we share some links to Twitter on that group, and unfortunately the Telegram official clients preview mode don’t support previewing Twitter messages with more than one image. Take this test message as an example: This is a test pic.twitter.com/E24MwvjOj0 — Bernat Ràfales (@brafales) May 20, 2017 The moment I link this to a Telegram chat, this is the result: Which is not ideal, as sometimes the message doesn’t make much sense when only one of the images is displayed. Turns out I’ve been learning some Go over the last few months as well, so I wondered if I could write a small Telegram Bot to help me with that. I needed something to which I could send a Twitter link, and gave me back either the default Twitter preview in Telegram, or a custom made one with all the images of the message, in case there were more than one.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A small Telegram Bot in Go">
+  <meta name="twitter:description" content="I started using Telegram a few years ago. Most of the time I don’t use it much to have 1 to 1 conversations but rather chat in a small group of friends which I’ve known for a while now. Every now a...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A small Telegram Bot in Go</h1>
+    
+    <p class="post-meta"><time datetime="2017-05-21T21:50:35+00:00" itemprop="datePublished">May 21, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>I started using <a href="https://telegram.org/">Telegram</a> a few years ago. Most of the time I don’t use it much to have 1 to 1 conversations but rather chat in a small group of friends which I’ve known for a while now. Every now and then, we share some links to <a href="https://twitter.com/">Twitter</a> on that group, and unfortunately the Telegram official clients preview mode don’t support previewing Twitter messages with more than one image.</p>
+
+<p>Take this test message as an example:</p>
+<blockquote class="twitter-tweet" data-lang="en">
+<p dir="ltr" lang="en">This is a test <a href="https://t.co/E24MwvjOj0">pic.twitter.com/E24MwvjOj0</a></p>
+— Bernat Ràfales (@brafales) <a href="https://twitter.com/brafales/status/865953795100028928">May 20, 2017</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>The moment I link this to a Telegram chat, this is the result:</p>
+
+<p><img class="aligncenter wp-image-3934 size-medium" src="/wp-content/uploads/2017/05/Screen-Shot-2017-05-20-at-16.35.10-288x300.png" alt="" width="288" height="300" /></p>
+
+<p>Which is not ideal, as sometimes the message doesn’t make much sense when only one of the images is displayed.</p>
+
+<p>Turns out I’ve been learning some <a href="https://golang.org/">Go</a> over the last few months as well, so I wondered if I could write a small Telegram Bot to help me with that. I needed something to which I could send a Twitter link, and gave me back either the default Twitter preview in Telegram, or a custom made one with all the images of the message, in case there were more than one.
+<!--more--></p>
+
+<h2>Introducing the new Bot</h2>
+<p>I started this more to learn a bit more of Go rather than to learn much about the Telegram and Twitter APIs, so I decided to use already built packages to deal with both the <a href="https://core.telegram.org/bots/api">Telegram Bot API</a> and the <a href="https://dev.twitter.com/rest/public">Twitter REST API</a>. The following flow chart describes in a nutshell what the bot does:</p>
+
+<p><img class="aligncenter wp-image-3948 size-large" src="/wp-content/uploads/2017/05/Piulades-Bot-Page-11-938x1024.png" alt="" width="650" height="710" /></p>
+
+<p> </p>
+
+<p>The way the bot code is structured is through the following packages:</p>
+<ul>
+ 	<li>configuration: holds general bot configuration options</li>
+ 	<li>twitter: deals with the Twitter REST API, mostly though <a href="https://github.com/dghubble/go-twitter/">go-twitter</a></li>
+ 	<li>message: builds messages that <a href="https://github.com/go-telegram-bot-api/telegram-bot-api">telegram-bot-api</a> understands</li>
+ 	<li>main: entry point. Initialises all the things and controls the main program flow</li>
+</ul>
+<p>The main program runs as follows:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="k">package</span> <span class="n">main</span>
+
+<span class="k">import</span> <span class="p">(</span>
+	<span class="s">"fmt"</span>
+	<span class="s">"log"</span>
+	<span class="s">"net/http"</span>
+	<span class="s">"os"</span>
+
+	<span class="s">"github.com/brafales/piulades-bot/configuration"</span>
+	<span class="s">"github.com/brafales/piulades-bot/message"</span>
+	<span class="s">"github.com/brafales/piulades-bot/twitter"</span>
+	<span class="s">"github.com/go-telegram-bot-api/telegram-bot-api"</span>
+<span class="p">)</span>
+
+<span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="n">config</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">configuration</span><span class="o">.</span><span class="n">New</span><span class="p">()</span>
+	<span class="n">fail</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+	<span class="n">bot</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">tgbotapi</span><span class="o">.</span><span class="n">NewBotAPI</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">BotKey</span><span class="p">)</span>
+	<span class="n">fail</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+	<span class="n">twitterClient</span> <span class="o">:=</span> <span class="n">twitter</span><span class="o">.</span><span class="n">NewClient</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">TwitterAPIKey</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">TwitterAPISecret</span><span class="p">)</span>
+
+	<span class="n">_</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">bot</span><span class="o">.</span><span class="n">SetWebhook</span><span class="p">(</span><span class="n">tgbotapi</span><span class="o">.</span><span class="n">NewWebhook</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">CallbackURL</span><span class="p">))</span>
+	<span class="n">fail</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+	<span class="n">updates</span> <span class="o">:=</span> <span class="n">bot</span><span class="o">.</span><span class="n">ListenForWebhook</span><span class="p">(</span><span class="s">"/"</span><span class="p">)</span>
+	<span class="k">go</span> <span class="n">http</span><span class="o">.</span><span class="n">ListenAndServe</span><span class="p">(</span><span class="s">":"</span><span class="o">+</span><span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"PORT"</span><span class="p">),</span> <span class="no">nil</span><span class="p">)</span>
+
+	<span class="k">for</span> <span class="n">update</span> <span class="o">:=</span> <span class="k">range</span> <span class="n">updates</span> <span class="p">{</span>
+		<span class="n">err</span> <span class="o">=</span> <span class="n">processUpdate</span><span class="p">(</span><span class="n">update</span><span class="p">,</span> <span class="n">bot</span><span class="p">,</span> <span class="n">twitterClient</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">ChatID</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+			<span class="n">fmt</span><span class="o">.</span><span class="n">Printf</span><span class="p">(</span><span class="s">"%v</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We set up a new configuration, which will hold some information that we will need throughout the rest of the program (more on how the configuration reads its values later). We then create a new Telegram Bot using the supplied bot key, and lastly we do the same with a Twitter client, supplying the API key and secret needed when setting up <a href="https://dev.twitter.com/oauth/application-only">Application Only Auth</a>.</p>
+
+<p>After the initialisation code, we set up the bot in Webhook mode. The line <code>updates := bot.ListenForWebhook("/")</code> will return a new <a href="https://golang.org/doc/effective_go.html#channels">channel</a> of Telegram Updates (think of them as Telegram messages sent to the bot) that will be updated by an <code>http.Handler</code> listening to requests made to <code>/</code>. After this, we can range over the updates, passing them to the method <code>processUpdate</code>, which will do all the heavy work.</p>
+<h3>Processing the messages</h3>
+<p>The <code>processUpdate</code> method reads as follows:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="k">func</span> <span class="n">processUpdate</span><span class="p">(</span><span class="n">update</span> <span class="n">tgbotapi</span><span class="o">.</span><span class="n">Update</span><span class="p">,</span>
+	<span class="n">bot</span> <span class="o">*</span><span class="n">tgbotapi</span><span class="o">.</span><span class="n">BotAPI</span><span class="p">,</span>
+	<span class="n">twitterClient</span> <span class="o">*</span><span class="n">twitter</span><span class="o">.</span><span class="n">Client</span><span class="p">,</span>
+	<span class="n">chatID</span> <span class="kt">int64</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="n">statusID</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">twitter</span><span class="o">.</span><span class="n">GetStatusID</span><span class="p">(</span><span class="n">update</span><span class="o">.</span><span class="n">Message</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">err</span>
+	<span class="p">}</span>
+
+	<span class="n">tweet</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">twitterClient</span><span class="o">.</span><span class="n">GetTwit</span><span class="p">(</span><span class="n">statusID</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">err</span>
+	<span class="p">}</span>
+
+	<span class="n">images</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">tweet</span><span class="o">.</span><span class="n">ExtendedEntities</span><span class="p">()</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">err</span>
+	<span class="p">}</span>
+	<span class="n">messages</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">message</span><span class="o">.</span><span class="n">Build</span><span class="p">(</span><span class="n">chatID</span><span class="p">,</span>
+		<span class="n">update</span><span class="o">.</span><span class="n">Message</span><span class="o">.</span><span class="n">From</span><span class="o">.</span><span class="n">UserName</span><span class="p">,</span>
+		<span class="n">images</span><span class="p">,</span>
+		<span class="n">tweet</span><span class="o">.</span><span class="n">PrintableText</span><span class="p">(</span><span class="n">update</span><span class="o">.</span><span class="n">Message</span><span class="o">.</span><span class="n">From</span><span class="o">.</span><span class="n">UserName</span><span class="p">))</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">err</span>
+	<span class="p">}</span>
+
+	<span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">message</span> <span class="o">:=</span> <span class="k">range</span> <span class="n">messages</span> <span class="p">{</span>
+		<span class="n">_</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">bot</span><span class="o">.</span><span class="n">Send</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="n">err</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="no">nil</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>It basically follows the general flow chart shown above:</p>
+<ol>
+ 	<li>We try to get a Twitter Status ID from the message the bot has received, and return immediately with an error if we can't</li>
+ 	<li>If we find a proper ID, we go and talk to Twitter to get all the information we need about the Tweet. Again, if we can't do that, we just return with an error</li>
+ 	<li>We try to retrieve the Tweet Extended Entities (which is the name the Twitter API gives to the multiple images you can attach to a Tweet), returning an error if something goes wrong in the process.</li>
+ 	<li>We send the message <code>Build</code> to the <code>message</code> package with the retrieved Entities. This will get us a slice of messages that are ready to be sent to Telegram through our bot.</li>
+ 	<li>For each one of the messages returned by the message builder, we send the <code>Send</code> message to our Telegram Bot, which will ensure that the message reaches its destination.</li>
+</ol>
+<p>A few of these steps are worth digging into, so let’s go and do that.</p>
+<h3>Talking to Twitter</h3>
+<p>Twitter uses <a href="https://en.wikipedia.org/wiki/OAuth">OAuth</a> to manage authentication. In our case we are writing an application that needs to access Twitter Statuses (the name Twitter gives to a Tweet). For our bot, we rely on the <a href="https://github.com/dghubble/go-twitter/">go-twitter</a> package, which leverages the <a href="https://godoc.org/golang.org/x/oauth2">oauth2 Go packages</a> to handle the authentication layer. A <code>twitter</code> package inside our application manages all this complexity for us:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="k">package</span> <span class="n">twitter</span>
+
+<span class="k">import</span> <span class="p">(</span>
+	<span class="s">"errors"</span>
+	<span class="s">"fmt"</span>
+	<span class="s">"net/http"</span>
+	<span class="s">"regexp"</span>
+	<span class="s">"strconv"</span>
+
+	<span class="s">"io/ioutil"</span>
+
+	<span class="n">twitterAPI</span> <span class="s">"github.com/dghubble/go-twitter/twitter"</span>
+	<span class="s">"golang.org/x/oauth2"</span>
+	<span class="s">"golang.org/x/oauth2/clientcredentials"</span>
+<span class="p">)</span>
+
+<span class="c">//Client allows you to communicate with the Twitter API</span>
+<span class="k">type</span> <span class="n">Client</span> <span class="k">struct</span> <span class="p">{</span>
+	<span class="n">client</span> <span class="o">*</span><span class="n">twitterAPI</span><span class="o">.</span><span class="n">Client</span>
+<span class="p">}</span>
+
+<span class="c">//NewClient returns a new Client instance.</span>
+<span class="c">//apiKey is the twitter API key and apiSecret is the</span>
+<span class="c">//twitter API secret</span>
+<span class="k">func</span> <span class="n">NewClient</span><span class="p">(</span><span class="n">apiKey</span> <span class="kt">string</span><span class="p">,</span> <span class="n">apiSecret</span> <span class="kt">string</span><span class="p">)</span> <span class="o">*</span><span class="n">Client</span> <span class="p">{</span>
+	<span class="n">config</span> <span class="o">:=</span> <span class="o">&amp;</span><span class="n">clientcredentials</span><span class="o">.</span><span class="n">Config</span><span class="p">{</span><span class="n">ClientID</span><span class="o">:</span> <span class="n">apiKey</span><span class="p">,</span>
+		<span class="n">ClientSecret</span><span class="o">:</span> <span class="n">apiSecret</span><span class="p">,</span>
+		<span class="n">TokenURL</span><span class="o">:</span>     <span class="s">"https://api.twitter.com/oauth2/token"</span><span class="p">}</span>
+	<span class="n">httpClient</span> <span class="o">:=</span> <span class="n">config</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">oauth2</span><span class="o">.</span><span class="n">NoContext</span><span class="p">)</span>
+	<span class="n">newClient</span> <span class="o">:=</span> <span class="n">Client</span><span class="p">{</span><span class="n">client</span><span class="o">:</span> <span class="n">twitterAPI</span><span class="o">.</span><span class="n">NewClient</span><span class="p">(</span><span class="n">httpClient</span><span class="p">)}</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="n">newClient</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We expose a <code>Client</code> type and a method <code>NewClient</code> that will create the internal Twitter client that go-twitter provides.</p>
+
+<p>Apart from a client, we also expose our own <code>Tweet</code> type, and provide a few utility methods to create them and ask useful questions. Amongst those utility methods, we have one that gets us the Extended Entities for a given Tweet, one that gives us the original Tweet URL, and one that will provide a pretty printed version of the Tweet contents for our Telegram messages:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="c">//Tweet holds information about a specific twitter status</span>
+<span class="k">type</span> <span class="n">Tweet</span> <span class="k">struct</span> <span class="p">{</span>
+	<span class="n">apiTweet</span>        <span class="o">*</span><span class="n">twitterAPI</span><span class="o">.</span><span class="n">Tweet</span>
+	<span class="n">imageDownloader</span> <span class="n">ImageDownloader</span>
+<span class="p">}</span>
+
+<span class="c">//NewTweet returns a new instance of Tweet from a low level API response</span>
+<span class="k">func</span> <span class="n">NewTweet</span><span class="p">(</span><span class="n">apiTweet</span> <span class="o">*</span><span class="n">twitterAPI</span><span class="o">.</span><span class="n">Tweet</span><span class="p">,</span> <span class="n">imageDownloader</span> <span class="n">ImageDownloader</span><span class="p">)</span> <span class="n">Tweet</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="n">Tweet</span><span class="p">{</span><span class="n">apiTweet</span><span class="o">:</span> <span class="n">apiTweet</span><span class="p">,</span> <span class="n">imageDownloader</span><span class="o">:</span> <span class="n">imageDownloader</span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c">//GetTwit returns a Tweet associated to the statusID</span>
+<span class="k">func</span> <span class="p">(</span><span class="n">t</span> <span class="n">Client</span><span class="p">)</span> <span class="n">GetTwit</span><span class="p">(</span><span class="n">statusID</span> <span class="kt">int64</span><span class="p">)</span> <span class="p">(</span><span class="n">Tweet</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">apiTweet</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">t</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">Statuses</span><span class="o">.</span><span class="n">Show</span><span class="p">(</span><span class="n">statusID</span><span class="p">,</span> <span class="no">nil</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">==</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="n">NewTweet</span><span class="p">(</span><span class="n">apiTweet</span><span class="p">,</span> <span class="n">DefaultImageDownloader</span><span class="p">{}),</span> <span class="no">nil</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="n">Tweet</span><span class="p">{},</span> <span class="n">err</span>
+<span class="p">}</span>
+
+<span class="c">//PrintableText returns a string with the tweet information</span>
+<span class="k">func</span> <span class="p">(</span><span class="n">t</span> <span class="n">Tweet</span><span class="p">)</span> <span class="n">PrintableText</span><span class="p">(</span><span class="n">user</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="n">fmt</span><span class="o">.</span><span class="n">Sprintf</span><span class="p">(</span><span class="s">"Tweet enviat per [%s]: https://twitter.com/%s/status/%d - %s"</span><span class="p">,</span>
+		<span class="n">user</span><span class="p">,</span>
+		<span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">ScreenName</span><span class="p">,</span>
+		<span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span>
+		<span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">Text</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c">//URL returns the original tweet URL</span>
+<span class="k">func</span> <span class="p">(</span><span class="n">t</span> <span class="n">Tweet</span><span class="p">)</span> <span class="n">URL</span><span class="p">()</span> <span class="kt">string</span> <span class="p">{</span>
+	<span class="k">return</span> <span class="n">fmt</span><span class="o">.</span><span class="n">Sprintf</span><span class="p">(</span><span class="s">"https://twitter.com/%s/status/%d"</span><span class="p">,</span>
+		<span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">User</span><span class="o">.</span><span class="n">ScreenName</span><span class="p">,</span>
+		<span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ID</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c">//ExtendedEntities returns a slice with all the raw images of the Tweet</span>
+<span class="k">func</span> <span class="p">(</span><span class="n">t</span> <span class="n">Tweet</span><span class="p">)</span> <span class="n">ExtendedEntities</span><span class="p">()</span> <span class="p">([][]</span><span class="kt">byte</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ExtendedEntities</span> <span class="o">!=</span> <span class="no">nil</span> <span class="o">&amp;&amp;</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ExtendedEntities</span><span class="o">.</span><span class="n">Media</span><span class="p">)</span> <span class="o">&gt;</span> <span class="m">1</span> <span class="p">{</span>
+		<span class="n">entities</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([][]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ExtendedEntities</span><span class="o">.</span><span class="n">Media</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ExtendedEntities</span><span class="o">.</span><span class="n">Media</span><span class="p">))</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">entity</span> <span class="o">:=</span> <span class="k">range</span> <span class="n">t</span><span class="o">.</span><span class="n">apiTweet</span><span class="o">.</span><span class="n">ExtendedEntities</span><span class="o">.</span><span class="n">Media</span> <span class="p">{</span>
+			<span class="n">entityData</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">t</span><span class="o">.</span><span class="n">imageDownloader</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">MediaURL</span><span class="p">)</span>
+			<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+				<span class="k">return</span> <span class="n">entities</span><span class="p">,</span> <span class="n">err</span>
+			<span class="p">}</span>
+			<span class="n">entities</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">entityData</span>
+		<span class="p">}</span>
+		<span class="k">return</span> <span class="n">entities</span><span class="p">,</span> <span class="no">nil</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="nb">make</span><span class="p">([][]</span><span class="kt">byte</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">),</span> <span class="no">nil</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Finally, the package also has the method that will look for Twitter links for a given text string, making use of Go regular expressions:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="c">//GetStatusID gives you the twitter status id for a given text</span>
+<span class="k">func</span> <span class="n">GetStatusID</span><span class="p">(</span><span class="n">text</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="kt">int64</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">r</span> <span class="o">:=</span> <span class="n">regexp</span><span class="o">.</span><span class="n">MustCompile</span><span class="p">(</span><span class="s">`https?://(www\.)?twitter\.com/\w+/status/(?P\d+)`</span><span class="p">)</span>
+	<span class="n">matches</span> <span class="o">:=</span> <span class="n">r</span><span class="o">.</span><span class="n">FindStringSubmatch</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">matches</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="n">id</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">strconv</span><span class="o">.</span><span class="n">ParseInt</span><span class="p">(</span><span class="n">matches</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span><span class="o">-</span><span class="m">1</span><span class="p">],</span> <span class="m">10</span><span class="p">,</span> <span class="m">64</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">err</span> <span class="o">==</span> <span class="no">nil</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="n">id</span><span class="p">,</span> <span class="no">nil</span>
+		<span class="p">}</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="m">0</span><span class="p">,</span> <span class="n">errors</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="s">"Could not find a twitter status id"</span><span class="p">)</span>
+<span class="p">}</span></code></pre></figure>
+
+<h3>Building the messages for Telegram</h3>
+<p>As described at the flow chart, we have essentially 2 use cases here:</p>
+<ol>
+ 	<li>The Tweet does not have more than one Extended Entity</li>
+ 	<li>The Tweet has 2 or more Extended Entities</li>
+</ol>
+<p>In case number (1) the current Telegram preview is good enough for us, so the message builder will simply send the same link again.</p>
+
+<p>Case number (2) is more interesting, as we want the bot to be sending the multiple Extended Entities as inline messages, and also send the Tweet text (but disabling the web preview flag, so we don’t send duplicate information).</p>
+
+<p>The Telegram Bot API allows us to do this in a relatively easy way:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="k">package</span> <span class="n">message</span>
+
+<span class="k">import</span> <span class="p">(</span>
+	<span class="s">"fmt"</span>
+
+	<span class="s">"github.com/go-telegram-bot-api/telegram-bot-api"</span>
+<span class="p">)</span>
+
+<span class="c">//Build returns a list of Chattable objects to send via Telegram</span>
+<span class="k">func</span> <span class="n">Build</span><span class="p">(</span><span class="n">chatID</span> <span class="kt">int64</span><span class="p">,</span> <span class="n">user</span> <span class="kt">string</span><span class="p">,</span> <span class="n">images</span> <span class="p">[][]</span><span class="kt">byte</span><span class="p">,</span> <span class="n">text</span> <span class="kt">string</span><span class="p">)</span> <span class="p">([]</span><span class="n">tgbotapi</span><span class="o">.</span><span class="n">Chattable</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">imageCount</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">imageCount</span> <span class="o">&gt;</span> <span class="m">0</span> <span class="p">{</span>
+		<span class="n">chattables</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="n">tgbotapi</span><span class="o">.</span><span class="n">Chattable</span><span class="p">,</span> <span class="n">imageCount</span><span class="o">+</span><span class="m">1</span><span class="p">,</span> <span class="n">imageCount</span><span class="o">+</span><span class="m">1</span><span class="p">)</span>
+		<span class="n">msg</span> <span class="o">:=</span> <span class="n">tgbotapi</span><span class="o">.</span><span class="n">NewMessage</span><span class="p">(</span><span class="n">chatID</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+		<span class="n">msg</span><span class="o">.</span><span class="n">DisableWebPagePreview</span> <span class="o">=</span> <span class="no">true</span>
+		<span class="n">chattables</span><span class="p">[</span><span class="m">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">msg</span>
+		<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">image</span> <span class="o">:=</span> <span class="k">range</span> <span class="n">images</span> <span class="p">{</span>
+			<span class="n">file</span> <span class="o">:=</span> <span class="n">tgbotapi</span><span class="o">.</span><span class="n">FileBytes</span><span class="p">{</span>
+				<span class="n">Name</span><span class="o">:</span>  <span class="n">fmt</span><span class="o">.</span><span class="n">Sprintf</span><span class="p">(</span><span class="s">"Image %d"</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span>
+				<span class="n">Bytes</span><span class="o">:</span> <span class="n">image</span><span class="p">,</span>
+			<span class="p">}</span>
+			<span class="n">msg</span> <span class="o">:=</span> <span class="n">tgbotapi</span><span class="o">.</span><span class="n">NewPhotoUpload</span><span class="p">(</span><span class="n">chatID</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+			<span class="n">chattables</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="m">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">msg</span>
+		<span class="p">}</span>
+		<span class="k">return</span> <span class="n">chattables</span><span class="p">,</span> <span class="no">nil</span>
+	<span class="p">}</span>
+	<span class="n">msg</span> <span class="o">:=</span> <span class="n">tgbotapi</span><span class="o">.</span><span class="n">NewMessage</span><span class="p">(</span><span class="n">chatID</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+	<span class="k">return</span> <span class="p">[]</span><span class="n">tgbotapi</span><span class="o">.</span><span class="n">Chattable</span><span class="p">{</span><span class="n">msg</span><span class="p">},</span> <span class="no">nil</span>
+<span class="p">}</span></code></pre></figure>
+
+<h3>Configuring our application</h3>
+<p>Last but not least, our application requires of some information to run. In our case:</p>
+<ul>
+ 	<li>Twitter authentication information</li>
+ 	<li>Telegram Bot authentication information</li>
+ 	<li>Telegram Chat where we want to send our messages to</li>
+ 	<li>What HTTP port should our web server listen to (needed for heroku deploys)</li>
+ 	<li>What URL should Telegram send the messages sent to the bot (the webhook or callback URL)</li>
+</ul>
+<p>Because I decided to deploy the bot to <a href="https://www.heroku.com/">heroku</a>, I went the environment variable route to get all the sensitive data the application needs. Through heroku, you can make certain values available as OS environment variables, which our application can access. This is how I made my configuration package load all the values the application needs to run properly:</p>
+
+<figure class="highlight"><pre><code class="language-go" data-lang="go"><span class="k">package</span> <span class="n">configuration</span>
+
+<span class="k">import</span> <span class="p">(</span>
+	<span class="s">"errors"</span>
+	<span class="s">"os"</span>
+	<span class="s">"strconv"</span>
+<span class="p">)</span>
+
+<span class="c">//Configuration holds application configuration</span>
+<span class="k">type</span> <span class="n">Configuration</span> <span class="k">struct</span> <span class="p">{</span>
+	<span class="n">TwitterAPIKey</span>    <span class="kt">string</span>
+	<span class="n">TwitterAPISecret</span> <span class="kt">string</span>
+	<span class="n">ChatID</span>           <span class="kt">int64</span>
+	<span class="n">Port</span>             <span class="kt">string</span>
+	<span class="n">BotKey</span>           <span class="kt">string</span>
+	<span class="n">CallbackURL</span>      <span class="kt">string</span>
+<span class="p">}</span>
+
+<span class="c">//New returns a new Config</span>
+<span class="k">func</span> <span class="n">New</span><span class="p">()</span> <span class="p">(</span><span class="o">*</span><span class="n">Configuration</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">chatID</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">strconv</span><span class="o">.</span><span class="n">ParseInt</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"CHAT_ID"</span><span class="p">),</span> <span class="m">10</span><span class="p">,</span> <span class="m">64</span><span class="p">)</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="o">&amp;</span><span class="n">Configuration</span><span class="p">{},</span> <span class="n">errors</span><span class="o">.</span><span class="n">New</span><span class="p">(</span><span class="s">"Could not get chat id from environment"</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">return</span> <span class="o">&amp;</span><span class="n">Configuration</span><span class="p">{</span>
+		<span class="n">TwitterAPIKey</span><span class="o">:</span>    <span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"TWITTER_API_KEY"</span><span class="p">),</span>
+		<span class="n">TwitterAPISecret</span><span class="o">:</span> <span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"TWITTER_API_SECRET"</span><span class="p">),</span>
+		<span class="n">Port</span><span class="o">:</span>             <span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"PORT"</span><span class="p">),</span>
+		<span class="n">BotKey</span><span class="o">:</span>           <span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"BOT_KEY"</span><span class="p">),</span>
+		<span class="n">CallbackURL</span><span class="o">:</span>      <span class="n">os</span><span class="o">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">"CALLBACK_URL"</span><span class="p">),</span>
+		<span class="n">ChatID</span><span class="o">:</span>           <span class="n">chatID</span><span class="p">,</span>
+	<span class="p">},</span> <span class="no">nil</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2>The result</h2>
+<p>Once the bot has been deployed, a message can be sent to it with a link to Twitter, and the bot will proxy the message with all the needed images to the channel I’m interested to:</p>
+
+<p><img class="aligncenter wp-image-3946 size-large" src="/wp-content/uploads/2017/05/Screen-Shot-2017-05-21-at-21.31.32-1024x480.png" alt="" width="650" height="305" /></p>
+
+<p>Which makes a lot more sense for Tweets with multiple images.</p>
+
+<p>Find all the code in the <a href="https://github.com/brafales/piulades-bot">piulades-bot Github repository</a>.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/04/17/arm-assembler-raspberry-pi-chapter-27/">&laquo; ARM assembler in Raspberry Pi – Chapter 27</a>
+
+
+  <a class="next" href="/2017/05/29/exploring-aarch64-assembler-chapter-8/">Exploring AArch64 assembler – Chapter 8 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

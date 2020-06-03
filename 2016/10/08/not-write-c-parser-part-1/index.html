@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>How (not) to write a C++ front end – Part 1</title>
+  <meta name="description" content="As part of the work I did in my previous employer, we had to develop a C++ front end. This is never an easy task so I will use this series to share some experiences while developing it.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/10/08/not-write-c-parser-part-1/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="How (not) to write a C++ front end – Part 1">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/10/08/not-write-c-parser-part-1/">
+  <meta property="og:description" content="As part of the work I did in my previous employer, we had to develop a C++ front end. This is never an easy task so I will use this series to share some experiences while developing it.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="How (not) to write a C++ front end – Part 1">
+  <meta name="twitter:description" content="As part of the work I did in my previous employer, we had to develop a C++ front end. This is never an easy task so I will use this series to share some experiences while developing it.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">How (not) to write a C++ front end – Part 1</h1>
+    
+    <p class="post-meta"><time datetime="2016-10-08T10:58:15+00:00" itemprop="datePublished">Oct 8, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+As part of the work I did in my previous employer, we had to develop a C++ front end. This is never an easy task so I will use this series to share some experiences while developing it.
+</p>
+<!--more-->
+<h2>Context</h2>
+<p>
+My previous employer was the <a href="http://www.bsc.es">Barcelona Supercomputing Center</a>. I worked in the <a href="https://pm.bsc.es">Programming Models</a> group of the Computer Science department. The main goal of that group is research and develop new programming models for parallelism in the context of high performance computing. For this goal there were two tools developed there: a runtime called <a href="https://pm.bsc.es/nanox">Nanos++</a> and a compiler called <a href="https://pm.bsc.es/mcxx">Mercurium</a>. The research was focused around OpenMP and BSC's own programming model <a href="https://pm.bsc.es/ompss">OmpSs</a>.
+</p>
+<p>
+I used to be the main developer and maintainer of Mercurium. Mercurium is a source-to-source compiler for C/C++/Fortran that we used to implement OpenMP and OmpSs so we could apply our proposals and ideas to existing codes, including those developed in-house in the BSC.
+</p>
+
+<h3>A bit of history</h3>
+
+<p>
+Historically systems featuring multiprocessors with shared memory (i.e. SMP or NUMA) were scarce and very expensive (in the 90s). This changed, when the power wall was hit and became clear that cranking up the frequency of a processor would not bring any further benefits (around the early 2000's). At this point, hardware vendors turned to parallelism inside the CPUs as a way to increase performance. Eventually multicores would become more and more affordable and thus popular. Nowadays it is very easy to find multicore processors even in the processors of our smartphones.
+</p>
+
+<p>
+The problem with parallelism is mainly programming it. In the 90s, <a href="https://en.wikipedia.org/wiki/High_Performance_Fortran">High Performance Fortran</a> was a failed attempt to provide a model. It failed not because the model was wrong per se, but because the compilation technology that was expected to support it never made it. From that failed project, <a href="http://www.openmp.org">OpenMP</a> was born. OpenMP put a lower bar to compilers so the programming model was much more straightforward and less demanding to the compilation technology. This means that vendors could implement it without heroic efforts. For years OpenMP kept a low profile. But then the multicore machines appeared and being shared memory machines were a good match for the expectations of OpenMP. This is the reason why OpenMP has seen a boost in the last 15 years. It is still not a mainstream programming model but it is well known in HPC environments. This renewed interest in OpenMP spawned research both from academia and the industry. OpenMP (and OmpSs) where the main goal in academic research of the Programming Models. But research needs some amount of development, and this is where I enter.
+</p>
+
+<p>
+Early in 2005, Alex Duran, a colleague (and later manager) of mine there in the BSC for about 7 years, had hacked a simple C front end that using some templates (actually like mini scripts in a small language) was able to implement many parts of OpenMP. The transformation was done in a source-to-source fashion. Alex coined that small tool <strong>Mercurium</strong> (admittedly not sure why, maybe because ancient god Mercurius/Hermes is the messenger of the gods but I fail to see how this relates to a source-to-source tool :). The compiler was called <code>mcc</code>. But OpenMP supports C, C++ and Fortran so in 2005 I was hired by the BSC, after earning my degree, to continue working in the source-to-source Fortran front end I had written for my final engineering degree project. Fortran may sound like an old language but is still widely used in HPC. Probably is only used there as a niche. This led to the development of <code>mf95</code> (the Mercurium Fortran 95 compiler).
+</p>
+
+<p>
+Around 2007 we realized that the existing infrastructure was a bit lacking. Both <code>mcc</code> and <code>mf95</code> were extremely simple tools (you could barely call them compilers). So we eventually decided to invest more on them. At this point, we abandoned the template approach by a more generic and common pass mechanism. And then I got maybe the most crazy idea ever: implement the missing C++ compiler we did not have yet.
+</p>
+
+<p>
+Oh man. This took like 7 years to become in a state that I'd consider acceptable. Inbetween, our managers told us that we had to support Fortran again. This was a bit disruptive and required rewriting the compiler again, so now Mercurium has three compilers in one: C, C++ and Fortran 95 (<code>mcc</code>, <code>mcxx</code> and <code>mfc</code>). Despite the effort diversion that this caused, I think that the overall infrastructure became more robust after this change.
+</p>
+
+<h2>Mercurium</h2>
+
+<p>
+Mercurium is a compilation infrastructure for fast prototyping in source-to-source transformations. As such it works in the following way.
+</p>
+
+<ol>
+<li>A front end parses the code and generates an ambiguous AST. This is very high level and detailed. Practically useless and very tailored to the input language.</li>
+<li>The AST is semantically analyzed and at this point is disambiguated. The outcome of this process is another AST, but to distinguish it, it was called <code>nodecl</code>. This second tree is very high level but it was designed to be able to express common elements of C, C++ and Fortran. Of course each language has its own features so there are specific trees for each, but I'd say that maybe 80% of the nodes are shared.</li>
+<li>This nodecl, along with the semantic information (symbols, types) determined in the earlier step, are passed to a compilation pipeline that has freedom to do whatever it wants. Eventually it modifies the tree (and updates the symbolic information in the way).</li>
+<li>Finally the nodecl tree is pretty printed giving source code again.</li>
+</ol>
+
+<p>
+The driver (mcc, mcxx or mfc) then invokes an underlying compiler like gcc, gfortran, icc, ifort, etc. to compile the transformed code.
+</p>
+
+<p>
+A cool feature of Mercurium is that phases need not to manually create nodecl trees, they can parse chunks of code either in C, C++ or Fortran and get a subtree out of it (along with the side effect of declarations in the semantic information). This was possible because the semantic phase keeps enough scoping information to allow new parsings.
+</p>
+
+<p>
+Many people raised an eyebrow when we said that we could handle C++. While we never claimed full compliancy with any particular C++ Standard, we got a decent degree of compatibility with the g++ headers. Our C++ front end does most of the stuff a C++ front end has to do.
+</p>
+
+<p>
+For instance, the following code:
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;vector&gt;
+#include &lt;numeric&gt;
+#include &lt;iostream&gt;
+</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">a</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">iota</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">a</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span> <span class="mi">1</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="n">it</span> <span class="o">:</span> <span class="n">a</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">it</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+is prettyprinted by the compiler as shown <a href="https://gist.githubusercontent.com/rofirrim/e758143d08c5d1d537e2f50d690fbfe6/raw/02d9eaf01e0adb92767fe1e07b8ed0647a0b7eea/out.cc">here</a> (you will probably want to go to the end of the file). This is a non-trivial amount of front end processing. Note that Mercurium internally instantiates stuff but keeps it internally for the underlying compiler (<code>g++</code> or <code>icpc</code>). Even this, you can see that Mercurium, has made some properties of the code explicit.
+</p>
+
+<p>
+As of this year, Mercurium is available in <a href="https://github.com/bsc-pm/mcxx">github</a>.
+</p>
+
+<h2>What do we need to write a C++ front end?</h2>
+
+<p>
+There are a few ingredients that you will need to write a C++ front end.
+</p>
+
+<ol>
+<li>A mechanism to preprocess the input. Mercurium does not have a preprocessor, instead it uses the one of the underlying compiler. This simplifies a few things since compilers look for some specific headers in particular directories that have to be known in advance. The downside of this approach is that it requires a call to preprocess. Modern C and C++ front ends do this on the fly while parsing.</li>
+<li>A way to tokenize the preprocessed input. This is not very complicated in C and C++ so it uses a <a href="http://flex.sourceforge.net/">Flex</a> scanner. (In contrast, Fortran lexical analysis is incredibly complicated. Mercurium used a prescanner for fixed-form Fortran and a normal Flex scanner for free-form Fortran. But this had a bunch of problems, eventually a handmade lexer that could handle both free and fixed form was written.)</li>
+<li>A parser. We need to take the sequence of tokens and verify that they form a syntactically valid C++ program. This is <strong>incredibly hard</strong> because of the C++ syntax itself.</li>
+<li>A semantic analysis phase. C++ has a rich type system and semantic, so this <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1885.pdf">C++ formalism</a> is in practice a must follow when implementing the semantics. This phase is incredibly hard to write as well, because it will involve inferring lots of things through overloading and template instantiation.</li>
+</ol>
+
+<h2>Things I'd do different today</h2>
+
+<p>
+When we started in this crazy endeavour around 2007, clang was in very early stages. So probably today we would rely on a clang library, this would lift a big part of the burden. I'm not sure if the current ability of implementing transformations using source code would still be feasible, but at least a lot of pain would have been avoided.
+</p>
+
+<p>
+In the next post we will see what parsing technology is used in Mercurium and all the problems that it has to solve.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/10/08/exploring-aarch64-assembler-chapter1/">&laquo; Exploring AArch64 assembler – Chapter 1</a>
+
+
+  <a class="next" href="/2016/10/08/not-write-c-parser-part-2/">How (not) to write a C++ front end – Part 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

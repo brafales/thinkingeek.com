@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>How (not) to write a C++ front end – Part 2</title>
+  <meta name="description" content="In the previous installment I gave some context about the existence of Mercurium as a tool. In this chapter we will start digging into the parsing technology used.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/10/08/not-write-c-parser-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="How (not) to write a C++ front end – Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/10/08/not-write-c-parser-part-2/">
+  <meta property="og:description" content="In the previous installment I gave some context about the existence of Mercurium as a tool. In this chapter we will start digging into the parsing technology used.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="How (not) to write a C++ front end – Part 2">
+  <meta name="twitter:description" content="In the previous installment I gave some context about the existence of Mercurium as a tool. In this chapter we will start digging into the parsing technology used.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">How (not) to write a C++ front end – Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2016-10-08T11:03:45+00:00" itemprop="datePublished">Oct 8, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the previous installment I gave some context about the existence of Mercurium as a tool. In this chapter we will start digging into the parsing technology used.
+</p>
+<!--more-->
+
+<h2>The solved problem that isn't</h2>
+<p>
+Some people claim that parsing is a solved problem that actually is not. The reason is that we have good formalisms for parsing and theoretically they are good but in practice they are not. This has led the compiler industry to ignore most of the parsing developments and handmade written parsers are used instead. In fact, those handmade parsers are the fastest in performance and can give great diagnostics but often they are a pain to maintain. Eventually, given that most languages evolve relatively at a slow pace, the maintenance effort gets amortized.
+</p>
+<p>
+Given a context-free grammar (which is a generative tool, it encodes how to <em>generate</em> the language) there are two big families of algorithms for parsing: LL and LR. LL, standing for Left to right Leftmost derivation, is very similar to a handmade parser and for many people are the most intuitive ones. Many variations of LL exist, LL(k), predicated LL(k) and Generalized LL. The latter exist to solve a problem of LL parsers: they do not allow rules of the form <code>X → X a</code>. GLL is a relatively recent development and there is not much experience in the field implementing them. A representative tool of LL parsing is <a href="http://www.antlr.org/">ANTLR</a>.
+</p>
+
+<p>
+The other family, LR, is probably most known due to the UNIX tool <code>yacc</code>. LR, standing for Left to right Rightmost derivation, is a different way of parsing. The idea is that the input is shifted into a stack and when one or more symbols from the top of the stack can be generated by the <code>Y</code> of a rule like <code>X → Y</code>, then that top of the stack is replaced by <code>X</code>. There are many algorithms as well of this family: LR(k), LALR(1) implemented by <code>yacc</code> (and its clone <a href="https://www.gnu.org/software/bison/">GNU Bison</a>), SLR and GLR. GLR is relatively newer and attempts to solve a problem that the other algorithms cannot cope: conflicts caused by ambiguous grammars.
+</p>
+
+<h2>Context-free parsing</h2>
+<p>
+Why is it context-free parsing more interesting than context-sensitive parsing? There are two reasons. First, LL and LR algorithms work on context-free grammar thus the context-freedom is more or less mandatory. Second, context-sensitive parsing more or less involves a relatively complicated step where the input has a different meaning. It is much easier describing a language using a context-free grammar even if this actually generates a larger language than the real programming language. Context-free grammars are very useful to encode structure, less so for semantics. 
+</p>
+<p>
+No matter how simple a programming language is, a context-free grammar will unlikely retain interesting properties like «the variable is not declared». This means that some amount of semantics is lost in the description of the grammar. Sometimes this is not a problem, because given a sequence of symbol of the programming language, there is only one syntactic way to build it. But it may well be that this is not the case. When this happens the language is ambiguous and no LR parser can cope with it. We mentioned above that GLR can, but at the cost of forcing you to disambiguate eventually at some point. The upside is that at least you recognize some structure. The downside is that sometimes the amount of possible interpretations can be overwhelming.
+</p>
+<p>
+Consider the following C++ snippet.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span> <span class="n">c</span><span class="p">;</span></code></pre></figure>
+
+<p>
+It looks like a variable declaration of <code>c</code> with type <code>A&lt;B&gt;</code>. But what if this snippet is found inside a function and the lines above it are
+<p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">c</span><span class="p">;</span></code></pre></figure>
+
+<p>
+now the meaning is completely different! It is an expression statement that (uselessly) computes <code>(A&lt;B)&gt;c</code>. If we ignore all the semantic knowledge (i.e. that <code>A</code>, <code>B</code> and <code>c</code> are variables of type <code>int</code>), which we do when using context-free parsing, the sequence of symbols <code>A &lt; B &gt; c;</code> is ambiguous and, if turns out to be valid, may have at least two meanings! Conversely,
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">x</span><span class="p">;</span></code></pre></figure>
+
+<p>
+has only a single meaning the declaration of a variable <code>x</code> with type <code>int</code>.
+</p>
+<p>
+In Mercurium a GLR parser is used to tackle this problem but it comes with its own warts.
+</p>
+
+<h2>Generalized LR</h2>
+<p>
+Ambiguous grammars, like the one of C++, do not have a LR parser because the algorithm will run into a conflict. Fortunately an extension of LR, called GLR (standing for Generalized LR) can be used instead. This algorithm, instead of choking when facing a conflict, considers both. There are three possible outcomes: no syntactic interpretation leads to a valid parsing, only one option leads to a valid parsing, more than one leads to a valid parsing. The first case happens when, the parser encounters a conflict but eventually no interpretation is possible. Retaking the example above.
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span> <span class="n">C</span><span class="o">&lt;</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+In this case, two options will considered after the first <code>&lt;</code>: declaration or expression, so the parser will try to parse both options. But the last <code>&lt;</code> (the one right before the <code>;</code>) will make both interpretations fail. This is a legitimate syntax error at this point.
+</p>
+<p>
+The second case happens when several interpretations fail, leading to a single valid one. This case is the ideal, because it means there was some dubious syntax but the doubt has eventually gone. Consider this case.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span> <span class="n">C</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Again, two options will be considered after the first <code>&lt;</code> but this time when we encounter <code>+</code> the declaration interpretation will fail and only the expression interpretation will succeed.
+</p>
+<p>
+The third case is the complex one: both interpretations are feasible. The example above <code>A&lt;B&gt; c;</code> showcases this. In fact, due to the C++ nature, there are lots of cases that are surprisingly feasible. For instance:
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="o">&lt;</span><span class="n">B</span><span class="o">&gt;</span> <span class="o">*</span><span class="n">c</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Looks like this can only be declaring <code>c</code> to be a variable with pointer type to <code>A&lt;B&gt;</code>. Right? What if before that piece of C++ whe had this?
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
+<span class="kt">void</span> <span class="nf">A</span><span class="p">(</span><span class="n">T</span> <span class="n">t</span><span class="p">);</span>
+<span class="k">struct</span> <span class="nc">C</span> <span class="p">{</span> <span class="p">}</span> <span class="n">c</span><span class="p">;</span>
+<span class="kt">void</span> <span class="k">operator</span><span class="o">*</span><span class="p">(</span><span class="kt">void</span> <span class="n">A</span><span class="p">(</span><span class="kt">int</span><span class="p">),</span> <span class="k">const</span> <span class="n">C</span><span class="o">&amp;</span><span class="p">)</span> <span class="o">=</span> <span class="k">delete</span><span class="p">;</span>
+<span class="k">typedef</span> <span class="kt">int</span> <span class="n">B</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Now this can only be an expression! If you do not understand what is going on, read the diagnostic of <code>g++</code> below.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">test.cc: In function ‘void f()’:
+test.cc:9:11: error: use of deleted function ‘void operator*(void (*)(int), const C&amp;)’
+     A&lt;B&gt; *c;
+           ^
+test.cc:4:6: note: declared here
+ void operator*(void A(int), const C&amp;) = delete;
+      ^~~~~~~~</code></pre></figure>
+
+
+
+<p>
+This is calling a function due to operator overloading!
+</p>
+
+<p>
+When multiple interpretations are syntactically valid, the parser just annotates all of them. A later phase, which will do the semantic checks, will verify both cases and disambiguate as needed.
+This approach seems sensible except that it has an unpleasant consequence: these multiple interpretations may happen inside other multiple interpretations, which may mean that sometimes we may end with lots of valid interpretations. Some other cases it means that those interpretations are only potential and eventually just a few are feasible. Consider the following case, which is not as contrived as it may seem. It actually is based on a real example in a Boost header.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">L1</span><span class="o">&lt;</span><span class="n">E2</span><span class="p">,</span> <span class="n">L3</span><span class="o">&lt;</span><span class="n">E4</span><span class="p">,</span> <span class="n">L5</span><span class="o">&lt;</span><span class="n">E6</span><span class="p">,</span> <span class="n">L7</span><span class="o">&lt;</span><span class="n">E8</span><span class="p">,</span> <span class="n">N</span><span class="o">&gt;&gt;&gt;&gt;</span> <span class="n">M</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+The first &lt; (in <code>L1&lt;E2</code>) is relatively simple: declaration or expression. But the second one (in <code>L3&lt;E4</code>) causes havoc for the cause of the declaration because this declaration now might be intepreted in two different ways: it might be a nontype template argument (similar to an expression) or it might be a type template argument (in case L3 were a template name) thus we have to take into account this. This problem repeats for <code>L5&lt;E6</code> and <code>L7&lt;E8</code>. Due to the number of <code>&gt;</code> before <code>M</code>, the expression case is not valid anymore (but it would be if it were only two <code>&gt;</code> as in <code>&gt;&gt;</code>). All the potential different interpretations for declarations will eventually fail as we encounter more <code>&gt;</code>, so eventually only one interpretation is valid. But when we encountered <code>L7&lt;E8</code> we already have 8 potential declaration interpretations. The parser must remember all of them, even if eventually all of them will fail. Consider a similar case:
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">L1</span><span class="o">&lt;</span><span class="n">E2</span><span class="p">,</span> <span class="n">L3</span><span class="o">&lt;</span><span class="n">E4</span><span class="p">,</span> <span class="n">L5</span><span class="o">&lt;</span><span class="n">E6</span><span class="p">,</span> <span class="n">L7</span><span class="o">&lt;</span><span class="n">E8</span><span class="p">,</span> <span class="n">N</span><span class="o">&gt;</span> <span class="n">M</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+This is potentially also valid if <code>L1</code> is a template with 5 template parameters of which the 3 in the middle must be nontype template arguments. And again all the possible interpretations will fail when we encounter <code>;</code> but until then the parser will have to consider them.
+</p>
+
+<p>
+This means two things. First the parser overhead increases in a proportional way to the number of feasible interpretations. This is overhead in terms of time, more interpretations more time devoted to all of them. And second, and less obvious but necessary for parsing, we cannot assume anything has been fully recognized until the parser reaches back to a state where only one interpretation is feasible (which for highly ambiguous programs would be at the end of the program, not the case of C++ though). This means that the parser needs a notion of tentative/non-deterministic parsing mode where it just advances through the input remembering what it saw but not committing anything to a real parse. This is overhead in terms of space (i.e. memory).
+</p>
+
+<p>
+If you are thinking, well but this does not happen often, except in those pesky Boost headers. Well, the following expression also exposes this problem, due to the function call/cast ambiguity in C.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="p">(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="n">f</span><span class="p">)(</span><span class="mi">1</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+So this is a tough problem if we want to parse in a context-free fashion. Note that most of these problems go away when writing a handmade parser which can use arbitrary context, though C++ still has some legitimate ambiguities and those parsers will have to account for them. For instance
+<p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">C</span> <span class="p">{</span> <span class="n">C</span><span class="p">();</span> <span class="n">C</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span> <span class="p">};</span>
+<span class="kt">void</span> <span class="nf">f</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">C</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="p">(</span><span class="n">b</span><span class="p">);</span> <span class="c1">// Declares a and b of type C</span>
+<span class="p">}</span>
+<span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+  <span class="n">C</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">++</span><span class="p">;</span> <span class="c1">// A comma-expression</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+In both cases a C++ parser must account for an unclear possibility of a declaration/expression ambiguity here. For the first case, the standard says that if both are valid, then it resorts to a declaration. The second case can only be an expression once <code>++</code> is encountered. (As a curiosity <code>g++</code> handles this case incorrectly).
+</p>
+<p>
+Using context-free parsing, the above case does not bear special treatment. It is just an ambiguous interpretation that will have to be disambiguated later.
+</p>
+
+<h3>GNU Bison GLR</h3>
+<p>
+Bison has a <a href="https://www.gnu.org/software/bison/manual/html_node/GLR-Parsers.html">rather good GLR implementation</a> that I'd like to call <em>stack-based</em> GLR. This technique, minimally departs from a traditional LALR and in general the algorithm is comparatively fast as the existing LALR implementation in GNU Bison under regular operation. When faced with a conflict, Bison GLR algorithm duplicates the stack of symbols it has seen and then it advances them. Each stack may have to be duplicated if further conflicts are encountered. For the example above, this can explode exponentially, leading to an exponential number of stacks and causing the parser to advance very, very slowly through the input. 
+<p>
+<p>
+Mercurium currently uses the GLR implementation of Bison so it suffers of this problem. Some Boost headers expose this problem: while the number of valid parsings are not exponential, the intermrediate parsing process explodes exponentially. In some causes several thousands of parsing stacks were created for the Boost headers, leading to a 1 second to parse a single declaration. Unfortunately that form was repeated in the Boost headers 5 times. This meant that parsing alone takes 5 seconds for that file. This is clearly suboptimal.
+</p>
+
+<h3>Elkhound algorithm</h3>
+
+<p>
+In contrast to the GNU Bison GLR algorithm, the <a href="http://scottmcpeak.com/elkhound/sources/elkhound/algorithm.html">Elkhound algorithm</a> by Scott McPeak uses a graph (sometimes called a Graph Structured Stack, GSS) so it can share as much items from the stack as possible. This has the advantage to avoid the exponential behaviour of the GNU Bison GLR algorithm but at expense of a higher overhead of manipulating a graph.
+</p>
+
+<p>
+As an experiment, I took the Bison GLR algorithm skeleton and modified so it implements the Elkhound algorithm. I did not implement a few of the suggested improvements by McPeak. I verified that, indeed, this algorithm does not incur on exponential behaviour. The problem is that for non problematic inputs, this algorithm has to pay the penalty of handling a graph. After some effort minimizing memory allocations as much as possible, I ended with a parser that was 1.5X slower in average that GNU Bison GLR (except for the inputs that show exponential behaviour which was orders of magnitud faster). This is a bit disappointing, considering how large some C++ headers are. Part of the overhead might be caused by the Bison expectations in the parser behaviour (we're mimicking a bit what the original Bison GLR does which may also contribute to the overhead).
+</p>
+
+<p>
+I don't think GNU Bison upstream would accept an alternate GLR implementation like that, given that in general their GLR implementation is very competitive. If you are curious of what I did you can check the code <a href="/wp-content/uploads/2016/09/new-glr.c">here</a>. Be warned this is very alpha and obviously does not implement all what a Bison GLR skeleton does. It should give you a good idea, though.
+</p>
+
+<h2>Conclusion</h2>
+
+<p>
+Parsing C++ is hard and no matter which approach we take is going to be painful. Applying a context-free approach using the LR algorithm turns out to be very complicated. We can use GLR but the GNU Bison implementation may sometimes expose exponential behaviour. An algorithm that avoids this happens to add some unpleasant overhead. 
+</p>
+<p>
+Production-grade C++ parsers nowadays use hand made, descent recursive parsers, which are a pain to maintain but can cope with parsing C++. This is the case of clang and GCC today. GCC used to have a Bison based C++ parser but it had lots of limitations. They switched to a handmade parser in GCC 3.4.
+</p>
+</p></p></p></p></p></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/10/08/not-write-c-parser-part-1/">&laquo; How (not) to write a C++ front end – Part 1</a>
+
+
+  <a class="next" href="/2016/10/08/exploring-aarch64-assembler-chapter-2/">Exploring AArch64 assembler – Chapter 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

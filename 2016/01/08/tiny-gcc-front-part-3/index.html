@@ -1,0 +1,2475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 3</title>
+  <meta name="description" content="Now that the minimal infrastructure is already set, we can start with the implementation of our tiny front end. Today we will talk about the lexer.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/01/08/tiny-gcc-front-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/01/08/tiny-gcc-front-part-3/">
+  <meta property="og:description" content="Now that the minimal infrastructure is already set, we can start with the implementation of our tiny front end. Today we will talk about the lexer.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 3">
+  <meta name="twitter:description" content="Now that the minimal infrastructure is already set, we can start with the implementation of our tiny front end. Today we will talk about the lexer.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2016-01-08T16:13:01+00:00" itemprop="datePublished">Jan 8, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/gcc/">gcc</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/tiny/">tiny</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Now that the minimal infrastructure is already set, we can start with the implementation of our tiny front end. Today we will talk about the lexer.
+</p>
+<!--more-->
+
+<h2>Typical compiler architecture</h2>
+
+<p>
+Since compilation is a lowering process, it makes sense to split the whole process in several steps. Each of these steps usually performs a single process. This is done because compilers quickly become untameable beasts. By splitting the compiler in several steps, it is easier to assign each step a specific and narrow task. This helps reasoning about the code and thus can minimize introducing bugs (or helps fixing them) and eases extending the compiler (this is actually commonplace software engineering good practice, but obviously applies to compilers as well).
+</p>
+
+<p>
+Almost every compilation infrastructure like GCC, LLVM, Open64, ... is split in two big parts. The front end (what we are implementing) and the <em>back end</em>. The front end is responsible of recognizing the source language and diagnosing syntactic and semantic errors. The back end is responsible for generating code for the specific target (i.e. the environment and architecture). Nowadays compilers are in general <em>optimizing</em> compilers (a misnomer since they should be called <em>enhancing</em> compilers) this means thay they try to generate code that makes the most of the properties of the program (machine-independent optimizations) and the target where the program is going to run (machine-dependent optimizations). While machine-independent optimizations can be done in the front end this would make them language-specific. This is undesirable, so most compilation infrastructures have an extra part between the front end and the back end that sometimes is called the middle end.
+</p>
+
+<p>
+Since the process sequentially flows from the front end to the middle end and from that to the back end, there must be a way for each two to communicate. Compilers use what is commonly called <em>intermediate representations</em>. An intermediate representation is a more or less abstract representation of the program. At the early stages of the compilation process, the representation is very abstract and high level, pretty close to the programming language. As the compilation process goes on, the intermediate representation becomes more and more low level, until it is almost assembler or machine code. It is not unusual that compilers have several intermediate representations. Sometimes it is the same representation simply restricted to a lower level subset. Sometimes is an entirely different representation. It may even happen that some optimizations require additional intermediate representations that are built only for them.
+</p>
+
+<p>
+In GCC, a front end can use whatever representation it wants but at the end, before handing out the code to the rest of the compilation process, it has to be lowered into something called GENERIC. GENERIC is a tree-like representation and it is used in the front end and some early steps in the middle end of GCC. As a front end we only have to care to be able to deliver sensible GENERIC to the rest of the compiler.
+</p>
+
+<p>
+But before we can create any GENERIC we first have to deal with the source code.
+</p>
+
+<h2>Open the file</h2>
+
+<p>
+Before we do anything let's modify our parse hook in <code>gcc-src/gcc/tiny/tiny1.cc</code> so we open the input file and so we can later analyze it.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="kt">void</span>
+<span class="nf">tiny_parse_file</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">FILE</span> <span class="o">*</span><span class="n">file</span> <span class="o">=</span> <span class="n">fopen</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">"r"</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">file</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">fatal_error</span> <span class="p">(</span><span class="n">UNKNOWN_LOCATION</span><span class="p">,</span> <span class="s">"cannot open filename %s: %m"</span><span class="p">,</span> <span class="n">filename</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="c1">// Here we will analyze our file</span>
+
+  <span class="n">fclose</span> <span class="p">(</span><span class="n">file</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">tiny_parse_files</span> <span class="p">(</span><span class="kt">int</span> <span class="n">num_files</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">files</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num_files</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">tiny_parse_file</span> <span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span>
+<span class="nf">tiny_langhook_parse_file</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">tiny_parse_files</span> <span class="p">(</span><span class="n">num_in_fnames</span><span class="p">,</span> <span class="n">in_fnames</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+This still does nothing useful but at least defines a placeholder where the analysis starts. Note the usage of globals <code>num_in_fnames</code> and <code>in_fnames</code> in <code>tiny_langhook_parse_file</code> that contain the number of files we are going to compile. Although we do not mind the number of parameters in <code>tiny_parse_files</code> our examples will have just a single file. In function <code>tiny_parse_file</code> now we just open the input file but the analysis will happen there.
+</p>
+
+<h2>Typical front end design</h2>
+
+<p>
+Nowadays front ends are commonly designed with three components: the lexical analyzer, the syntactic analyzer and the semantic analyzer. This is consistent with the strategy of splitting the compiler in smaller parts so they are manageable.
+</p>
+
+<p>
+The lexical analyzer takes the input and splits into the constitutive parts of the language (i.e. the lexical elements) called <em>tokens</em>. The lexical analyzer is commonly called the <em>lexer</em>, the <em>scanner</em> or the <em>tokenizer</em>. Conceptually constructs a sequence of tokens of the program and nothing else.
+</p>
+<p>
+This sequence of tokens is consumed by the syntactic analyzer. The syntactic analyzer verifies that the order of the tokens is such that it represents a (syntactically) valid program. The semantic analyzer still has to verify that a (syntactically) valid sequence of tokens adheres to the rules of the language. The term <em>parser</em> is commonly used to encompass the three processes of lexical, syntactic and semantic analysis.
+</p>
+
+<h2>Lexical analysis</h2>
+
+<p>
+Back to tiny, the tokens of the language more or less correspond to the elements in black bold <code><strong>face</strong></code> in the rules of <a href="/2016/01/05/tiny-gcc-front-part-1/">part 1</a>, this is, all what appears in the right hand side of a rule and is not like 〈this〉. The following elements of the program will be analyzed by the lexer as tokens.
+</p>
+
+<p>
+<code><strong>var</strong></code>
+<code><strong>write</strong></code>
+<code><strong>;</strong></code>
+<code><strong>+</strong></code>
+</p>
+
+<p>
+Some other tokens will not directly correspond to these elements, but a sequence of them. Identifiers, integer literals, string literals, can be understood as tokens on their own. The reason is that there is little value in keeping them split in their constituents.
+</p>
+
+<p>
+123
+123.456
+"hello"
+foo
+</p>
+
+<p>
+For instance, the first three lines of the following tiny program (assume it is in a file <code>sum.tiny</code>)
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="k">var</span> <span class="n">i</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">s</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="n">s</span> <span class="p">:=</span> <span class="m">0</span><span class="p">;</span>
+<span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">1</span> <span class="k">to</span> <span class="m">10</span> <span class="k">do</span>
+  <span class="n">s</span> <span class="p">:=</span> <span class="n">s</span> <span class="p">+</span> <span class="n">i</span><span class="p">;</span>
+<span class="k">end</span>
+<span class="k">write</span> <span class="n">s</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+will be tokenized like this.
+</p>
+<p style="line-height: 200%">
+<span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>VAR</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>IDENTIFIER</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>COLON</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>INT</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>SEMICOLON</code></span>
+<span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>VAR</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>IDENTIFIER</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>COLON</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>INT</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>SEMICOLON</code></span>
+<span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>IDENTIFIER</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>ASSIG</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>INTEGER_LITERAL</code></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;"><code>SEMICOLON</code></span>
+</p>
+
+<p>
+For each token we will want a bit more of information. In particular, <code>IDENTIFIER</code> tokens and <code>INTEGER_LITERAL</code>, among others, should have at least their associated text. For diagnostic purposes, we will also want to keep track of the location of each token inside the input. So we will also associate a file, line and column (called a location or <em>locus</em>). The above sequence of tokens would actually be more like 
+</p>
+
+<p style="line-height: 200%">
+<span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>VAR</code>, file=sum.tiny, line=1, col=1</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>IDENTIFIER</code>, file=sum.tiny, line=1, col=5, <strong>text=i</strong></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>COLON</code>, file=sum.tiny, line=1, col=7</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>INT</code>, file=sum.tiny, line=1, col=9</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>SEMICOLON</code>, file=sum.tiny, line=1, col=12</span>
+<span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>VAR</code>, file=sum.tiny, line=2, col=1</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>IDENTIFIER</code>, file=sum.tiny, line=2, col=5, <strong>text=s</strong></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>COLON</code>, file=sum.tiny, line=2, col=7</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>INT</code>, file=sum.tiny, line=2, col=9</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>SEMICOLON</code>, file=sum.tiny, line=2, col=12</span>
+<span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>IDENTIFIER</code>, file=sum.tiny, line=3, col=1, <strong>text=s</strong></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>ASSIG</code>, file=sum.tiny, line=3, col=3</span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>INTEGER_LITERAL</code>, file=sum.tiny, line=2, col=6, <strong>text=0</strong></span> <span style="border: 1px solid rgb(0, 0, 0); padding: 2px;">id=<code>SEMICOLON</code>, file=sum.tiny, line=3, col=7</span>
+</p>
+
+<h2>Tokens</h2>
+
+<p>
+What is a token? It is conceptually a tuple of what a token can have: the kind of the token, its location and a text (if any).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Token</span>
+<span class="p">{</span>
+<span class="nl">private:</span>
+  <span class="n">TokenId</span> <span class="n">token_id</span><span class="p">;</span>
+  <span class="n">location_t</span> <span class="n">locus</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">*</span><span class="n">str</span><span class="p">;</span>
+<span class="p">...</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+Field <code>token_id</code> will store the kind of token, <code>locus</code> will keep the location (more on this below) and <code>str</code> will keep an associated text, if any, of the token.
+</p>
+
+<p>
+Field <code>token_id</code> has type <code>TokenId</code> that is nothing but an enum of the kinds of tokens we have.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">enum</span> <span class="n">TokenId</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+The enum would contain all the token kinds as enumerators. We can write them manually but this quickly becomes tedious. Instead we will use <a href="https://en.wikipedia.org/wiki/X_Macro">X-Macros</a>. This way we can describe our tokens in one place and the data structures will be updated automatically. We will use this technique several times in our front end to ease maintaining. Of course other code-generating approaches (like using small DSLs like <a href="http://www.gnu.org/software/m4/">GNU M4</a>) can be used instead, this one is enough for most of our needs.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// TINY_TOKEN(name, description)</span>
+<span class="c1">// TINY_TOKEN_KEYWORD(name, identifier)</span>
+<span class="c1">//</span>
+<span class="c1">// Keep TINY_TOKEN_KEYWORD sorted</span>
+
+<span class="cp">#define TINY_TOKEN_LIST                                                        \
+  TINY_TOKEN (FIRST_TOKEN, "&lt;first-token-marker&gt;")                             \
+  TINY_TOKEN (END_OF_FILE, "end of file")                                      \
+  TINY_TOKEN (ASSIG, ":=")                                                     \
+  TINY_TOKEN (ASTERISK, "*")                                                   \
+  TINY_TOKEN (COLON, ":")                                                      \
+  TINY_TOKEN (DIFFERENT, "!=")                                                 \
+  TINY_TOKEN (EQUAL, "=")                                                      \
+  TINY_TOKEN (LEFT_PAREN, "(")                                                 \
+  TINY_TOKEN (MINUS, "-")                                                      \
+  TINY_TOKEN (PLUS, "+")                                                       \
+  TINY_TOKEN (RIGHT_PAREN, ")")                                                \
+  TINY_TOKEN (SEMICOLON, ";")                                                  \
+  TINY_TOKEN (SLASH, "/")                                                      \
+  TINY_TOKEN (PERCENT, "%")                                                    \
+  TINY_TOKEN (GREATER, "&gt;")                                                    \
+  TINY_TOKEN (GREATER_OR_EQUAL, "&gt;=")                                          \
+  TINY_TOKEN (LOWER, "&lt;")                                                      \
+  TINY_TOKEN (LOWER_OR_EQUAL, "&lt;=")                                            \
+  TINY_TOKEN (IDENTIFIER, "identifier")                                        \
+  TINY_TOKEN (INTEGER_LITERAL, "integer literal")                              \
+  TINY_TOKEN (REAL_LITERAL, "real literal")                                    \
+  TINY_TOKEN (STRING_LITERAL, "string literal")                                \
+                                                                               \
+  TINY_TOKEN_KEYWORD (AND, "and")                                              \
+  TINY_TOKEN_KEYWORD (DO, "do")                                                \
+  TINY_TOKEN_KEYWORD (ELSE, "else")                                            \
+  TINY_TOKEN_KEYWORD (END, "end")                                              \
+  TINY_TOKEN_KEYWORD (FLOAT, "float")                                          \
+  TINY_TOKEN_KEYWORD (FOR, "for")                                              \
+  TINY_TOKEN_KEYWORD (IF, "if")                                                \
+  TINY_TOKEN_KEYWORD (INT, "int")                                              \
+  TINY_TOKEN_KEYWORD (NOT, "not")                                              \
+  TINY_TOKEN_KEYWORD (OR, "or")                                                \
+  TINY_TOKEN_KEYWORD (READ, "read")                                            \
+  TINY_TOKEN_KEYWORD (THEN, "then")                                            \
+  TINY_TOKEN_KEYWORD (TO, "to")                                                \
+  TINY_TOKEN_KEYWORD (VAR, "var")                                              \
+  TINY_TOKEN_KEYWORD (WHILE, "while")                                          \
+  TINY_TOKEN_KEYWORD (WRITE, "write")                                          \
+                                                                               \
+  TINY_TOKEN (LAST_TOKEN, "&lt;last-token-marker&gt;")
+</span>
+<span class="k">enum</span> <span class="n">TokenId</span>
+<span class="p">{</span>
+<span class="cp">#define TINY_TOKEN(name, _) name,
+#define TINY_TOKEN_KEYWORD(x, y) TINY_TOKEN (x, y)
+</span>  <span class="n">TINY_TOKEN_LIST</span>
+<span class="cp">#undef TINY_TOKEN_KEYWORD
+#undef TINY_TOKEN
+</span><span class="p">};</span></code></pre></figure>
+
+<p>
+What we do is we define a macro <code>TINY_TOKEN_LIST</code> using undefined macros inside. Right before using the list we define these, in this case <code>TINY_TOKEN</code> and <code>TINY_TOKEN_KEYWORD</code>, to what we need. For this specific case, this will fill our enum <code>TokenId</code> with the first parameter of the macro, that we chose to use as the enumerator name. Note that we distinguish plain tokens from keyword tokens using <code>TINY_TOKEN_KEYWORD</code> instead of <code>TINY_TOKEN</code>. Later on we will see why.
+</p>
+
+<p>
+The expansion of the above X-Macro will generate something like the following. This is what we wanted but we do not have to write it manually.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">enum</span> <span class="n">TokenId</span>
+<span class="p">{</span>
+  <span class="n">FIRST_TOKEN</span><span class="p">,</span>
+  <span class="n">END_OF_FILE</span><span class="p">,</span>
+  <span class="n">ASSIG</span><span class="p">,</span>
+  <span class="c1">// ... etcetera ...</span>
+  <span class="n">WRITE</span><span class="p">,</span>
+  <span class="n">LAST_TOKEN</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+We will also use this technique to create a function that returns a descriptive text for a given token kind.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span>
+<span class="nf">get_token_description</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">tid</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+    <span class="p">{</span>
+<span class="cp">#define TINY_TOKEN(name, descr)                                                \
+  case name:                                                                   \
+    return descr;
+#define TINY_TOKEN_KEYWORD(x, y) TINY_TOKEN (x, y)
+</span>      <span class="n">TINY_TOKEN_LIST</span>
+<span class="cp">#undef TINY_TOKEN_KEYWORD
+#undef TINY_TOKEN
+</span>    <span class="nl">default:</span>
+      <span class="n">gcc_unreachable</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+And we will also create a debugging function that given a token_id will return its token kind as a string (i.e. given the token kind <code>ASSIG</code> this function will return the string <code>"ASSIG"</code>).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span>
+<span class="nf">token_id_to_str</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">tid</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+    <span class="p">{</span>
+<span class="cp">#define TINY_TOKEN(name, _)                                                    \
+  case name:                                                                   \
+    return #name;
+#define TINY_TOKEN_KEYWORD(x, y) TINY_TOKEN (x, y)
+</span>      <span class="n">TINY_TOKEN_LIST</span>
+<span class="cp">#undef TINY_TOKEN_KEYWORD
+#undef TINY_TOKEN
+</span>    <span class="nl">default:</span>
+      <span class="n">gcc_unreachable</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Since we do not want to create tokens directly using the constructors we will create them using <em>factory</em> functions. Most tokens will simply be created with a token id and a location but some of them have will have an associated text. The factories are <code>make</code>, <code>make_identifier</code>, <code>make_integer</code>, <code>make_real</code> and <code>make_string</code>. 
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Token</span>
+<span class="p">{</span>
+ <span class="nl">private:</span>
+  <span class="c1">// ...</span>
+
+  <span class="n">Token</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">token_id_</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">locus_</span><span class="p">)</span>
+    <span class="o">:</span> <span class="n">token_id</span> <span class="p">(</span><span class="n">token_id_</span><span class="p">),</span> <span class="n">locus</span> <span class="p">(</span><span class="n">locus_</span><span class="p">),</span> <span class="n">str</span> <span class="p">(</span><span class="nb">NULL</span><span class="p">)</span>
+  <span class="p">{</span>
+  <span class="p">}</span>
+  <span class="n">Token</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">token_id_</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">locus_</span><span class="p">,</span> <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">str_</span><span class="p">)</span>
+    <span class="o">:</span> <span class="n">token_id</span> <span class="p">(</span><span class="n">token_id_</span><span class="p">),</span> <span class="n">locus</span> <span class="p">(</span><span class="n">locus_</span><span class="p">),</span> <span class="n">str</span> <span class="p">(</span><span class="k">new</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="p">(</span><span class="n">str_</span><span class="p">))</span>
+  <span class="p">{</span>
+  <span class="p">}</span>
+ 
+  <span class="c1">// No default initializer</span>
+  <span class="n">Token</span> <span class="p">();</span>
+  <span class="c1">// Do not copy/assign tokens</span>
+  <span class="n">Token</span> <span class="p">(</span><span class="k">const</span> <span class="n">Token</span> <span class="o">&amp;</span><span class="p">);</span>
+  <span class="n">Token</span> <span class="o">&amp;</span><span class="k">operator</span><span class="o">=</span><span class="p">(</span><span class="k">const</span> <span class="n">Token</span> <span class="o">&amp;</span><span class="p">);</span>
+ 
+<span class="nl">public:</span>
+  <span class="k">static</span> <span class="n">TokenPtr</span>
+  <span class="n">make</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">token_id</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">locus</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">TokenPtr</span><span class="p">(</span><span class="k">new</span> <span class="n">Token</span> <span class="p">(</span><span class="n">token_id</span><span class="p">,</span> <span class="n">locus</span><span class="p">));</span>
+  <span class="p">}</span>
+ 
+  <span class="k">static</span> <span class="n">TokenPtr</span>
+  <span class="n">make_identifier</span> <span class="p">(</span><span class="n">location_t</span> <span class="n">locus</span><span class="p">,</span> <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">str</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">TokenPtr</span><span class="p">(</span><span class="k">new</span> <span class="n">Token</span> <span class="p">(</span><span class="n">IDENTIFIER</span><span class="p">,</span> <span class="n">locus</span><span class="p">,</span> <span class="n">str</span><span class="p">));</span>
+  <span class="p">}</span>
+ 
+  <span class="k">static</span> <span class="n">TokenPtr</span>
+  <span class="n">make_integer</span> <span class="p">(</span><span class="n">location_t</span> <span class="n">locus</span><span class="p">,</span> <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">str</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">TokenPtr</span><span class="p">(</span><span class="k">new</span> <span class="n">Token</span> <span class="p">(</span><span class="n">INTEGER_LITERAL</span><span class="p">,</span> <span class="n">locus</span><span class="p">,</span> <span class="n">str</span><span class="p">));</span>
+  <span class="p">}</span>
+ 
+  <span class="k">static</span> <span class="n">TokenPtr</span>
+  <span class="n">make_real</span> <span class="p">(</span><span class="n">location_t</span> <span class="n">locus</span><span class="p">,</span> <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">str</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">TokenPtr</span><span class="p">(</span><span class="k">new</span> <span class="n">Token</span> <span class="p">(</span><span class="n">REAL_LITERAL</span><span class="p">,</span> <span class="n">locus</span><span class="p">,</span> <span class="n">str</span><span class="p">));</span>
+  <span class="p">}</span>
+
+  <span class="c1">// ...</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+These factories return smart pointers to <code>Token</code> because the lifetime of a token is not obvious and we want to clean up them anyway when they are not used anymore.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;tr1/memory&gt;
+</span>
+<span class="k">struct</span> <span class="nc">Token</span><span class="p">;</span>
+<span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">tr1</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Token</span><span class="o">&gt;</span> <span class="n">TokenPtr</span><span class="p">;</span>
+<span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">tr1</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">Token</span><span class="o">&gt;</span> <span class="n">const_TokenPtr</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Type <code>const_TokenPtr</code> will be used later in the lexer. We have to use C++03 TR1 because gcc is written in C++03 not C++11 (in C++11 we would use the standard <code>memory</code> header and <code>std::shared_ptr</code> template instead)
+</p>
+
+<p>
+The complete implementation of the class Token is in files <a href="https://github.com/rofirrim/gcc-tiny/blob/master/gcc/tiny/tiny-token.h">gcc-src/gcc/tiny/tiny-token.h</a> and <a href="https://github.com/rofirrim/gcc-tiny/blob/master/gcc/tiny/tiny-token.cc">gcc-src/gcc/tiny/tiny-token.cc</a>
+</p>
+
+<h2>Lexer operation</h2>
+
+<p>
+Conceptually a lexer returns the sequence of tokens of our input. Building such sequence as a whole would force us to temporarily store it in memory. This would work but it is not particularly efficient because input files may easily have thousands of tokens and we are going to analyze them more or less sequentially. A lexer that returns a <em>stream</em> of tokens will have lower memory requirements.
+<p>
+
+<p>
+This means that the lexer will always return a single token. It will return the current one unless we tell the lexer to advance to the next token (going backwards is out of question). This suggests that our lexer must support a <em>get</em> operation that returns the current token and a <em>skip</em> operation that advances the current token to the next one (skip does not return anything). Sometimes we can even mix the two operations in a single <em>get</em> operation that, at the same time, returns the current token and skips it.
+</p>
+
+<p>
+This stream-like approach saves memory but now we have made our life a bit harder. Sometimes (this will be more evident during syntactic analysis) we may need to <em>peek</em> a few tokens ahead. With the get/skip interface above it will be responsibility of the user of the lexer to keep track of tokens peeked ahead. While this is doable it may be a bit unwieldy. So our lexer should support peeking n tokens ahead. If n is zero this is the same as the current token, so we can make our lexer to have two operations <em>peek(n)</em> and <em>skip</em>. Note that there is no real need of <em>skip(n)</em> since this can easily be achieved by calling n times skip (although it may be handy having it).
+</p>
+
+<p>
+For theoretical reasons out of the scope of this post, our front end should not do unbounded peeks. This means that, ideally, all peek(n) operations should receive an n value known at compile time. For the sake of simplicity, though, our implementation will allow unbounded peeks.
+</p>
+
+<p>
+The two operations that the lexer can do (peek and skip) remind us of a queue. When we peek a token, if it is not in the queue it will be added to the back of the queue, otherwise the token in the queue will be used. Skip simply removes an item from the front of the queue. Recall that peek(0) is the current token and skip will advance the token stream. This means that the token returned by peek(n+1) before skip, will be returned by peek(n) after the skip.
+</p>
+
+<img src="/wp-content/uploads/2016/01/lexer-input.png" alt="lexer-input" width="300" height="277" class="aligncenter size-full wp-image-2678" />
+
+<h2>Lexer interface</h2>
+
+<p>
+Our lexer interface will look like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Lexer</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">Lexer</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">,</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">input</span><span class="p">);</span>
+  <span class="o">~</span><span class="n">Lexer</span> <span class="p">();</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">peek_token</span> <span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">peek_token</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="p">}</span>
+  <span class="n">const_TokenPtr</span> <span class="n">peek_token</span> <span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+
+  <span class="kt">void</span> <span class="n">skip_token</span> <span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">skip_token</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="p">}</span>
+  <span class="kt">void</span> <span class="n">skip_token</span> <span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+<span class="nl">private:</span>
+ <span class="p">...</span>
+<span class="p">};</span></code></pre></figure>
+
+
+<p>
+Basically we will pass to the lexer the input file (and the filename, for location tracking purposes) and then we have the two operations described above now renamed as <code>peek_token</code> and <code>skip_token</code>.
+</p>
+
+<p>
+Where do we get the tokens from? Well, before we can form a token we have to somehow read the input file. We can view the input file similar to a stream of tokens but this time it will be a stream of characters. We will group them into tokens. This suggests that the idea of peek(n) and skip can be applied to the <code>FILE*</code>. So it seems a good idea to abstract this away in a template class <code>buffered_queue</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="k">typename</span> <span class="nc">Source</span><span class="p">&gt;</span> <span class="k">struct</span> <span class="nc">buffered_queue</span>
+<span class="p">{</span></code></pre></figure>
+
+
+<p>
+The template parameter <code>T</code> will be the type of items stored in our queue. For the input file it will be <code>char</code> (although we will use <code>int</code> for a reason explained below). For the tokens themselves it will be <code>TokenPtr</code>. <code>Source</code> is a class type that implements the function call operator. This operator must return a <code>T</code> value. It will be invoked during peek(n) n refers to an element that is not yet in the queue.
+</p>
+
+<p>
+The function call operator for the input file will basically invoke <code>fgetc</code>. This function returns an <code>unsigned char</code> casted into a <code>int</code> because of the <code>EOF</code> marker used to mark end of file. This is the reason why our buffered_queue for the input file will store <code>int</code> rather than <code>char</code>. For the stream of tokens the function call operator will just build the next token using the input, we will see later how we build the token.
+</p>
+
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Lexer</span>
+<span class="p">{</span>
+  <span class="c1">// ...</span>
+ <span class="nl">private:</span> 
+  <span class="k">struct</span> <span class="nc">InputSource</span>
+  <span class="p">{</span>
+    <span class="kt">FILE</span> <span class="o">*</span><span class="n">input</span><span class="p">;</span>
+    <span class="n">InputSource</span> <span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">input_</span><span class="p">)</span> <span class="o">:</span> <span class="n">input</span> <span class="p">(</span><span class="n">input_</span><span class="p">)</span> <span class="p">{}</span>
+    <span class="kt">int</span> <span class="k">operator</span><span class="p">()</span> <span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">fgetc</span> <span class="p">(</span><span class="n">input</span><span class="p">);</span> <span class="p">}</span>
+  <span class="p">};</span>
+  <span class="n">InputSource</span> <span class="n">input_source</span><span class="p">;</span>
+  <span class="n">buffered_queue</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="n">InputSource</span><span class="o">&gt;</span> <span class="n">input_queue</span><span class="p">;</span>
+
+  <span class="k">struct</span> <span class="nc">TokenSource</span>
+  <span class="p">{</span>
+    <span class="n">Lexer</span> <span class="o">*</span><span class="n">lexer</span><span class="p">;</span>
+    <span class="n">TokenSource</span> <span class="p">(</span><span class="n">Lexer</span> <span class="o">*</span><span class="n">lexer_</span><span class="p">)</span> <span class="o">:</span> <span class="n">lexer</span> <span class="p">(</span><span class="n">lexer_</span><span class="p">)</span> <span class="p">{}</span>
+    <span class="n">TokenPtr</span> <span class="k">operator</span><span class="p">()</span> <span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="n">lexer</span><span class="o">-&gt;</span><span class="n">build_token</span> <span class="p">();</span> <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="n">TokenSource</span> <span class="n">token_source</span><span class="p">;</span>
+  <span class="n">buffered_queue</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">tr1</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Token</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">TokenSource</span><span class="o">&gt;</span> <span class="n">token_queue</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+
+<p>
+Data members <code>input_queue</code> and <code>token_queue</code> implement respectively the buffered queues of the input file and the stream of tokens.
+</p>
+
+<p>
+The implementation of buffered_queue is a bit long to paste it here. It is in <a href="https://github.com/rofirrim/gcc-tiny/blob/master/gcc/tiny/tiny-buffered-queue.h">gcc-src/gcc/tiny/tiny-buffered-queue.h</a>. It is implemented using a <code>std::vector</code> and two position markers: <code>start</code> and <code>end</code>. When <code>start == end</code> it means that the queue is empty. Member function <code>skip</code> just advances <code>start</code>, calling <code>peek</code> if we are actually skiping more than what was peeked so far. If it becomes the same as <code>end</code>, it just moves both to the beginning of the vector, this way the vector does not have to grow indefinitely. Member function <code>peek</code> checks if the requested <code>n</code> is already in the queue, if it is, it just returns it. If it is not it will call <code>Source::operator()</code>, but before that it checks if there is enough room in the vector. If there is not, then a larger vector is allocated, data is copied and the new vector is now used as the buffer. There is room for improvement for this class. For instance we may try to compact the vector before reallocating because the space may already be there just we are too near the end of the vector, etc. But I think it is good enough for us now.
+</p>
+
+<p>
+Now we can see the implementation of peek_token and skip_token.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">const_TokenPtr</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">peek_token</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">token_queue</span><span class="p">.</span><span class="n">peek</span> <span class="p">(</span><span class="n">n</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">skip_token</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">token_queue</span><span class="p">.</span><span class="n">skip</span> <span class="p">(</span><span class="n">n</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+This way the token will be formed during the call to <code>token_queue.peek</code> . It will invoke <code>SourceToken::operator()</code> which ends calling <code>Lexer::build_token</code>. So now it is time to see how a token is formed.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">TokenPtr</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">build_token</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">for</span> <span class="p">(;;)</span>
+    <span class="p">{</span>
+      <span class="n">location_t</span> <span class="n">loc</span> <span class="o">=</span> <span class="n">get_current_location</span> <span class="p">();</span>
+      <span class="kt">int</span> <span class="n">current_char</span> <span class="o">=</span> <span class="n">peek_input</span> <span class="p">();</span>
+      <span class="n">skip_input</span> <span class="p">();</span>
+
+      <span class="c1">// ... rest of the code ...</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Before we discuss the main loop, note that the body of the loop calls <code>peek_input</code> and <code>skip_input</code>. These two functions use the <code>input_queue</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">peek_input</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">input_queue</span><span class="p">.</span><span class="n">peek</span> <span class="p">(</span><span class="n">n</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">skip_input</span> <span class="p">(</span><span class="kt">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">input_queue</span><span class="p">.</span><span class="n">skip</span> <span class="p">(</span><span class="n">n</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Similar to what happened with <code>token_queue</code>, <code>input_queue</code> will invoke <code>InputSource::operator()</code> which simply calls <code>fgetc</code>, effectively returning us the current character of the file (until we skip it, of course).
+</p>
+
+<p>
+So, why is there a loop in <code>Lexer::build_token</code>? Because we may have to advance several characters of the input before we can form a token. When a token is formed, we will simply return from the function. While we cannot form it (for instance when we encounter whitespace or newlines) we will just keep requesting characters. Of course there must be a way of finishing the loop: when we find the end of file we will just build the <code>END_OF_FILE</code> token and stop processing the input.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+</pre></td><td class="code"><pre><span class="n">TokenPtr</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">build_token</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">for</span> <span class="p">(;;)</span>
+    <span class="p">{</span>
+      <span class="n">location_t</span> <span class="n">loc</span> <span class="o">=</span> <span class="n">get_current_location</span> <span class="p">();</span>
+      <span class="kt">int</span> <span class="n">current_char</span> <span class="o">=</span> <span class="n">peek_input</span> <span class="p">();</span>
+      <span class="n">skip_input</span> <span class="p">();</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="n">current_char</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span>
+	<span class="p">{</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">END_OF_FILE</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	<span class="p">}</span>
+      <span class="c1">// ...</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+If the character read from the input is not the <code>END_OF_FILE</code> we can start <em>tokenizing</em> it. We have to ignore whitespace by not forming a token but we still have to update location information.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+</pre></td><td class="code"><pre>      <span class="k">switch</span> <span class="p">(</span><span class="n">current_char</span><span class="p">)</span>
+	<span class="p">{</span>
+	<span class="c1">// **************</span>
+	<span class="c1">// * Whitespace *</span>
+	<span class="c1">// **************</span>
+	<span class="k">case</span> <span class="sc">'\n'</span><span class="p">:</span>
+	  <span class="n">current_line</span><span class="o">++</span><span class="p">;</span>
+	  <span class="n">current_column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+	  <span class="n">linemap_line_start</span> <span class="p">(</span><span class="o">::</span><span class="n">line_table</span><span class="p">,</span> <span class="n">current_line</span><span class="p">,</span> <span class="n">max_column_hint</span><span class="p">);</span>
+	  <span class="k">continue</span><span class="p">;</span>
+	<span class="k">case</span> <span class="sc">' '</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">continue</span><span class="p">;</span>
+	<span class="k">case</span> <span class="sc">'\t'</span><span class="p">:</span>
+	  <span class="c1">// Width of a tab is not well defined, let's assume 8 for now</span>
+	  <span class="n">current_column</span> <span class="o">+=</span> <span class="mi">8</span><span class="p">;</span>
+	  <span class="k">continue</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+As you can see we have two data members <code>current_line</code> and <code>current_column</code> that we have to update for proper location tracking. Let's ignore for now the line 129, more on this later.
+</p>
+
+<p>
+Now we can start matching punctuation. Some tokens are straightforward.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+</pre></td><td class="code"><pre>	<span class="k">case</span> <span class="sc">'='</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">EQUAL</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	<span class="k">case</span> <span class="sc">'('</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">LEFT_PAREN</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	<span class="k">case</span> <span class="sc">'-'</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">MINUS</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	<span class="k">case</span> <span class="sc">'+'</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">PLUS</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	<span class="k">case</span> <span class="sc">')'</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">RIGHT_PAREN</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	<span class="k">case</span> <span class="sc">';'</span><span class="p">:</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">SEMICOLON</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Some others may require a bit of peeking, but that's all.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+</pre></td><td class="code"><pre>	<span class="k">case</span> <span class="sc">'&lt;'</span><span class="p">:</span>
+	  <span class="k">if</span> <span class="p">(</span><span class="n">peek_input</span> <span class="p">()</span> <span class="o">==</span> <span class="sc">'='</span><span class="p">)</span>
+	    <span class="p">{</span>
+	      <span class="n">skip_input</span> <span class="p">();</span>
+	      <span class="n">current_column</span> <span class="o">+=</span> <span class="mi">2</span><span class="p">;</span>
+
+	      <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">LOWER_OR_EQUAL</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	    <span class="p">}</span>
+	  <span class="k">else</span>
+	    <span class="p">{</span>
+	      <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	      <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">LOWER</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	    <span class="p">}</span>
+	  <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+If you wonder how comments are implemented: the lexer just skips over it.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+</pre></td><td class="code"><pre>	<span class="k">case</span> <span class="sc">'#'</span><span class="p">:</span> <span class="cm">/* comment */</span>
+	  <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+	  <span class="n">current_char</span> <span class="o">=</span> <span class="n">peek_input</span> <span class="p">();</span>
+	  <span class="k">while</span> <span class="p">(</span><span class="n">current_char</span> <span class="o">!=</span> <span class="sc">'\n'</span><span class="p">)</span>
+	    <span class="p">{</span>
+	      <span class="n">skip_input</span> <span class="p">();</span>
+	      <span class="n">current_column</span><span class="o">++</span><span class="p">;</span> <span class="c1">// won't be used</span>
+	      <span class="n">current_char</span> <span class="o">=</span> <span class="n">peek_input</span> <span class="p">();</span>
+	    <span class="p">}</span>
+	  <span class="k">continue</span><span class="p">;</span>
+	  <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+If we reach the end of the loop and the character has not been handled, it means that the character is invalid. Function <code>error_at</code> is a diagnostic utility from GCC that we will see again during syntactic analysis, so let's ignore it from now.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">335
+336
+337
+</pre></td><td class="code"><pre>      <span class="c1">// Martians</span>
+      <span class="n">error_at</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="s">"unexpected character '%x'"</span><span class="p">,</span> <span class="n">current_char</span><span class="p">);</span>
+      <span class="n">current_column</span><span class="o">++</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+And so on. See the full listing <a href="https://github.com/rofirrim/gcc-tiny/blob/master/gcc/tiny/tiny-lexer.cc#L121">here</a>. It may seem tedious but it only has to be written once and after that it is relatively easy to extend.
+</p>
+
+
+<h3>Identifiers and keywords</h3>
+
+<p>
+Identifiers and keywords are interesting because they share some lexical form. As we specified in <a href="/2016/01/05/tiny-gcc-front-part-1/">part 1</a>, if an identifier may be a keyword it is tokenized as a keyword. This means that <code>whil</code> is an <code>IDENTIFIER</code> but <code>while</code> is the token <code>WHILE</code>. So what we do is we just 
+gather the text of the token and check if it is an keyword. If it is, we form the corresponding keyword token, otherwise we form an identifier token.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+</pre></td><td class="code"><pre>      <span class="c1">// ***************************</span>
+      <span class="c1">// * Identifiers or keywords *</span>
+      <span class="c1">// ***************************</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">ISALPHA</span> <span class="p">(</span><span class="n">current_char</span><span class="p">)</span> <span class="o">||</span> <span class="n">current_char</span> <span class="o">==</span> <span class="sc">'_'</span><span class="p">)</span>
+	<span class="p">{</span>
+	  <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">str</span><span class="p">;</span>
+	  <span class="n">str</span><span class="p">.</span><span class="n">reserve</span> <span class="p">(</span><span class="mi">16</span><span class="p">);</span> <span class="c1">// some sensible default</span>
+	  <span class="n">str</span> <span class="o">+=</span> <span class="n">current_char</span><span class="p">;</span>
+
+	  <span class="kt">int</span> <span class="n">length</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+	  <span class="n">current_char</span> <span class="o">=</span> <span class="n">peek_input</span> <span class="p">();</span>
+	  <span class="k">while</span> <span class="p">(</span><span class="n">ISALPHA</span> <span class="p">(</span><span class="n">current_char</span><span class="p">)</span> <span class="o">||</span> <span class="n">ISDIGIT</span> <span class="p">(</span><span class="n">current_char</span><span class="p">)</span>
+		 <span class="o">||</span> <span class="n">current_char</span> <span class="o">==</span> <span class="sc">'_'</span><span class="p">)</span>
+	    <span class="p">{</span>
+	      <span class="n">length</span><span class="o">++</span><span class="p">;</span>
+
+	      <span class="n">str</span> <span class="o">+=</span> <span class="n">current_char</span><span class="p">;</span>
+	      <span class="n">skip_input</span> <span class="p">();</span>
+	      <span class="n">current_char</span> <span class="o">=</span> <span class="n">peek_input</span> <span class="p">();</span>
+	    <span class="p">}</span>
+
+	  <span class="n">current_column</span> <span class="o">+=</span> <span class="n">length</span><span class="p">;</span>
+
+	  <span class="n">TokenId</span> <span class="n">keyword</span> <span class="o">=</span> <span class="n">classify_keyword</span> <span class="p">(</span><span class="n">str</span><span class="p">);</span>
+	  <span class="k">if</span> <span class="p">(</span><span class="n">keyword</span> <span class="o">==</span> <span class="n">IDENTIFIER</span><span class="p">)</span>
+	    <span class="p">{</span>
+	      <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make_identifier</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">str</span><span class="p">);</span>
+	    <span class="p">}</span>
+	  <span class="k">else</span>
+	    <span class="p">{</span>
+	      <span class="k">return</span> <span class="n">Token</span><span class="o">::</span><span class="n">make</span> <span class="p">(</span><span class="n">keyword</span><span class="p">,</span> <span class="n">loc</span><span class="p">);</span>
+	    <span class="p">}</span>
+	<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Macros <code>ISALPHA</code> and <code>ISDIGIT</code> are provided by the gcc header <code>safe-ctype.h</code> and check if a character belongs to the set of alphanumeric letters or decimal digits, respectively. The function <code>classify_keyword</code> is implemented by doing a binary search in a sorted array of keywords. This sorted array is defined using X-Macros, here we use only <code>TINY_TOKEN_KEYWORD</code> and we ignore the remaining tokens.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+</pre></td><td class="code"><pre><span class="k">namespace</span>
+<span class="p">{</span>
+
+<span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">keyword_index</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="cp">#define TINY_TOKEN(x, y)
+#define TINY_TOKEN_KEYWORD(name, keyword) keyword,
+</span>  <span class="n">TINY_TOKEN_LIST</span>
+<span class="cp">#undef TINY_TOKEN_KEYWORD
+#undef TINY_TOKEN
+</span><span class="p">};</span>
+
+<span class="n">TokenId</span> <span class="n">keyword_keys</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="cp">#define TINY_TOKEN(x, y)
+#define TINY_TOKEN_KEYWORD(name, keyword) name,
+</span>  <span class="n">TINY_TOKEN_LIST</span>
+<span class="cp">#undef TINY_TOKEN_KEYWORD
+#undef TINY_TOKEN
+</span><span class="p">};</span>
+
+<span class="k">const</span> <span class="kt">int</span> <span class="n">num_keywords</span> <span class="o">=</span> <span class="k">sizeof</span> <span class="p">(</span><span class="n">keyword_index</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span> <span class="p">(</span><span class="o">*</span><span class="n">keyword_index</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+What we do here is declaring two <em>parallel</em> arrays. The first one, <code>keyword_index</code>, is just an array of std::string with one element per keyword. Since <code>TINY_TOKEN_KEYWORD</code>s are sorted by keyword inside <code>TINY_TOKEN_LIST</code> this array will be sorted too. The second array, <code>keyword_keys</code>, contains the token ids for the corresponding tokens in <code>keyword_index</code>. Then our function <code>classify_keyword</code> just looks up a string in keyword_index. If it finds it uses the position of the keyword to index keyword_keys.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+</pre></td><td class="code"><pre><span class="n">TokenId</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">classify_keyword</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">str</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">*</span><span class="n">last</span> <span class="o">=</span> <span class="n">keyword_index</span> <span class="o">+</span> <span class="n">num_keywords</span><span class="p">;</span>
+  <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">*</span><span class="n">idx</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">lower_bound</span> <span class="p">(</span><span class="n">keyword_index</span><span class="p">,</span> <span class="n">last</span><span class="p">,</span> <span class="n">str</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">idx</span> <span class="o">==</span> <span class="n">last</span> <span class="o">||</span> <span class="n">str</span> <span class="o">!=</span> <span class="o">*</span><span class="n">idx</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">IDENTIFIER</span><span class="p">;</span>
+  <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="k">return</span> <span class="n">keyword_keys</span><span class="p">[</span><span class="n">idx</span> <span class="o">-</span> <span class="n">keyword_index</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<h2>Tracking location</h2>
+
+<p>
+Tracking location can be implemented manually but GCC has good support in this area so it would be a pity not to use it.
+</p>
+
+<p>
+GCC has a global variable called <code>line_table</code> responsible for tracking locations. We have to tell <code>line_table</code> when we enter a file and when we leave it (this is useful for include-like constructions since line_table will keep track of this). We do this in the constructor of <code>Lexer</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Lexer</span><span class="o">::</span><span class="n">Lexer</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">,</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">input_</span><span class="p">)</span>
+  <span class="o">:</span> <span class="n">input</span> <span class="p">(</span><span class="n">input_</span><span class="p">),</span> <span class="n">current_line</span> <span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">current_column</span> <span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">line_map</span> <span class="p">(</span><span class="mi">0</span><span class="p">),</span>
+    <span class="n">input_source</span> <span class="p">(</span><span class="n">input</span><span class="p">),</span> <span class="n">input_queue</span> <span class="p">(</span><span class="n">input_source</span><span class="p">),</span> <span class="n">token_source</span> <span class="p">(</span><span class="k">this</span><span class="p">),</span>
+    <span class="n">token_queue</span> <span class="p">(</span><span class="n">token_source</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">line_map</span> <span class="o">=</span> <span class="o">::</span><span class="n">linemap_add</span> <span class="p">(</span><span class="o">::</span><span class="n">line_table</span><span class="p">,</span> <span class="o">::</span><span class="n">LC_ENTER</span><span class="p">,</span>
+			    <span class="cm">/* sysp */</span> <span class="mi">0</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span>
+			    <span class="cm">/* current_line */</span> <span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Function <code>linemap_add</code> informs line_table that we are entering a file (<code>LC_ENTER</code>) and that we are in line 1. When forming a token, we have to get the location. We did this calling <code>Lexer::get_current_location</code> (see above). It simply requests a new <code>location_t</code> for the current column.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">location_t</span>
+<span class="n">Lexer</span><span class="o">::</span><span class="n">get_current_location</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="o">::</span><span class="n">linemap_position_for_column</span> <span class="p">(</span><span class="o">::</span><span class="n">line_table</span><span class="p">,</span> <span class="n">current_column</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+When a newline is encountered, we have to tell line_table that a new line starts. We already did this in <code>build_token</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">123
+124
+125
+126
+127
+128
+129
+130
+</pre></td><td class="code"><pre>	<span class="c1">// **************</span>
+	<span class="c1">// * Whitespace *</span>
+	<span class="c1">// **************</span>
+	<span class="k">case</span> <span class="sc">'\n'</span><span class="p">:</span>
+	  <span class="n">current_line</span><span class="o">++</span><span class="p">;</span>
+	  <span class="n">current_column</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+	  <span class="n">linemap_line_start</span> <span class="p">(</span><span class="o">::</span><span class="n">line_table</span><span class="p">,</span> <span class="n">current_line</span><span class="p">,</span> <span class="n">max_column_hint</span><span class="p">);</span>
+	  <span class="k">continue</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<h3>Current layout</h3>
+
+<p>Our <code>gcc-src/gcc/tiny</code> now looks like this</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">gcc-src/gcc/tiny
+├── config-lang.in
+├── lang-specs.h
+├── Make-lang.in
+├── tiny1.cc
+├── tiny-buffered-queue.h
+├── tiny-lexer.cc
+├── tiny-lexer.h
+├── tinyspec.cc
+├── tiny-token.cc
+└── tiny-token.h</code></pre></figure>
+
+
+<h2>Trying our lexer</h2>
+
+<p>
+Ok, now we have a lexer, let's try it. First let's build the new files. Let's update <code>gcc-src/gcc/tiny/Make-lang.in</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="nv">tiny_OBJS</span> <span class="o">=</span> <span class="se">\</span>
+    tiny/tiny1.o <span class="se">\</span>
+    tiny/tiny-token.o <span class="se">\</span>
+    tiny/tiny-lexer.o <span class="se">\</span>
+    <span class="nv">$(END)</span></code></pre></figure>
+
+
+<p>
+Now let's change <code>tiny_parse_file</code> in <code>gcc-src/gcc/tiny/tiny1.cc</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="kt">void</span>
+<span class="nf">tiny_parse_file</span> <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">FILE</span> <span class="o">*</span><span class="n">file</span> <span class="o">=</span> <span class="n">fopen</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">"r"</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">file</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">fatal_error</span> <span class="p">(</span><span class="n">UNKNOWN_LOCATION</span><span class="p">,</span> <span class="s">"cannot open filename %s: %m"</span><span class="p">,</span> <span class="n">filename</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="c1">// Here we would parse our file</span>
+  <span class="n">Tiny</span><span class="o">::</span><span class="n">Lexer</span> <span class="n">lex</span> <span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">file</span><span class="p">);</span>
+
+  <span class="n">Tiny</span><span class="o">::</span><span class="n">const_TokenPtr</span> <span class="n">tok</span> <span class="o">=</span> <span class="n">lex</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="k">for</span> <span class="p">(;;)</span>
+    <span class="p">{</span>
+      <span class="kt">bool</span> <span class="n">has_text</span> <span class="o">=</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span>
+		      <span class="o">||</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">INTEGER_LITERAL</span>
+		      <span class="o">||</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">REAL_LITERAL</span>
+		      <span class="o">||</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">STRING_LITERAL</span><span class="p">;</span>
+
+      <span class="n">location_t</span> <span class="n">loc</span> <span class="o">=</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">();</span>
+
+      <span class="n">fprintf</span> <span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"&lt;id=%s%s, %s, line=%d, col=%d&gt;</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">token_id_to_str</span> <span class="p">(),</span>
+	       <span class="n">has_text</span> <span class="o">?</span> <span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="s">", text="</span><span class="p">)</span> <span class="o">+</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">()).</span><span class="n">c_str</span> <span class="p">()</span> <span class="o">:</span> <span class="s">""</span><span class="p">,</span>
+	       <span class="n">LOCATION_FILE</span> <span class="p">(</span><span class="n">loc</span><span class="p">),</span> <span class="n">LOCATION_LINE</span> <span class="p">(</span><span class="n">loc</span><span class="p">),</span> <span class="n">LOCATION_COLUMN</span> <span class="p">(</span><span class="n">loc</span><span class="p">));</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span><span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END_OF_FILE</span><span class="p">)</span>
+          <span class="k">break</span><span class="p">;</span>
+
+      <span class="n">lex</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="n">tok</span> <span class="o">=</span> <span class="n">lex</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">fclose</span> <span class="p">(</span><span class="n">file</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+After the customary <code>make</code> and <code>make install</code> we can test with the example of <code>sum.tiny</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">$ ./gcc-install/bin/gcctiny -c sum.tiny
+&lt;id=VAR, sum.tiny, line=1, col=1&gt;
+&lt;id=IDENTIFIER, text=i, sum.tiny, line=1, col=5&gt;
+&lt;id=COLON, sum.tiny, line=1, col=7&gt;
+&lt;id=INT, sum.tiny, line=1, col=9&gt;
+&lt;id=SEMICOLON, sum.tiny, line=1, col=12&gt;
+&lt;id=VAR, sum.tiny, line=2, col=1&gt;
+&lt;id=IDENTIFIER, text=s, sum.tiny, line=2, col=5&gt;
+&lt;id=COLON, sum.tiny, line=2, col=7&gt;
+&lt;id=INT, sum.tiny, line=2, col=9&gt;
+&lt;id=SEMICOLON, sum.tiny, line=2, col=12&gt;
+&lt;id=IDENTIFIER, text=s, sum.tiny, line=3, col=1&gt;
+&lt;id=ASSIG, sum.tiny, line=3, col=3&gt;
+&lt;id=INTEGER_LITERAL, text=0, sum.tiny, line=3, col=6&gt;
+&lt;id=SEMICOLON, sum.tiny, line=3, col=7&gt;
+&lt;id=FOR, sum.tiny, line=4, col=1&gt;
+&lt;id=IDENTIFIER, text=i, sum.tiny, line=4, col=5&gt;
+&lt;id=ASSIG, sum.tiny, line=4, col=7&gt;
+&lt;id=INTEGER_LITERAL, text=1, sum.tiny, line=4, col=10&gt;
+&lt;id=TO, sum.tiny, line=4, col=12&gt;
+&lt;id=INTEGER_LITERAL, text=10, sum.tiny, line=4, col=15&gt;
+&lt;id=DO, sum.tiny, line=4, col=18&gt;
+&lt;id=IDENTIFIER, text=s, sum.tiny, line=5, col=3&gt;
+&lt;id=ASSIG, sum.tiny, line=5, col=5&gt;
+&lt;id=IDENTIFIER, text=s, sum.tiny, line=5, col=8&gt;
+&lt;id=PLUS, sum.tiny, line=5, col=10&gt;
+&lt;id=IDENTIFIER, text=i, sum.tiny, line=5, col=12&gt;
+&lt;id=SEMICOLON, sum.tiny, line=5, col=13&gt;
+&lt;id=END, sum.tiny, line=6, col=1&gt;
+&lt;id=WRITE, sum.tiny, line=7, col=1&gt;
+&lt;id=IDENTIFIER, text=s, sum.tiny, line=7, col=7&gt;
+&lt;id=SEMICOLON, sum.tiny, line=7, col=8&gt;
+&lt;id=END_OF_FILE, sum.tiny, line=8, col=1&gt;</code></pre></figure>
+
+
+<p>
+Yay!
+</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+Now that we are able to create the sequence of tokens of our input program  we still have to verify that the sequence forms a syntactically valid program. But this will be in the next chapter. That's all for today.
+</p>
+</p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/06/tiny-gcc-front-part-2/">&laquo; A tiny GCC front end – Part 2</a>
+
+
+  <a class="next" href="/2016/01/10/tiny-gcc-front-part-4/">A tiny GCC front end – Part 4 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Creating your own Job Managers in Ubiquo</title>
+  <meta name="description" content="Ubiquo is a Ruby on Rails, MIT Licensed Open Source CMS we develop and use at gnuine for a variety of projects. One of the features of Ubiquo is the ability to run jobs separately from the http requests to the site. Today I&#39;m going to show you how to customize the Ubiquo Jobs plugin to create your own types of jobs and managers to launch them. Sometimes can be useful to create different managers. An example of this situation is when you want to run different kind of jobs in different circumstances. Ubiquo Jobs provides a default manager which will get ActiveJob jobs depending on priorities and schedule times: def self.get(runner) recovery(runner) candidate_jobs = job_class.all( :conditions =&amp;gt; [ &#39;planified_at &amp;lt;= ? AND state = ?&#39;, Time.now.utc, UbiquoJobs::Jobs::Base::STATES[:waiting] ], :order =&amp;gt; &#39;priority asc&#39; ) job = first_without_dependencies(candidate_jobs) job.update_attributes({ :state =&amp;gt; UbiquoJobs::Jobs::Base::STATES[:instantiated], :runner =&amp;gt; runner }) if job job end The job_class variable defaults to UbiquoJobs::Jobs::ActiveJob. If you want to make your own manager to handle special jobs, or change the way the jobs are picked, the best way to do so is to implement your own manager. A nice rails-like way to do that is include them in the lib/ folder of your ubiquo project. The class you should inherit from is UbiquoJobs::Managers::ActiveManager. If you wanted the manager to just pick up a specific subclass of ubiquo jobs, it would suffice to reimplement the self.job_class class method to return your own kind of job: def self.job_class UbiquoJobs::Jobs::YourJobClass end However, there&amp;#8217;s a better way to do this. For this special case, the default UbiquoJob class provides a special member which stores the job&amp;#8217;s class name, allowing you to select all objects subclasses of ActiveJob by its classname. For example, imagine you have a kind of job for special tasks that you know for sure will take a long time to complete. Seems reasonable to have a different manager to handle those jobs. You would create a new job in the file app/jobs/very_long_job.rb: class VeryLongJob &amp;lt; UbiquoJobs::Jobs::ActiveJob def do_job_work #Do what needs to be done here return 0 end end Then you could create a manager that handles only those kind of jobs by implementing your own subclass of the UbiquoJobs::Managers::ActiveManager class: module JobManagers class VeryLongJobManager &amp;lt; UbiquoJobs::Managers::ActiveManager def self.get(runner) recovery(runner) candidate_jobs = job_class.all( :conditions =&amp;gt; [ &#39;planified_at &amp;lt;= ? AND state = ? AND type = ?&#39;, Time.now.utc, UbiquoJobs::Jobs::Base::STATES[:waiting], &#39;VeryLongJob&#39; ], :order =&amp;gt; &#39;priority asc&#39; ) job = first_without_dependencies(candidate_jobs) job.update_attributes({ :state =&amp;gt; UbiquoJobs::Jobs::Base::STATES[:instantiated], :runner =&amp;gt; runner }) if job job end end end The code is exactly the same as the default ActiveManager class, but the finder will take an extra parameter, &#39;VeryLongJob&#39;, to indicate that only the ActiveJob objects that are of the subclass VerylongJob should be taken. After that, you need to modify the task that calls the workers so it takes your manager, or create a new task that will run your manager. The default task that will start a worker looks as this: desc &quot;Starts a new ubiquo worker&quot; task :start, [:name, :interval] =&amp;gt; [:environment] do |t, args| options = { :sleep_time =&amp;gt; args.interval.to_f }.delete_if { |k,v| v.blank? } UbiquoWorker.init(args.name, options) end This uses a special configuration parameter to determine the manager to use. This configuration option is stored in Ubiquo::Config.context(:ubiquo_jobs), the name of the configuration option is :job_manager_class, and takes the manager class as a value. So in order to create a task that will use your manager, you should create a new task like this one: desc &quot;Starts a new ubiquo worker&quot; task :start_very_long_jobs, [:name, :interval] =&amp;gt; [:environment] do |t, args| options = { :sleep_time =&amp;gt; args.interval.to_f }.delete_if { |k,v| v.blank? } Ubiquo::Config.context(:ubiquo_jobs).set(:job_manager_class, JobManagers::VeryLongJobManager) UbiquoWorker.init(args.name, options) end Your should call this task like this (assuming it&amp;#8217;s on the same namespace as the default task): rake ubiquo:worker:start_very_long_jobs[name,interval]">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2011/12/02/creating-job-managers-ubiquo/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Creating your own Job Managers in Ubiquo">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2011/12/02/creating-job-managers-ubiquo/">
+  <meta property="og:description" content="Ubiquo is a Ruby on Rails, MIT Licensed Open Source CMS we develop and use at gnuine for a variety of projects. One of the features of Ubiquo is the ability to run jobs separately from the http requests to the site. Today I&#39;m going to show you how to customize the Ubiquo Jobs plugin to create your own types of jobs and managers to launch them. Sometimes can be useful to create different managers. An example of this situation is when you want to run different kind of jobs in different circumstances. Ubiquo Jobs provides a default manager which will get ActiveJob jobs depending on priorities and schedule times: def self.get(runner) recovery(runner) candidate_jobs = job_class.all( :conditions =&amp;gt; [ &#39;planified_at &amp;lt;= ? AND state = ?&#39;, Time.now.utc, UbiquoJobs::Jobs::Base::STATES[:waiting] ], :order =&amp;gt; &#39;priority asc&#39; ) job = first_without_dependencies(candidate_jobs) job.update_attributes({ :state =&amp;gt; UbiquoJobs::Jobs::Base::STATES[:instantiated], :runner =&amp;gt; runner }) if job job end The job_class variable defaults to UbiquoJobs::Jobs::ActiveJob. If you want to make your own manager to handle special jobs, or change the way the jobs are picked, the best way to do so is to implement your own manager. A nice rails-like way to do that is include them in the lib/ folder of your ubiquo project. The class you should inherit from is UbiquoJobs::Managers::ActiveManager. If you wanted the manager to just pick up a specific subclass of ubiquo jobs, it would suffice to reimplement the self.job_class class method to return your own kind of job: def self.job_class UbiquoJobs::Jobs::YourJobClass end However, there&amp;#8217;s a better way to do this. For this special case, the default UbiquoJob class provides a special member which stores the job&amp;#8217;s class name, allowing you to select all objects subclasses of ActiveJob by its classname. For example, imagine you have a kind of job for special tasks that you know for sure will take a long time to complete. Seems reasonable to have a different manager to handle those jobs. You would create a new job in the file app/jobs/very_long_job.rb: class VeryLongJob &amp;lt; UbiquoJobs::Jobs::ActiveJob def do_job_work #Do what needs to be done here return 0 end end Then you could create a manager that handles only those kind of jobs by implementing your own subclass of the UbiquoJobs::Managers::ActiveManager class: module JobManagers class VeryLongJobManager &amp;lt; UbiquoJobs::Managers::ActiveManager def self.get(runner) recovery(runner) candidate_jobs = job_class.all( :conditions =&amp;gt; [ &#39;planified_at &amp;lt;= ? AND state = ? AND type = ?&#39;, Time.now.utc, UbiquoJobs::Jobs::Base::STATES[:waiting], &#39;VeryLongJob&#39; ], :order =&amp;gt; &#39;priority asc&#39; ) job = first_without_dependencies(candidate_jobs) job.update_attributes({ :state =&amp;gt; UbiquoJobs::Jobs::Base::STATES[:instantiated], :runner =&amp;gt; runner }) if job job end end end The code is exactly the same as the default ActiveManager class, but the finder will take an extra parameter, &#39;VeryLongJob&#39;, to indicate that only the ActiveJob objects that are of the subclass VerylongJob should be taken. After that, you need to modify the task that calls the workers so it takes your manager, or create a new task that will run your manager. The default task that will start a worker looks as this: desc &quot;Starts a new ubiquo worker&quot; task :start, [:name, :interval] =&amp;gt; [:environment] do |t, args| options = { :sleep_time =&amp;gt; args.interval.to_f }.delete_if { |k,v| v.blank? } UbiquoWorker.init(args.name, options) end This uses a special configuration parameter to determine the manager to use. This configuration option is stored in Ubiquo::Config.context(:ubiquo_jobs), the name of the configuration option is :job_manager_class, and takes the manager class as a value. So in order to create a task that will use your manager, you should create a new task like this one: desc &quot;Starts a new ubiquo worker&quot; task :start_very_long_jobs, [:name, :interval] =&amp;gt; [:environment] do |t, args| options = { :sleep_time =&amp;gt; args.interval.to_f }.delete_if { |k,v| v.blank? } Ubiquo::Config.context(:ubiquo_jobs).set(:job_manager_class, JobManagers::VeryLongJobManager) UbiquoWorker.init(args.name, options) end Your should call this task like this (assuming it&amp;#8217;s on the same namespace as the default task): rake ubiquo:worker:start_very_long_jobs[name,interval]">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Creating your own Job Managers in Ubiquo">
+  <meta name="twitter:description" content="Ubiquo is a Ruby on Rails, MIT Licensed Open Source CMS we develop and use at gnuine for a variety of projects. One of the features of Ubiquo is the ability to run jobs separately from the http req...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Creating your own Job Managers in Ubiquo</h1>
+    
+    <p class="post-meta"><time datetime="2011-12-02T12:00:02+00:00" itemprop="datePublished">Dec 2, 2011</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ruby-on-rails/">ruby on rails</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ubiquo/">ubiquo</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="http://www.ubiquo.me">Ubiquo</a> is a <a href="http://rubyonrails.org/">Ruby on Rails</a>, <a href="http://www.opensource.org/licenses/mit-license.php">MIT Licensed</a> Open Source <a href="http://en.wikipedia.org/wiki/Content_management_system">CMS</a> we develop and use at <a href="http://www.gnuine.com">gnuine</a> for a variety of projects. One of the features of Ubiquo is the ability to run jobs separately from the http requests to the site. Today I'm going to show you how to customize the Ubiquo Jobs plugin to create your own types of jobs and managers to launch them.</p>
+<p>Sometimes can be useful to create different managers. An example of this situation is when you want to run different kind of jobs in different circumstances.</p>
+<p>Ubiquo Jobs provides a default manager which will get <tt>ActiveJob</tt> jobs depending on priorities and schedule times:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
+  <span class="n">recovery</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
+  <span class="n">candidate_jobs</span> <span class="o">=</span> <span class="n">job_class</span><span class="p">.</span><span class="nf">all</span><span class="p">(</span>
+    <span class="ss">:conditions</span> <span class="o">=&gt;</span> <span class="p">[</span>
+      <span class="s1">'planified_at &lt;= ? AND state = ?'</span><span class="p">,</span>
+      <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">utc</span><span class="p">,</span>
+      <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:waiting</span><span class="p">]</span>
+    <span class="p">],</span>
+    <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s1">'priority asc'</span>
+  <span class="p">)</span>
+  <span class="n">job</span> <span class="o">=</span> <span class="n">first_without_dependencies</span><span class="p">(</span><span class="n">candidate_jobs</span><span class="p">)</span>
+  <span class="n">job</span><span class="p">.</span><span class="nf">update_attributes</span><span class="p">({</span>
+      <span class="ss">:state</span> <span class="o">=&gt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:instantiated</span><span class="p">],</span>
+      <span class="ss">:runner</span> <span class="o">=&gt;</span> <span class="n">runner</span>
+    <span class="p">})</span> <span class="k">if</span> <span class="n">job</span>
+  <span class="n">job</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>The <tt>job_class</tt> variable defaults to <tt>UbiquoJobs::Jobs::ActiveJob</tt>. If you want to make your own manager to handle special jobs, or change the way the jobs are picked, the best way to do so is to implement your own manager. A nice rails-like way to do that is include them in the <tt>lib/</tt> folder of your ubiquo project.
+The class you should inherit from is <tt>UbiquoJobs::Managers::ActiveManager</tt>. If you wanted the manager to just pick up a specific subclass of ubiquo jobs, it would suffice to reimplement the <tt>self.job_class</tt> class method to return your own kind of job:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">job_class</span>
+  <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">YourJobClass</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>However, there&#8217;s a better way to do this. For this special case, the default <tt>UbiquoJob</tt> class provides a special member which stores the job&#8217;s class name, allowing you to select all objects subclasses of <tt>ActiveJob</tt> by its classname. For example, imagine you have a kind of job for special tasks that you know for sure will take a long time to complete. Seems reasonable to have a different manager to handle those jobs. You would create a new job in the file <tt>app/jobs/very_long_job.rb</tt>:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">class</span> <span class="nc">VeryLongJob</span> <span class="o">&lt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">ActiveJob</span>
+  <span class="k">def</span> <span class="nf">do_job_work</span>
+    <span class="c1">#Do what needs to be done here</span>
+    <span class="k">return</span> <span class="mi">0</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Then you could create a manager that handles only those kind of jobs by implementing your own subclass of the <tt>UbiquoJobs::Managers::ActiveManager</tt> class:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">module</span> <span class="nn">JobManagers</span>
+  <span class="k">class</span> <span class="nc">VeryLongJobManager</span> <span class="o">&lt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Managers</span><span class="o">::</span><span class="no">ActiveManager</span>
+    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
+      <span class="n">recovery</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
+      <span class="n">candidate_jobs</span> <span class="o">=</span> <span class="n">job_class</span><span class="p">.</span><span class="nf">all</span><span class="p">(</span>
+        <span class="ss">:conditions</span> <span class="o">=&gt;</span> <span class="p">[</span>
+          <span class="s1">'planified_at &lt;= ? AND state = ? AND type = ?'</span><span class="p">,</span> 
+          <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">utc</span><span class="p">,</span>
+          <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:waiting</span><span class="p">],</span>
+          <span class="s1">'VeryLongJob'</span>
+        <span class="p">],</span>
+        <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s1">'priority asc'</span>
+      <span class="p">)</span>
+      <span class="n">job</span> <span class="o">=</span> <span class="n">first_without_dependencies</span><span class="p">(</span><span class="n">candidate_jobs</span><span class="p">)</span>
+      <span class="n">job</span><span class="p">.</span><span class="nf">update_attributes</span><span class="p">({</span>
+          <span class="ss">:state</span> <span class="o">=&gt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:instantiated</span><span class="p">],</span>
+          <span class="ss">:runner</span> <span class="o">=&gt;</span> <span class="n">runner</span>
+        <span class="p">})</span> <span class="k">if</span> <span class="n">job</span>
+      <span class="n">job</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>The code is exactly the same as the default <tt>ActiveManager</tt> class, but the finder will take an extra parameter, <tt>'VeryLongJob'</tt>, to indicate that only the <tt>ActiveJob</tt> objects that are of the subclass <tt>VerylongJob</tt> should be taken.</p>
+<p>After that, you need to modify the task that calls the workers so it takes your manager, or create a new task that will run your manager. The default task that will
+start a worker looks as this:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">desc</span> <span class="s2">"Starts a new ubiquo worker"</span>
+<span class="n">task</span> <span class="ss">:start</span><span class="p">,</span> <span class="p">[</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:interval</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:environment</span><span class="p">]</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">|</span>
+  <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="ss">:sleep_time</span> <span class="o">=&gt;</span> <span class="n">args</span><span class="p">.</span><span class="nf">interval</span><span class="p">.</span><span class="nf">to_f</span>
+  <span class="p">}.</span><span class="nf">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="o">|</span> <span class="n">v</span><span class="p">.</span><span class="nf">blank?</span> <span class="p">}</span>
+  <span class="no">UbiquoWorker</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="nf">name</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>This uses a special configuration parameter to determine the manager to use. This configuration option is stored in <tt>Ubiquo::Config.context(:ubiquo_jobs)</tt>, the name of the configuration option is <tt>:job_manager_class</tt>, and takes the manager class as a value. So in order to create a task that will use your manager, you should create a new task like this one:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">desc</span> <span class="s2">"Starts a new ubiquo worker"</span>
+<span class="n">task</span> <span class="ss">:start_very_long_jobs</span><span class="p">,</span> <span class="p">[</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:interval</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:environment</span><span class="p">]</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">|</span>
+  <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="ss">:sleep_time</span> <span class="o">=&gt;</span> <span class="n">args</span><span class="p">.</span><span class="nf">interval</span><span class="p">.</span><span class="nf">to_f</span>
+  <span class="p">}.</span><span class="nf">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="o">|</span> <span class="n">v</span><span class="p">.</span><span class="nf">blank?</span> <span class="p">}</span>
+  <span class="no">Ubiquo</span><span class="o">::</span><span class="no">Config</span><span class="p">.</span><span class="nf">context</span><span class="p">(</span><span class="ss">:ubiquo_jobs</span><span class="p">).</span><span class="nf">set</span><span class="p">(</span><span class="ss">:job_manager_class</span><span class="p">,</span> <span class="no">JobManagers</span><span class="o">::</span><span class="no">VeryLongJobManager</span><span class="p">)</span>
+  <span class="no">UbiquoWorker</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="nf">name</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Your should call this task like this (assuming it&#8217;s on the same namespace as the default task):</p>
+<p><code>
+rake ubiquo:worker:start_very_long_jobs[name,interval]
+</code></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2011/11/21/simple-guide-configure-xmonad-dzen2-conky/">&laquo; Simple guide to configure xmonad, dzen2 and conky</a>
+
+
+  <a class="next" href="/2012/01/24/ruby-rails-associations-multiple-databases/">Ruby on Rails Many To Many associations with multiple databases &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 3</title>
+  <meta name="description" content="In the last chapter we saw how the driver handles the compilation and how it invokes flang1 and flang2. In this chapter we are going to start with flang1.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/07/29/walk-through-flang-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/07/29/walk-through-flang-part-3/">
+  <meta property="og:description" content="In the last chapter we saw how the driver handles the compilation and how it invokes flang1 and flang2. In this chapter we are going to start with flang1.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 3">
+  <meta name="twitter:description" content="In the last chapter we saw how the driver handles the compilation and how it invokes flang1 and flang2. In this chapter we are going to start with flang1.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2017-07-29T22:58:00+00:00" itemprop="datePublished">Jul 29, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last chapter we saw how the driver handles the compilation and how it invokes <code>flang1</code> and <code>flang2</code>. In this chapter we are going to start with <code>flang1</code>.
+<!--more--></p>
+
+<h2>Documentation</h2>
+
+<p>
+Flang comes with some decent documentation that is worth reading it. It is not built by default unless we pass <code>-DFLANG_INCLUDE_DOCS=ON</code> to the cmake command. It is originally written in <a href="https://en.wikipedia.org/wiki/Nroff">nroff</a> but fortunately there is a nroff→reStructured Text tool which is then used by <code>sphinx</code> to generate readable HTML files. Needless to say that you will need <code>sphinx</code> installed for that last step. Once built, you will find the documentation in <code>STAGEDIR/build-flang/docs/web/html</code>.
+</p>
+
+<h3>flang1</h3>
+
+<p>
+According to the documentation flang1 is called the front-end or in the driver "the upper" (i.e. higher level) part of flang. Its task is basically parsing the Fortran code and generating an Abstract Syntax Tree (AST). Then there are two lowering steps applied to that AST and finally it is emitted in a form called ILM.
+</p>
+
+<p>
+The parsing process is long and involved so in this chapter we will focus on the lexing (scanning) of the input. We will talk about the (syntactical) parsing itself in the next chapter.
+</p>
+
+<h2>Initialization</h2>
+
+<p>
+<code>flang1</code> and <code>flang2</code> are written in C90 and they use a lot of global variables. This is usually undesirable in new codebases, specially if you plan to make flang part of a library, but not uncommon in ancient codebases. A common pattern you will see in the code is that it reinitializes some globals or restores them from previously kept values.
+</p>
+
+<h3>main</h3>
+
+<p>
+The main function of <code>flang1</code> is found in <code>flang/tools/flang1exe/main.c</code> and the function <code>init</code> is invoked to initialize the front end. If you wonder what <code>getcpu</code> does, you'll be a bit disappointed as the name is misleading: it is just a function to measure time (a stopwatch function).
+</p>
+
+<figure class="highlight"><figcaption>flang/tools/flang1exe/main.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1554
+1555
+1556
+1557
+1558
+1559
+1560
+1561
+1562
+1563
+</pre></td><td class="code"><pre><span class="cm">/** \brief Fortran front-end main entry
+    \param argc number of command-line arguments
+    \pram argv array of command-line argument strings
+*/</span>
+<span class="kt">int</span>
+<span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">savescope</span><span class="p">,</span> <span class="n">savecurrmod</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">getcpu</span><span class="p">();</span>
+  <span class="n">init</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">);</span> <span class="cm">/* initialize */</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Function <code>init</code> does a few things but basically parses the arguments, in <code>argc</code> and <code>argv</code>, and initializes the scanner.
+</p>
+
+<p>
+Parsing the arguments is done in two steps. First a set of accepted command options is registered in an argument parser structure. The registration specifies the kind of command option expected and what variable to update when the option is encountered. For instance, maybe you recall in part 2 that we saw that the preprocessing was done by flang itself. This is controlled by a command option called <code>preprocess</code> that acts as a boolean: its presence in the command line options means that we want to preprocess the input file. Once all the command options have been registered, then <code>argc</code> and <code>argv</code> are effectively parsed, which updates the variables we specified. So the rest of the file is basically checking that what was specified in the command line makes sense. 
+</p>
+
+<p>
+Variable <code>preproc</code> below is a global variable defined in <code>main.c</code>. Variable <code>flg</code> is a global data structure containing all sorts of fields regarding the compilation flags of flang. We will often encounter another global variable called <code>gbl</code> which contains global information for the whole front end.
+</p>
+
+<p>
+This function is rather long so I'm just showing some representative parts.
+</p>
+
+<figure class="highlight"><figcaption>flang/tools/flang1exe/main.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">void</span>
+<span class="nf">init</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="cm">/* Initialize the map that will be used by dump handler later */</span>
+  <span class="n">create_action_map</span><span class="p">(</span><span class="o">&amp;</span><span class="n">phase_dump_map</span><span class="p">);</span>
+
+  <span class="n">arg_parser_t</span> <span class="o">*</span><span class="n">arg_parser</span><span class="p">;</span>
+
+  <span class="n">create_arg_parser</span><span class="p">(</span><span class="o">&amp;</span><span class="n">arg_parser</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+
+  <span class="cm">/* Register two ways for supplying source file argument */</span>
+  <span class="n">register_filename_arg</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sourcefile</span><span class="p">);</span>
+  <span class="n">register_string_arg</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="s">"src"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sourcefile</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="cm">/* Output file (.ilm) */</span>
+  <span class="n">register_combined_bool_string_arg</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="s">"output"</span><span class="p">,</span> <span class="p">(</span><span class="n">bool</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">flg</span><span class="p">.</span><span class="n">output</span><span class="p">),</span>
+                                    <span class="o">&amp;</span><span class="n">outfile_name</span><span class="p">);</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="n">register_boolean_arg</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="s">"preprocess"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">arg_preproc</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="n">register_boolean_arg</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="s">"freeform"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">arg_freeform</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="cm">/* Set values form command line arguments */</span>
+  <span class="n">parse_arguments</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">);</span>
+
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">was_value_set</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">arg_preproc</span><span class="p">))</span> <span class="p">{</span>
+    <span class="cm">/* If the argument was present on command line set the value, otherwise
+     * keep "undefined" -1 */</span>
+    <span class="n">preproc</span> <span class="o">=</span> <span class="n">arg_preproc</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">was_value_set</span><span class="p">(</span><span class="n">arg_parser</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">arg_freeform</span><span class="p">))</span> <span class="p">{</span>
+    <span class="cm">/* If the argument was present on command line set the value, otherwise
+     * keep "undefined" -1 */</span>
+    <span class="n">flg</span><span class="p">.</span><span class="n">freeform</span> <span class="o">=</span> <span class="n">arg_freeform</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="c1">// (.. omitted ..)</span>
+     <span class="k">if</span> <span class="p">((</span><span class="n">gbl</span><span class="p">.</span><span class="n">srcfil</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">sourcefile</span><span class="p">,</span> <span class="s">"r"</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+       <span class="cm">/* fill in gbl.src_file, file_suffix */</span>
+       <span class="kt">char</span> <span class="o">*</span><span class="n">s</span><span class="p">;</span>
+       <span class="n">gbl</span><span class="p">.</span><span class="n">src_file</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">strlen</span><span class="p">(</span><span class="n">sourcefile</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+       <span class="n">strcpy</span><span class="p">(</span><span class="n">gbl</span><span class="p">.</span><span class="n">src_file</span><span class="p">,</span> <span class="n">sourcefile</span><span class="p">);</span>
+       <span class="n">basenam</span><span class="p">(</span><span class="n">gbl</span><span class="p">.</span><span class="n">src_file</span><span class="p">,</span> <span class="s">""</span><span class="p">,</span> <span class="n">sourcefile</span><span class="p">);</span>
+       <span class="n">file_suffix</span> <span class="o">=</span> <span class="s">""</span><span class="p">;</span>
+       <span class="k">for</span> <span class="p">(</span><span class="n">s</span> <span class="o">=</span> <span class="n">gbl</span><span class="p">.</span><span class="n">src_file</span><span class="p">;</span> <span class="o">*</span><span class="n">s</span><span class="p">;</span> <span class="o">++</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+         <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">s</span> <span class="o">==</span> <span class="sc">'.'</span><span class="p">)</span>
+           <span class="n">file_suffix</span> <span class="o">=</span> <span class="n">s</span><span class="p">;</span>
+       <span class="p">}</span>
+       <span class="k">goto</span> <span class="n">is_open</span><span class="p">;</span>
+     <span class="p">}</span>
+     <span class="cm">/* not found */</span>
+     <span class="n">error</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sourcefile</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="n">is_open</span><span class="o">:</span>
+  <span class="c1">// (.. omitted ..)</span>
+  <span class="n">scan_init</span><span class="p">(</span><span class="n">gbl</span><span class="p">.</span><span class="n">srcfil</span><span class="p">);</span></code></pre></figure>
+
+<h3>Scanner initialization</h3>
+
+<p>
+The scanner is initialized by <code>scan_init</code> found in <code>tools/flang1/flang1exe/scan.c</code>. It first registers all the Fortran keywords.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"> <span class="cm">/** \brief Initialize Scanner.  This routine is called once at the beginning
+       of execution.
+     \param fd file descriptor for main input source file
+  */</span>
+ <span class="kt">void</span>
+ <span class="nf">scan_init</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fd</span><span class="p">)</span>
+ <span class="p">{</span>
+   <span class="n">sem</span><span class="p">.</span><span class="n">nec_dir_list</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+ 
+   <span class="cm">/* for each set of keywords, determine the first and last keywords
+    * beginning with a given letter.
+    */</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">normalkw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">logicalkw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">iokw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">formatkw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">parallelkw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">parbegkw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">deckw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pragma_kw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ppragma_kw</span><span class="p">);</span>
+   <span class="n">init_ktable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kernel_kw</span><span class="p">);</span>
+   <span class="c1">// ..</span>
+   <span class="n">curr_fd</span> <span class="o">=</span> <span class="n">fd</span><span class="p">;</span>
+   <span class="n">curr_line</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+   <span class="n">first_line</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+   <span class="n">in_include</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+   <span class="n">gbl</span><span class="p">.</span><span class="n">eof_flag</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span></code></pre></figure>
+
+<p>&lt;/p&gt;
+All Fortran keywords start with a letter and flang groups them in several categories depending on the context in which they can appear. There are 10 tables, one per category.
+&lt;/p&gt;</p>
+
+<ul>
+<li>Normal keywords, found at the beginning of regular Fortran statements like <code>WHILE</code>, <code>IF</code>, <code>DO</code>, <code>PROGRAM</code>, etc.</li>
+<li>Keywords that appear inside logical-expressions like <code>.and.</code>, <code>.eqv.</code>, <code>.true.</code>, <code>.not.</code>, etc.</li>
+<li>Specifiers, mainly I/O statements but for other statements that have specifiers (like ALLOCATE). Examples of this are <code>UNIT</code>, <code>ERR</code>, <code>FMT</code>, etc.</li>
+<li>Specifiers of the FORMAT statement. In Fortran the FORMAT statement is the equivalent of the printf format string, but rather than a string literal containing specific values the FORMAT statement specification is part of the programming language syntax. Given its syntax, though, the FORMAT statement is a beast of its own. Keywords in this category include <code>EN</code>, <code>ES</code>, <code>X</code>, etc.</li>
+<li>Keywords that start OpenMP directives like PARALLEL or TASK. Given that OpenMP allows combining many directives, the scanner has to take into account cases like <code>target teams distribute parallel do simd</code> as a special token (we will see below why).</li>
+<li>Keywords that appear inside OpenMP directive as clauses. These are things like <code>FIRSTPRIVATE</code>, <code>SHARED</code> or <code>SIMDLEN</code>.</li>
+<li>Flang supports many extensions, one of them is the <code>CDEC$</code> directives, or specific pragmas of PGI Fortran. There are three categories for keywords used by these extensions.</li>
+</ul>
+
+<p>
+Each keywords is represented using a <code>KWORD</code> type. The third field (<code>nonstandard</code>) does not seem used at least when the keywords are registered.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/kwddf.h</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">20
+21
+22
+23
+24
+</pre></td><td class="code"><pre> <span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+   <span class="kt">char</span> <span class="o">*</span><span class="n">keytext</span><span class="p">;</span>       <span class="cm">/* keyword text in lower case */</span>
+   <span class="kt">int</span> <span class="n">toktyp</span><span class="p">;</span>          <span class="cm">/* token id (as used in parse tables) */</span>
+   <span class="n">LOGICAL</span> <span class="n">nonstandard</span><span class="p">;</span> <span class="cm">/* TRUE if nonstandard (extension to f90) */</span>
+ <span class="p">}</span> <span class="n">KWORD</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Then 10 arrays follow with the keywords of each category.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/kwddf.h</figcaption><pre><code class="language-c" data-lang="c"> <span class="k">static</span> <span class="n">KWORD</span> <span class="n">t1</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>         <span class="cm">/* normal keyword table */</span>
+                      <span class="p">{</span><span class="s">""</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="cm">/* a keyword index must be nonzero */</span>
+                      <span class="p">{</span><span class="s">"abstract"</span><span class="p">,</span> <span class="n">TK_ABSTRACT</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"accept"</span><span class="p">,</span> <span class="n">TK_ACCEPT</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"align"</span><span class="p">,</span> <span class="n">TK_ALIGN</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"allocatable"</span><span class="p">,</span> <span class="n">TK_ALLOCATABLE</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"allocate"</span><span class="p">,</span> <span class="n">TK_ALLOCATE</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"array"</span><span class="p">,</span> <span class="n">TKF_ARRAY</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"assign"</span><span class="p">,</span> <span class="n">TK_ASSIGN</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"associate"</span><span class="p">,</span> <span class="n">TK_ASSOCIATE</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"asynchronous"</span><span class="p">,</span> <span class="n">TK_ASYNCHRONOUS</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"backspace"</span><span class="p">,</span> <span class="n">TK_BACKSPACE</span><span class="p">},</span>
+    <span class="p">...</span>
+ <span class="k">static</span> <span class="n">KWORD</span> <span class="n">t2</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>         <span class="cm">/* logical keywords */</span>
+                      <span class="p">{</span><span class="s">""</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="cm">/* a keyword index must be nonzero */</span>
+                      <span class="p">{</span><span class="s">"a"</span><span class="p">,</span> <span class="n">TK_AND</span><span class="p">,</span> <span class="n">TRUE</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"and"</span><span class="p">,</span> <span class="n">TK_AND</span><span class="p">,</span> <span class="n">FALSE</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"eq"</span><span class="p">,</span> <span class="n">TK_EQ</span><span class="p">,</span> <span class="n">FALSE</span><span class="p">},</span>
+                      <span class="p">{</span><span class="s">"eqv"</span><span class="p">,</span> <span class="n">TK_EQV</span><span class="p">,</span> <span class="n">FALSE</span><span class="p">},</span>
+   <span class="p">...</span>
+ <span class="k">static</span> <span class="n">KWORD</span> <span class="n">t3</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+     <span class="cm">/* I/O keywords and ALLOCATE keywords */</span>
+     <span class="p">{</span><span class="s">""</span><span class="p">,</span> <span class="mi">0</span><span class="p">},</span> <span class="cm">/* a keyword index must be nonzero */</span>
+     <span class="p">{</span><span class="s">"access"</span><span class="p">,</span> <span class="n">TK_ACCESS</span><span class="p">},</span>
+     <span class="p">{</span><span class="s">"action"</span><span class="p">,</span> <span class="n">TK_ACTION</span><span class="p">},</span>
+     <span class="p">{</span><span class="s">"advance"</span><span class="p">,</span> <span class="n">TK_ADVANCE</span><span class="p">},</span>
+     <span class="p">{</span><span class="s">"align"</span><span class="p">,</span> <span class="n">TK_ALIGN</span><span class="p">},</span> <span class="cm">/* ... used in ALLOCATE stmt */</span>
+     <span class="p">{</span><span class="s">"asynchronous"</span><span class="p">,</span> <span class="n">TK_ASYNCHRONOUS</span><span class="p">},</span>
+  <span class="p">...</span></code></pre></figure>
+
+<p>
+These arrays are then registered in their table of type <code>KTABLE</code> (note that for some reason unknown to me there is no <code>t10</code> array, instead it is <code>t11</code>).
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"> <span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+   <span class="kt">int</span> <span class="n">kcount</span><span class="p">;</span>  <span class="cm">/* number of keywords in this table */</span>
+   <span class="n">KWORD</span> <span class="o">*</span><span class="n">kwds</span><span class="p">;</span> <span class="cm">/* pointer to first in array of KWORD */</span>
+                <span class="cm">/* the following members are filled in by init_ktable() to record
+                 * the indices of the first and last keywords beginning with a
+                 * certain letter.   If first[] is zero, there does not exist a
+                 * keyword which begins with the respective letter.  A nonzero
+                 * value is the index into the keyword table.
+                 */</span>
+   <span class="kt">short</span> <span class="n">first</span><span class="p">[</span><span class="mi">26</span><span class="p">];</span> <span class="cm">/* indexed by ('a' ... 'z') - 'a' */</span>
+   <span class="kt">short</span> <span class="n">last</span><span class="p">[</span><span class="mi">26</span><span class="p">];</span>  <span class="cm">/* indexed by ('a' ... 'z') - 'a' */</span>
+ <span class="p">}</span> <span class="n">KTABLE</span><span class="p">;</span>
+
+ <span class="p">...</span>
+
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">normalkw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t1</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t1</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">logicalkw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t2</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t2</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">iokw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t3</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t3</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">formatkw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t4</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t4</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">parallelkw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t5</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t5</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">parbegkw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t6</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t6</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">deckw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t7</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t7</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">pragma_kw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t8</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t8</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">ppragma_kw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t9</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t9</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span>
+ <span class="k">static</span> <span class="n">KTABLE</span> <span class="n">kernel_kw</span> <span class="o">=</span> <span class="p">{</span><span class="k">sizeof</span><span class="p">(</span><span class="n">t11</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">KWORD</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">t11</span><span class="p">[</span><span class="mi">0</span><span class="p">]};</span></code></pre></figure>
+
+<h3>Source forms</h3>
+
+<p>
+Fortran is a very old language that was born in the context of punch cards. Each punch card can represent only 72 or 80 (or sometimes 132) characters. By default a single punch card represented a single statement. Sometimes, though, we will run off of space in a punch card and we need to continue on the next one. To tell whether the next punch card was a continuation of the previous one, a special mark is used in some part of the punch card. Nowadays Fortran is written in computers using text editors, not punch cards, so each line of text has the content of a punch card. This means that it is possible to continue a statement to the next line, because the length restrictions still exist. Fortran limits to 19 continuations. This is, a statement can be up to 20 lines. At this point of the initialization, we allocate enough space for those 20 lines.
+</p>
+
+<p><img src="/wp-content/uploads/2017/07/FortranCardPROJ039.agr_.jpg" alt="" width="1687" height="809" class="size-full wp-image-4173" /> Card from a Fortran program: Z(1) = Y + W(1). Source: <a href="https://commons.wikimedia.org/wiki/File%3AFortranCardPROJ039.agr.jpg">Wikipedia</a></p>
+
+<p>
+In the code below <code>stmtbefore</code> is the global variable that will contain the character buffer of the whole statement before a process called <code>crunch</code> (that we will see later what it means). The statement, crunched or not, will be found in the character buffer <code>stmtb</code>.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c">       <span class="cm">/*                                                                         
+        * Initially, create enough space for 21 lines (1 for the initial card,    
+        * 19 continuations, and an extra card to delay first reallocation until   
+        * after the 20th card is read).  Note that for each line, we never copy   
+        * more than 'MAX_COLS-1' characters into the statement -- read_card()     
+        * always locates a position after the first (cardb[0]) position.          
+        * read_card() also terminates a line with respect to the number of columns
+        * allowed in a line (flg.extend_source)                                   
+        * More space is created as needed in get_stmt.                            
+        */</span>                                                                        
+       <span class="n">max_card</span> <span class="o">=</span> <span class="n">INIT_LPS</span><span class="p">;</span>                                                       
+       <span class="n">stmtbefore</span> <span class="o">=</span> <span class="n">sccalloc</span><span class="p">((</span><span class="n">UINT</span><span class="p">)(</span><span class="n">max_card</span> <span class="o">*</span> <span class="p">(</span><span class="n">MAX_COLS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">));</span>              
+       <span class="k">if</span> <span class="p">(</span><span class="n">stmtbefore</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>                                                    
+         <span class="n">error</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>                                            
+       <span class="n">stmtbafter</span> <span class="o">=</span> <span class="n">sccalloc</span><span class="p">((</span><span class="n">UINT</span><span class="p">)(</span><span class="n">max_card</span> <span class="o">*</span> <span class="p">(</span><span class="n">MAX_COLS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">));</span>              
+       <span class="k">if</span> <span class="p">(</span><span class="n">stmtbafter</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>                                                    
+         <span class="n">error</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>                                            
+       <span class="n">stmtb</span> <span class="o">=</span> <span class="n">stmtbefore</span><span class="p">;</span>                                                        
+       <span class="n">last_char</span> <span class="o">=</span> <span class="p">(</span><span class="kt">short</span> <span class="o">*</span><span class="p">)</span><span class="n">sccalloc</span><span class="p">((</span><span class="n">UINT</span><span class="p">)(</span><span class="n">max_card</span> <span class="o">*</span> <span class="nf">sizeof</span><span class="p">(</span><span class="kt">short</span><span class="p">)));</span>           
+       <span class="k">if</span> <span class="p">(</span><span class="n">last_char</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>                                                     
+         <span class="n">error</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>                                            </code></pre></figure>
+
+<p>
+Lines, i.e. cards, may have two source forms: <em>fixed form</em> and <em>free form</em>. All lines of a single file usually use one of the source forms but some compilers allow changing the source form inside a file and mixing the two source forms in a single file.
+</p>
+
+<p>
+Until Fortran 90, the only possible form was fixed form. Fixed form mimics the layout used in Fortran punch cards: columns 1 to 5 represent a numerical label and the statement is written from columns 7 to 72. If character 6 is a character other than a space (or a zero) it means that this line is a continuation of the previous one and columns 1 to 5 should be blanks. Columns beyond the 73 are ignored in a regular or continuated line. Other blanks, except when found inside string literals (called "character context") are not significant in fixed form (e.g <code>ABC</code> is the same as <code>A BC</code> or <code>AB C</code>). Also this form recognizes as comment lines, that are ignored by the compiler, those lines that have a <code>C</code>, <code>*</code> or (as en extension) <code>D</code> in column 1, or the character <code>!</code> in columns 1 to 5.
+</p>
+
+<div style="background-color: #fee; padding: 1ex;">
+This is a particularly contrived example of valid Fortran code.
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="w"> </span><span class="mi">2</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="n">I</span><span class="w">    </span><span class="n">F</span><span class="p">(</span><span class="w">  </span><span class="n">A</span><span class="err">.</span><span class="n">G</span><span class="w">  </span><span class="n">T</span><span class="mf">.1</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="n">T</span><span class="w">
+     </span><span class="n">AH</span><span class="w">   </span><span class="n">EN</span><span class="p">;</span><span class="w"> </span><span class="n">P</span><span class="w">  </span><span class="n">R</span><span class="w">    </span><span class="n">I</span><span class="w">  </span><span class="n">NT</span><span class="w">
+     </span><span class="o">**</span><span class="p">,</span><span class="w"> </span><span class="s2">"A is bigger than 10"</span><span class="w">
+      </span><span class="n">E</span><span class="w">        </span><span class="n">NDI</span><span class="w">           </span><span class="n">F</span></code></pre></figure>
+
+</div>
+
+<p>
+The other source form, free form, is closer to modern programming languages syntax. There are no column restrictions, except for the length of the line. Spaces are relevant and continuations are marked using a <code>&amp;</code> at the end of the statement and optionally another <code>&amp;</code> at the beginning of the next statement (in this second form the statement is pasted as if there was nothing between the two ampersand characters). A comment starts after a <code>!</code> character (outside of "character context) in any column of the line.
+</p>
+
+<div style="background-color: #fee; padding: 1ex;">
+The same code above written in free form and reformatted for clarity.
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="nl">20</span><span class="w"> </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="ow">.GT.</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+  </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"A is bigger than 10"</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">IF</span></code></pre></figure>
+
+</div>
+
+<p>
+At this point the variable <code>flg.freeform</code> states if the input source form is free form or not. As we commented in last chapter files like <code>.f</code>, <code>.F</code>, <code>.for</code>, <code>.FOR</code> will be assumed by the driver to be fixed form by default. The function <code>set_input_form</code> is used to switch between each mode. When the mode is set a couple of pointer to functions will be updated: <code>p_get_stmt</code> and <code>p_read_card</code>. They point to <code>get_stmt</code> and <code>get_card</code> for fixed form and to <code>ff_get_stmt</code> and <code>ff_get_card</code> in free form.
+</p>
+
+<p>
+Now the initialization of the scanner is complete and we can proceed to read the first card. To do this we invoke <code>p_read_card</code>. We will revisit this part later but for now it is suffice to know that the card buffer always contains the card from which we are going to get the statement. So before we can get the statement, the card has to be read. Because of this flow we need to read the first card here.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c">   <span class="n">card_type</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">p_read_card</span><span class="p">)();</span></code></pre></figure>
+
+<h3>Program units</h3>
+
+<p>
+Once the scanner has been initialized the initialization is mostly complete and then <code>flang1</code> proceeds to parse each <em>program unit</em>.
+</p>
+
+<p>
+Fortran code, at the top level, are a sequence of program units. Each program unit is independent of the others. There are 5 kinds of program units in Fortran: PROGRAM, SUBROUTINE, FUNCTION, MODULE and BLOCK DATA. PROGRAM is what in C is considered the <code>main</code> function. There must be a single PROGRAM program unit a Fortran program. SUBROUTINE and FUNCTION program units define <em>extern</em> procedures, meaning that these procedures are defined at the global level of the program. A module system was added to Fortran as of Fortran 90, and it is represented by the MODULE program units. MODULE program units have two parts: non-executable and executable. The non-executable part defines types, global variables or generic specifiers (a form of overloading). The executable part is used to define <em>module</em> procedures which are FUNCTION or SUBROUTINE (sub)program units contained in the MODULE. BLOCK DATA is a weird program unit to initialize a special kind of global data called named COMMON blocks and is seldomly used today.
+</p>
+
+<p>
+Parsing is structured in flang1 as an interaction of two components: the scanner and the parser. The scanner is responsible of reading the lines (cards) and tokenizing the input. The parser will check that the sequence of tokens provided by the scanner has the form (but not necessarily the correct meaning) of a valid Fortran program. Parsing is done by the function <code>parser()</code> invoked in a loop inside <code>main</code>, once per program unit.
+<p>
+
+<h2>Parsing: high level overview</h2>
+
+<p>
+Parsing is done in two steps. A first step parses only non-executable statements. The second parses the executable statements. Fortran has a relatively strict ordering of statements and they are classified as either non-executable or executable (except ENTRY statement that has to be both due to its special nature, but let's ignore this). Non-executable statements intuitively are declarations, and in principle do not entail code generation as they only impact the symbol tables and such (this is a bit theoretical because they do impact code generation). Executable statements are imperative statements in the code. Both phases are performed by the <code>_parser</code> function (invoked from <code>parser</code> twice)
+</p>
+
+<img src="/wp-content/uploads/2017/07/Captura-de-pantalla-de-2017-07-29-13-02-08.png" alt="" width="689" height="671" class="size-full wp-image-4198" /> Ordering of statements in Fortran 2008. Columns in a row mean that the statements can be interspersed with the other statements in the other columns of the row. Source: <a href="http://www.j3-fortran.org/doc/year/10/10-007.pdf">Fortran 2008 draft</a> 
+
+<p>
+Before it parses anything the parser needs a token. This is done by invoking <code>get_token</code>. Depending on the semantic phase <code>get_token</code> will invoke <code>_get_token</code> or <code>_read_token</code>. The first one works using the input file. The second works in an intermediate file that is generated during the first phase.
+</p>
+
+<p>
+Let's focus first in the first phase. When <code>_get_token</code> is invoked it checks if the global variable <code>currc</code> is NULL. If it is it means that we have to read the next statement. To do this it invokes <code>p_get_stmt</code> (that we set up above when we initialized the scanner by calling <code>set_input_form</code>).
+</p>
+
+<h2>Reading a statement</h2>
+
+<p>
+The pointer to function <code>p_get_stmt</code> will either point to <code>get_stmt</code>, for fixed form, or <code>ff_get_stmt</code>, for free form. Both functions will read all the lines that form the current statement, at least one, into the <code>stmtb</code> buffer. A requirement of this function is that at least one card has been already read before we can copy its contents. This requirement is fulfilled the first time we call them because we did this when we initialized the scanner above. It also implies that we have to make sure the next card has been read before we invoke this function again. The function itself (or one of the functions it calls) makes sure this happens before leaving.
+</p>
+
+<p>
+If the statement spans to more than one line, because of continuations, we need to read the next line. In fixed form this is done relatively straightforward in the code, once we have read the current line we read the next card, if the next card is a continuation we just keep looping and reading the next card. A schema of the code (because the original is a bit too long) follows:
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"> <span class="k">static</span> <span class="kt">void</span>
+ <span class="nf">get_stmt</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+ <span class="p">{</span>
+   <span class="k">do</span> <span class="p">{</span>
+     <span class="k">switch</span> <span class="p">(</span><span class="n">card_type</span><span class="p">)</span> <span class="p">{</span>
+     <span class="k">case</span> <span class="n">CT_INITIAL</span><span class="p">:</span> <span class="c1">// This means a normal card</span>
+       <span class="c1">// Pad line to 72 characters and copy to stmtb</span>
+       <span class="c1">// Also handle the label field and put it in scn.</span>
+       <span class="k">break</span><span class="p">;</span>
+     <span class="k">case</span> <span class="n">CT_CONTINUATION</span><span class="p">:</span> <span class="c1">// This card continues the previous one</span>
+       <span class="c1">// Copies from the character next to the continuation column to the end of the line</span>
+       <span class="c1">// (Continuation column is usually column 6 but because of extensions it can be column 2)</span>
+       <span class="k">break</span><span class="p">;</span>
+     <span class="k">case</span> <span class="n">CT_COMMENT</span><span class="p">:</span>
+       <span class="c1">// Do nothing</span>
+       <span class="k">break</span><span class="p">;</span>
+     <span class="c1">// other cases here</span>
+    <span class="p">}</span>
+    <span class="n">card_type</span> <span class="o">=</span> <span class="n">read_card</span><span class="p">();</span>
+   <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">card_type</span> <span class="o">==</span> <span class="n">CT_CONTINUATION</span> <span class="o">||</span>
+             <span class="n">card_type</span> <span class="o">==</span> <span class="n">CT_COMMENT</span><span class="p">);</span>
+  <span class="p">));</span>
+ <span class="p">}</span></code></pre></figure>
+
+
+<p>
+In free form, things are a bit more complicated. Continuations are specified using a &amp; at the end of the current line and optionally another &amp; in the next line. At the top level the schema is similar to the one used in fixed form but a function <code>ff_prescan</code> is used to handle the &amp; symbols. That function basically copies the characters in the line to <code>stmtb</code> but has a special case for <code>&amp;</code>, when it finds a <code>&amp;</code> then it has to advance to the next line skipping comments that may appear and being careful if a <code>&amp;</code> appears as the first nonblank of the next line. This last step is handled by <code>ff_get_noncomment</code> which will read the next cards as needed: at least one but can be more than one if there are comments.
+</p>
+
+<p>
+Now the statement has been read and is found in <code>stmtb</code>.
+</p>
+
+<h2>Reading cards</h2>
+
+<p>
+One of the operations that are needed when reading a statement is reading the cards (or lines). The functions dat to this are <code>read_card</code>, fixed form, and <code>ff_read_card</code>, free form. Calling these functions returns the kind of the card read as we've seen above each card has an associated card kind. The whole set is shown below.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+</pre></td><td class="code"><pre> <span class="cm">/*   define card types returned by read_card: */</span>
+ 
+ <span class="cp">#define CT_NONE 0
+</span> <span class="cp">#define CT_INITIAL 1
+</span> <span class="cp">#define CT_END 2
+</span> <span class="cp">#define CT_CONTINUATION 3
+</span> <span class="cp">#define CT_SMP 4
+</span> <span class="cp">#define CT_DEC 5
+</span> <span class="cp">#define CT_COMMENT 6
+</span> <span class="cp">#define CT_EOF 7
+</span> <span class="cp">#define CT_DIRECTIVE 8
+</span> <span class="cp">#define CT_LINE 9
+</span> <span class="cp">#define CT_PRAGMA 10
+</span> <span class="cp">#define CT_FIXED 11
+</span> <span class="cp">#define CT_FREE 12
+</span> <span class="cp">#define CT_MEM 13
+</span> <span class="cm">/* parsed pragma: */</span>
+ <span class="cp">#define CT_PPRAGMA 14
+</span> <span class="cp">#define CT_ACC 15
+</span> <span class="cp">#define CT_KERNEL 16</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+The first thing both functions do when reading a card is to invoke <code>_readln</code>. This function will read a whole line of the input file and put it in the <code>cardb</code> array. Then the function uses this buffer to process the current card (recall card means line in this context).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">212
+213
+214
+</pre></td><td class="code"><pre> <span class="k">static</span> <span class="kt">char</span> <span class="n">cardb</span><span class="p">[</span><span class="n">CARDB_SIZE</span><span class="p">];</span> <span class="cm">/* buffer containing last card read
+                                 * in. text terminated by newline
+                                 * character. */</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+A card of <code>CT_INITIAL</code> means the first card related to a statement. <code>CT_EOF</code> is used to notify that we have reached the end of the file. The scanner checks if a line is of the form <code># number "filename"</code>, if so it return <code>CT_LINE</code>. If a line only contains blanks is handled as a comment of type CT_COMMENT.
+</p>
+<p>
+In fixed form, then it checks if the first column has a character <code>%</code> or <code>$</code>, if so this card is a <code>CT_DIRECTIVE</code>. If the first characters are <code>C$OMP</code>, <code>*$OMP</code> or <code>!$OMP</code> then this is an OpenMP directive in which case the card will be of kind <code>CT_SMP</code>. Similarly for Cuda Fortran <code>C$CUF</code>, <code>*$CUF</code> or <code>!$CUF</code> but the card type is <code>CT_KERNEL</code>. If the line started with <code>C</code>, <code>*</code> or <code>!</code> but did not match any directive or supported pragma, again the whole card will be a <code>CT_COMMENT</code>. If the whole line is just the characters <code>END</code> then it will be <code>CT_END</code>. This is sort of a special case because the Fortran standard explicitly says that a <code>END</code> statement cannot be continuated.
+</p>
+<p>
+In free form similar checks happen but without checking columns and taking into account the different form of continuations. A line that starts with a non-blank <code>&amp;</code> will be a <code>CT_CONTINUATION</code>. Similar checks like the ones done for fixed form are done for the cases of <code>CT_SMP</code>, <code>CT_KERNEL</code>, etc.
+</p>
+
+<h2>Constructing the token</h2>
+
+<p>
+As we explained above <code>_get_token</code> invokes <code>p_get_stmt</code> to read a statement which in turn will read a card. At this point <code>stmtb</code> contains the full statement. Global variable currc points to the next character to be read in the statement. If it is <code>NULL</code>, as explained above, we have to read the statement.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"> <span class="k">static</span> <span class="kt">int</span>
+ <span class="nf">_get_token</span><span class="p">(</span><span class="n">INT</span> <span class="o">*</span><span class="n">tknv</span><span class="p">)</span>
+ <span class="p">{</span>
+   <span class="k">static</span> <span class="kt">int</span> <span class="n">lparen</span><span class="p">;</span>
+   <span class="n">tknval</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+ 
+ <span class="nl">retry:</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">currc</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+     <span class="n">scnerrfg</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+     <span class="n">put_astfil</span><span class="p">(</span><span class="n">FR_STMT</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">FALSE</span><span class="p">);</span>
+     <span class="n">stmtb</span> <span class="o">=</span> <span class="n">stmtbefore</span><span class="p">;</span>
+     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">scn</span><span class="p">.</span><span class="n">multiple_stmts</span><span class="p">)</span> <span class="p">{</span>
+       <span class="p">(</span><span class="o">*</span><span class="n">p_get_stmt</span><span class="p">)();</span>
+  <span class="p">}</span>
+  <span class="cm">/* ... */</span></code></pre></figure>
+
+
+<h3>Crunch</h3>
+
+
+<p>
+Now <code>currc</code> points to the first character in the statement and we can start reading it. Before we proceed, though, we may have to <em>crunch</em> the statement.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c">     <span class="cm">/* ... */</span>
+     <span class="k">if</span> <span class="p">(</span><span class="n">no_crunch</span><span class="p">)</span> <span class="p">{</span>
+       <span class="n">no_crunch</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+       <span class="n">currc</span> <span class="o">=</span> <span class="n">stmtb</span><span class="p">;</span>
+       <span class="n">sig_blanks</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+     <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+       <span class="n">crunch</span><span class="p">();</span>
+       <span class="n">stmtb</span> <span class="o">=</span> <span class="n">stmtbafter</span><span class="p">;</span>
+       <span class="cm">/* ... */</span></code></pre></figure>
+
+
+<p>
+All statements, except pragma lines starting with <code>$PRAGMA</code>, are crunched. The variable <code>no_crunch</code>, set during <code>p_get_stmt</code> will state that. In practice it is always false so we will crunch almost every statement. Crunch normalizes the input statement so it is easier to handle by the scanner.
+</p>
+
+<ul>
+<li>In free form the label of the statement, if any, is processed.</li>
+<li>Blanks and tabs are removed. In fixed form this means removing all blanks (except those in character context) and in free form remove all unnecessary ones. In free form redundant sequences of blanks are removed (e.g. two consecutive blanks).</li>
+<li>Upper case letters are passed to lowercase. This is because in Fortran technically the basic character set does not include lowercase letters so there is no case-sensitivity by default in identifiers (if wanted it must be provided by the vendor).</li>
+<li>Character strings (like <code>"ABC"</code>) are added to the symbol table. Registering a string in the symbol table assigns it an integer identifier (unless it was already registered, in which case the same identifier is used). The whole character string is replaced by the byte 31 followed by the 4 bytes of the integer on the symbol table encoded in big endian (first byte found is the most significant byte). </li>
+<li>Similarly for integer constants that are not decimals (like <code>B'0101'</code>, <code>O'644'</code> or <code>X'FFF'</code> ) the initial character, B, O or X, is replaced by the bytes 22, 28 and 29 respectively though the rest of the constant is left as is.</li>
+</ul>
+
+<p>
+Crunch also checks that parentheses are well balanced in the statement. It also computes the <em>free</em> (or <em>exposed</em> in flang parlance) of comma (<code>,</code>), a double colon (<code>::</code>) or an equal sign (<code>=</code>) or arrow (<code>=&gt;</code>). Here free means <em>not found inside parentheses</em>. The reason to do this is because of the way Fortran statements have to be parsed. Fortran keywords are not reserved words, so they can be used as valid identifiers. All Fortran statements, except assignment statements, start with a keyword. This puts us in a weird position as nothing prevents an assignment statement to start with a keyword as well. The following rules are used:
+</p>
+<ul>
+<li>If there is a free equal sign this can be an assignment statement like <code>A = expr</code>. This is stated in the global variable <code>exp_equal</code>. Note that a case like <code>IF (A &lt; 3) B = 4</code> has a free equal sign and will have to be handled specially.</li>
+<li>Similarly, if there is a free arrow this can be a pointer assignment statement like <code>P =&gt; expr</code>. This is stated in the global variable <code>exp_ptr_assign</code>.</li>
+<li>If there is a free comma this cannot be an assignment. Usually this is a <code>DO</code> statement like <code>DO I = 1, 100</code>. This is stated in the global variable <code>exp_comma</code>. In fixed form a very similar syntax like <code>DO I = 1. 100</code> would be <code>DOI=1.100</code> which would be an assignment statement.</li>
+<li>If there is a free double colon this cannot be an assignment either. Something like <code>INTEGER :: A = 3</code>. Note that in fixed form, where blanks are not significant <code>INTEGER A = 3 </code>would be the same as <code>INTEGERA=3</code> which would be an assignment statement.</li>
+</ul>
+
+
+<p>
+Once we know something is not a statement then we can expect a keyword as the first thing, otherwise any identifier (including one that could be a keyword) is to be expected.
+</p>
+
+<div style="background-color: #fee; padding: 1ex;">
+This is an extravagant, yet valid, usage of keywords as normal identifiers.<br />
+<small>The code assumes that a function <code>IF</code> has been declared, with four dummy arguments <code>THEN</code>, <code>ENDIF</code>, <code>DO</code> and <code>ENDDO</code>. It also assumes that two user-defined operators <code>.ELSE.</code> and <code>.WHILE.</code> havee been declared too.</small>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">RECURSIVE</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="k">IF</span><span class="p">(</span><span class="k">THEN</span><span class="p">,</span><span class="k">ENDIF</span><span class="p">,</span><span class="k">DO</span><span class="p">,</span><span class="k">ENDDO</span><span class="p">)</span><span class="w"> </span><span class="k">RESULT</span><span class="w"> </span><span class="p">(</span><span class="k">ELSE</span><span class="p">)</span><span class="w">
+    </span><span class="k">USE</span><span class="w"> </span><span class="k">IMPLICIT</span><span class="w">
+    </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="kt">INTEGER</span><span class="p">(</span><span class="kt">REAL</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="n">A</span><span class="o">-</span><span class="n">Z</span><span class="p">)</span><span class="w">
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="k">THEN</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">ELSE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">THEN</span><span class="w"> </span><span class="ow">.ELSE.</span><span class="w"> </span><span class="k">DO</span><span class="w">
+    </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="k">THEN</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+      </span><span class="k">ELSE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">IF</span><span class="p">(</span><span class="k">THEN</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="k">ENDIF</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="k">DO</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="k">ENDDO</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="w">
+    </span><span class="k">ELSE</span><span class="w">
+      </span><span class="k">ELSE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">.WHILE.</span><span class="w"> </span><span class="mi">4</span><span class="w">
+      </span><span class="k">ENDIF</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="w">
+    </span><span class="k">ENDIF</span><span class="w">
+    </span><span class="k">DO</span><span class="w"> </span><span class="k">WHILE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">DO</span><span class="p">,</span><span class="w"> </span><span class="k">DO</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="k">DO</span><span class="w">
+      </span><span class="k">ENDDO</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">WHILE</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="k">ENDDO</span><span class="w">
+    </span><span class="k">ENDDO</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">FUNCTION</span><span class="w"> </span><span class="k">IF</span></code></pre></figure>
+
+</div>
+
+<p>
+The crunched statement is kept in <code>stmtbafter</code> and <code>stmtb</code> is updated to point to it (the original statement as read from the input is still available in <code>stmtbefore</code>).
+</p>
+
+<h3>Tokenization</h3>
+
+<p>
+Now the token can be tokenized. First the scan initializes some more state at this point. The flag scnerrfg is set to true if crunch failed (e.g. parentheses were not balanced) and in some other points where the scanner routines find problems. In these cases the parser is preventively reinitialized (as it could happen that the error happens in the middle of a statement) and the whole statement is ignored.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c">       <span class="cm">/* ... */</span>
+       <span class="n">crunch</span><span class="p">();</span>
+       <span class="n">stmtb</span> <span class="o">=</span> <span class="n">stmtbafter</span><span class="p">;</span>
+       <span class="k">if</span> <span class="p">(</span><span class="n">scnerrfg</span><span class="p">)</span> <span class="p">{</span>
+         <span class="n">parse_init</span><span class="p">();</span>
+         <span class="k">goto</span> <span class="n">retry</span><span class="p">;</span>
+       <span class="p">}</span>
+       <span class="n">scn</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">avl</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+       <span class="n">currc</span> <span class="o">=</span> <span class="n">stmtb</span><span class="p">;</span>
+       <span class="n">scmode</span> <span class="o">=</span> <span class="n">SCM_FIRST</span><span class="p">;</span>
+       <span class="n">ionly</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+       <span class="n">par_depth</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+       <span class="n">past_equal</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+       <span class="n">reset_past_equal</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+       <span class="n">acb_depth</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+       <span class="n">bind_state</span> <span class="o">=</span> <span class="n">B_NONE</span><span class="p">;</span>
+       <span class="cm">/* ... */</span></code></pre></figure>
+
+
+<p>
+At this point several special cases are handled first for statements that start with <code>!$DEC</code>, <code>!$OMP</code>, <code>!$PRAGMA</code>, etc. Let's ignore them and focus on the usual scanning. The code now proceeds to a big switch that handles every character in the input. The outcome of this switch is basically a value stored in <code>tkntype</code>, an integer that states the kind of token we have found in the input.
+</p>
+
+<p>
+If we find a blank we ignore it and restart the switch (which at its switching condition has the side effect of moving to the next character already). A semicolon (<code>;</code>) is used in Fortran to have more than one statement per line (though only the first statement can have label), in this case we need to remember if this line has multiple statements (in order to avoid requesting a new statement when entering <code>_get_token</code> in case <code>currc</code> is NULL) and then we return the token "end of line" (TK_EOL). Returning a token is done by jumping to the label <code>ret_token</code> (which does return the token and something else, as we'll see below).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"> <span class="cm">/* ... */</span>
+ <span class="n">again</span><span class="o">:</span>
+   <span class="k">switch</span> <span class="p">(</span><span class="o">*</span><span class="n">currc</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+ 
+   <span class="k">case</span> <span class="sc">' '</span><span class="p">:</span>
+     <span class="k">goto</span> <span class="n">again</span><span class="p">;</span>
+ 
+   <span class="k">case</span> <span class="sc">';'</span><span class="p">:</span> <span class="cm">/* statement separator; set flag and ... */</span>
+     <span class="n">scn</span><span class="p">.</span><span class="n">multiple_stmts</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+   <span class="k">case</span> <span class="sc">'!'</span><span class="p">:</span>  <span class="cm">/* inline comment character .. treat like end
+               * of line character .......   */</span>
+   <span class="k">case</span> <span class="sc">'\n'</span><span class="p">:</span> <span class="cm">/* return end of statement token: */</span>
+     <span class="n">currc</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+     <span class="n">tkntyp</span> <span class="o">=</span> <span class="n">TK_EOL</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">ret_token</span><span class="p">;</span>
+  <span class="cm">/* ... */</span></code></pre></figure>
+
+
+<p>
+Next cases tokenize identifiers invoking the <code>alpha</code> function.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c">   <span class="cm">/* ... */</span>
+   <span class="k">case</span> <span class="sc">'a'</span><span class="p">:</span>
+   <span class="k">case</span> <span class="sc">'b'</span><span class="p">:</span>
+   <span class="cm">/* ... */</span>
+   <span class="k">case</span> <span class="sc">'z'</span><span class="p">:</span>
+   <span class="k">case</span> <span class="sc">'A'</span><span class="p">:</span>
+   <span class="k">case</span> <span class="sc">'B'</span><span class="p">:</span>
+   <span class="cm">/* ... */</span>
+   <span class="k">case</span> <span class="sc">'Z'</span><span class="p">:</span>
+   <span class="k">case</span> <span class="sc">'_'</span><span class="p">:</span>
+   <span class="k">case</span> <span class="sc">'$'</span><span class="p">:</span>
+     <span class="k">if</span> <span class="p">((</span><span class="n">scmode</span> <span class="o">==</span> <span class="n">SCM_IDENT</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">bind_state</span> <span class="o">==</span> <span class="n">B_RESULT_RPAREN_FOUND</span><span class="p">))</span> <span class="p">{</span>
+       <span class="n">scmode</span> <span class="o">=</span> <span class="n">SCM_FIRST</span><span class="p">;</span>
+     <span class="p">}</span>
+     <span class="n">alpha</span><span class="p">();</span>
+  <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Function alpha first gathers all the characters that can form up an identifier or keyword. Unfortunately, this function is giant and is written in a very difficult style to explain. So I will try to summarise what it does rather than pasting here the code.
+</p>
+<ol>
+<li>Gather all the characters that can form up an identifier.</li>
+<li>If we are at the beginning of a statement then we proceed to identify the keyword</li>
+<ul>
+<li>There are a couple of special cases handled here for type parameters <code>LEN</code> and <code>KIND</code>. They can only occur inside a <code>TYPE</code> construct.</li>
+</ul>
+<li>Now check if the initial identifier could actually be a statement whose form is a keyword followed by a (. These are <code>ASSOCIATE</code> and <code>SELECT TYPE</code> (including the <code>SELECTTYPE</code> spelling). If the checks succeed either <code>TK_ASSOCIATE</code> or <code>TK_SELECTTYPE</code> is already returned.</li>
+<li>Now check if a free equal sign for the cases where it may not designate an assignment expression, cases like <code>IF(A &gt; B) C=10</code>. Similarly for cases like <code>IF(A &gt; B) P=&gt;expr</code></li>
+<li>If there is a free double colon that could be a <code>USE</code> keyword in statements of the form <code>USE INTRINSIC :: foo</code>.</li>
+<li>At this point check the keyword, if it is not just return an identifier, otherwise return the keyword found.</li>
+</ol>
+
+<p>
+Returning the keyword found is done by jumping to the label <code>get_keyword</code>. It starts by invoking the function <code>keyword</code>. This function checks the first letter of the current scanned keyword in a given keyword table (in this case the table of <em>normal</em> keywords of Fortran). Recall that the keyword tables are indexed by the first letter of the keyword. Using this letter we get a range of known keywords (that start with that letter). These known keywords are sorted alphabetically. Function <code>cmp</code> returns 0 if an exact match is found, otherwise it returns a negative or positive number depending on whether the current token is lexicographically lower or greater, respectively. This is why once we see that the scanned keyword is no higher than the current known keyword, we can stop checking because no match will actually be found.
+</p>
+
+<p>Note that the parameter <code>exact</code> is not used at all in this function.</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">5964
+5965
+5966
+5967
+5968
+5969
+5970
+5971
+5972
+5973
+5974
+5975
+5976
+5977
+5978
+5979
+5980
+5981
+5982
+5983
+5984
+5985
+5986
+5987
+5988
+5989
+5990
+5991
+5992
+5993
+5994
+5995
+5996
+5997
+5998
+5999
+6000
+6001
+6002
+6003
+6004
+6005
+</pre></td><td class="code"><pre> <span class="cm">/*  return token id for the longest keyword in keyword table
+  *  'ktype', which is a prefix of the id string.
+  *  Set 'keylen' to the length of the keyword found.
+  *  Possible return values:
+  *  &gt;  0 - keyword found (corresponds to a TK_ value).
+  *  == 0 - keyword not found.
+  *  &lt;  0 - keyword 'prefix' found (corresponds to a TKF_ value).
+  *  If a match is found, keyword_idx is set to the index of the KWORD
+  *  entry matching the keyword.
+  */</span>
+ <span class="k">static</span> <span class="kt">int</span>
+ <span class="nf">keyword</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">id</span><span class="p">,</span> <span class="n">KTABLE</span> <span class="o">*</span><span class="n">ktable</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">keylen</span><span class="p">,</span> <span class="n">LOGICAL</span> <span class="n">exact</span><span class="p">)</span>
+ <span class="p">{</span>
+   <span class="kt">int</span> <span class="n">chi</span><span class="p">,</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">kl</span><span class="p">,</span> <span class="n">cond</span><span class="p">;</span>
+   <span class="n">KWORD</span> <span class="o">*</span><span class="n">base</span><span class="p">;</span>
+ 
+   <span class="cm">/* convert first character (a letter) of an identifier into a subscript */</span>
+   <span class="n">chi</span> <span class="o">=</span> <span class="o">*</span><span class="n">id</span> <span class="o">-</span> <span class="sc">'a'</span><span class="p">;</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">chi</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">chi</span> <span class="o">&gt;</span> <span class="mi">25</span><span class="p">)</span>
+     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* not a letter 'a' .. 'z' */</span>
+   <span class="n">low</span> <span class="o">=</span> <span class="n">ktable</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">[</span><span class="n">chi</span><span class="p">];</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">low</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+     <span class="k">return</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* a keyword does not begin with the letter */</span>
+   <span class="n">high</span> <span class="o">=</span> <span class="n">ktable</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">[</span><span class="n">chi</span><span class="p">];</span>
+   <span class="n">base</span> <span class="o">=</span> <span class="n">ktable</span><span class="o">-&gt;</span><span class="n">kwds</span><span class="p">;</span>
+   <span class="cm">/*
+    * Searching for the longest keyword which is a prefix of the identifier.
+    */</span>
+   <span class="n">p</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+   <span class="k">for</span> <span class="p">(;</span> <span class="n">low</span> <span class="o">&lt;=</span> <span class="n">high</span><span class="p">;</span> <span class="n">low</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+     <span class="n">cond</span> <span class="o">=</span> <span class="n">cmp</span><span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">base</span><span class="p">[</span><span class="n">low</span><span class="p">].</span><span class="n">keytext</span><span class="p">,</span> <span class="n">keylen</span><span class="p">);</span>
+     <span class="k">if</span> <span class="p">(</span><span class="n">cond</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+       <span class="k">break</span><span class="p">;</span>
+     <span class="k">if</span> <span class="p">(</span><span class="n">cond</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+       <span class="n">p</span> <span class="o">=</span> <span class="n">low</span><span class="p">;</span>
+   <span class="p">}</span>
+   <span class="k">if</span> <span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+     <span class="n">keyword_idx</span> <span class="o">=</span> <span class="n">p</span><span class="p">;</span>
+     <span class="k">return</span> <span class="n">base</span><span class="p">[</span><span class="n">p</span><span class="p">].</span><span class="n">toktyp</span><span class="p">;</span>
+   <span class="p">}</span>
+   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+ <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+In case no keyword is found (though we somehow expected one) or we directly expected an identifier, then <code>alpha</code> will jump to the label <code>return_identifier</code>. This part of the code still has to do some extra checks, because some keywords might appear in special cases like an array constructor of the form <code>(/ REAL :: 1.2, 3.4 /)</code>.</p>
+
+<p>
+After these initial checks then the code can really return an identifier of type <code>TK_IDENT</code> in the <code>tkntype</code> global variable. Identifiers also have a value kept in the global variable <code>tknvalue</code>. The global variable <code>scn</code> has a field <code>scn.id</code> which is basically a resizeable buffer of chars with a couple of fields <code>scn.id.avl</code> (available) and <code>scn.id.size</code> (what has been allocated). The buffer itself, <code>scn.id.name</code>, is reallocated as needed. Basically the identifier is appended to the buffer and then the index in the buffer of the just appended identifier is used as the <code>tknvalue</code>. This buffer is reused for each statement so it keeps only the identifiers found in the current statement. Also note that an identifier that appears more than once in a statement (like <code>B = A + A</code>) will be appended twice and each occurrence will have a different <code>tknvalue</code>. This schema may look a bit naive but works well if, as happens often, just a few identifiers are used in a statement. 
+</p>
+
+<p>
+For integer and real constants the function called is <code>get_number</code>. This function can handle both integers or reals. For integers several atoi-like functions are used to get the value of the designated integer constant. For reals <code>strtod</code> is used (apparently there is no support for reals bigger than C's <code>double</code>). Once the value has been computed then it is signed in in a hash table of constants. This is done using the <code>getcon</code> function which returns a new symbol identifier in the symbol table. We will see the symbol table in a later chapter.
+</p>
+
+<p>
+Finally once the current token has been scanned it is passed to <code>_write_token</code>. This function basically writes the token into an intermediate file. This file is used in the second step of parsing the input.
+</p>
+
+<h2>The intermediate file</h2>
+
+<p>
+We mentioned above that the parsing is done in two steps. The first step constructs the tokens directly from the Fortran input file. This token is then returned to the parser, which will use it to update its internal state machine that checks the validity of the token sequence. But as a side effect of <code>_get_token</code>, tokens, along with some payload info, are written in an intermediate file. This intermediate file is used by <code>_read_token</code> when retrieving tokens for the second step of the parsing (recall that the parser calls <code>get_token</code> and in the second step <code>get_token</code> calls <code>_read_token</code>, in the first it called <code>_get_token</code> which we have described above). Basically the code is parsed twice (two passes) but each time the input is different and each pass obviously does slightly different things. We will see parsing with more detail in the next chapter.
+</p>
+
+<p>
+We may wonder the reason of this design. My hypothesis is that flang is based on an ancient codebase that was first written in an era where computers had much less memory than today. In a more modern design the interaction between the two passes would probably involve structures in memory. This approach does not work well if memory is scarce. An option also could be just reusing the original input, but we've already seen that Fortran complicates reading the input so scanning twice the input seems wasteful in terms of time. That said, due to the nature of Fortran seems unavoidable having to do two passes in order to fully parse the code.
+</p>
+
+<p>
+It is not trivial to view this intermediate as a temporary unnamed file is used but hacking <code>scan_init</code> can be used to get what is written in this file. This file contains a set of records, each record started by a record identifier of 4 bytes. They are defined in <code>scan.h</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/* File Records:
+ *
+ * Each record in the ast source file (astb.astfil) begins with a
+ * 4-byte type field.  In most cases, the remaining portion of the
+ * field is textual information in the form of a line (terminated by
+ * '\n'.
+ */</span>
+<span class="cp">#define FR_SRC -1
+#define FR_B_INCL -2
+#define FR_E_INCL -3
+#define FR_END -4
+#define FR_LINENO -5
+#define FR_PRAGMA -6
+#define FR_STMT -7
+#define FR_B_HDR -8
+#define FR_E_HDR -9
+#define FR_LABEL -98
+#define FR_TOKEN -99</span></code></pre></figure>
+
+
+<p>
+As stated by the code itself, each record is usually followed by text. Consider the following input.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="w">
+    </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+    </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="w">
+    </span><span class="n">C</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">&amp;</span><span class="w">
+        </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="w">
+    </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"HELLO WORLD"</span><span class="w">
+    </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">C</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span></code></pre></figure>
+
+
+<p>
+Generates the following intermediate file, which I have processed because some of the fields are encoded directly as binary data.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">FR_SRC: 'test.f90'
+FR_STMT: 1 'PROGRAM MAIN'
+FR_LINENO: '1'
+FR_TOKEN: '463 0 PROGRAM'
+FR_TOKEN: '56 0 4 main &lt;id name&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 2 '    INTEGER :: A, B'
+FR_LINENO: '2'
+FR_TOKEN: '383 0 INTEGER'
+FR_TOKEN: '37 0 ::'
+FR_TOKEN: '56 0 1 a &lt;id name&gt;'
+FR_TOKEN: '17 0 ,'
+FR_TOKEN: '56 2 1 b &lt;id name&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 3 '    A = 1'
+FR_LINENO: '3'
+FR_TOKEN: '56 0 1 a &lt;id name&gt;'
+FR_TOKEN: '174 0 ='
+FR_TOKEN: '60 1 1 &lt;integer&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 4 '    B = 2'
+FR_LINENO: '4'
+FR_TOKEN: '56 0 1 b &lt;id name&gt;'
+FR_TOKEN: '174 0 ='
+FR_TOKEN: '60 2 2 &lt;integer&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 5 '    C = A + &amp;'
+FR_LINENO: '5'
+6 '        A + B'
+FR_TOKEN: '56 0 1 c &lt;id name&gt;'
+FR_TOKEN: '174 0 ='
+FR_TOKEN: '56 2 1 a &lt;id name&gt;'
+FR_TOKEN: '16 0 +'
+FR_TOKEN: '56 4 1 a &lt;id name&gt;'
+FR_TOKEN: '16 0 +'
+FR_TOKEN: '56 6 1 b &lt;id name&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 7 '    PRINT *, "HELLO WORLD"'
+FR_LINENO: '7'
+FR_TOKEN: '458 0 PRINT'
+FR_TOKEN: '14 0 *'
+FR_TOKEN: '17 0 ,'
+FR_TOKEN: '169 629 11 48454c4c4f20574f524c44 &lt;quoted string&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 8 '    PRINT *, C'
+FR_LINENO: '8'
+FR_TOKEN: '458 0 PRINT'
+FR_TOKEN: '14 0 *'
+FR_TOKEN: '17 0 ,'
+FR_TOKEN: '56 0 1 c &lt;id name&gt;'
+FR_TOKEN: '321 0 END'
+FR_STMT: 9 'END PROGRAM MAIN'
+FR_LINENO: '9'
+FR_TOKEN: '333 0 1 ENDPROGRAM'
+FR_TOKEN: '56 0 4 main &lt;id name&gt;'
+FR_TOKEN: '321 0 END'</code></pre></figure>
+
+
+<p>
+<code>FR_SRC</code> is used to specify the file name. <code>FR_STMT</code> is used to mark the beginning of the next statement. Its payload is the line number of the statement and the text of the statement (before crunching). A record <code>FR_LINENO</code> is used to set the line number of the tokens next tokens, the payload is the line number itself. Unfortunately if the statement spans onto more than one line no new <code>FR_LINENO </code>is emitted so the diagnostics are always emitted from the first line of the statement. Each token is represented by a FR_TOKEN record. The payload contains at least two integers: the type of token first and then some value associated to the token type (if not relevant for the type of token this value is zero). Most tokens are just followed by the text of the token and sometimes some description of the kind of token like &lt;quoted string&gt; or &lt;id name&gt; that as far as I understand have no purpose other than making debugging easier.
+</p>
+
+<p>
+It is interesting to analyse some tokens with more detail:
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">FR_TOKEN: '169 629 11 48454c4c4f20574f524c44 &lt;quoted string&gt;'</code></pre></figure>
+
+
+<p>
+This is basically a token that is just the string literal. The first two integers are the token type, the token value (the hash that was computed during crunch but it is not valid any more in this pass so it will be unused) and the length of the token and then a sequence of hexadecimal digits representing the bytes of the string. In this particular case the string <code>HELLO WORLD</code> (<code>48</code> is <code>H</code>, <code>45</code> is <code>E</code>, <code>4c</code> is <code>E</code>, etc.)
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">FR_TOKEN: '56 2 1 a &lt;id name&gt;'
+FR_TOKEN: '16 0 +'
+FR_TOKEN: '56 4 1 a &lt;id name&gt;'</code></pre></figure>
+
+
+<p>
+This is a sequence of three tokens. The first and last one are a token of kind <code>TK_IDENT</code> (56) as we mentioned above their token value is unique inside the statement (even if the token is the same identifier). The second token is simply the token for the plus sign (<code>+</code>).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">FR_STMT: 5 '    C = A + &amp;'
+FR_LINENO: '5'
+6 '        A + B'</code></pre></figure>
+
+
+<p>
+This is interesting because flang assumes that any record that is not a known record (as defined above in <code>scan.h</code>) is a line number. This is why all the record kind identifiers are negative numbers. So what is emitted for a statement that spans in several lines is just the record of the statement with the first line (followed by a <code>FR_LINENO</code>) and then another line number and a statement string.
+</p>
+
+<p>
+The function <code>_read_token</code> only returns when encounters a record of kind <code>FR_TOKEN</code>. The other register kinds do not have any effect (like <code>FR_SRC</code>) or just have side-effects for the parser itself (like <code>FR_STMT</code> or <code>FR_LINENO</code>).
+</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+Ok. This post is already too long so maybe we should stop here. But first a summary:
+</p>
+
+<ul>
+<li>Parsing is done in two steps (or passes).</li>
+<li>The parser asks tokens to the scanner.</li>
+<li>Depending on the parsing step, the scanner uses a different origin to form the tokens that returns to the parser.</li>
+<li>The first step uses the Fortran source file.</li>
+<ul>
+<li>This involves reading the whole statement.</li>
+<li>To read the whole statement one or more cards (lines) have to be read.</li>
+<li>Once the statement is read it is crunched in which a few tokens are simplified</li>
+<li>The tokens are returned using that crunched statement.</li>
+<li>As a side-effect of returning the tokens, an intermediate file is generated.</li>
+</ul>
+<li>The second step uses the intermediate file.</li>
+<ul>
+<li>The intermediate file is just a sequence of records.</li>
+<li>Records that encode tokens are used to return tokens to the parser.</li>
+</ul>
+</ul>
+
+<p>
+In the next chapter we will see with more detail the parser, now that we understand where tokens come from.
+</p>
+</p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/06/17/walk-through-flang-part-2/">&laquo; Walk-through flang – Part 2</a>
+
+
+  <a class="next" href="/2017/09/03/walk-through-flang-part-4/">Walk-through flang – Part 4 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Toying with GCC JIT – Part 2</title>
+  <meta name="description" content="One of the quintessential UNIX tools is the grep tool. The global regular expression print is a tool that prints lines of text file that match a given regular expression. In this post we will apply JIT compilation to a very simple regular expression matcher by Rob Pike.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/11/18/toying-gcc-jit-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Toying with GCC JIT – Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/11/18/toying-gcc-jit-part-2/">
+  <meta property="og:description" content="One of the quintessential UNIX tools is the grep tool. The global regular expression print is a tool that prints lines of text file that match a given regular expression. In this post we will apply JIT compilation to a very simple regular expression matcher by Rob Pike.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Toying with GCC JIT – Part 2">
+  <meta name="twitter:description" content="One of the quintessential UNIX tools is the grep tool. The global regular expression print is a tool that prints lines of text file that match a given regular expression. In this post we will apply...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Toying with GCC JIT – Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2015-11-18T00:25:40+00:00" itemprop="datePublished">Nov 18, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+One of the quintessential UNIX tools is the <code>grep</code> tool. The <q><b>g</b>lobal <b>r</b>egular <b>e</b>xpression <strong>p</strong>rint</q> is a tool that prints lines of text file that match a given regular expression. In this post we will apply JIT compilation to a very simple regular expression matcher by Rob Pike.
+</p>
+<!--more-->
+
+<h2>Regular expressions</h2>
+<p>
+<em>Regular expressions</em> are a theoretical construct to generate <em>regular languages</em>. Without going into much detail, a regular language is one that just requires a finite (i.e. bounded) amount of memory to recognize it. This means that we will not be able to recognize some languages that may have unbounded contexts. For instance, recognizing the language of the basic arithmetic requires keeping track parentheses and/or priorities among operators. Since we can nest an unbounded number of terms (forcing us to remember an unbounded number of priorities and parentheses), such language cannot be regular. Regular expressions, despite the limitations of the regular languages that they generate, are very useful in the context of searching text.
+</p>
+<p>
+There exist several regular expression syntaxes. The most famous ones are the <a href="http://pubs.opengroup.org/onlinepubs/009696899/basedefs/xbd_chap09.html">POSIX</a> syntax and the <a href="http://perldoc.perl.org/perlrequick.html">Perl</a> syntax. Their syntax differ but the basic concepts are the same. Note also, that the Perl regular expressions can be used to recognize a superset of regular languages but this is a consequence of their implementation.
+</p>
+
+<h3>A mini regular expression syntax</h3>
+
+<p>
+In the article <a href="http://www.cs.princeton.edu/courses/archive/spr09/cos333/beautiful.html">A Regular Expression Matcher</a>, Brian Kernighan describes a very simple yet still useful syntax of regular expressions.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">c    matches any literal character c
+.    matches any single character
+^    matches the beginning of the input string
+$    matches the end of the input string
+*    matches zero or more occurrences of the previous character</code></pre></figure>
+
+<p>It is not obvious from the description above but <code>^</code> will only be honoured at the beginning of the regular expression (otherwise it will be handled like <code>c</code>).</p>
+
+<h2>The matcher</h2>
+
+<p>
+In the same article, Kernighan presents an implementation, by Rob Pike, of the matcher algorithm. The implementation is strikingly simple and neat.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+</pre></td><td class="code"><pre><span class="c1">// Used below</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">matchstar</span><span class="p">(</span><span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">);</span>
+
+<span class="cm">/* matchhere: search for regexp at beginning of text */</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">matchhere</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'*'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matchstar</span><span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">regexp</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">text</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'$'</span> <span class="o">&amp;&amp;</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">*</span><span class="n">text</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span><span class="o">!=</span><span class="sc">'\0'</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="sc">'.'</span> <span class="o">||</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==*</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matchhere</span><span class="p">(</span><span class="n">regexp</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">text</span><span class="o">+</span><span class="mi">1</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* matchstar: search for c* regexp at beginning of text */</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">matchstar</span><span class="p">(</span><span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">do</span> <span class="p">{</span>    <span class="cm">/* a * matches zero or more instances */</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">matchhere</span><span class="p">(</span><span class="n">regexp</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span> <span class="o">!=</span> <span class="sc">'\0'</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span><span class="o">++</span> <span class="o">==</span> <span class="n">c</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">'.'</span><span class="p">));</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/* match: search for regexp anywhere in text */</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">match</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'^'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matchhere</span><span class="p">(</span><span class="n">regexp</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">text</span><span class="p">);</span>
+    <span class="k">do</span> <span class="p">{</span>    <span class="cm">/* must look even if string is empty */</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">matchhere</span><span class="p">(</span><span class="n">regexp</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span><span class="o">++</span> <span class="o">!=</span> <span class="sc">'\0'</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The article is missing <code>main</code> (a <em>driver</em> routine in the article terminology) function that takes the regular expression and tries to match it against each line. It is not hard to make one, though.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"usage: %s regex filename</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+        <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">regexp</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+    <span class="kt">FILE</span> <span class="o">*</span><span class="n">f</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">"r"</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">f</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"error opening file '%s': %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+                <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+        <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="kt">char</span><span class="o">*</span> <span class="n">line</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="kt">size_t</span> <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="n">getline</span><span class="p">(</span><span class="o">&amp;</span><span class="n">line</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">length</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">match</span><span class="p">(</span><span class="n">regexp</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+            <span class="n">fprintf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="s">"%s"</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">free</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+    <span class="n">fclose</span><span class="p">(</span><span class="n">f</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+With all in place, now we can use this small program as a simpler version of <code>grep</code>. Let's search lines in the <a href="http://www.gutenberg.org/cache/epub/11/pg11.txt">plain text version</a> of <q>Alice's Adventures In Wonderland</q> from the <a href="http://www.gutenberg.org/">Gutenberg project</a>.
+</p>
+
+<p>
+For instance lines that contain first Alice and later Rabbit.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ ./jgrep-basic "Alice.*Rabbit" pg11.txt 
+Alice heard the Rabbit say, 'A barrowful will do, to begin with.'
+them Alice recognised the White Rabbit: it was talking in a hurried
+Alice watched the White Rabbit as he fumbled over the list, feeling very</code></pre></figure>
+
+<p>
+Or the opposite, first Rabbit and then Alice.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ ./jgrep-basic "Rabbit.*Alice" pg11.txt 
+Very soon the Rabbit noticed Alice, as she went hunting about, and
+'We must burn the house down!' said the Rabbit's voice; and Alice called
+'She boxed the Queen's ears--' the Rabbit began. Alice gave a little</code></pre></figure>
+
+<h3>Our goal using a JIT compiler</h3>
+
+<p>
+The shown algorithm of the matcher is <em>generic</em> meaning that it works for any valid regular expression. But note that the regular expression will never change during the program. This means that our matcher could be using a specialized version of the algorithm tailored exclusively for the given regular expression. This is just the opposite of generic, we want a <em>specialized</em> version of the matching algorithm. Since we do not know the exact regular expression ahead of the execution of the program, we will have to create it during the program execution. This is why we will need a JIT compiler.
+</p>
+
+<p>
+You may be now wondering whether the specialized version will run faster than the generic one. Likely not, but it is worth trying anyway.
+</p>
+
+<h2>Compiling the regular expression</h2>
+
+<p>
+Let's get back at the <code>matchhere</code> function above.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="k">static</span> <span class="kt">int</span> <span class="nf">matchhere</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'*'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">matchstar</span><span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">regexp</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">text</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'$'</span> <span class="o">&amp;&amp;</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">*</span><span class="n">text</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span><span class="o">!=</span><span class="sc">'\0'</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="sc">'.'</span> <span class="o">||</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==*</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matchhere</span><span class="p">(</span><span class="n">regexp</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">text</span><span class="o">+</span><span class="mi">1</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now take into account that regexp will be known by the JIT compiler as if it were a constant. So we do not need to pass it as a parameter. The parameter <code>text</code>, will not be known, because there will be one text per line of the searched file (and no, we do not want to make a specialized matcher per regular expression times lines, only one specialized matcher per <code>regex</code>). Let's analyze the algorithm case by case.
+</p>
+
+<p>
+In lines 3 to 4, we check the finalization of the regular expression. In our case, since the regular expression is fixed, it means that if we somehow process it all, our specialized match must simply <code>return 1;</code>, meaning that the current <code>text</code> matches the regular expression.
+</p>
+
+<p>
+In lines 7 to 8, our matcher must verify that we are at the end of the text, otherwise there is no match. This means that if we find a $ at the end of the regular expression, the code must simply check if text is the <code>NULL</code> ending of <code>text</code>.
+</p>
+
+<p>
+In lines 9 to 10, our matcher simply checks that <code>.</code> or c match a single letter. If there is a match, the original implementation simply calls itself skipping one character from the regular expression and the text. This effectively moves on to match the remainder of the regular expression with the remainder of the text. Our implementation will skip this recursive call and instead just simply advance the text. We will then, match the remainder of the regular expression.
+</p>
+
+<p>
+Finally, lines 5 to 6 implement the <a href="https://en.wikipedia.org/wiki/Kleene_star">Kleene star</a>. We have to match 0 or more times the character before the star. The original implementation just calls <code>matchstar</code> (repeated below for clarity). The call to matchstar passes the current character (that we have to match 0 or more times) and the remainder of the regular expression (the code skips the <code>*</code> as well, this is why it says <code>regexp+2</code>).
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="cm">/* matchstar: search for c* regexp at beginning of text */</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">matchstar</span><span class="p">(</span><span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">text</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">do</span> <span class="p">{</span>    <span class="cm">/* a * matches zero or more instances */</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">matchhere</span><span class="p">(</span><span class="n">regexp</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span> <span class="o">!=</span> <span class="sc">'\0'</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="o">*</span><span class="n">text</span><span class="o">++</span> <span class="o">==</span> <span class="n">c</span> <span class="o">||</span> <span class="n">c</span> <span class="o">==</span> <span class="sc">'.'</span><span class="p">));</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In line 5 of <code>matchstar</code>, the original algorithm attempts to match the remainder of the regular expression (now found in the parameter <code>regexp</code>). If it matches directly it means that c* or .* has matched 0 characters, and we are done. If it does not match it attempts to match a single letter (either <code>c</code> or <code>.</code>). If it matches, it advances the text (the hard-to-grasph expression <code>*text++ == c</code> is obfuscated C that means: do first <code>tmp1 = *text;</code> then <code>text++;</code> and then <code>tmp1 == c</code>) and just proceeds to match again the remainder of the regular expression with the now remainder of the text. Finally if the remainder of the expression never matches or the current text does not match any of <code>c</code> or <code>.</code> then the whole Kleene star does not match. Note that this is not the most efficient way to implement a regular expression matcher but it easy to understand. For our JIT compiled code, what we will do, is to create another specialized matcher for the remaining of the regular expression and call it in the loop.
+</p>
+
+<p>
+This is all we need for the <code>matchhere</code> function. Let's encode it so it can be JIT compiled.
+</p>
+
+<h2>Code generation</h2>
+
+<h3>The matchhere and matchstar functions</h3>
+
+<p>
+Ok, let's start with <code>matchhere</code>. Each matcher will return <code>int</code> and receive a <code>const char*</code>, that we will call text. So let's start creating the function.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+</pre></td><td class="code"><pre><span class="k">static</span> <span class="n">gcc_jit_function</span> <span class="o">*</span><span class="nf">generate_code_matchhere</span><span class="p">(</span><span class="n">gcc_jit_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">regexp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">function_name</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">int_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_INT</span><span class="p">);</span>
+  <span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">char_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_CHAR</span><span class="p">);</span>
+  <span class="n">gcc_jit_type</span> <span class="o">*</span><span class="n">const_char_ptr_type</span> <span class="o">=</span> <span class="n">gcc_jit_context_get_type</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_TYPE_CONST_CHAR_PTR</span><span class="p">);</span>
+
+  <span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_text</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">const_char_ptr_type</span><span class="p">,</span> <span class="s">"text"</span><span class="p">);</span>
+  <span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_text</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_text</span><span class="p">);</span>
+
+  <span class="c1">// matchhere</span>
+  <span class="n">gcc_jit_param</span><span class="o">*</span> <span class="n">params</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">param_text</span> <span class="p">};</span>
+  <span class="n">gcc_jit_function</span> <span class="o">*</span><span class="n">matchhere</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_function</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+      <span class="n">GCC_JIT_FUNCTION_INTERNAL</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="n">function_name</span><span class="p">,</span>
+      <span class="mi">1</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="cm">/* is_variadic */</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">current_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+  <span class="p">...</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The exact name of the function will be passed as a parameter, you will see later why. The function itself is internal, because we will only call from another JIT compiled function, and as said above it only has a single parameter (<code>text</code>) of type <code>const char*</code> and returns <code>int</code>. We also create a <em>rvalue</em> of the parameter, that will be used later in the generated code. We will also create a first block and put it in <code>current_block</code>. We will maintain the variable <code>current_block</code> to always be the block where we have to append code in order to match the different parts of the regular expression.
+</p>
+
+<p>
+We will also prepare a couple of variables at this point. We will always need a return 1, either when our matcher reaches the end of the regular expression or when we generate code for the Kleene star. So let's have a return_one ready.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">136
+137
+138
+139
+140
+141
+</pre></td><td class="code"><pre>  <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">return_zero</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+
+  <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">return_one</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+  <span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+      <span class="n">return_one</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+      <span class="n">gcc_jit_context_one</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">));</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+We also prepare a <code>return_zero</code>, but it is not clear whether we will need it not, so at the moment let's leave it empty (as NULL) and we will create if needed later.
+</p>
+
+<p>
+Now let's go processing the given regular expression and create code to match it.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">144
+145
+146
+</pre></td><td class="code"><pre>  <span class="c1">// Now go creating</span>
+  <span class="k">for</span> <span class="p">(;;)</span>
+  <span class="p">{</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+A simple first case is when we reach the end of the regular expression.
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">146
+147
+148
+149
+150
+151
+152
+</pre></td><td class="code"><pre>    <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">gcc_jit_block_end_with_jump</span><span class="p">(</span>
+          <span class="n">current_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">return_one</span><span class="p">);</span>
+      <span class="k">break</span><span class="p">;</span> <span class="c1">// We are done</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+When we reach the end of the regular expression, it means that all the previous bits of the regular expression have matched as well. So lets end the current block with just <code>return 1</code>. And we leave the loop because there is none left to do with the regular expression.
+</p>
+
+<p>
+Let's put the Kleene star aside for a moment so we see the simpler cases first. The next one is a <code>$</code> at the end of the regular expression.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+</pre></td><td class="code"><pre>    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'$'</span> <span class="o">&amp;&amp;</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+          <span class="n">current_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">GCC_JIT_COMPARISON_EQ</span><span class="p">,</span> 
+            <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span>
+              <span class="n">gcc_jit_rvalue_dereference</span><span class="p">(</span><span class="n">rval_text</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">)</span>
+              <span class="p">),</span>
+            <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">char_type</span><span class="p">)));</span>
+
+      <span class="n">regexp</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+If the regular expression contains a <code>$</code> as the last character, just return the result of the equal comparison (lines 216 to 221) of <code>*text</code> (lines 218 to 220) and <code>(char)0</code> (line 221). Note that if the compared operands are equal (i.e. <code>*text == (char)0</code>), then we will <code>return 1</code>, otherwise we will <code>return 0</code>. After we have generated the code, we just move on to the next letter of the regular expression (that in this case will be '\0', so we will just emit a <code>return 1</code> because this is the first case above).
+</p>
+
+<p>
+Another two simple examples are <code>.</code> and <code>c</code>. The case for <code>.</code> is as follows.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+</pre></td><td class="code"><pre>    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'.'</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">generate_return_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">matchhere</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">return_zero</span><span class="p">);</span>
+
+      <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">next_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+
+      <span class="c1">// if (*text == '\0')</span>
+      <span class="c1">//    return 0;</span>
+      <span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span>
+          <span class="n">current_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">GCC_JIT_COMPARISON_EQ</span><span class="p">,</span> 
+            <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span>
+              <span class="n">gcc_jit_rvalue_dereference</span><span class="p">(</span><span class="n">rval_text</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">)</span>
+              <span class="p">),</span>
+            <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">char_type</span><span class="p">)),</span>
+          <span class="n">return_zero</span><span class="p">,</span>
+          <span class="n">next_block</span><span class="p">);</span>
+
+      <span class="c1">// text = &amp;text[1]; // pointer arithmetic</span>
+      <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span><span class="n">next_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_param_as_lvalue</span><span class="p">(</span><span class="n">param_text</span><span class="p">),</span>
+          <span class="n">text_plus_one</span><span class="p">);</span>
+
+      <span class="c1">// Chain the code</span>
+      <span class="n">current_block</span> <span class="o">=</span> <span class="n">next_block</span><span class="p">;</span>
+
+      <span class="c1">// Done with the current letter</span>
+      <span class="n">regexp</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+The code is a bit longer but conceptually simple. We first make sure that we have a <code>return 0</code> (line 227). We have a function <code>generate_return_zero</code> that we pass (by reference) that <code>return_zero</code> variable that we declared above (but there we left it initialized to NULL) and it creates a <code>return 0</code>; if it is still <code>NULL</code>, otherwise it does nothing. Then (line 229) we create a new block <code>next_block</code> that we will use soon. Next we end the current block with a conditional jump (line 233). If the checked condition succeeds, we jump to the <code>return_zero</code> block otherwise we will jump to <code>next_block</code>. What is the condition of this conditional jump? Well, we just compare (line 235) the current character of the text, this is <code>*text</code> (lines 237 to 239), with <code>(char)0</code> (line 240).
+</p>
+
+<p>
+If the comparison fails, meaning that the current letter is not <code>(char)0</code> and that <code>.</code> has matched, we have to advance to the next letter of the text. Here we have to compute <code>text+1</code>, since this is a pointer GCC JIT does this by doing the equivalent C code <code>&amp;text[1]</code>. Unfortunately, probably due to a (still unconfirmed) <a href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=68370">bug</a> GCC JIT requires us to compute the also-equivalent-but-including-an-unnecessary-cast <code>(const char*)&amp;text[1]</code>. Since we do this last operation several times in our matcher, we already have a <code>text_plus_one</code> variable representing this computation. We created it before entering the loop that processes the regular expression.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+</pre></td><td class="code"><pre>  <span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">text_plus_one</span> <span class="o">=</span> 
+    <span class="n">gcc_jit_context_new_cast</span><span class="p">(</span>                     <span class="c1">// (const char*)&amp;text[1]</span>
+        <span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_lvalue_get_address</span><span class="p">(</span>               <span class="c1">// &amp;text[1]</span>
+          <span class="n">gcc_jit_context_new_array_access</span><span class="p">(</span>       <span class="c1">// text[1]</span>
+            <span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">rval_text</span><span class="p">,</span>                            <span class="c1">// text</span>
+            <span class="n">gcc_jit_context_one</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">)),</span>  <span class="c1">// 1</span>
+          <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">),</span>
+        <span class="n">const_char_ptr_type</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+So in next_block above (line 245) we add an assignment to text with the expression in text_plus_one, effectively computing <code>text = &amp;text[1]</code> which is the same (albeit a bit more convoluted) as <code>text++</code>, or <code>text += 1</code> or <code>text = text + 1</code>. And now next_block becomes current_block (line 250). Finally we move on to the next letter of the regular expression (line 253).
+</p>
+
+<p>
+The case for <code>c</code>, shown below, is very similar but now we just return zero if the current letter of the text, i.e <code>*text</code>, is not the same as the current letter (line 270) of the regular expression.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+</pre></td><td class="code"><pre>    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">generate_return_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">matchhere</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">return_zero</span><span class="p">);</span>
+
+      <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">next_block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+
+      <span class="c1">// if (*text != regexp[0])</span>
+      <span class="c1">//    return 0;</span>
+      <span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span>
+          <span class="n">current_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">GCC_JIT_COMPARISON_NE</span><span class="p">,</span> 
+            <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span>
+              <span class="n">gcc_jit_rvalue_dereference</span><span class="p">(</span><span class="n">rval_text</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">)</span>
+              <span class="p">),</span>
+            <span class="n">gcc_jit_context_new_rvalue_from_int</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">char_type</span><span class="p">,</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
+          <span class="n">return_zero</span><span class="p">,</span>
+          <span class="n">next_block</span><span class="p">);</span>
+
+      <span class="c1">// text = &amp;text[1]; // pointer arithmetic</span>
+      <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span><span class="n">next_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_param_as_lvalue</span><span class="p">(</span><span class="n">param_text</span><span class="p">),</span>
+          <span class="n">text_plus_one</span><span class="p">);</span>
+
+      <span class="c1">// Chain the code</span>
+      <span class="n">current_block</span> <span class="o">=</span> <span class="n">next_block</span><span class="p">;</span>
+
+      <span class="c1">// Done with the current letter</span>
+      <span class="n">regexp</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+You may be wondering what is this <code>new_block_name</code> (lines 229 and 259) that we use when creating a new block. It is just a function that returns a new block name, this may be useful for debugging the JIT compiled code. Along with that function we have <code>new_function_name</code> and <code>new_local_name</code> that do something similar and we will use them when implementing the Kleene star. The three functions are shown below (although they are not particularly interesting).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+</pre></td><td class="code"><pre><span class="k">static</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="nf">new_block_name</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">static</span> <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">enum</span> <span class="p">{</span> <span class="n">SIZE</span> <span class="o">=</span> <span class="mi">16</span> <span class="p">};</span>
+  <span class="k">static</span> <span class="kt">char</span> <span class="n">c</span><span class="p">[</span><span class="n">SIZE</span><span class="p">];</span>
+
+  <span class="n">snprintf</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">SIZE</span><span class="p">,</span> <span class="s">"block-%02d"</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+  <span class="n">c</span><span class="p">[</span><span class="n">SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+
+  <span class="n">n</span><span class="o">++</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="nf">new_function_name</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">static</span> <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">enum</span> <span class="p">{</span> <span class="n">SIZE</span> <span class="o">=</span> <span class="mi">16</span> <span class="p">};</span>
+  <span class="k">static</span> <span class="kt">char</span> <span class="n">c</span><span class="p">[</span><span class="n">SIZE</span><span class="p">];</span>
+
+  <span class="n">snprintf</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">SIZE</span><span class="p">,</span> <span class="s">"matchhere_%d"</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+  <span class="n">c</span><span class="p">[</span><span class="n">SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+
+  <span class="n">n</span><span class="o">++</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="nf">new_local_name</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">static</span> <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">enum</span> <span class="p">{</span> <span class="n">SIZE</span> <span class="o">=</span> <span class="mi">16</span> <span class="p">};</span>
+  <span class="k">static</span> <span class="kt">char</span> <span class="n">c</span><span class="p">[</span><span class="n">SIZE</span><span class="p">];</span>
+
+  <span class="n">snprintf</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">SIZE</span><span class="p">,</span> <span class="s">"tmp_%d"</span><span class="p">,</span> <span class="n">n</span><span class="p">);</span>
+  <span class="n">c</span><span class="p">[</span><span class="n">SIZE</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+
+  <span class="n">n</span><span class="o">++</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Now we can proceed to implement the Kleene star. I left if for the last because its implementation is slightly longer. As we mentioned above, the original algorithm matches the current text with the remaining regular expression (after the *). So what we need is specialized matcher for the remainder of the regexp. We can do that by recursively calling the current function to generate such matcher. Cool, right? :)
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">153
+154
+155
+156
+</pre></td><td class="code"><pre>    <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'*'</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Generate code for the remaining regular expression</span>
+      <span class="n">gcc_jit_function</span> <span class="o">*</span><span class="n">remaining_regexp_match</span> <span class="o">=</span> <span class="n">generate_code_matchhere</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">regexp</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">new_function_name</span><span class="p">());</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Now we need two more blocks, <code>loop_body</code> and <code>loop_check</code>, and we will end the current block with an unconditional jump to <code>loop_body</code>. This is implementing the initial semantics of the C do-while statement: we first enter the loop body prior checking the condition.
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">158
+159
+160
+161
+</pre></td><td class="code"><pre>      <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">loop_body</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+      <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">loop_check</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+
+      <span class="n">gcc_jit_block_end_with_jump</span><span class="p">(</span><span class="n">current_block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">loop_body</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+If you check the code of matchstar above you will see that inside the do-while we first call <code>matchhere</code> with the remainder of the regular expression. So this is what we do now.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+</pre></td><td class="code"><pre>      <span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">args</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">rval_text</span> <span class="p">};</span>
+      <span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">match_remainder</span> <span class="o">=</span> 
+        <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span>
+            <span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+            <span class="n">GCC_JIT_COMPARISON_NE</span><span class="p">,</span>
+            <span class="n">gcc_jit_context_new_call</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+              <span class="n">remaining_regexp_match</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="p">),</span>
+            <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">));</span>
+
+      <span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span><span class="n">loop_body</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">match_remainder</span><span class="p">,</span>
+          <span class="n">return_one</span><span class="p">,</span>
+          <span class="n">loop_check</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+We will call the remainig regexp matcher (lines 168-169) passing as the argument the current text (line 163). We will compare the result of the matcher with zero (lines 165 to 170) to end with a conditional jump the <code>loop_body</code> block. If the result is not zero, it means that the matcher of the remaining regepx did match so we return one. Otherwise we go to the <code>loop_check</code> block, this is the <em>while</em> part of the do-while in <code>matchstar</code>.
+</p>
+
+<p>
+Now there is a bit of complexity caused by the <code>*text++ == c</code> syntax. As I said above, this is equivalent to do the following.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">tmp</span> <span class="o">=</span> <span class="o">*</span><span class="n">text</span><span class="p">;</span>
+<span class="n">text</span><span class="o">++</span><span class="p">;</span>
+<span class="n">tmp</span> <span class="o">==</span> <span class="n">c</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+So we have to create a <em>temporary variable</em> to store <code>*text</code>, then increment <code>text</code> and then use the temporary variable for the comparison itself. So this is what we do.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">177
+178
+179
+180
+181
+182
+</pre></td><td class="code"><pre>      <span class="n">gcc_jit_lvalue</span><span class="o">*</span> <span class="n">tmp</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_local</span><span class="p">(</span><span class="n">matchhere</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">char_type</span><span class="p">,</span> <span class="n">new_local_name</span><span class="p">());</span>
+      <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span>
+          <span class="n">loop_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">tmp</span><span class="p">,</span>
+          <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span>
+            <span class="n">gcc_jit_rvalue_dereference</span><span class="p">(</span><span class="n">rval_text</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">)));</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+We create a new temporary variable (line 177) and then we assign to it the value of <code>*text</code>.</p> Now our code will be different depending on whether the Kleene star was <code>c*</code> or <code>.*</code>. For the latter case we just compute if the temporary is not equal (lines 188 to 191) to <code>(char)0</code> (line 191).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">184
+185
+186
+187
+188
+189
+190
+191
+192
+</pre></td><td class="code"><pre>      <span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">check_expr</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'.'</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">check_expr</span> <span class="o">=</span>
+          <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+              <span class="n">GCC_JIT_COMPARISON_NE</span><span class="p">,</span>
+              <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span>
+              <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">char_type</span><span class="p">));</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+For the former case (i.e. <code>c*</code>), we just compute if the temporary is equal (lines 196 to 199) to <code>c</code> (line 199).
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">193
+194
+195
+196
+197
+198
+199
+200
+</pre></td><td class="code"><pre>      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="n">check_expr</span> <span class="o">=</span>
+          <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+              <span class="n">GCC_JIT_COMPARISON_EQ</span><span class="p">,</span>
+              <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span>
+              <span class="n">gcc_jit_context_new_rvalue_from_int</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">char_type</span><span class="p">,</span> <span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]));</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Next, we perform <code>text++</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">202
+203
+204
+</pre></td><td class="code"><pre>      <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span><span class="n">loop_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_param_as_lvalue</span><span class="p">(</span><span class="n">param_text</span><span class="p">),</span>
+          <span class="n">text_plus_one</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+And finally we end the <code>loop_check</code> block with a conditional jump, depending on whether the comparison was true or not (line 205). If the comparison was false, it means that neither the remainder of the regular expression matched neither the current letter of the regular expression matches the Kleene star, so we return zero (line 208). If the comparison was true (line 207) we just go back to the <em>do</em> part of the do-while.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">205
+206
+207
+208
+209
+210
+</pre></td><td class="code"><pre>      <span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span><span class="n">loop_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">check_expr</span><span class="p">,</span>
+          <span class="n">loop_body</span><span class="p">,</span>
+          <span class="n">return_zero</span><span class="p">);</span>
+
+      <span class="k">break</span><span class="p">;</span> <span class="c1">// We are done</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+After this, we are done with the regular expression (line 210). We stop processing the regular expression at this point because, the remainder of it is already being processed in a matcher that we created for this Kleene star case. It may be surprising that for a regular expression like <code>ab*c</code>, the matcher only generates code for <code>ab*</code>, but take into account that we created a matcher for <code>c</code>, that is being used when matching <code>b*</code>.
+</p>
+
+<p>
+Finally we return the function we have created. This is important because we need to call this function from the JIT compiled code (from the <code>match</code> function or from the Kleene star code).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">293
+294
+</pre></td><td class="code"><pre>  <span class="k">return</span> <span class="n">matchhere</span><span class="p">;</span>
+<span class="err">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<h3>match</h3>
+
+<p>
+Phew, that was long, but we are not done yet. We have to implement the match function. The match function handles <code>^</code> (if any).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">296
+297
+298
+299
+300
+301
+302
+303
+</pre></td><td class="code"><pre><span class="kt">void</span> <span class="nf">generate_code_regexp</span><span class="p">(</span><span class="n">gcc_jit_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">regexp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">matchhere_regexp</span> <span class="o">=</span> <span class="n">regexp</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'^'</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">matchhere_regexp</span><span class="o">++</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">gcc_jit_function</span><span class="o">*</span> <span class="n">matchhere</span> <span class="o">=</span> <span class="n">generate_code_matchhere</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">matchhere_regexp</span><span class="p">,</span> <span class="s">"matchhere"</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+We first generate a matcher for the regular expression (line 303) skipping an initial <code>^</code> if any (lines 299 to 302). To do this we use the code generator shown in the previous section.
+</p>
+
+<p>
+Now we create a match function, that like matchhere, will just receive a text as a parameter.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">310
+311
+312
+313
+314
+315
+316
+</pre></td><td class="code"><pre>  <span class="n">gcc_jit_param</span> <span class="o">*</span><span class="n">param_text</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_param</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">const_char_ptr_type</span><span class="p">,</span> <span class="s">"text"</span><span class="p">);</span>
+  <span class="n">gcc_jit_rvalue</span> <span class="o">*</span><span class="n">rval_text</span> <span class="o">=</span> <span class="n">gcc_jit_param_as_rvalue</span><span class="p">(</span><span class="n">param_text</span><span class="p">);</span>
+
+  <span class="n">gcc_jit_param</span><span class="o">*</span> <span class="n">params</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">param_text</span> <span class="p">};</span>
+  <span class="n">gcc_jit_function</span> <span class="o">*</span><span class="n">match</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_function</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+      <span class="n">GCC_JIT_FUNCTION_EXPORTED</span><span class="p">,</span> <span class="n">int_type</span><span class="p">,</span> <span class="s">"match"</span><span class="p">,</span>
+      <span class="mi">1</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="cm">/* is_variadic */</span> <span class="mi">0</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Note that this time the function is exported, because we will call it outside of the JIT compiler context.
+</p>
+
+<p>
+Since we will have to call <code>matchhere</code>, let's prepare a call now that we will use later.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">318
+319
+320
+321
+</pre></td><td class="code"><pre>  <span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">args</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">rval_text</span> <span class="p">};</span>
+  <span class="n">gcc_jit_rvalue</span><span class="o">*</span> <span class="n">call_to_matchhere</span> <span class="o">=</span> <span class="n">gcc_jit_context_new_call</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+      <span class="n">matchhere</span><span class="p">,</span>
+      <span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Now let's conditionally generate code depending on whether the regular expression started with <code>^</code>. If it does, the code is rather simple.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+</pre></td><td class="code"><pre>  <span class="k">if</span> <span class="p">(</span><span class="n">regexp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'^'</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">block</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+
+    <span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+        <span class="n">block</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">GCC_JIT_COMPARISON_NE</span><span class="p">,</span> 
+          <span class="n">call_to_matchhere</span><span class="p">,</span>
+          <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">)));</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+We only have to check (lines 328 to 331) if the result of the call to <code>matchhere</code> (line 330) is not equal to zero (line 331) and use that value as the return of the <code>match</code> function.
+</p>
+
+<p>
+If the regular expression does not start with <code>^</code>, then we have to succesively match suffixes of the text. We need a loop for that, so the required code is a bit longer.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+</pre></td><td class="code"><pre>  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">loop_body</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+    <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">return_one</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+    <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">condition_check</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+    <span class="n">gcc_jit_block</span><span class="o">*</span> <span class="n">return_zero</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_block</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">new_block_name</span><span class="p">());</span>
+
+    <span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span>
+        <span class="n">loop_body</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">GCC_JIT_COMPARISON_NE</span><span class="p">,</span> 
+          <span class="n">call_to_matchhere</span><span class="p">,</span>
+          <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">)),</span>
+        <span class="n">return_one</span><span class="p">,</span>
+        <span class="n">condition_check</span><span class="p">);</span>
+
+    <span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+        <span class="n">return_one</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_one</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">));</span>
+
+    <span class="n">gcc_jit_lvalue</span><span class="o">*</span> <span class="n">tmp</span> <span class="o">=</span> <span class="n">gcc_jit_function_new_local</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">char_type</span><span class="p">,</span> <span class="n">new_local_name</span><span class="p">());</span>
+    <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span>
+        <span class="n">condition_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">tmp</span><span class="p">,</span>
+        <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span>
+          <span class="n">gcc_jit_rvalue_dereference</span><span class="p">(</span><span class="n">rval_text</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">)));</span>
+    <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span>
+        <span class="n">condition_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_param_as_lvalue</span><span class="p">(</span><span class="n">param_text</span><span class="p">),</span>
+        <span class="n">gcc_jit_context_new_cast</span><span class="p">(</span>
+          <span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">gcc_jit_lvalue_get_address</span><span class="p">(</span>
+            <span class="n">gcc_jit_context_new_array_access</span><span class="p">(</span>
+              <span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+              <span class="n">rval_text</span><span class="p">,</span>
+              <span class="n">gcc_jit_context_one</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">)),</span>
+            <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">),</span>
+          <span class="n">const_char_ptr_type</span><span class="p">));</span>
+    <span class="n">gcc_jit_block_end_with_conditional</span><span class="p">(</span>
+        <span class="n">condition_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_new_comparison</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+          <span class="n">GCC_JIT_COMPARISON_NE</span><span class="p">,</span> 
+          <span class="n">gcc_jit_lvalue_as_rvalue</span><span class="p">(</span><span class="n">tmp</span><span class="p">),</span>
+          <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">char_type</span><span class="p">)),</span>
+        <span class="n">loop_body</span><span class="p">,</span>
+        <span class="n">return_zero</span><span class="p">);</span>
+
+    <span class="n">gcc_jit_block_end_with_return</span><span class="p">(</span>
+        <span class="n">return_zero</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
+        <span class="n">gcc_jit_context_zero</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">int_type</span><span class="p">));</span>
+  <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+We will need four blocks. A <code>loop_body</code> block for the do-while (note that since <code>loop_body</code> is the first block created for the function it will be the entry block of the function), a condition_check where we will check if we have reached the end of the text, and two <code>return_zero</code> and <code>return_one</code> blocks that simply <code>return 0</code> (lines 380 to 382) and <code>return 1</code> (lines 349 to 351) respectively. We end the loop_body block conditionally (line 340) depending on whether the call to matchhere (line 344) returns a value different to zero (line 342 to 345). If it does it means there was a match and then we go to <code>return_one</code>, otherwise we go to the <code>condition_check</code> block.
+</p>
+
+<p>
+Again in the condition of the loop we find <code>*text++ == '\0'</code> which again we have to decompose in <code>tmp = *text; text++; tmp != '\0'</code> (lines 353 to 370). We check if <code>tmp</code> is different to zero (lines 373 to 376). If it is we just go back to the loop body, otherwise we return zero (lines 371 to 378). This is similar to the code we generated for check in the loop of the Kleene star matcher.
+</p>
+
+<h3>Driver</h3>
+
+<p>
+We are close to the end. We still need to change our main function to generate and compile the code and then run the called code.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"usage: %s regex filename</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+    <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">regexp</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+  <span class="n">gcc_jit_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">;</span>
+  <span class="n">ctx</span> <span class="o">=</span> <span class="n">gcc_jit_context_acquire</span> <span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">ctx</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"acquired context is NULL"</span><span class="p">);</span>
+
+  <span class="n">gcc_jit_context_set_int_option</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">GCC_JIT_INT_OPTION_OPTIMIZATION_LEVEL</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+
+  <span class="n">generate_code_regexp</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">regexp</span><span class="p">);</span>
+
+  <span class="n">gcc_jit_result</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">gcc_jit_context_compile</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"compilation failed"</span><span class="p">);</span>
+
+  <span class="kt">void</span> <span class="o">*</span><span class="n">function_addr</span> <span class="o">=</span> <span class="n">gcc_jit_result_get_code</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="s">"match"</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">function_addr</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"error getting 'match'"</span><span class="p">);</span>
+
+  <span class="k">typedef</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">match_fun_t</span><span class="p">)(</span><span class="k">const</span> <span class="kt">char</span><span class="o">*</span><span class="p">);</span>
+  <span class="n">match_fun_t</span> <span class="n">match</span> <span class="o">=</span> <span class="p">(</span><span class="n">match_fun_t</span><span class="p">)</span><span class="n">function_addr</span><span class="p">;</span>
+
+  <span class="kt">FILE</span> <span class="o">*</span><span class="n">f</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">"r"</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">f</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"error opening file '%s': %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+        <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+        <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+    <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_FAILURE</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kt">char</span><span class="o">*</span> <span class="n">line</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+  <span class="kt">size_t</span> <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">getline</span><span class="p">(</span><span class="o">&amp;</span><span class="n">line</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">length</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">match</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+      <span class="n">fprintf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="s">"%s"</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">free</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+  <span class="n">fclose</span><span class="p">(</span><span class="n">f</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Most of the code is similar to the driver at the beginning of the post. The only relevant parts are that now we first generate the code calling <code>generate_code_regexp</code> (line 407). This will populate the JIT compiler context so we can compile it (line 409). Once compiled it is just a matter of getting the address of the <code>match</code> function. See how this time our <code>match</code> function only has one parameter. The regexp itself has been embedded in its code because we have generated a specialized matcher. Optionally we can enable <code>-O2</code> optimization level so the generated code is faster (at expense of a slower JIT compilation).
+</p>
+
+<h2>Cliffhanger 8-)</h2>
+
+<p>
+In the next chapter we will get some performance numbers in order to see if it was worth or not to use JIT compilation to speed up or regular expression matcher.
+</p>
+
+<p>
+That's all for today
+</p>
+</p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/11/14/toying-gcc-jit-part-1/">&laquo; Toying with GCC JIT – Part 1</a>
+
+
+  <a class="next" href="/2015/11/20/toying-gcc-jit-part-3/">Toying with GCC JIT – Part 3 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

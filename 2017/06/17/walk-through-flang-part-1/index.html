@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 1</title>
+  <meta name="description" content="Flang is an open source project to create a Fortran compiler for LLVM. It is based on NVIDIA/PGI Fortran and it has been released under Apache License 2.0. In this series we will do a walk-through the code of this compiler and how it has been integrated in the existing LLVM infrastructure.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/06/17/walk-through-flang-part-1/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 1">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/06/17/walk-through-flang-part-1/">
+  <meta property="og:description" content="Flang is an open source project to create a Fortran compiler for LLVM. It is based on NVIDIA/PGI Fortran and it has been released under Apache License 2.0. In this series we will do a walk-through the code of this compiler and how it has been integrated in the existing LLVM infrastructure.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 1">
+  <meta name="twitter:description" content="Flang is an open source project to create a Fortran compiler for LLVM. It is based on NVIDIA/PGI Fortran and it has been released under Apache License 2.0. In this series we will do a walk-through ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 1</h1>
+    
+    <p class="post-meta"><time datetime="2017-06-17T23:29:53+00:00" itemprop="datePublished">Jun 17, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="https://github.com/flang-compiler/flang">Flang</a> is an open source project to create a Fortran compiler for LLVM. It is based on <a href="http://www.pgroup.com/">NVIDIA/PGI Fortran</a> and it has been released under Apache License 2.0. In this series we will do a walk-through the code of this compiler and how it has been integrated in the existing LLVM infrastructure.</p>
+
+<!--more-->
+
+<h2>Introduction</h2>
+
+<p>
+Fortran is a very old programming language. Invented in 1956 by a team in IBM led by John Backus, Fortran represented the first successful <em>high-level</em> programming language system which generated code that was realistically efficient. Much has happened since then, Fortran was standardized in <span style="font-variant: small-caps;">Fortran 77</span> and then in Fortran 90, Fortran 95, Fortran 2003 and Fortran 2008. Most commercial offerings nowadays support Fortran 2003 and some subset of Fortran 2008. Today Fortran is a niche language which is mostly used for numerical computing and high-performance computing (HPC) though newer languages like <a href="https://julialang.org/">Julia</a> aim at replacing it.
+</p>
+
+<p>
+The GNU project in his GNU Compiler Collection (GCC), has for long had a Fortran compiler: first g77 (<span style="font-variant: small-caps;">Fortran 77</span> only) and then <code>gfortran</code> (Fortran 95 and later versions). The LLVM project, being a newer project, never had such a compiler. I believe that at some point the flang project will fill this gap although this may not happen in the short-term.
+</p>
+
+<h2>The LLVM project</h2>
+
+<p>
+The <a href="http://www.llvm.org">LLVM project</a> is an umbrella project for the development of compilers using open-source modular components. In contrast to GCC, LLVM uses a permissive license which, in principle, is more appealing for companies that develop commercial products on top of those components. The LLVM infrastructure lies around the LLVM IR which is basically a common representation for the middle-end of the compiler, where most target-independent transformations happen, but the project also includes a C/C++ compiler (<a href="http://clang.llvm.org">clang</a>), an implementation of the C++ Standard Library (<a href="http://libcxx.llvm.org/">libcxx</a>), a linker (<a href="http://lld.llvm.org/">lld</a>), a debugger (<a href="http://lldb.llvm.org/">lldb</a>) and other compilation-related components.
+
+<h2>Installation of flang</h2>
+
+<p>
+Before we dig in the code of flang, we will want to install it. Fortunately this is documented in <a href="https://github.com/flang-compiler/flang/blob/master/README.md">the upstream README.md</a> but I will repeat the steps here.
+</p>
+
+<p>
+First choose a path where you will install LLVM, clang and flang. Let's call this path the <code>INSTALLDIR</code> directory and put it in an environment variable. Make sure it is an absolute path.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">export </span><span class="nv">INSTALLDIR</span><span class="o">=</span>/some/path/to/install/flang</code></pre></figure>
+
+
+<p>
+Also choose a directory where you will fetch the source code and build the components, it should be diferent to <code>INSTALLDIR</code>. I will call this directory <code>STAGEDIR</code> and inside of it I will create <code>STAGEDIR/build</code>, which I will call the <code>BUILDDIR</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>build
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">BUILDDIR</span><span class="o">=</span>STAGEDIR/build</code></pre></figure>
+
+
+<p>
+Inside <code>STAGEDIR</code>, let's fetch first the code of LLVM 4.0, the command below will create a directory <code>STAGEDIR/llvm</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>
+<span class="nv">$ </span>git clone <span class="nt">--depth</span> 1 <span class="nt">-b</span> release_40 https://github.com/llvm-mirror/llvm.git</code></pre></figure>
+
+
+<p>
+Now, inside <code>STAGEDIR/llvm/tools</code>, check out the code of a clang that has been modified to be able to invoke the flang components. This will create a directory <code>STAGEDIR/llvm/tools/clang</code>
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>/llvm/tools
+<span class="nv">$ </span>git clone <span class="nt">--depth</span> 1 <span class="nt">-b</span> flang_release_40 https://github.com/flang-compiler/clang.git</code></pre></figure>
+
+
+<p>
+One dependence of flang is the Intel OpenMP Runtime Library (OpenMP RTL), so we have to check it out inside <code>STAGEDIR/llvm/projects</code>. This will create a directory <code>STAGEDIR/llvm/projects</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>/llvm/projects
+<span class="nv">$ </span>git clone <span class="nt">-b</span> release_40 https://github.com/llvm-mirror/openmp.git</code></pre></figure>
+
+
+<p>
+At this point we can already build llvm, clang and the OpenMP RTL. You can also remove <code>-G Ninja</code> if you prefer to use the Makefile generator instead of the <a href="https://ninja-build.org/">ninja</a> one.  We are passing the option <code>-DBUILD_SHARED_LIBS=ON</code> because we are building the Debug version of llvm/clang, otherwise, because of debug information, the static binaries are huge and take a lot of time and memory of the system to link, this should not make any difference in the final setup. If you do not want to build with debug information you can pass the option <code>-DCMAKE_BUILD_TYPE=Release</code> in all invocations of <code>cmake</code> below.
+<p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$BUILDDIR</span>
+<span class="nv">$ </span>cmake ../llvm/ <span class="se">\</span>
+   <span class="nt">-G</span> Ninja <span class="se">\</span>
+   <span class="nt">-DBUILD_SHARED_LIBS</span><span class="o">=</span>ON <span class="se">\</span>
+   <span class="nt">-DCMAKE_INSTALL_PREFIX</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>
+&lt;... lots of output ...&gt;
+<span class="nv">$ </span>ninja
+&lt;... takes some <span class="nb">time</span> ...&gt;
+<span class="nv">$ </span>ninja <span class="nb">install</span></code></pre></figure>
+
+
+<p>
+The <code>ninja</code> build step will take several minutes depending on your machine. Be patient. A few warnings may appear in particular when building the OpenMP RTL. Once this step completes now we have llvm and clang but not flang yet.
+</p>
+
+<p>
+Now let's checkout flang code inside <code>STAGEDIR</code>. This will create a directory <code>STAGEDIR/flang</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>
+<span class="nv">$ </span>git clone https://github.com/flang-compiler/flang.git</code></pre></figure>
+
+
+<p>
+Now create a build-flang directory where we will build flang only.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>build-flang</code></pre></figure>
+
+
+<p>
+Building flang has to be done using the just compiled clang so we have to pass more flags to cmake. Unfortunately the ninja generator of cmake still does not support Fortran, so we will have to use the regular Makefile generator. We cannot use <code>-DBUILD_SHARED_LIBS=ON</code> either due to some problems in the layering of the code. The option <code>-DCMAKE_INSTALL_RPATH=$INSTALLDIR/lib</code> works around a problem when linking Fortran programs in flang. Also compiling in parallel may fail, if it happens, simply invoking again <code>make</code> without the <code>-j</code> option should do. 
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$STAGEDIR</span>/build-flang
+<span class="nv">$ </span>cmake ../flang <span class="se">\</span>
+    <span class="nt">-DCMAKE_INSTALL_PREFIX</span><span class="o">=</span><span class="nv">$INSTALLDIR</span> <span class="se">\</span>
+    <span class="nt">-DCMAKE_CXX_COMPILER</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/bin/clang++ <span class="se">\</span>
+    <span class="nt">-DCMAKE_C_COMPILER</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/bin/clang <span class="se">\</span>
+    <span class="nt">-DCMAKE_Fortran_COMPILER</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/bin/flang <span class="se">\</span>
+    <span class="nt">-DCMAKE_INSTALL_RPATH</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/lib
+<span class="nv">$ </span>make <span class="nt">-j</span><span class="si">$(</span><span class="nb">nproc</span><span class="si">)</span>
+&lt;... takes some <span class="nb">time </span>and prints lots of things ...&gt;
+<span class="nv">$ </span>make <span class="nb">install</span></code></pre></figure>
+
+
+<p>
+Once this process completes we should have flang installed. Let's make some smoke test. Create a file <code>test.f90</code> with the following contents.
+</p>
+
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="code"><pre><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span><span class="w">
+  </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="k">NONE</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">X</span><span class="w">
+
+  </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"Please, enter a number"</span><span class="w">
+  </span><span class="k">READ</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">X</span><span class="w">
+  </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"The square root of "</span><span class="p">,</span><span class="w"> </span><span class="n">X</span><span class="p">,</span><span class="w"> </span><span class="s2">" is "</span><span class="p">,</span><span class="w"> </span><span class="nb">SQRT</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+Now build it using flang.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ $INSTALLDIR</span>/bin/flang <span class="nt">-o</span> <span class="nb">test </span>test.f90</code></pre></figure>
+
+
+<p>
+If you try to run it, however, you will see this error.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>./test
+./test: error <span class="k">while </span>loading shared libraries: libflang.so: cannot open shared object file: No such file or directory</code></pre></figure>
+
+
+<p>
+This is kind of expected, the program is not finding the libraries of the Fortran runtime. There are several solutions to this problem, but the simpler one is the following.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">export </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/lib:<span class="nv">$LD_LIBRARY_PATH</span></code></pre></figure>
+
+
+<p>
+Now it should work (type a number and press Enter, in the example below I used 17).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>./test
+ Please, enter a number
+17
+ The square root of     17.00000      is     4.123106    </code></pre></figure>
+
+
+<h3>Environment script</h3>
+
+<p>
+It may be convenient to create a small script to configure the environment correctly before using flang.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"export PATH=</span><span class="nv">$INSTALLDIR</span><span class="s2">/bin:</span><span class="se">\$</span><span class="s2">PATH"</span> <span class="o">&gt;</span> flang-env.sh
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"export LD_LIBRARY_PATH=</span><span class="nv">$INSTALLDIR</span><span class="s2">/lib:</span><span class="se">\$</span><span class="s2">LD_LIBRARY_PATH"</span> <span class="o">&gt;&gt;</span> flang-env.sh</code></pre></figure>
+
+
+<p>
+Before using flang simply loading this script will do.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">source </span>flang-env.sh</code></pre></figure>
+
+
+<h3>Installation script</h3>
+
+<p>
+I made a <a href="https://gist.github.com/rofirrim/4af6d876f9ea9aea0957cb2d830de05d">simple installation script</a> that does the steps shown above. This script should be run inside an empty directory and it will use the current directory as <code>STAGEDIR</code> and <code>STAGEDIR/install</code> as <code>INSTALLDIR</code>. Also note that this script does not check if you have already cloned the git repositories, so if you want to replay part of the process you may need to comment parts of it.
+</p>
+
+<p>
+Ok, that's enough for today. In the next chapter we will see the high level workflow when compiling with flang.
+</p>
+</p></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/06/15/10-years-geek/">&laquo; 10 years of Think In Geek</a>
+
+
+  <a class="next" href="/2017/06/17/walk-through-flang-part-2/">Walk-through flang – Part 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

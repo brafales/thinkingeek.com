@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 5</title>
+  <meta name="description" content="In the previous installment of this series we saw how flang parses the statements using an LR(1) algorithm. As the parser recognized the parts of the statements it invokes semantic actions. Today we’re going to talk more about them.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/10/07/walk-through-flang-part-5/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 5">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/10/07/walk-through-flang-part-5/">
+  <meta property="og:description" content="In the previous installment of this series we saw how flang parses the statements using an LR(1) algorithm. As the parser recognized the parts of the statements it invokes semantic actions. Today we’re going to talk more about them.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 5">
+  <meta name="twitter:description" content="In the previous installment of this series we saw how flang parses the statements using an LR(1) algorithm. As the parser recognized the parts of the statements it invokes semantic actions. Today w...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 5</h1>
+    
+    <p class="post-meta"><time datetime="2017-10-07T17:46:54+00:00" itemprop="datePublished">Oct 7, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the previous installment of this series we saw how flang parses the statements using an LR(1) algorithm. As the parser recognized the parts of the statements it invokes semantic actions. Today we’re going to talk more about them.</p>
+
+<!--more-->
+
+<h2>What is not being "parsed" yet</h2>
+
+<p>
+In part 4 we saw that the parser uses an LR(1) algorithm to parse the Fortran statements. But Fortran has constructs that require a specific sequence of statements: for instance a (block) do-construct is formed by a do-statement, followed by one or more statements and constructs and ended with an end-do-statement. Also not all statements are not useable in all contexts, for instance we cannot use an assignment-statement in the non-executable part of a MODULE program unit, use more than once the <code>CONTAINS</code> statement in any program unit or declare a variable once we have assigned a variable (unless we have started a new BLOCK construct).
+</p>
+
+<p>
+The examples above are just a few of the things that the parser, because of the kind of grammars used today, can't really check by itself. We have to do these syntactical checks elsewhere. But there are other aspects of the language that the parser cannot check, for instance whether we're declaring a variable twice or using it in a way that would render an ill-formed program. For instance one cannot pass a <code>REAL</code> variable as argument of a function expecting an <code>INTEGER</code> parameter.
+</p>
+
+<p>
+Luckily as we recognize the statements of the program we can react to them and assess their validity and meaning. What has to be done when a part of the language is recognized can be named as a semantic action. Although not all actions are strictly related to semantics because some of them will simply validate syntactical properties (they will be concerned only about the form instead of the meaning).
+</p>
+
+<h3>Displeasure</h3>
+
+<p>
+It is precisely this semantic analysis of front-ends and parsers the one that most people find annoying. The reason is that the solutions are usually very ad-hoc, extremely tailored to the language, rarely general or systematic enough. Don't get surprised if this part of flang is precisely an example of this. Of course it does not have to be like this but it is hard (and difficult to motivate) to do otherwise.
+</p>
+
+<h2>Semantic actions and values</h2>
+
+<p>
+Semantic actions are a way of implementing a theoretical formalism called <em>attribute grammars</em>. Attribute grammars associate properties to terminals and non-terminals called <em>attributes</em>. These attributes can be synthesized or inherited. Purely synthesized attributes are those that are defined strictly by the part of the language. For instance an expression 1.0 + 1 we know it will have type <code>REAL</code> and an expression <code>1 + 1</code> will have a type <code>INTEGER</code>. We can easily identify the type of an expression as a synthesized attribute of expressions. An inherited attribute, though, is one that depends on the specific situation of the part of the language. These are attributes that somehow denote context. For instance in the following example, the expression <code>A + 1</code> has type <code>REAL</code>. And we know this because A has type <code>REAL</code>. If we redeclare <code>A</code> as an <code>INTEGER</code> the expression <code>A + 1</code> has type <code>INTEGER</code>. This is because the occurrence of <code>A</code> in an expression may have a type or another depending on the "declared type" of <code>A</code>, that declared type is an inherited attribute at this point.
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">REAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="w">
+</span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">42</span><span class="w">
+</span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span></code></pre></figure>
+
+<p>
+You will see that implementing attribute grammars in an LR(1) parser will end in mixed feelings.
+</p>
+
+<p>
+For the synthesized attributes, we use <em>semantic values</em>. Each part of the language (token or rule) is informally (i.e. enforced by checks/assumptions in the code) assigned a semantic value. There are many types of semantic values defined in <code>semant.h</code> but the 4 most used ones are the following:
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cp">#define S_CONST 1    </span><span class="cm">/* scalar constant */</span><span class="cp">
+#define S_EXPR 2     </span><span class="cm">/* expression */</span><span class="cp">
+#define S_LVALUE 3   </span><span class="cm">/* non-whole variable */</span><span class="cp">
+#define S_IDENT 7    </span><span class="cm">/* identifier, possibly a whole variable */</span></code></pre></figure>
+
+<p>
+<code>S_EXPR</code> is used for general expressions. <code>S_CONST</code> is used for expressions that denote constants or for contexts where a constant is required. <code>S_LVALUE</code> and <code>S_IDENT</code> represent variables in Fortran parlance, this is, expressions that denote some storage in memory. Usually these expressions appear at the left of an assigment hence the name <em>lvalue</em>. <code>S_IDENT</code> may also be used for places where the name of an identifier is required.
+</p>
+
+<p>
+All semantic values, regardless of their particular type share a few attributes that are always available. The semantic value is defined in <code>semstk.h</code> and their type in C is <code>SST</code> but in general only pointers to it will be used.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semstk.h</figcaption><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">sst</span> <span class="p">{</span>
+  <span class="kt">short</span> <span class="n">id</span><span class="p">;</span>           <span class="cm">/* type of this stack entry */</span>
+  <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">flag</span><span class="p">;</span> <span class="cm">/* general flag */</span>
+  <span class="kt">unsigned</span> <span class="n">f1</span> <span class="o">:</span> <span class="mi">1</span><span class="p">;</span>    <span class="cm">/* plain expr flag - 0 =&gt; no parens */</span>
+  <span class="kt">unsigned</span> <span class="n">f2</span> <span class="o">:</span> <span class="mi">1</span><span class="p">;</span>    <span class="cm">/* id is an alias */</span>
+  <span class="kt">int</span> <span class="n">ast</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">mnoff</span><span class="p">;</span> <span class="cm">/* derived type flag &amp; information */</span>
+  <span class="kt">int</span> <span class="n">sr</span><span class="p">;</span>    <span class="cm">/* save &amp; restore word */</span>
+  <span class="cm">/* value of this stack entry */</span>
+  <span class="p">...</span>
+<span class="p">}</span> <span class="n">SST</span><span class="p">;</span></code></pre></figure>
+
+<p>
+The field <code>id</code> stores the type (e.g. <code>S_CONST</code> or <code>S_EXPR</code>). Another important field is <code>ast</code> where an identifier to an AST tree will be stored, ASTs will represent computation itself. The other fields are used less often as they have narrower meanings.
+</p>
+
+<p>
+A <code>SST</code> also has a type-specific fields but they are not commonly accessed directly but using a bunch of macros which encapsulate the attributes. These macros use the following naming convention: if they end with <code>G</code> the macro just returns the attribute (i.e. it <strong>g</strong>ets it). If the macro ends with <code>P</code>, then the macro receives two arguments, the first one being the semantic value and the second one being the value to which we want assign the attribute (i.e. it <strong>p</strong>uts it). Most of the time, the attributes that we can get and set are integers.
+</p>
+
+<p>
+Recall that a semantic action is executed when a reduction happens. Each reduction is a rule alternative with a left-hand side being the rule name and the right-hand side a sequence of tokens and rules. Each of these tokens and rules will have their semantic value. We can read the semantic values of the elements of the right hand side using the macro <code>RHS(n)</code> where <code>n</code> is the number of the element that we want to access (starting from 1). We can use the macro LHS to access the semantic value of the left hand side, typically to assign its attributes. Be careful to read <code>RHS(1)</code> first before setting <code>LHS</code> as they actually refer to the same memory. This might be handy if <code>LHS</code> is just propagating <code>RHS(1)</code>, in a <em>unary reduction</em> of the form <code>X ::= Y</code> in cases where nothing else must have to be checked.
+</p>
+
+<p>
+What about inherited attributes? Well, it is not possible to implement them nicely, so a way to do this is using global variables or data structures that represent the environment. In the case of flang there is a giant structure in <code>tools/flang1/flang1exe/semant.h</code> called sem with lots of fields that will be used to represent inherited information. This global variable called <code>sem</code> has so many fields that is not worth detailing them here.
+</p>
+
+<h2>Example</h2>
+
+<p>
+Let's go through a very simple example to see what the parser does. Recall that the parser does two passes through the input and in each pass different semantic actions can be run for the same reduction. We start with the first pass but later on we will have to switch to the second one.
+</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">X</span><span class="w">
+    </span><span class="n">X</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+When the parser sees the token PROGRAM it already knows it can perform the following reduction.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(   2) &lt;stbeg&gt; ::=</code></pre></figure>
+
+<p>
+This is a nullary reduction so no <code>RHS</code> will be used. Setting <code>LHS</code> is possible in these cases though. If you recall the part 4, reductions are classified in blocks. This one belongs to the first block and is implemented in <code>semant.c</code>. The code it does is surprisingly long so I'm not pasting all of it here.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/* ------------------------------------------------------------------ */</span>
+<span class="cm">/*
+ *    &lt;stbeg&gt; ::=
+ */</span>
+<span class="k">case</span> <span class="n">STBEG1</span><span class="p">:</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">in_enum</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="n">TK_ENUMERATOR</span><span class="p">:</span>
+    <span class="k">case</span> <span class="n">TK_ENDENUM</span><span class="p">:</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="nl">default:</span>
+      <span class="n">error</span><span class="p">(</span><span class="mi">155</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">gbl</span><span class="p">.</span><span class="n">lineno</span><span class="p">,</span> <span class="s">"ENUMERATOR statement expected"</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">ignore_stmt</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>
+First it checks if we are inside an enum definition (a new feature of Fortran 2003) which is kept in <code>sem.in_enum</code>. <code>sem</code> is a global variable that keeps a vast amount of state regarding the parsing. It is defined in <code>tools/flang1/flang1exe/semant.h</code>. Inside an enum definition only an ENUMERATOR constructor or END ENUM can appear so these are the two valid tokens at this point, otherwise this statement is wrong and has to be ignored (<code>sem.ignore_stmt = TRUE</code>). <code>break</code> will finish the semantic processing.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">==</span> <span class="n">PHASE_USE</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">TK_USE</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">TK_INCLUDE</span><span class="p">:</span>
+    <span class="k">break</span><span class="p">;</span>
+  <span class="nl">default:</span>
+    <span class="n">apply_use_stmts</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">deferred_func_kind</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">get_retval_KIND_value</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">deferred_func_len</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">get_retval_LEN_value</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">deferred_dertype</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">get_retval_derived_type</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+If you recall part 2 you may remember that Fortran has a strict ordering of statements. If we are still in a position to accept USE statements and the next token suggests a USE-statement we just proceed. Otherwise, no more USE statements can appear in which case their effect can be executed at this point: basically adding the imported names. Also functions may have some attributes that use names in these USE-statements, so the frontend has had to defer them up to this point.
+</p>
+
+<p>
+There are a few more checks but most of them concerned to parallel constructs that we will omit here. Now the following reduction is executed.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  33) &lt;id&gt; ::= &lt;id name&gt;</code></pre></figure>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/* ------------------------------------------------------------------ */</span>
+<span class="cm">/*                                                                      
+ *    &lt;id&gt; ::= &lt;id name&gt;                                                
+ */</span>                                                                     
+<span class="k">case</span> <span class="n">ID1</span><span class="p">:</span>                                                               
+  <span class="n">np</span> <span class="o">=</span> <span class="n">scn</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">name</span> <span class="o">+</span> <span class="n">SST_CVALG</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="mi">1</span><span class="p">));</span>                                 
+  <span class="n">sptr</span> <span class="o">=</span> <span class="n">getsymbol</span><span class="p">(</span><span class="n">np</span><span class="p">);</span>                                                 
+  <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">in_dim</span> <span class="o">&amp;&amp;</span> <span class="n">sem</span><span class="p">.</span><span class="n">type_mode</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">KINDG</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">&amp;&amp;</span>                    
+      <span class="n">STYPEG</span><span class="p">(</span><span class="n">sptr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">ST_MEMBER</span><span class="p">)</span> <span class="p">{</span>                                      
+    <span class="cm">/* possible use of a type parameter in the dimension field          
+     * of an array type component declaration                           
+     */</span>                                                                 
+    <span class="n">KINDP</span><span class="p">(</span><span class="n">sptr</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>                                                    
+  <span class="p">}</span>                                                                     
+  <span class="n">SST_SYMP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">sptr</span><span class="p">);</span>                                                  
+  <span class="n">SST_ACLP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>                                                     </code></pre></figure>
+
+<p>
+As we explained in part 3, <code>scn.id.name</code> is a buffer of null-ended strings for the current statement. Each identifier tokenized by the parser is given as a value the offset (in bytes) of that buffer where the identifier is stored (i.e the buffer is a sequence of null ended strings). When doing a shift, the parser has put the value passed by the tokenizer (although it used <code>SST_SYMP</code> that macro uses the same storage as <code>SST_CVALx</code>). So in <code>np</code> we will have the current identifier. The next step is getting a symbol pointer (it is actually a 32-bit integer) of it in the symbol table. We will talk about the symbol table in the next chapter. Once we get the symbol very little has to happen at this level: just store it in LHS using <code>SST_SYMP</code> (put the symbol <code>lptr</code> in LHS). <code>SST_ACLP</code> just clears a field that is used for array-constructors (it is unclear to me why it has to be done for every identifier at this point).
+</p>
+
+<p>
+Some other checks happen but are not very relevant at this point. The next reduction is
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  45) &lt;routine id&gt; ::= PROGRAM &lt;id&gt;</code></pre></figure>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/*                                                      
+ *      &lt;routine id&gt; ::= PROGRAM &lt;id&gt;                   
+ */</span>                                                     
+<span class="k">case</span> <span class="n">ROUTINE_ID4</span><span class="p">:</span>                                       
+  <span class="n">gbl</span><span class="p">.</span><span class="n">rutype</span> <span class="o">=</span> <span class="n">RU_PROG</span><span class="p">;</span>                                 
+  <span class="n">rhstop</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>                                           
+  <span class="k">if</span> <span class="p">(</span><span class="n">IN_MODULE</span><span class="p">)</span>                                        
+    <span class="n">ERR310</span><span class="p">(</span><span class="s">"PROGRAM may not appear in a MODULE"</span><span class="p">,</span> <span class="n">CNULL</span><span class="p">);</span></code></pre></figure>
+
+<p>
+The semantic action starts by marking in a field of <code>gbl.rutype</code> that this is a program. Other valid values of this field are <code>RU_FUNC</code> (for FUNCTION), <code>RU_SUBR</code> (for PROGRAM) and <code>RU_BDATA</code> for (BLOCK DATA). To be honest I have no idea what the prefix <code>RU_</code> means here but apparently is related to subprogram. Maybe it started as a way to distinguish the <strong>r</strong>o<strong>u</strong>tines and <code>RO</code> might be confused with read-only.
+</p>
+
+<p>
+Next is checking that we're not inside a module. This macro expands to <code>(sem.mod_cnt &amp;&amp; gbl.internal == 0)</code> which means we have seen zero modules so far and we are not a sub-program. Certainly a <code>PROGRAM</code> statement cannot appear inside a <code>MODULE</code>.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="nl">routine_id:</span>                                                
+  <span class="n">is_entry</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>                                        
+  <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">interface</span> <span class="o">&amp;&amp;</span> <span class="n">gbl</span><span class="p">.</span><span class="n">currsub</span><span class="p">)</span> <span class="p">{</span>                      
+    <span class="n">error</span><span class="p">(</span><span class="mi">303</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">gbl</span><span class="p">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">SYMNAME</span><span class="p">(</span><span class="n">gbl</span><span class="p">.</span><span class="n">currsub</span><span class="p">),</span> <span class="n">CNULL</span><span class="p">);</span>
+    <span class="n">pop_subprogram</span><span class="p">();</span>                                      
+    <span class="n">pop_scope_level</span><span class="p">(</span><span class="n">SCOPE_NORMAL</span><span class="p">);</span>                         
+  <span class="p">}</span></code></pre></figure>
+
+<p>
+This code is shared among several semantic functions so not all the checks will make much sense for the <code>PROGRAM</code> statement itself. Here we acknowledge that this is not an <code>ENTRY</code> statement. Confusingly <code>is_entry</code> is a static variable of <code>semant.c</code> so we may just be resetting it here to false. Also a PROGRAM statement cannot appear inside an INTERFACE. A few lines below we see some interesting stuff:
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c">  <span class="n">sptr1</span> <span class="o">=</span> <span class="n">sptr</span> <span class="o">=</span> <span class="n">SST_SYMG</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="n">rhstop</span><span class="p">));</span> </code></pre></figure>
+
+<p>
+Where the code retrieves the symbol from <code>RHS(2)</code>, so the <code>&lt;id&gt;</code>. This is the attribute we synthesized in the previous reduction.
+</p>
+
+<p>
+The next reduction is
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  23) &lt;prog title&gt; ::= &lt;routine id&gt; |</code></pre></figure>
+
+<p>
+Here we would check generic things related to PROGRAM, FUNCTION, SUBROUTINE, MODULE and BLOCKDATA statements. For FUNCTION and SUBROUTINE at this point we would keep the dummy arguments (formal parameters) that would have been synthesized in another semantic function.
+</p>
+
+<p>
+Next reduction is
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(   4) &lt;statement&gt; ::= &lt;prog title&gt;  |</code></pre></figure>
+
+<p>
+This semantic function does final processing, most of it only of concern of parallel constructs.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(   3) &lt;stend&gt; ::=</code></pre></figure>
+
+<p>
+More finish processing, mostly cleanups so the state of the next statement is ready.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(   1) &lt;stmt&gt; ::= &lt;stbeg&gt; &lt;statement&gt; &lt;stend&gt;</code></pre></figure>
+
+<p>
+The semantic function associated to this reduction does nothing.
+</p>
+
+<p>
+So far we have just parsed <code>PROGRAM MAIN</code>. Now we move onto <code>INTEGER :: X</code>. I'll skip the boring reductions this time.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 154) &lt;base type&gt; ::= INTEGER |</code></pre></figure>
+
+<p>
+The semantic just synthesizes an inherited attribute for this one that will be used later.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c">      <span class="cm">/* ------------------------------------------------------------------ */</span>
+      <span class="cm">/*                                                                      
+       *      &lt;base type&gt; ::= INTEGER  |                                      
+       */</span>                                                                     
+      <span class="k">case</span> <span class="n">BASE_TYPE1</span><span class="p">:</span>                                                        
+        <span class="n">sem</span><span class="p">.</span><span class="n">gdtype</span> <span class="o">=</span> <span class="n">sem</span><span class="p">.</span><span class="n">ogdtype</span> <span class="o">=</span> <span class="n">stb</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">dt_int</span><span class="p">;</span>                           
+        <span class="n">sem</span><span class="p">.</span><span class="n">gty</span> <span class="o">=</span> <span class="n">TY_INT</span><span class="p">;</span>                                                     
+        <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 163) &lt;opt len spec&gt; ::=    |</code></pre></figure>
+
+<p>
+Basically we remember that there is not any kind of length specifier like <code>INTEGER * N</code> or <code>CHARACTER * N</code>. Technically the Fortran standard only allows this for CHARACTER under the LEN attribute (i.e. <code>CHARACTER * N</code> means <code>CHARACTER(LEN=N)</code>) but historically this has been accepted for non-CHARACTER types to mean KIND (i.e <code>INTEGER * 8 means</code> <code>INTEGER(KIND=8)</code>). Apparently Flang also accepts a colon (:) instead of *, so <code>INTEGER : 8</code> would also be accepted.
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/* ------------------------------------------------------------------ */</span>
+<span class="cm">/*
+ *      &lt;opt len spec&gt; ::= |
+ */</span>
+<span class="k">case</span> <span class="n">OPT_LEN_SPEC1</span><span class="p">:</span>
+  <span class="n">SST_IDP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="n">SST_SYMP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+  <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="n">SST_DTYPEP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">sem</span><span class="p">.</span><span class="n">gdtype</span><span class="p">);</span>
+  <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 145) &lt;data type&gt; ::=  &lt;base type&gt; &lt;opt len spec&gt; |</code></pre></figure>
+
+<p>
+Here the semantic function synthesizes the final type using <code>&lt;base type&gt;</code> and <code>&lt;opt len spec&gt;</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 298) &lt;opt attr list&gt; ::=  |</code></pre></figure>
+
+<p>
+Here we would handle the attributes like <code>DIMENSION</code>, <code>POINTER</code>, <code>ALLOCATABLE</code>, etc. But in this declaration there is none, so nothing of interest happens (only minor bookkeeping).
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  21) &lt;pgm&gt; ::=</code></pre></figure>
+
+<p>
+Here we check that we are inside some program unit. In this case this will do nothing, but for historical reasons it is possible to start an implicit PROGRAM program unit by using any statement that may follow a <code>PROGRAM</code> statement. This means, among other consequences, that the minimal valid Fortran program is just <code>END</code> and a "hello world" can be as short as <code>PRINT *, "HELLO WORLD"</code> statement followed by an <code>END</code> statement: no need for an initial <code>PROGRAM</code> (though omitting it is currently deprecated).
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  33) &lt;id&gt; ::= &lt;id name&gt;
+prod(  32) &lt;ident&gt; ::= &lt;id&gt;</code></pre></figure>
+
+<p>
+The first production we already saw it for the name of PROGRAM. The second one just marks the semantic value of LHS as an identifier.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 163) &lt;opt len spec&gt; ::=    |</code></pre></figure>
+
+<p>
+Ok, again a length specifier here. In this case it would be like <code>INTEGER :: variable * N</code> which again is an extension, in standard Fortran this is only allowed for CHARACTER. Our declaration has none so again nothing happens here.
+</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 360) &lt;entity id&gt; ::= &lt;ident&gt; &lt;opt len spec&gt;  |</code></pre></figure>
+
+<p>
+Here we gather the length information and array information (none for our declaration). We take the symbol we stored in <code>&lt;ident&gt;</code> and create a variable for it.
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c">      <span class="nl">entity_id_shared:</span>         
+        <span class="n">sptr</span> <span class="o">=</span> <span class="n">SST_SYMG</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="mi">1</span><span class="p">));</span>
+        <span class="cm">/* .. several lines omitted .. */</span>
+        <span class="n">sptr</span> <span class="o">=</span> <span class="n">create_var</span><span class="p">(</span><span class="n">sptr</span><span class="p">);</span>
+        <span class="cm">/* .. several lines omitted .. */</span>
+        <span class="n">SST_SYMP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">sptr</span><span class="p">);</span>
+        <span class="n">stype1</span> <span class="o">=</span> <span class="n">STYPEG</span><span class="p">(</span><span class="n">sptr</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+<code>create_var</code> (defined in <code>semant.c</code>) makes a few checks and calls <code>refsym_inscope</code> (defined in <code>semsym.c</code>) to insert the symbol in the current scope. After this, the semantic function checks the type of the symbol and does several extra checks on the type of the declaration. If all goes well then the symbol is given the type. The code is a bit involved at this point because Fortran has several non-executable statements that can set the same attributes. The following code shows two ways of declaring two arrays <code>A</code> and <code>B</code> of 10 INTEGER elements.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="w">       </span><span class="c1">! Sets the type attribute of A to be INTEGER</span><span class="w">
+</span><span class="k">DIMENSION</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w"> </span><span class="c1">! Sets the dimension attribute so A is an array 1 to 9</span><span class="w">
+                   </span><span class="c1">! Ultimately A is an array 1 to 9 of INTEGER</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">   </span><span class="c1">! Sets the type and dimension attributes at once.</span><span class="w">
+                   </span><span class="c1">! B is an array 1 to 9 of INTEGER</span></code></pre></figure>
+
+
+<p>
+Several statements allow setting the dimension attribute for historical reasons as well:
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="w">       </span><span class="c1">! Sets the type attribute of A to INTEGER</span><span class="w">
+</span><span class="k">SAVE</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">      </span><span class="c1">! Sets the save and dimension attributes</span><span class="w">
+
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">B</span><span class="w">       </span><span class="c1">! Sets the type attribute of B to INTEGER</span><span class="w">
+</span><span class="k">TARGET</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">    </span><span class="c1">! Sets the target and dimension attributes</span></code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 357) &lt;entity decl&gt; ::= &lt;entity id&gt; |</code></pre></figure>
+
+
+<p>
+At this point some checks regarding the initialization of the entity happen.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 356) &lt;entity decl list&gt; ::= &lt;entity decl&gt;</code></pre></figure>
+
+
+<p>
+This does nothing in the context of a type declaration but it just synthesizes a list of entities in other cases (the reduction used is the same in both).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 104) &lt;declaration&gt; ::= &lt;data type&gt; &lt;opt attr list&gt; :: &lt;pgm&gt; &lt;entity decl list&gt;</code></pre></figure>
+
+
+<p>
+This is the whole declaration. The semantic function just cleans up a few variables and sets a null AST to the LHS semantic value.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/*                                                                       
+ *    &lt;declaration&gt; ::= &lt;data type&gt; &lt;opt attr list&gt; :: &lt;pgm&gt; &lt;entity decl
+ *list&gt; |                                                                
+ */</span>                                                                      
+<span class="k">case</span> <span class="n">DECLARATION26</span><span class="p">:</span>                                                      
+  <span class="k">if</span> <span class="p">(</span><span class="n">entity_attr</span><span class="p">.</span><span class="n">exist</span> <span class="o">&amp;</span> <span class="n">ET_B</span><span class="p">(</span><span class="n">ET_PARAMETER</span><span class="p">))</span> <span class="p">{</span>                          
+    <span class="n">seen_parameter</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>                                               
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">interface</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>                                              
+      <span class="n">end_param</span><span class="p">();</span>                                                       
+  <span class="p">}</span>                                                                      
+  <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>                                                      
+  <span class="n">in_entity_typdcl</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>                                              
+  <span class="n">entity_attr</span><span class="p">.</span><span class="n">exist</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>                                                 
+  <span class="n">entity_attr</span><span class="p">.</span><span class="n">access</span> <span class="o">=</span> <span class="sc">' '</span><span class="p">;</span>                                              
+  <span class="n">bind_attr</span><span class="p">.</span><span class="n">exist</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>                                                  
+  <span class="n">bind_attr</span><span class="p">.</span><span class="n">altname</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>                                                 
+  <span class="k">break</span><span class="p">;</span>                                                                 </code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(   6) &lt;statement&gt; ::= &lt;declaration&gt; |</code></pre></figure>
+
+
+<p>
+At this point the code updates the program phase, this is, the position that determines which statements inside the program unit are allowed and which are not.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="n">STATEMENT3</span><span class="p">:</span>
+  <span class="n">sem</span><span class="p">.</span><span class="n">class</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">prevphase</span> <span class="o">=</span> <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_IMPLICIT</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&gt;</span> <span class="n">PHASE_IMPLICIT</span><span class="p">)</span>
+      <span class="n">errsev</span><span class="p">(</span><span class="mi">70</span><span class="p">);</span>
+    <span class="k">else</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_IMPLICIT</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_DATA</span> <span class="o">||</span> <span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_NAMELIST</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&gt;</span> <span class="n">PHASE_EXEC</span><span class="p">)</span>
+      <span class="n">errsev</span><span class="p">(</span><span class="mi">70</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&lt;</span> <span class="n">PHASE_SPEC</span><span class="p">)</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_SPEC</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_INTERFACE</span> <span class="o">||</span> <span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_ABSTRACT</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_INIT</span><span class="p">;</span>
+    <span class="n">prevphase</span> <span class="o">=</span> <span class="n">PHASE_INIT</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_PARAMETER</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&gt;</span> <span class="n">PHASE_SPEC</span><span class="p">)</span>
+      <span class="n">errsev</span><span class="p">(</span><span class="mi">70</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&lt;</span> <span class="n">PHASE_IMPLICIT</span><span class="p">)</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_IMPLICIT</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_USE</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&gt;</span> <span class="n">PHASE_USE</span><span class="p">)</span>
+      <span class="n">errsev</span><span class="p">(</span><span class="mi">70</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&lt;</span> <span class="n">PHASE_USE</span><span class="p">)</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_USE</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">==</span> <span class="n">TK_IMPORT</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&gt;</span> <span class="n">PHASE_IMPORT</span><span class="p">)</span>
+      <span class="n">errsev</span><span class="p">(</span><span class="mi">70</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&lt;</span> <span class="n">PHASE_IMPORT</span><span class="p">)</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_IMPORT</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">&gt;</span> <span class="n">PHASE_SPEC</span><span class="p">)</span>
+      <span class="n">errsev</span><span class="p">(</span><span class="mi">70</span><span class="p">);</span>
+    <span class="cm">/* allow for attributes before a use statement */</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">!=</span> <span class="n">TK_ATTRIBUTES</span> <span class="o">&amp;&amp;</span> <span class="n">scn</span><span class="p">.</span><span class="n">stmtyp</span> <span class="o">!=</span> <span class="n">TK_MP_DECLARESIMD</span><span class="p">)</span>
+      <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_SPEC</span><span class="p">;</span>
+  <span class="p">}</span></code></pre></figure>
+
+
+<p>
+Then, if the declaration entails any computation, it keeps the AST that represents it. This might happen for instance with a POINTER that must be initialized in a way that is not ASSOCIATED to anything, likewise for ALLOCATABLES and other entities.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">((</span><span class="n">ast</span> <span class="o">=</span> <span class="n">SST_ASTG</span><span class="p">(</span><span class="n">LHS</span><span class="p">)))</span> <span class="p">{</span>
+  <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">add_stmt</span><span class="p">(</span><span class="n">ast</span><span class="p">);</span>      
+  <span class="n">SST_ASTG</span><span class="p">(</span><span class="n">LHS</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>        
+<span class="p">}</span>                           </code></pre></figure>
+
+
+<p>
+At this point we have finished with <code>INTEGER :: X</code> and we can proceed to parse <code>X = 1</code>. Again I will omit repeated reductions.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  19) &lt;nii&gt; ::=</code></pre></figure>
+
+
+<p>
+Here we check that we are not inside an INTERFACE. Certainly an assignment is not valid happen there.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  20) &lt;nim&gt; ::=</code></pre></figure>
+
+
+<p>
+Here we check that we are not inside a MODULE. Again, an assignment is no valid there. Several of the reductions in this pass of the parsing do not have any interesting semantic value, so let's assume we're already in the second pass.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 765) &lt;psfunc&gt; ::=</code></pre></figure>
+
+<p>
+According to the code, this rule just toggles a flag that says whether we are at the left of a <code>=</code>. <code>psfunc</code> apparently means <code>possible statement function</code>. A statement function is like a small declaration that totally looks like an assignment except that it takes scalar parameters and returns a scalar value. For obvious reasons this statement is deprecated as of Fortran 90.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">PROGRAM</span><span class="w"> </span><span class="n">FOO</span><span class="w">
+ </span><span class="k">IMPLICIT</span><span class="w"> </span><span class="k">NONE</span><span class="w">
+ </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">X</span><span class="w">
+ </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">F</span><span class="w">
+ </span><span class="n">F</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">X</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w">     </span><span class="c1">! Looks like an assignment</span><span class="w">
+                  </span><span class="c1">! but is a function statement</span><span class="w">
+                  </span><span class="c1">! They can only appear before</span><span class="w">
+                  </span><span class="c1">! the first executable statement.</span><span class="w">
+ </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">F</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">   </span><span class="c1">! Will print 11</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">PROGRAM</span><span class="w"> </span><span class="n">FOO</span></code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  33) &lt;id&gt; ::= &lt;id name&gt;
+prod(  32) &lt;ident&gt; ::= &lt;id&gt;
+prod( 627) &lt;var ref&gt; ::=    &lt;ident&gt;  |</code></pre></figure>
+
+
+<p>
+We're at the left of the assignment, among other things, this function will mark <code>&lt;var ref&gt;</code> as a <code>ST_IDENT</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 765) &lt;psfunc&gt; ::=</code></pre></figure>
+
+
+<p>
+Now we mark that we are not anymore at the left of an assignment, we can't see it yet through the reductions but we have already consumed the <code>=</code> token.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 665) &lt;constant&gt; ::=   &lt;integer&gt;  |</code></pre></figure>
+
+
+<p>
+So this is the token for the 1. The semantic function will basically set the LHS to no symbol, its type to be integer and will store the constant, this is done in <code>ast_conval</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">SST_LSYMP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>      
+<span class="n">SST_DTYPEP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">DT_INT</span><span class="p">);</span>
+<span class="cm">/* value set by scan */</span> 
+<span class="n">ast_conval</span><span class="p">(</span><span class="n">top</span><span class="p">);</span>        </code></pre></figure>
+
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">void</span>                                                     
+<span class="nf">ast_conval</span><span class="p">(</span><span class="n">SST</span> <span class="o">*</span><span class="n">top</span><span class="p">)</span>                                            
+<span class="p">{</span>                                                               
+  <span class="n">SST_ACLP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="cm">/* prevent UMR */</span>                           
+  <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">mk_cval1</span><span class="p">(</span><span class="n">SST_CVALG</span><span class="p">(</span><span class="n">LHS</span><span class="p">),</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">SST_DTYPEG</span><span class="p">(</span><span class="n">LHS</span><span class="p">)));</span>
+  <span class="n">SST_SHAPEP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>                                           
+<span class="p">}</span>                                                               </code></pre></figure>
+
+
+<p>
+(UMR means uninitialized memory read, and it is a warning printed by <a href="https://teamblue.unicomsi.com/products/purifyplus/">Purify</a>, a tool similar to Valgrind to detect memory errors.)
+The usage of <code>top</code> vs <code>LHS</code> is a bit confusing at this point. My understanding is that they are the same.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 597) &lt;primary&gt; ::= &lt;constant&gt; |
+prod( 584) &lt;expression&gt; ::= &lt;primary&gt;   |</code></pre></figure>
+
+
+<p>
+These two reductions do nothing or simply propagate values upwards the expression hierarchy.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 764) &lt;assignment&gt; ::= &lt;psfunc&gt; &lt;var ref&gt; &lt;psfunc&gt; = &lt;expression&gt;</code></pre></figure>
+
+
+<p>
+Here we will build the assignment itself. This is a long function, but at some point we will get the AST of RHS(5) and the location in RHS(2). Here <code>RHS(2)</code> is exactly <code>&lt;var ref&gt;</code> and RHS(5) is <code>&lt;expression&gt;</code>. An AST representing the assignment is then created which is stored in LHS. The code also makes sure we know we are in the executable part of the program unit (only executable statements or FORMAT statements are allowed in that part).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c">   <span class="cm">/* ... */</span>
+   <span class="n">ast</span> <span class="o">=</span> <span class="n">assign</span><span class="p">(</span><span class="n">RHS</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">RHS</span><span class="p">(</span><span class="mi">5</span><span class="p">));</span>
+   <span class="o">*</span><span class="n">LHS</span> <span class="o">=</span> <span class="o">*</span><span class="n">RHS</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+   <span class="cm">/* ... */</span>
+   <span class="n">sem</span><span class="p">.</span><span class="n">pgphase</span> <span class="o">=</span> <span class="n">PHASE_EXEC</span><span class="p">;</span>
+   <span class="cm">/* ... */</span>
+   <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="n">ast</span><span class="p">);</span></code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod( 742) &lt;simple stmt&gt; ::= &lt;assignment&gt; |
+prod(   7) &lt;statement&gt; ::= &lt;nii&gt; &lt;nim&gt; &lt;simple stmt&gt; |</code></pre></figure>
+
+<p>
+The semantic function of <code>&lt;simple stmt&gt;</code> does nothing. The semantic function of <code>&lt;statement&gt;</code> takes the AST from <code>&lt;simple stmt&gt;</code> and adds it to the global AST.
+</p>
+
+<p>
+Finally we are at the END PROGRAM statement.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  22) &lt;end&gt; ::=</code></pre></figure>
+
+
+<p>
+This does nothing in our case, in other contexts may have to finish the INTERFACE blocks seen so far.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">prod(  33) &lt;id&gt; ::= &lt;id name&gt;
+prod(  32) &lt;ident&gt; ::= &lt;id&gt;
+prod(  78) &lt;opt ident&gt; ::= &lt;ident&gt;
+prod(  73) &lt;end stmt&gt; ::= ENDPROGRAM    &lt;opt ident&gt; |</code></pre></figure>
+
+
+<p>
+Several final clean ups happen here. Too complicated at this point to describe them.
+</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+Ok, this was very long and sadly we could not get much detail of this. In the next chapter we will see how the symbol table works.
+</p>
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/09/03/walk-through-flang-part-4/">&laquo; Walk-through flang – Part 4</a>
+
+
+  <a class="next" href="/2017/11/05/exploring-aarch64-assembler-chapter-9/">Exploring AArch64 assembler – Chapter 9 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

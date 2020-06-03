@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Sending emails using Google Mail with Ruby</title>
+  <meta name="description" content="It&#39;s no secret that Google Mail has become, over the last years, the most widely used email server and client on the world. Not only it&#39;s basically free, but with the use of Google Apps you can even use it on your own domains. Because so many people use it, even system administrators, it may be good to know how to use it to send system emails. Also, because Ruby is actually the only scripting language I feel comfortable with, I&#39;ll show you a simple library to send emails using Google SMTP server as an outgoing server, so you don&#39;t have to configure your server with sendmail, postfix or another typical UNIX mail server. The first thing we will need is to include (and install) two gems: net/smtp (actually this comes from the Standard Library on Ruby 1.9) tlsmail The first one will allow us to use some SMTP features in Ruby, and the second one will allow us to use TLS authentication for SMTP, the method used by Google Mail. With those two libraries, we can already send a simple email, using the standard SMTP format: def send_email from, to, mailtext begin Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE) Net::SMTP.start(@smtp_info[:smtp_server], @smtp_info[:port], @smtp_info[:helo], @smtp_info[:username], @smtp_info[:password], @smtp_info[:authentication]) do |smtp| smtp.send_message mailtext, from, to end rescue =&amp;gt; e raise &quot;Exception occured: #{e} &quot; exit -1 end end You can see here that the SMTP info is stored in a variable @smtp_info. We will take care of that later. Also, the variable mailtext passed to the method also needs a special format. More on that later as well. The really important fragment of code here is the one that calls enable_tls on the Net::SMTP module. This method is provided by the tlsmail gem and will allow our SMTP connection to use TLS as the authentication method. The other part of the code is pretty straightforward: we simply call the start method with a block, in which we actually send the email with send_message. Note that we have to provide the start method with the SMTP info of our Google Mail server account. This includes the server, which will be smtp.gmail.com, the port, which is 587, the HELO, which is gmail.com if using a standard account or your domain FQDN if using your own domain, and finally your username and password. For the authentication parameter we have to provide :plain (TLS will be used on top of that). Now let&#39;s see how the mailtext string is built. In this case I&#39;ll be using a plain text format with two different variants: a simple text email, or an email with an attachment. To send a simple text email, we have to follow the SMTP standard. I took the info from this tutorialspoint post. Here&#39;s the pattern we have to follow to build a compliant string: def send_plain_email from, to, subject, body mailtext = &amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} #{body} EOF send_email from, to, mailtext end Note the importance of the indenting here, as the from/to/subject lines must start at the first text column. With this simple method, you can then simply call the method we programmed before with the resulting string as a parameter and the email will be sent. Pretty easy. Sending an attachment is a bit more complicated. As SMTP email is send in plain text, attachments are encoded in base64 strings, and are added to the message string in a special way. Here&#39;s how to do it in Ruby: def send_attachment_email from, to, subject, body, attachment # Read a file and encode it into base64 format begin filecontent = File.read(attachment) encodedcontent = [filecontent].pack(&quot;m&quot;) # base64 rescue raise &quot;Could not read file #{attachment}&quot; end marker = (0...50).map{ (&#39;a&#39;..&#39;z&#39;).to_a[rand(26)] }.join part1 =&amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} MIME-Version: 1.0 Content-Type: multipart/mixed; boundary=#{marker} --#{marker} EOF # Define the message action part2 =&amp;lt;&amp;lt;EOF Content-Type: text/plain Content-Transfer-Encoding:8bit #{body} --#{marker} EOF # Define the attachment section part3 =&amp;lt;&amp;lt;EOF Content-Type: multipart/mixed; name=\&quot;#{File.basename(attachment)}\&quot; Content-Transfer-Encoding:base64 Content-Disposition: attachment; filename=&quot;#{File.basename(attachment)}&quot; #{encodedcontent} --#{marker}-- EOF mailtext = part1 + part2 + part3 send_email from, to, mailtext end As you can see, in the first place the file is read and converted to a base64 string. After that, the message is generated. SMTP uses a special unique marker to delimit the attachment from the rest of the text. In here we use the line (0...50).map{ (&#39;a&#39;..&#39;z&#39;).to_a[rand(26)] }.join (extracted from StackOverflow) to generate a 50 char length random string. Although it&#39;s very unlikely to happen, we should check that this random string does not appear anywhere else in the message body or the base64 converted attached file before using it as a delimiter. After that, the rest of the message is built, specifying it has an attachment and its delimiter in the following lines: MIME-Version: 1.0 Content-Type: multipart/mixed; boundary=#{marker} --#{marker} The file is actually attached some lines below. After that, we can pass this new string to the method that sends the email, and all done. Now, because our SMTP info can be sensitive (it contains our username and our password), it might not be a good idea to just hardcode this info in the email sending script. That&#39;s why I&#39;ve used a yaml serialized hash to store this info, so we can load it at any time. Doing this is really easy with the yaml gem: smtp_info = begin YAML.load_file(&quot;/path/to/your/smtpinfo&quot;) rescue $stderr.puts &quot;Could not find SMTP info&quot; exit -1 end An example file would look like this: --- :smtp_server: smtp.gmail.com :port: 587 :helo: gmail.com :username: user@gmail.com :password: your_password_here :authentication: :plain Now that we have all the parts programmed, we should only pack it a little so it can be of use as a library. The following code contains a simple script with a class to send the emails and a little program that reads parameters from the command line: require &#39;net/smtp&#39; require &#39;tlsmail&#39; require &#39;yaml&#39; class SMTPGoogleMailer attr_accessor :smtp_info def send_plain_email from, to, subject, body mailtext = &amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} #{body} EOF send_email from, to, mailtext end def send_attachment_email from, to, subject, body, attachment # Read a file and encode it into base64 format begin filecontent = File.read(attachment) encodedcontent = [filecontent].pack(&quot;m&quot;) # base64 rescue raise &quot;Could not read file #{attachment}&quot; end marker = (0...50).map{ (&#39;a&#39;..&#39;z&#39;).to_a[rand(26)] }.join part1 =&amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} MIME-Version: 1.0 Content-Type: multipart/mixed; boundary=#{marker} --#{marker} EOF # Define the message action part2 =&amp;lt;&amp;lt;EOF Content-Type: text/plain Content-Transfer-Encoding:8bit #{body} --#{marker} EOF # Define the attachment section part3 =&amp;lt;&amp;lt;EOF Content-Type: multipart/mixed; name=\&quot;#{File.basename(attachment)}\&quot; Content-Transfer-Encoding:base64 Content-Disposition: attachment; filename=&quot;#{File.basename(attachment)}&quot; #{encodedcontent} --#{marker}-- EOF mailtext = part1 + part2 + part3 send_email from, to, mailtext end private def send_email from, to, mailtext begin Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE) Net::SMTP.start(@smtp_info[:smtp_server], @smtp_info[:port], @smtp_info[:helo], @smtp_info[:username], @smtp_info[:password], @smtp_info[:authentication]) do |smtp| smtp.send_message mailtext, from, to end rescue =&amp;gt; e raise &quot;Exception occured: #{e} &quot; exit -1 end end end if __FILE__ == $0 from = ARGV[1] to = ARGV[2] subject = ARGV[3] body = ARGV[4] attachment = ARGV[5] smtp_info = begin YAML.load_file(ARGV[0]) rescue $stderr.puts &quot;Could not find SMTP info&quot; exit -1 end mailer = SMTPGoogleMailer.new mailer.smtp_info = smtp_info if ARGV[4] begin mailer.send_attachment_email from, to, subject, body, attachment rescue =&amp;gt; e $stderr.puts &quot;Something went wrong: #{e}&quot; exit -1 end else begin mailer.send_plain_email from, to, subject, body rescue =&amp;gt; e $stderr.puts &quot;Something went wrong: #{e}&quot; exit -1 end end end And that&#39;s all! You can use the script as a standalone command to send an email with some command line arguments or just require it in your ruby script and use the class to send the messages.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2012/07/29/sending-emails-google-mail-ruby/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Sending emails using Google Mail with Ruby">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2012/07/29/sending-emails-google-mail-ruby/">
+  <meta property="og:description" content="It&#39;s no secret that Google Mail has become, over the last years, the most widely used email server and client on the world. Not only it&#39;s basically free, but with the use of Google Apps you can even use it on your own domains. Because so many people use it, even system administrators, it may be good to know how to use it to send system emails. Also, because Ruby is actually the only scripting language I feel comfortable with, I&#39;ll show you a simple library to send emails using Google SMTP server as an outgoing server, so you don&#39;t have to configure your server with sendmail, postfix or another typical UNIX mail server. The first thing we will need is to include (and install) two gems: net/smtp (actually this comes from the Standard Library on Ruby 1.9) tlsmail The first one will allow us to use some SMTP features in Ruby, and the second one will allow us to use TLS authentication for SMTP, the method used by Google Mail. With those two libraries, we can already send a simple email, using the standard SMTP format: def send_email from, to, mailtext begin Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE) Net::SMTP.start(@smtp_info[:smtp_server], @smtp_info[:port], @smtp_info[:helo], @smtp_info[:username], @smtp_info[:password], @smtp_info[:authentication]) do |smtp| smtp.send_message mailtext, from, to end rescue =&amp;gt; e raise &quot;Exception occured: #{e} &quot; exit -1 end end You can see here that the SMTP info is stored in a variable @smtp_info. We will take care of that later. Also, the variable mailtext passed to the method also needs a special format. More on that later as well. The really important fragment of code here is the one that calls enable_tls on the Net::SMTP module. This method is provided by the tlsmail gem and will allow our SMTP connection to use TLS as the authentication method. The other part of the code is pretty straightforward: we simply call the start method with a block, in which we actually send the email with send_message. Note that we have to provide the start method with the SMTP info of our Google Mail server account. This includes the server, which will be smtp.gmail.com, the port, which is 587, the HELO, which is gmail.com if using a standard account or your domain FQDN if using your own domain, and finally your username and password. For the authentication parameter we have to provide :plain (TLS will be used on top of that). Now let&#39;s see how the mailtext string is built. In this case I&#39;ll be using a plain text format with two different variants: a simple text email, or an email with an attachment. To send a simple text email, we have to follow the SMTP standard. I took the info from this tutorialspoint post. Here&#39;s the pattern we have to follow to build a compliant string: def send_plain_email from, to, subject, body mailtext = &amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} #{body} EOF send_email from, to, mailtext end Note the importance of the indenting here, as the from/to/subject lines must start at the first text column. With this simple method, you can then simply call the method we programmed before with the resulting string as a parameter and the email will be sent. Pretty easy. Sending an attachment is a bit more complicated. As SMTP email is send in plain text, attachments are encoded in base64 strings, and are added to the message string in a special way. Here&#39;s how to do it in Ruby: def send_attachment_email from, to, subject, body, attachment # Read a file and encode it into base64 format begin filecontent = File.read(attachment) encodedcontent = [filecontent].pack(&quot;m&quot;) # base64 rescue raise &quot;Could not read file #{attachment}&quot; end marker = (0...50).map{ (&#39;a&#39;..&#39;z&#39;).to_a[rand(26)] }.join part1 =&amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} MIME-Version: 1.0 Content-Type: multipart/mixed; boundary=#{marker} --#{marker} EOF # Define the message action part2 =&amp;lt;&amp;lt;EOF Content-Type: text/plain Content-Transfer-Encoding:8bit #{body} --#{marker} EOF # Define the attachment section part3 =&amp;lt;&amp;lt;EOF Content-Type: multipart/mixed; name=\&quot;#{File.basename(attachment)}\&quot; Content-Transfer-Encoding:base64 Content-Disposition: attachment; filename=&quot;#{File.basename(attachment)}&quot; #{encodedcontent} --#{marker}-- EOF mailtext = part1 + part2 + part3 send_email from, to, mailtext end As you can see, in the first place the file is read and converted to a base64 string. After that, the message is generated. SMTP uses a special unique marker to delimit the attachment from the rest of the text. In here we use the line (0...50).map{ (&#39;a&#39;..&#39;z&#39;).to_a[rand(26)] }.join (extracted from StackOverflow) to generate a 50 char length random string. Although it&#39;s very unlikely to happen, we should check that this random string does not appear anywhere else in the message body or the base64 converted attached file before using it as a delimiter. After that, the rest of the message is built, specifying it has an attachment and its delimiter in the following lines: MIME-Version: 1.0 Content-Type: multipart/mixed; boundary=#{marker} --#{marker} The file is actually attached some lines below. After that, we can pass this new string to the method that sends the email, and all done. Now, because our SMTP info can be sensitive (it contains our username and our password), it might not be a good idea to just hardcode this info in the email sending script. That&#39;s why I&#39;ve used a yaml serialized hash to store this info, so we can load it at any time. Doing this is really easy with the yaml gem: smtp_info = begin YAML.load_file(&quot;/path/to/your/smtpinfo&quot;) rescue $stderr.puts &quot;Could not find SMTP info&quot; exit -1 end An example file would look like this: --- :smtp_server: smtp.gmail.com :port: 587 :helo: gmail.com :username: user@gmail.com :password: your_password_here :authentication: :plain Now that we have all the parts programmed, we should only pack it a little so it can be of use as a library. The following code contains a simple script with a class to send the emails and a little program that reads parameters from the command line: require &#39;net/smtp&#39; require &#39;tlsmail&#39; require &#39;yaml&#39; class SMTPGoogleMailer attr_accessor :smtp_info def send_plain_email from, to, subject, body mailtext = &amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} #{body} EOF send_email from, to, mailtext end def send_attachment_email from, to, subject, body, attachment # Read a file and encode it into base64 format begin filecontent = File.read(attachment) encodedcontent = [filecontent].pack(&quot;m&quot;) # base64 rescue raise &quot;Could not read file #{attachment}&quot; end marker = (0...50).map{ (&#39;a&#39;..&#39;z&#39;).to_a[rand(26)] }.join part1 =&amp;lt;&amp;lt;EOF From: #{from} To: #{to} Subject: #{subject} MIME-Version: 1.0 Content-Type: multipart/mixed; boundary=#{marker} --#{marker} EOF # Define the message action part2 =&amp;lt;&amp;lt;EOF Content-Type: text/plain Content-Transfer-Encoding:8bit #{body} --#{marker} EOF # Define the attachment section part3 =&amp;lt;&amp;lt;EOF Content-Type: multipart/mixed; name=\&quot;#{File.basename(attachment)}\&quot; Content-Transfer-Encoding:base64 Content-Disposition: attachment; filename=&quot;#{File.basename(attachment)}&quot; #{encodedcontent} --#{marker}-- EOF mailtext = part1 + part2 + part3 send_email from, to, mailtext end private def send_email from, to, mailtext begin Net::SMTP.enable_tls(OpenSSL::SSL::VERIFY_NONE) Net::SMTP.start(@smtp_info[:smtp_server], @smtp_info[:port], @smtp_info[:helo], @smtp_info[:username], @smtp_info[:password], @smtp_info[:authentication]) do |smtp| smtp.send_message mailtext, from, to end rescue =&amp;gt; e raise &quot;Exception occured: #{e} &quot; exit -1 end end end if __FILE__ == $0 from = ARGV[1] to = ARGV[2] subject = ARGV[3] body = ARGV[4] attachment = ARGV[5] smtp_info = begin YAML.load_file(ARGV[0]) rescue $stderr.puts &quot;Could not find SMTP info&quot; exit -1 end mailer = SMTPGoogleMailer.new mailer.smtp_info = smtp_info if ARGV[4] begin mailer.send_attachment_email from, to, subject, body, attachment rescue =&amp;gt; e $stderr.puts &quot;Something went wrong: #{e}&quot; exit -1 end else begin mailer.send_plain_email from, to, subject, body rescue =&amp;gt; e $stderr.puts &quot;Something went wrong: #{e}&quot; exit -1 end end end And that&#39;s all! You can use the script as a standalone command to send an email with some command line arguments or just require it in your ruby script and use the class to send the messages.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Sending emails using Google Mail with Ruby">
+  <meta name="twitter:description" content="It&#39;s no secret that Google Mail has become, over the last years, the most widely used email server and client on the world. Not only it&#39;s basically free, but with the use of Google Apps you...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Sending emails using Google Mail with Ruby</h1>
+    
+    <p class="post-meta"><time datetime="2012-07-29T16:50:51+00:00" itemprop="datePublished">Jul 29, 2012</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/gmail/">gmail</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/google/">google</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/mail/">mail</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ruby/">ruby</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/smtp/">smtp</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+It's no secret that Google Mail has become, over the last years, the most widely used email server and client on the world. Not only it's basically free, but with the use of Google Apps you can even use it on your own domains.
+</p>
+<p>
+Because so many people use it, even system administrators, it may be good to know how to use it to send system emails. Also, because Ruby is actually the only scripting language I feel comfortable with, I'll show you a simple library to send emails using Google SMTP server as an outgoing server, so you don't have to configure your server with sendmail, postfix or another typical UNIX mail server.
+</p>
+<p>
+The first thing we will need is to include (and install) two gems:
+<ul>
+<li>net/smtp (actually this comes from the Standard Library on Ruby 1.9)</li>
+<li>tlsmail</li>
+</ul>
+The first one will allow us to use some SMTP features in Ruby, and the second one will allow us to use TLS authentication for SMTP, the method used by Google Mail.
+</p>
+<p>
+With those two libraries, we can already send a simple email, using the standard SMTP format:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">send_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">mailtext</span>
+  <span class="k">begin</span> 
+    <span class="no">Net</span><span class="o">::</span><span class="no">SMTP</span><span class="p">.</span><span class="nf">enable_tls</span><span class="p">(</span><span class="no">OpenSSL</span><span class="o">::</span><span class="no">SSL</span><span class="o">::</span><span class="no">VERIFY_NONE</span><span class="p">)</span>
+    <span class="no">Net</span><span class="o">::</span><span class="no">SMTP</span><span class="p">.</span><span class="nf">start</span><span class="p">(</span><span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:smtp_server</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:port</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:helo</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:username</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:password</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:authentication</span><span class="p">])</span> <span class="k">do</span> <span class="o">|</span><span class="n">smtp</span><span class="o">|</span>
+      <span class="n">smtp</span><span class="p">.</span><span class="nf">send_message</span> <span class="n">mailtext</span><span class="p">,</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span>
+    <span class="k">end</span>
+  <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>  
+    <span class="k">raise</span> <span class="s2">"Exception occured: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2"> "</span>
+    <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+  <span class="k">end</span>  
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+You can see here that the SMTP info is stored in a variable <code>@smtp_info</code>. We will take care of that later. Also, the variable <code>mailtext</code> passed to the method also needs a special format. More on that later as well. The really important fragment of code here is the one that calls <code>enable_tls</code> on the <code>Net::SMTP</code> module. This method is provided by the <code>tlsmail</code> gem and will allow our SMTP connection to use TLS as the authentication method. The other part of the code is pretty straightforward: we simply call the <a href="http://www.ruby-doc.org/stdlib-1.9.3/libdoc/net/smtp/rdoc/Net/SMTP.html#method-c-start">start</a> method with a block, in which we actually send the email with <a href="http://www.ruby-doc.org/stdlib-1.9.3/libdoc/net/smtp/rdoc/Net/SMTP.html#method-i-send_message">send_message</a>. Note that we have to provide the <code>start</code> method with the SMTP info of our Google Mail server account. This includes the server, which will be <code>smtp.gmail.com</code>, the port, which is <code>587</code>, the HELO, which is <code>gmail.com</code> if using a standard account or your domain FQDN if using your own domain, and finally your username and password. For the authentication parameter we have to provide <code>:plain</code> (TLS will be used on top of that).
+</p>
+<p>
+Now let's see how the <code>mailtext</code> string is built. In this case I'll be using a plain text format with two different variants: a simple text email, or an email with an attachment.
+</p>
+<p>
+To send a simple text email, we have to follow the SMTP standard. I took the info from this <a href="http://www.tutorialspoint.com/ruby/ruby_sending_email.htm">tutorialspoint post</a>. Here's the pattern we have to follow to build a compliant string:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">send_plain_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span>
+  <span class="n">mailtext</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+From: </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="sh">
+To: </span><span class="si">#{</span><span class="n">to</span><span class="si">}</span><span class="sh">
+Subject: </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="sh">
+
+</span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="sh">
+</span><span class="no">EOF</span>
+  <span class="n">send_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">mailtext</span>
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+Note the importance of the indenting here, as the from/to/subject lines must start at the first text column. With this simple method, you can then simply call the method we programmed before with the resulting string as a parameter and the email will be sent. Pretty easy.
+</p>
+<p>
+Sending an attachment is a bit more complicated. As SMTP email is send in plain text, attachments are encoded in base64 strings, and are added to the message string in a special way. Here's how to do it in Ruby:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">send_attachment_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">attachment</span>
+<span class="c1"># Read a file and encode it into base64 format</span>
+  <span class="k">begin</span>
+    <span class="n">filecontent</span> <span class="o">=</span> <span class="no">File</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span>
+    <span class="n">encodedcontent</span> <span class="o">=</span> <span class="p">[</span><span class="n">filecontent</span><span class="p">].</span><span class="nf">pack</span><span class="p">(</span><span class="s2">"m"</span><span class="p">)</span>   <span class="c1"># base64</span>
+  <span class="k">rescue</span>
+    <span class="k">raise</span> <span class="s2">"Could not read file </span><span class="si">#{</span><span class="n">attachment</span><span class="si">}</span><span class="s2">"</span>
+  <span class="k">end</span>
+
+  <span class="n">marker</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="o">...</span><span class="mi">50</span><span class="p">).</span><span class="nf">map</span><span class="p">{</span> <span class="p">(</span><span class="s1">'a'</span><span class="o">..</span><span class="s1">'z'</span><span class="p">).</span><span class="nf">to_a</span><span class="p">[</span><span class="nb">rand</span><span class="p">(</span><span class="mi">26</span><span class="p">)]</span> <span class="p">}.</span><span class="nf">join</span>
+  <span class="n">part1</span> <span class="o">=&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+From: </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="sh">
+To: </span><span class="si">#{</span><span class="n">to</span><span class="si">}</span><span class="sh">
+Subject: </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="sh">
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">
+--</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">
+</span><span class="no">EOF</span>
+
+<span class="c1"># Define the message action</span>
+  <span class="n">part2</span> <span class="o">=&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+Content-Type: text/plain
+Content-Transfer-Encoding:8bit
+
+</span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="sh">
+--</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">
+</span><span class="no">EOF</span>
+
+<span class="c1"># Define the attachment section</span>
+  <span class="n">part3</span> <span class="o">=&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+Content-Type: multipart/mixed; name=</span><span class="se">\"</span><span class="si">#{</span><span class="no">File</span><span class="p">.</span><span class="nf">basename</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span><span class="si">}</span><span class="se">\"</span><span class="sh">
+Content-Transfer-Encoding:base64
+Content-Disposition: attachment; filename="</span><span class="si">#{</span><span class="no">File</span><span class="p">.</span><span class="nf">basename</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span><span class="si">}</span><span class="sh">"
+
+</span><span class="si">#{</span><span class="n">encodedcontent</span><span class="si">}</span><span class="sh">
+--</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">--
+</span><span class="no">EOF</span>
+
+  <span class="n">mailtext</span> <span class="o">=</span> <span class="n">part1</span> <span class="o">+</span> <span class="n">part2</span> <span class="o">+</span> <span class="n">part3</span>
+
+  <span class="n">send_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">mailtext</span>
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+As you can see, in the first place the file is read and converted to a base64 string. After that, the message is generated. SMTP uses a special unique marker to delimit the attachment from the rest of the text. In here we use the line <code>(0...50).map{ ('a'..'z').to_a[rand(26)] }.join</code> (extracted from StackOverflow) to generate a 50 char length random string. Although it's very unlikely to happen, we should check that this random string does not appear anywhere else in the message body or the base64 converted attached file before using it as a delimiter.
+</p>
+<p>
+After that, the rest of the message is built, specifying it has an attachment and its delimiter in the following lines:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">MIME</span><span class="o">-</span><span class="no">Version</span><span class="p">:</span> <span class="mf">1.0</span>
+<span class="no">Content</span><span class="o">-</span><span class="no">Type</span><span class="p">:</span> <span class="n">multipart</span><span class="o">/</span><span class="n">mixed</span><span class="p">;</span> <span class="n">boundary</span><span class="o">=</span><span class="c1">#{marker}</span>
+<span class="o">--</span><span class="c1">#{marker}</span></code></pre></figure>
+
+</p>
+<p>
+The file is actually attached some lines below. After that, we can pass this new string to the method that sends the email, and all done.
+</p>
+<p>
+Now, because our SMTP info can be sensitive (it contains our username and our password), it might not be a good idea to just hardcode this info in the email sending script. That's why I've used a yaml serialized hash to store this info, so we can load it at any time. Doing this is really easy with the <code>yaml</code> gem:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">smtp_info</span> <span class="o">=</span> 
+    <span class="k">begin</span>
+      <span class="no">YAML</span><span class="p">.</span><span class="nf">load_file</span><span class="p">(</span><span class="s2">"/path/to/your/smtpinfo"</span><span class="p">)</span>
+    <span class="k">rescue</span>
+      <span class="vg">$stderr</span><span class="p">.</span><span class="nf">puts</span> <span class="s2">"Could not find SMTP info"</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+An example file would look like this:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-yml" data-lang="yml"><span class="nn">---</span>
+<span class="s">:smtp_server: smtp.gmail.com</span>
+<span class="s">:port: </span><span class="m">587</span>
+<span class="s">:helo: gmail.com</span>
+<span class="s">:username: user@gmail.com</span>
+<span class="s">:password: your_password_here</span>
+<span class="s">:authentication: :plain</span></code></pre></figure>
+
+</p>
+<p>
+Now that we have all the parts programmed, we should only pack it a little so it can be of use as a library. The following code contains a simple script with a class to send the emails and a little program that reads parameters from the command line:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'net/smtp'</span>
+<span class="nb">require</span> <span class="s1">'tlsmail'</span>
+<span class="nb">require</span> <span class="s1">'yaml'</span>
+
+<span class="k">class</span> <span class="nc">SMTPGoogleMailer</span>
+  <span class="nb">attr_accessor</span> <span class="ss">:smtp_info</span>
+
+  <span class="k">def</span> <span class="nf">send_plain_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span>
+    <span class="n">mailtext</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+From: </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="sh">
+To: </span><span class="si">#{</span><span class="n">to</span><span class="si">}</span><span class="sh">
+Subject: </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="sh">
+
+</span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="sh">
+</span><span class="no">EOF</span>
+    <span class="n">send_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">mailtext</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">send_attachment_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">attachment</span>
+<span class="c1"># Read a file and encode it into base64 format</span>
+    <span class="k">begin</span>
+      <span class="n">filecontent</span> <span class="o">=</span> <span class="no">File</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span>
+      <span class="n">encodedcontent</span> <span class="o">=</span> <span class="p">[</span><span class="n">filecontent</span><span class="p">].</span><span class="nf">pack</span><span class="p">(</span><span class="s2">"m"</span><span class="p">)</span>   <span class="c1"># base64</span>
+    <span class="k">rescue</span>
+      <span class="k">raise</span> <span class="s2">"Could not read file </span><span class="si">#{</span><span class="n">attachment</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+
+    <span class="n">marker</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="o">...</span><span class="mi">50</span><span class="p">).</span><span class="nf">map</span><span class="p">{</span> <span class="p">(</span><span class="s1">'a'</span><span class="o">..</span><span class="s1">'z'</span><span class="p">).</span><span class="nf">to_a</span><span class="p">[</span><span class="nb">rand</span><span class="p">(</span><span class="mi">26</span><span class="p">)]</span> <span class="p">}.</span><span class="nf">join</span>
+    <span class="n">part1</span> <span class="o">=&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+From: </span><span class="si">#{</span><span class="n">from</span><span class="si">}</span><span class="sh">
+To: </span><span class="si">#{</span><span class="n">to</span><span class="si">}</span><span class="sh">
+Subject: </span><span class="si">#{</span><span class="n">subject</span><span class="si">}</span><span class="sh">
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">
+--</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">
+</span><span class="no">EOF</span>
+
+<span class="c1"># Define the message action</span>
+    <span class="n">part2</span> <span class="o">=&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+Content-Type: text/plain
+Content-Transfer-Encoding:8bit
+
+</span><span class="si">#{</span><span class="n">body</span><span class="si">}</span><span class="sh">
+--</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">
+</span><span class="no">EOF</span>
+
+<span class="c1"># Define the attachment section</span>
+    <span class="n">part3</span> <span class="o">=&lt;&lt;</span><span class="no">EOF</span><span class="sh">
+Content-Type: multipart/mixed; name=</span><span class="se">\"</span><span class="si">#{</span><span class="no">File</span><span class="p">.</span><span class="nf">basename</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span><span class="si">}</span><span class="se">\"</span><span class="sh">
+Content-Transfer-Encoding:base64
+Content-Disposition: attachment; filename="</span><span class="si">#{</span><span class="no">File</span><span class="p">.</span><span class="nf">basename</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span><span class="si">}</span><span class="sh">"
+
+</span><span class="si">#{</span><span class="n">encodedcontent</span><span class="si">}</span><span class="sh">
+--</span><span class="si">#{</span><span class="n">marker</span><span class="si">}</span><span class="sh">--
+</span><span class="no">EOF</span>
+
+    <span class="n">mailtext</span> <span class="o">=</span> <span class="n">part1</span> <span class="o">+</span> <span class="n">part2</span> <span class="o">+</span> <span class="n">part3</span>
+
+    <span class="n">send_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">mailtext</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">send_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">mailtext</span>
+    <span class="k">begin</span> 
+      <span class="no">Net</span><span class="o">::</span><span class="no">SMTP</span><span class="p">.</span><span class="nf">enable_tls</span><span class="p">(</span><span class="no">OpenSSL</span><span class="o">::</span><span class="no">SSL</span><span class="o">::</span><span class="no">VERIFY_NONE</span><span class="p">)</span>
+      <span class="no">Net</span><span class="o">::</span><span class="no">SMTP</span><span class="p">.</span><span class="nf">start</span><span class="p">(</span><span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:smtp_server</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:port</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:helo</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:username</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:password</span><span class="p">],</span> <span class="vi">@smtp_info</span><span class="p">[</span><span class="ss">:authentication</span><span class="p">])</span> <span class="k">do</span> <span class="o">|</span><span class="n">smtp</span><span class="o">|</span>
+        <span class="n">smtp</span><span class="p">.</span><span class="nf">send_message</span> <span class="n">mailtext</span><span class="p">,</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span>
+      <span class="k">end</span>
+    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>  
+      <span class="k">raise</span> <span class="s2">"Exception occured: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2"> "</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">end</span>  
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="k">if</span> <span class="kp">__FILE__</span> <span class="o">==</span> <span class="vg">$0</span>
+  <span class="n">from</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">to</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+  <span class="n">subject</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+  <span class="n">body</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+  <span class="n">attachment</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+  <span class="n">smtp_info</span> <span class="o">=</span> 
+    <span class="k">begin</span>
+      <span class="no">YAML</span><span class="p">.</span><span class="nf">load_file</span><span class="p">(</span><span class="no">ARGV</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">rescue</span>
+      <span class="vg">$stderr</span><span class="p">.</span><span class="nf">puts</span> <span class="s2">"Could not find SMTP info"</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">end</span>
+
+  <span class="n">mailer</span> <span class="o">=</span> <span class="no">SMTPGoogleMailer</span><span class="p">.</span><span class="nf">new</span>
+  <span class="n">mailer</span><span class="p">.</span><span class="nf">smtp_info</span> <span class="o">=</span> <span class="n">smtp_info</span>
+
+  <span class="k">if</span> <span class="no">ARGV</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="k">begin</span>
+      <span class="n">mailer</span><span class="p">.</span><span class="nf">send_attachment_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">attachment</span>
+    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+      <span class="vg">$stderr</span><span class="p">.</span><span class="nf">puts</span> <span class="s2">"Something went wrong: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">else</span>
+    <span class="k">begin</span>
+      <span class="n">mailer</span><span class="p">.</span><span class="nf">send_plain_email</span> <span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">body</span>
+    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+      <span class="vg">$stderr</span><span class="p">.</span><span class="nf">puts</span> <span class="s2">"Something went wrong: </span><span class="si">#{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span>
+      <span class="nb">exit</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+And that's all! You can use the script as a standalone command to send an email with some command line arguments or just require it in your ruby script and use the class to send the messages.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2012/07/16/ruby-rails-varnish-user-dependent-content/">&laquo; Ruby on Rails, Varnish and user dependent content</a>
+
+
+  <a class="next" href="/2012/07/29/crazy-stuff-c-1/">Crazy stuff in C++ (1) &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

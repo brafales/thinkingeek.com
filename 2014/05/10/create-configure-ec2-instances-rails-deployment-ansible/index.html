@@ -1,0 +1,4946 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>How to create and configure EC2 instances for Rails hosting with CentOS using Ansible</title>
+  <meta name="description" content="Introduction In this quite extensive post I will walk you through the process of creating from scratch a box in EC2 ready to use for deploying your Rails app using Ansible. In the process I will show how to write a simple module that, while not necessary, will illustrate some points as well.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2014/05/10/create-configure-ec2-instances-rails-deployment-ansible/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="How to create and configure EC2 instances for Rails hosting with CentOS using Ansible">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2014/05/10/create-configure-ec2-instances-rails-deployment-ansible/">
+  <meta property="og:description" content="Introduction In this quite extensive post I will walk you through the process of creating from scratch a box in EC2 ready to use for deploying your Rails app using Ansible. In the process I will show how to write a simple module that, while not necessary, will illustrate some points as well.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="How to create and configure EC2 instances for Rails hosting with Ce...">
+  <meta name="twitter:description" content="Introduction In this quite extensive post I will walk you through the process of creating from scratch a box in EC2 ready to use for deploying your Rails app using Ansible. In the process I will sh...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">How to create and configure EC2 instances for Rails hosting with CentOS using Ansible</h1>
+    
+    <p class="post-meta"><time datetime="2014-05-10T11:02:42+00:00" itemprop="datePublished">May 10, 2014</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ansible/">ansible</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/apache/">apache</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/aws/">aws</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/centos/">centos</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/devops/">devops</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ec2/">ec2</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/passenger/">passenger</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/rails/">rails</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/rbenv/">rbenv</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ruby/">ruby</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ruby-on-rails/">ruby on rails</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/sysadmin/">sysadmin</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <h2>Introduction</h2>
+<p>In this quite extensive post I will walk you through the process of creating from scratch a box in <a href="https://aws.amazon.com/ec2/" target="_blank">EC2</a> ready to use for deploying your <a href="http://rubyonrails.org/" target="_blank">Rails</a> app using <a href="http://www.ansible.com/" target="_blank">Ansible</a>. In the process I will show how to write a simple module that, while not necessary, will illustrate some points as well.</p>
+
+<!--more-->
+
+<p>Keep in mind that this is an example based on how we work in our company and that, at the same time, I am not specialised in devops or system administration, so the following example can have its pitfalls. It is also my first work in Ansible so there are probably more efficient ways to do some of the stuff.</p>
+
+<p>At the end of the process we will have a box with the following elements:</p>
+<ul>
+	<li>rbenv</li>
+	<li>desired ruby version</li>
+	<li>passenger</li>
+	<li>apache</li>
+</ul>
+<p>All this is built on CentOS 64 bit machines.</p>
+
+<p>Finally, I’d like to mention that this work has been possible thanks to the amazing Ansible community on freenode, which has been extremely helpful and patient when I needed guidance.</p>
+
+<p>All this code can be found in my public <a href="https://github.com/brafales/rails_server_playbook" target="_blank">rails_server_playbook</a> github repository, in which I will be adding improvements or fixing mistakes.</p>
+
+<h2>Background</h2>
+<p>At work we have (almost) all of our infrastructure in AWS. We essentially use EC2 instances to host a series of applications and services, and have an RDS MySQL database. We do not require fancy things, and in fact we only use a tiny amount of features of the range AWS has to offer. We also don’t need to be constantly creating and terminating new instances for autoscaling.</p>
+
+<p>The main problem before we decided to give Ansible a try was that the process for updating our boxes was extremely painful and inefficient. We had this old AMI template which we kept upgrading every time we needed something changed on it, and then reprovisioned our servers with the new template. Applying those changes to tens of machines was tedious and error prone. There was also the fact that the existing documentation on the packages installed and configuration files changed was scarce, making changes even more difficult for the fear of breaking something and the annoyance of having to be reverse engineering everything.</p>
+
+<p>To put a stop to this, we decided it was time to automate all this, and by that time Ansible was just becoming trendy. It also seemed to fit all our needs:</p>
+<ul>
+	<li>Simple</li>
+	<li>Lightweight</li>
+	<li>Agentless</li>
+</ul>
+<p>Also, the community around it seemed great, so we decided to give it a go. This project would let us not only automate the whole server provisioning, but also have a comprehensive documentation (under version control) of what was installed on the boxes.</p>
+
+<p>So basically the scenario I will describe assumes that:</p>
+<ul>
+	<li>We have a known list of machines we want in our infrastructure</li>
+	<li>Every machine can be either for staging or production</li>
+	<li>Every machine has an associated and known elastic ip (which is eventually linked to one or multiple domain names)</li>
+	<li>While some of the machine characteristics are particular, some of them are going to be shared among all of them</li>
+	<li>Most of the machines will be used to run Rails apps on them. Most of the times the same app</li>
+</ul>
+<p>With that in mind, let me explain how our Ansible playbooks work.</p>
+<h2>Creating the instances</h2>
+<p>The instance creation is centralised in a role called <code>ec2_creation</code>. The role is fairly simple.</p>
+
+<p>The instance configuration is on the file <code>roles/ec2_creation/vars/main.yml</code>. This file uses some kind of a hierarchical model. The variable <code>default_values</code> contains shared values among all of the instances. Then we have two more variables: <code>staging</code> and <code>production</code>, each one containing specific configuration for each environment.</p>
+
+<p>Here’s what the file looks like:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="na">default_values</span><span class="pi">:</span>
+  <span class="na">instance_type</span><span class="pi">:</span> <span class="s2">"</span><span class="s">m1.large"</span>
+  <span class="na">region</span><span class="pi">:</span> <span class="s2">"</span><span class="s">eu-west-1"</span>
+  <span class="na">zone</span><span class="pi">:</span> <span class="s2">"</span><span class="s">eu-west-1b"</span>
+  <span class="na">key_pair</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Apps"</span>
+  <span class="na">image_id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">ami-f011e187"</span> <span class="c1">#Amazon Linux 64 bits blank slate</span>
+  <span class="na">security_groups</span><span class="pi">:</span> <span class="pi">[</span><span class="s2">"</span><span class="s">App</span><span class="nv"> </span><span class="s">Frontends"</span><span class="pi">,</span> <span class="s2">"</span><span class="s">App</span><span class="nv"> </span><span class="s">Private"</span><span class="pi">]</span>
+
+<span class="na">instances</span><span class="pi">:</span>
+  <span class="na">production</span><span class="pi">:</span>
+    <span class="s">example.com</span><span class="pi">:</span>
+      <span class="na">elastic_ip</span><span class="pi">:</span> <span class="s2">"</span><span class="s">54.247.104.88"</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">example.com"</span>
+
+  <span class="na">staging</span><span class="pi">:</span>
+    <span class="s">example.com</span><span class="pi">:</span>
+      <span class="na">elastic_ip</span><span class="pi">:</span> <span class="s2">"</span><span class="s">54.247.89.191"</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">stag-example.com"</span>
+      <span class="na">instance_type</span><span class="pi">:</span> <span class="s2">"</span><span class="s">m1.small"</span>
+
+<span class="na">instance_values</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['name']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['name'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">instance_type</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['instance_type']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['instance_type'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">region</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['region']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['region'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">zone</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['zone']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['zone'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">key_pair</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['key_pair']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['key_pair'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">image_id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['image_id']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['image_id'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">elastic_ip</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['elastic_ip']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['elastic_ip'])</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">security_groups</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instances[rails_env][site]['security_groups']</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">default(default_values['security_groups'])</span><span class="nv"> </span><span class="s">}}"</span></code></pre></figure>
+
+<p>The trick behind this is that we will pass our <code>ansible-playbook</code> command the extra variables <code>--extra-vars "rails_env=staging site=example.com"</code> and then the <code>instance_values</code> variable will contain everything we need to create the instance.</p>
+
+<p>The main provisioning file, which we call <code>provisioning.yml</code>, has several parts, the first one is like this:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="c1">#Create the instance</span>
+<span class="pi">-</span> <span class="na">hosts</span><span class="pi">:</span> <span class="s">localhost</span>
+  <span class="na">connection</span><span class="pi">:</span> <span class="s">local</span>
+  <span class="na">gather_facts</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">roles</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">ec2_creation</span></code></pre></figure>
+
+<p>This is what will create the actual instance. Let me explain the parameters:</p>
+<ul>
+	<li><code>hosts: localhost</code> -- we setup the hosts as localhost because the actual task will be run on the local machine.</li>
+	<li><code>connection: local</code> -- same as above, we do not need any special connection to connect to localhost.</li>
+	<li><code>gather_facts: false</code> -- no need to gather any facts.</li>
+	<li><code>roles: ec2_creation</code> -- this will basically tell the playbook to apply the role <code>ec2_creation</code>, which contains the individual tasks to create the instance.</li>
+</ul>
+<p>The <code>ec2_creation</code> role has two tasks, which you can see in the <code>main.yml</code> file on its tasks folder:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">gather_ec2_facts.yml</span> <span class="c1">#Get ec2 information</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">create_instance.yml</span> <span class="c1">#Create the instance</span></code></pre></figure>
+
+<p>The first task will connect to EC2 and query the current instances to see if what we want to create exists or not. In order to do this we use a custom made module named <code>ec2_instances</code> that you can check on the appendix if you’re interested in knowing how it works. For the time being the only thing needed to know is that we will register the output of this module to a variable for later use. The code for this task is as follows:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Check if instance exists</span>
+  <span class="na">ec2_instances</span><span class="pi">:</span>
+    <span class="na">region</span><span class="pi">:</span> <span class="s2">"</span><span class="s">eu-west-1"</span>
+  <span class="na">register</span><span class="pi">:</span> <span class="s">ec2_instances</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Debug EC2 facts</span>
+  <span class="na">debug</span><span class="pi">:</span> <span class="s">msg="{{ ec2_instances.instances }}"</span></code></pre></figure>
+
+<p>We pass the module a single parameter region, in this case hardcoded to <code>"eu-west-1"</code>, you can use a variable if you prefer it.</p>
+
+<p>The <code>register</code> instruction will save the output of the module to a variable named <code>ec2_instances</code> that we will be using later.</p>
+
+<p>Finally, there’s a second task that will just output into the console the information retrieved. I use the <code>debug</code> task often when I’m not sure what information each variable holds.</p>
+
+<p>Once we have the information on the existing instances, we invoke the tasks on the <code>create_instance.yml</code> file, which is a bit more complex:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Get instance information</span>
+  <span class="na">debug</span><span class="pi">:</span>
+    <span class="na">msg</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values</span><span class="nv"> </span><span class="s">}}"</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Create instance</span>
+  <span class="na">ec2</span><span class="pi">:</span>
+    <span class="na">region</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['region']</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">zone</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['zone']</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">keypair</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['key_pair']</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">group</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['security_groups']</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">instance_type</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['instance_type']</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['image_id']</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">count</span><span class="pi">:</span> <span class="m">1</span>
+    <span class="na">wait</span><span class="pi">:</span> <span class="s">yes</span>
+    <span class="na">instance_tags</span><span class="pi">:</span>
+      <span class="na">Name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['name']</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">when</span><span class="pi">:</span> <span class="s">ec2_instances.instances[instance_values['name']]|default("") == ""</span>
+  <span class="na">register</span><span class="pi">:</span> <span class="s">ec2_info</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Wait for instances to listen on port </span><span class="m">22</span>
+  <span class="na">wait_for</span><span class="pi">:</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">started</span>
+    <span class="na">host</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">ec2_info.instances[0].public_dns_name</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">port</span><span class="pi">:</span> <span class="m">22</span>
+  <span class="na">when</span><span class="pi">:</span> <span class="s">ec2_info|changed</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Add new instance to ec2hosts group</span>
+  <span class="na">add_host</span><span class="pi">:</span>
+    <span class="na">hostname</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">ec2_info.instances[0].public_ip</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">groupname</span><span class="pi">:</span> <span class="s">ec2hosts</span>
+    <span class="na">instance_id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">ec2_info.instances[0].id</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">when</span><span class="pi">:</span> <span class="s">ec2_info|changed</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Get ec2_info information</span>
+  <span class="na">debug</span><span class="pi">:</span>
+    <span class="na">msg</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">ec2_info</span><span class="nv"> </span><span class="s">}}"</span></code></pre></figure>
+
+<p>The first one is yet another debug statement to show the values which will be used to create the instance.</p>
+
+<p>The second one is the one that creates the instance. It uses the <a href="http://docs.ansible.com/ec2_module.html" target="_blank"><code>ec2</code></a> module, and most of the parameters are self explanatory, so I will focus on several that I find need some more attention:</p>
+<ul>
+	<li><code>count: 1</code> -- in this case, as mentioned, we only need one box per app.</li>
+	<li><code>wait: yes</code> -- will wait until the instance is booting to return.</li>
+	<li><code>instance_tags</code> -- this parameter is very important, as we will use the <code>Name</code> tag of the instances to uniquely identify them.</li>
+	<li><code>register: ec2_info</code> -- we register the details of the newly created instance in this variable because we will need this information on a later task.</li>
+	<li><code>when</code> -- this one is also important because it will determine whether we will actually create the instance or not. If you remember the previous step, we connected to EC2 to get the existing instances and save that information on the variable <code>ec2_instances</code>. This variable has a dictionary of the instances on EC2 indexed by the value of their <code>Name</code> tag. So in our case, <code>ec2_instances.instances[instance_values['name']]</code> will hold the information of the instance on EC2 with the name of the instance we want to create. If that information is there, it means the instance exists, so we do not create it. The way used to check for the dictionary having the key is a bit unorthodox and I'm open to a more elegant solution on the comments, but what we basically do is try to evaluate it and default it to the empty string using Jinja2 in case it's undefined. We compare this result to the empty string and if both values are equal it means that the initial evaluation failed to find the key as it had to use the default value (see <a href="http://docs.ansible.com/playbooks_variables.html#defaulting-undefined-variables" target="_blank">Defaulting Undefined Variables</a>).</li>
+</ul>
+<p>The next task on the list will wait until the instance is up and listening to port 22 before doing anything else. Note that as a host we pass information from the registered variable: <code>ec2_info.instances[0].public_dns_name</code> and that we only execute the task if the previous step has created the instance with <code>when: ec2_info|changed</code>.</p>
+
+<p>The reason to wait until ssh is up and listening to connections is that we will need to access the new box via ssh to run the rest of the playbook.</p>
+
+<p>Finally, on the last task (ignoring the debug one) we add this newly created instance to a group of hosts we name <code>ec2_hosts</code>. The actual ip is in the <code>ec2_info.instances[0].public_ip</code> variable, and we also add some more information on the host that we will use later, like the EC2 instance id.</p>
+
+<p>And that is all the <code>ec2_creation</code> role will do. Next on the list for the main provisioning playbook is the application of the <code>common</code> and <code>passenger</code> roles, which will install and configure everything needed on the box.</p>
+<h2>Configuring the newly created box</h2>
+<p>Once we have the machine up and running, what comes next is a standard set of tasks for ansible. I grouped those tasks in a role called <code>common</code> that has the usual role structure and elements in separate folders:</p>
+<ul>
+	<li>tasks -- the different tasks to perform.</li>
+	<li>vars -- useful variables used along the role.</li>
+	<li>files -- static config files for the target machine.</li>
+	<li>templates -- template files that need some stuff replaced.</li>
+	<li>handlers -- triggers for various things.</li>
+</ul>
+<p>Now this common role is not yet a 100% complete and chances are for a fully working setup some more things will need to be added (like development yum packages for compiling certain ruby gems), but it’s a good start as a skeleton.</p>
+
+<p>The application of the common role in the main provisioning playbook is done by adding this to the provisioning.yml file:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1">#Configure and install all we need</span>
+<span class="pi">-</span> <span class="na">hosts</span><span class="pi">:</span> <span class="s">ec2hosts</span>
+  <span class="na">gather_facts</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">remote_user</span><span class="pi">:</span> <span class="s">rails</span>
+  <span class="na">roles</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">common</span>
+    <span class="pi">-</span> <span class="s">passenger</span></code></pre></figure>
+
+<p>The common role has its tasks separared in several files that are included in the right order in the main.yml file:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="c1"># Main tasks for all hosts</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">hostname.yml</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">sudoers.yml</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">rails_user.yml</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">packages.yml</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">rbenv.yml</span></code></pre></figure>
+
+<p>Note that we will create a user <code>rails</code> that will be the user running the applications, and that we also have the <code>ec2-user</code> user provided by the Amazon Linux AMI that has <code>sudo</code> permissions.</p>
+
+<p>In order for this to work, you have to make sure you can connect to the newly created instance with the <code>ec2-user</code> by adding your EC2 key into your ssh-agent.</p>
+
+<p>To avoid repeating myself in each task in which we do this, note that most of them require the <code>sudo</code> modifier so the commands are run with superuser permissions.</p>
+<h3>The hostname task</h3>
+<p>The fist thing we’ll do is set up the machine hostname. We will use a pattern to define our machine hostnames, and that pattern will be <code>&lt;environment&gt;.&lt;site&gt;</code> (eg: <code>stag.example.com</code>). The task uses the <a href="http://docs.ansible.com/hostname_module.html" target="_blank"><code>hostname</code></a> module and is pretty straightforward:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Setup hostname</span>
+  <span class="na">hostname</span><span class="pi">:</span>
+    <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">rails_env</span><span class="nv"> </span><span class="s">}}.{{</span><span class="nv"> </span><span class="s">site</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">remote_user</span><span class="pi">:</span> <span class="s">ec2-user</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span></code></pre></figure>
+
+<h3>The sudoers task</h3>
+<p>In here we will add some configuration to the sudoers system. This is the task code:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">sudoers // copy cloud-init file for ec2-user</span>
+  <span class="na">copy</span><span class="pi">:</span>
+    <span class="na">src</span><span class="pi">:</span> <span class="s">cloud-init</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s">/etc/sudoers.d/cloud-init</span>
+    <span class="na">owner</span><span class="pi">:</span> <span class="s">root</span>
+    <span class="na">group</span><span class="pi">:</span> <span class="s">root</span>
+    <span class="na">mode</span><span class="pi">:</span> <span class="m">0440</span>
+  <span class="na">remote_user</span><span class="pi">:</span> <span class="s">ec2-user</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span></code></pre></figure>
+
+<p>In here we <a href="http://docs.ansible.com/copy_module.html" target="_blank"><code>copy</code></a> a file into the remote machine and assign it the correct owner and permissions. The file is located in the <code>roles/common/files/cloud-init</code> path and has this contents:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">ec2-user <span class="nv">ALL</span><span class="o">=(</span>ALL<span class="o">)</span> NOPASSWD: ALL
+rails <span class="nv">ALL</span><span class="o">=(</span>ALL<span class="o">)</span> NOPASSWD: ALL</code></pre></figure>
+
+<p>What this does is allow both the <code>ec2-user</code> and <code>rails</code> users to be able to run <code>sudo</code> commands without having to type in the password. This will be handy for us to run commands with superuser privileges, but keep in mind the security implications of it.</p>
+<h3>The rails_user task</h3>
+<p>The next step is creating the <code>rails</code> user. The file actually contains more than one task:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rails_user // create the user</span>
+  <span class="na">user</span><span class="pi">:</span>
+    <span class="na">name</span><span class="pi">:</span> <span class="s">rails</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">present</span>
+  <span class="na">remote_user</span><span class="pi">:</span> <span class="s">ec2-user</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rails_user // clean authorized keys</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s2">"</span><span class="s">(test</span><span class="nv"> </span><span class="s">-f</span><span class="nv"> </span><span class="s">/home/rails/.ssh/authorized_keys</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">echo</span><span class="nv"> </span><span class="s">-n</span><span class="nv"> </span><span class="se">\"\"</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">/home/rails/.ssh/authorized_keys)</span><span class="nv"> </span><span class="s">||</span><span class="nv"> </span><span class="s">true"</span>
+  <span class="na">remote_user</span><span class="pi">:</span> <span class="s">ec2-user</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">ssh_keys</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rails_user // set up authorized_keys</span>
+  <span class="na">authorized_key</span><span class="pi">:</span>
+    <span class="na">user</span><span class="pi">:</span> <span class="s">rails</span>
+    <span class="na">key</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">item</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">with_file</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">ssh_keys/brafales</span>
+  <span class="na">remote_user</span><span class="pi">:</span> <span class="s">ec2-user</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">ssh_keys</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">copy ssh keys</span>
+  <span class="na">local_action</span><span class="pi">:</span> <span class="s">command scp -rp3 user@securehost.com:./ami_files/ssh/* rails@{{ hostvars.localhost.ec2_info.instances[0].public_ip }}:./.ssh/</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">no</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">ssh_keys</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">ensure correct ssh file permissions</span>
+  <span class="na">file</span><span class="pi">:</span> <span class="s">path=/home/rails/.ssh/{{ item }} owner=rails group=rails mode=0600</span>
+  <span class="na">with_items</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">id_rsa</span>
+    <span class="pi">-</span> <span class="s">id_rsa.pub</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">ssh_keys</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">ssh config</span>
+  <span class="na">copy</span><span class="pi">:</span> <span class="s">src=ssh_config dest=/home/rails/.ssh/config owner=rails group=rails mode=0644</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">ssh_keys</span>
+
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">bash.yml</span></code></pre></figure>
+
+<p>We start by using the <a href="http://docs.ansible.com/user_module.html" target="_blank">user</a> module to create the user.</p>
+
+<p>Once the user is created we setup the ssh authorized keys so we can log in with this user using an arbitrary number of ssh keys we want (in our case we use one key per developer plus the ones we need for deployments). We do this on two stages: the first one clears the <code>~/.ssh/authorized_keys</code> to get rid of old keys using a <a href="http://docs.ansible.com/shell_module.html" target="_blank"><code>shell</code></a> command, and then we use the <a href="http://docs.ansible.com/authorized_key_module.html" target="_blank"><code>authorized_key</code></a> module and use the loop pattern so we can add as many keys as we want. The public keys are on the <code>roles/common/files/ssh-keys</code> path.</p>
+
+<p>Another ssh key related task is needed too. In our architecture, all frontends using the <code>rails</code> user share the same ssh key as well. This simplifies a lot connection in between all our ec2 machines. In this case, though, because we need both the private and public keys, we do not store it in a repository, but on a special machine (which also holds sensitive password information on rails yaml files, for example) that in this example would be <code>securehost.com</code>. So in order to copy the keys securely, we run a local command that will use <a href="http://linuxcommand.org/man_pages/scp1.html" target="_blank"><code>scp</code></a> to transfer the keys from the secure host to the new box. It’s important to notice the flag <code>-rp3</code> on the command, which will transfer the files using the local machine as a gateway. Otherwise it would try to connect using ssh between both hosts, which would not yet be possible precisely because the new machine lacks the keys to connect to the secure host (this of course assumes the shell from which you’re running the playbook has ssh access to the secure host).</p>
+
+<p>After that we finish our ssh maintenance with two more things. First we ensure the newly copied keys have the right permissions with the <code>file</code> module, and lastly we copy the ssh config we want the user to use from <code>roles/common/files/ssh_config</code> to <code>~/.ssh/config</code>. This config has just the line <code>StrictHostKeyChecking no</code> which will ignore fingerprint changes when connecting to ssh hosts. This is, again, a security compromise made based on the fact that we reprovision boxes often.</p>
+<h3>The bash task</h3>
+<p>At the end of the <code>rails_user.yml</code> you’ll notice we included the <code>bash.yml</code> file. This will configure some bash options for the new user and create some folders that we will need later. The file has the following contents:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">bash // create plugins folder</span>
+  <span class="na">file</span><span class="pi">:</span>
+    <span class="na">path</span><span class="pi">:</span> <span class="s">/home/rails/.bashrc.d</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">directory</span>
+    <span class="na">mode</span><span class="pi">:</span> <span class="m">0755</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">bash // copy bashrc file</span>
+  <span class="na">copy</span><span class="pi">:</span>
+    <span class="na">src</span><span class="pi">:</span> <span class="s">bashrc</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s">/home/rails/.bashrc</span>
+    <span class="na">mode</span><span class="pi">:</span> <span class="m">0644</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">bash // copy rails_env file</span>
+  <span class="na">template</span><span class="pi">:</span>
+    <span class="na">src</span><span class="pi">:</span> <span class="s">rails_env.sh.j2</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s">/home/rails/.bashrc.d/rails_env.sh</span>
+    <span class="na">mode</span><span class="pi">:</span> <span class="s">0644</span></code></pre></figure>
+
+<p>What we do here is create the <code>.bashrc.d</code> folder in the user home folder, which will hold additional bash configuration files. We then copy the <code>.bashrc</code> config file from <code>roles/common/files/bashrc</code>:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># .bashrc</span>
+
+<span class="c"># Source global definitions</span>
+<span class="k">if</span> <span class="o">[</span> <span class="nt">-f</span> /etc/bashrc <span class="o">]</span><span class="p">;</span> <span class="k">then</span>
+	<span class="nb">.</span> /etc/bashrc
+<span class="k">fi</span>
+
+<span class="c"># User specific aliases and functions</span>
+<span class="k">for </span>f <span class="k">in</span> .bashrc.d/<span class="k">*</span>
+<span class="k">do
+  if</span> <span class="o">[</span> <span class="nt">-f</span> <span class="nv">$f</span> <span class="o">]</span> <span class="p">;</span> <span class="k">then</span>
+    <span class="nb">.</span> <span class="nv">$f</span>
+  <span class="k">fi
+done</span></code></pre></figure>
+
+<p>This will make sure every file in the newly created plugins folder will get sourced upon login. And finally we add one file to the plugins folder. In this case it’s not just a plain file but a template, located in <code>roles/common/templates/rails_env.sh.j2</code>:</p>
+
+<figure class="highlight"><pre><code class="language-jinja" data-lang="jinja">export RAILS_ENV="<span class="cp">{{</span> <span class="nv">rails_env</span> <span class="cp">}}</span>"</code></pre></figure>
+
+<p>This will simply make sure the machine has the correct <code>RAILS_ENV</code> environment variable set up.</p>
+<h3>The packages task</h3>
+<p>This is a really simple task that will simply install some packages in the system using the <a href="http://docs.ansible.com/yum_module.html" target="_blank"><code>yum</code> package manager module</a>:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">install common packages</span>
+  <span class="na">yum</span><span class="pi">:</span>
+    <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">item</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">latest</span>
+  <span class="na">with_items</span><span class="pi">:</span> <span class="s">packages</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span></code></pre></figure>
+
+<p>The packages to install are gathered from a variable named <code>packages</code> that is defined in <code>roles/common/vars/main.yml</code> (it also holds more variables to be used in other tasks):</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="na">packages</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">git</span>
+  <span class="pi">-</span> <span class="s">curl-devel</span>
+  <span class="pi">-</span> <span class="s">httpd24</span>
+  <span class="pi">-</span> <span class="s">httpd24-devel</span>
+  <span class="pi">-</span> <span class="s">apr-devel</span>
+  <span class="pi">-</span> <span class="s">apr-util-devel</span>
+  <span class="pi">-</span> <span class="s">gcc47.x86_64</span>
+  <span class="pi">-</span> <span class="s">gcc47-c++.x86_64</span>
+  <span class="pi">-</span> <span class="s">openssl.x86_64</span>
+  <span class="pi">-</span> <span class="s">openssl-devel.x86_64</span>
+<span class="na">rbenv_root</span><span class="pi">:</span> <span class="s">/home/rails/.rbenv</span>
+<span class="na">ruby_version</span><span class="pi">:</span> <span class="s">2.1.1</span>
+<span class="na">passenger_version</span><span class="pi">:</span> <span class="s">4.0.41</span></code></pre></figure>
+
+<p>By default it will install the bare software to later build rbenv, but it is a good place to add other packages that you may need for other purposes.</p>
+<h3>The apache task</h3>
+<p>To host the apps we will use apache. The software has already been installed in a previous task, but we still need to add a configuration file to it. This will be done with the following task:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Copy apache config file</span>
+  <span class="na">copy</span><span class="pi">:</span>
+    <span class="na">src</span><span class="pi">:</span> <span class="s">apache_custom.conf</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s">/etc/httpd/conf.d/</span>
+    <span class="na">mode</span><span class="pi">:</span> <span class="m">0644</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="s">yes</span></code></pre></figure>
+
+<p>The config file, that you can find on <code>roles/common/files/apache_custom.conf</code> has the following contents:</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">#Include rails configs
+IncludeOptional /home/rails/conf/vhosts/*.conf</code></pre></figure>
+
+<p>And it will just let us add customised virtual hosts into our <code>rails</code> user home folder, for each of our apps.</p>
+<h3>The rbenv task</h3>
+<p>And finally, we install the <a href="http://rbenv.org/" target="_blank"><code>rbenv</code></a> ruby version manager.</p>
+
+<p>This is a little more involved task with several steps on it, and all the information to do this is on the <code>rbenv</code> web page and is just adapted to our structure:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // copy rbenv bash plugin</span>
+  <span class="na">template</span><span class="pi">:</span>
+    <span class="na">src</span><span class="pi">:</span> <span class="s">rbenv.sh.j2</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s">/home/rails/.bashrc.d/rbenv.sh</span>
+    <span class="na">mode</span><span class="pi">:</span> <span class="m">0644</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // clone repo</span>
+  <span class="na">git</span><span class="pi">:</span>
+    <span class="na">repo</span><span class="pi">:</span> <span class="s">git://github.com/sstephenson/rbenv.git</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">rbenv_root</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // clone ruby-build</span>
+  <span class="na">git</span><span class="pi">:</span>
+    <span class="na">repo</span><span class="pi">:</span> <span class="s">git://github.com/sstephenson/ruby-build.git</span>
+    <span class="na">dest</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">rbenv_root</span><span class="nv"> </span><span class="s">}}/plugins/ruby-build"</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // check ruby installed</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s2">"</span><span class="s">rbenv</span><span class="nv"> </span><span class="s">versions</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">grep</span><span class="nv"> </span><span class="s">{{</span><span class="nv"> </span><span class="s">ruby_version</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">register</span><span class="pi">:</span> <span class="s">ruby_installed</span>
+  <span class="na">ignore_errors</span><span class="pi">:</span> <span class="s">yes</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // install ruby</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">rbenv install "{{ ruby_version }}"</span>
+  <span class="na">when</span><span class="pi">:</span> <span class="s">ruby_installed|failed</span>
+  <span class="na">notify</span><span class="pi">:</span> <span class="s">rbenv rehash</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // set global ruby</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">rbenv global "{{ ruby_version }}"</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // update rubygems</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">gem update --system</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // install bundler</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">gem install bundler</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span></code></pre></figure>
+
+<p>We begin by copying a bash plugin that will make sure that <code>rbenv</code> is properly set up upon login. For this we use a template in <code>roles/common/templates/rbenv.sh.j2</code>:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">export </span><span class="nv">RBENV_ROOT</span><span class="o">=</span><span class="s2">"{{ rbenv_root }}"</span>
+<span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.rbenv/bin:</span><span class="nv">$PATH</span><span class="s2">"</span>
+<span class="nb">eval</span> <span class="s2">"</span><span class="si">$(</span>rbenv init -<span class="si">)</span><span class="s2">"</span></code></pre></figure>
+
+<p>If you need details on this check the documentation on <code>rbenv</code> where it explains why it’s needed. The template uses the variable <code>rbenv_root</code> that contains the folder in which <code>rbenv</code> will be installed.</p>
+
+<p>After this we clone the <code>rbenv</code> repository into the installation folder using the <a href="http://docs.ansible.com/git_module.html" target="_blank"><code>git</code></a> module.</p>
+
+<p>Once we have <code>rbenv</code>, we also clone the <a href="https://github.com/sstephenson/ruby-build" target="_blank"><code>ruby-build</code></a> plugin, that will allow us to build the ruby versions that we need for our systems to run the applications.</p>
+
+<p>Now we are ready to build the ruby we need. But before that we check that it’s actually not been already built, to avoid extra work. We do this by running the command <code>rbenv versions | grep </code> and registering the result into the <code>ruby_installed</code> variable, that we will use later as a conditional.</p>
+
+<p>The next task builds ruby and has two special things:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // install ruby</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">rbenv install "{{ ruby_version }}"</span>
+  <span class="na">when</span><span class="pi">:</span> <span class="s">ruby_installed|failed</span>
+  <span class="na">notify</span><span class="pi">:</span> <span class="s">rbenv rehash</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span></code></pre></figure>
+
+<p>The first one is that it has a conditional, so it will only be run when the variable we registered before is false with the line <code>when: ruby_installed|failed</code>. The second one is that it has a <code>notify</code> tag that will trigger a handler with the line <code>notify: rbenv rehash</code>.</p>
+
+<p>This has to be done because of the <code>rbenv</code> architecture, that requires you to run a special command every time you install a new command line tool to a managed ruby.</p>
+
+<p>We can do this with ansible <a href="http://docs.ansible.com/glossary.html#handlers" target="_blank">handlers</a>. This will let us call the special handler <code>rbenv rehash</code> when certain conditions are met (like a task being executed) without having to repeat the same set of things on different places.</p>
+
+<p>In our case, this handler is set up in the file <code>roles/common/handlers/main.yml</code>:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv rehash</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">rbenv rehash</span></code></pre></figure>
+
+<p>And is a very simple shell command.</p>
+
+<p>So now that we have the version of ruby we want installed, we make it the default ruby interpreter for <code>rbenv</code>:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // set global ruby</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">rbenv global "{{ ruby_version }}"</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span></code></pre></figure>
+
+<p>We then update the <code>rubygems</code> software:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // update rubygems</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">gem update --system</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span></code></pre></figure>
+
+<p>And last, but not least, install the <code>bundler</code> gem:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">rbenv // install bundler</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">gem install bundler</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">rbenv</span></code></pre></figure>
+
+<p>And that is all for the <code>common</code> role.</p>
+<h3>Installing <a href="https://www.phusionpassenger.com/" target="_blank">Phusion Passenger</a></h3>
+<p>The playbook also includes the role <code>passenger</code>, which will, as you may expect, get a working passenger installation done.</p>
+
+<p>The role is divided into two tasks, listed in the <code>main.yml</code>task file:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">gem.yml</span>
+<span class="pi">-</span> <span class="na">include</span><span class="pi">:</span> <span class="s">httpd_conf.yml</span></code></pre></figure>
+
+<p>The first thing we do is install the passenger gem and compile, if needed, the necessary libraries:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">install gem</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">gem install passenger -v {{ passenger_version }}</span>
+  <span class="na">notify</span><span class="pi">:</span> <span class="s">rbenv rehash</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">check if already compiled</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">passenger-install-apache2-module --snippet | cut -d " " -f 3 | head -n 1 | xargs test -f</span>
+  <span class="na">register</span><span class="pi">:</span> <span class="s">passenger_compiled</span>
+  <span class="na">ignore_errors</span><span class="pi">:</span> <span class="no">true</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">compile module</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">passenger-install-apache2-module --auto</span>
+  <span class="na">when</span><span class="pi">:</span> <span class="s">passenger_compiled|failed</span></code></pre></figure>
+
+<p>The first task is pretty self explanatory. It’s important to note that we need to call the <code>rbenv rehash</code> handler, as the gem will install new binaries that otherwise would not be accessible to <code>rbenv</code>.</p>
+
+<p>After that, we check if, by any change, we already installed and compiled passenger before. The way to do it is to run the command <code>passenger-install-apache2-module --snippet</code> and getting the part of the output that points us to the library that it’s built. Then we do a <code>test -f</code> of that file to check if it exists. We register the result on the <code>passenger_compiled</code> variable for later use.</p>
+
+<p>In the case <code>passenger_compiled</code> fails we need to compile the module. We can achieve this easily by running the shell command on the config above. Note that we pass the <code>--auto</code> modifier so it doesn’t need any interaction from the user.</p>
+
+<p>That will leave us with everything installed and on place. Now apache needs to be told to use this new module, which we do in the <code>httpd_conf.yml</code> file:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="nn">---</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">get passenger snippet</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">passenger-install-apache2-module --snippet</span>
+  <span class="na">register</span><span class="pi">:</span> <span class="s">passenger_snippet</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">passenger</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">setup snippet</span>
+  <span class="na">shell</span><span class="pi">:</span> <span class="s">echo "{{ passenger_snippet.stdout }}" &gt; /etc/httpd/conf.modules.d/02-passenger.conf</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">passenger</span>
+
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">setup passenger options</span>
+  <span class="na">copy</span><span class="pi">:</span> <span class="s">src=passenger-options.conf dest=/etc/httpd/conf.modules.d/02-passenger-options.conf owner=root group=root mode=0644</span>
+  <span class="na">sudo</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">tags</span><span class="pi">:</span> <span class="s">passenger</span></code></pre></figure>
+
+<p>The first thing to do is capture the config snippet from the <code>passenger-install-apache2-module --snippet</code> command and save it to <code>passenger_snippet</code>. Then we create a new apache config file with its contents on <code>/etc/httpd/conf.modules.d/02-passenger.conf</code>. All files in the folder <code>/etc/httpd/conf.modules.d/</code> will be automatically loaded by apache assuming you have not changed the main config file. Finally, we copy another file with some passenger defaults to <code>/etc/httpd/conf.modules.d/02-passenger-options.conf</code>:</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">PassengerMaxPoolSize 35
+PassengerMaxInstancesPerApp 8
+PassengerPoolIdleTime 500
+PassengerStartTimeout 300
+PassengerMaxRequestQueueSize 500</code></pre></figure>
+
+<p>Feel free to use your own values for this.</p>
+
+<p>And that is all. After this you only need to work on your own apache configurations and deployment scripts to get things up and running.</p>
+
+<h2>Associating the elastic ip to the new box</h2>
+<p>In the main provisioning task, there is a final task that will use the <a href="http://docs.ansible.com/ec2_eip_module.html" target="_blank">ec2_eip</a> module to associate the elastic ip to the new box:</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="c1">#Associate elastic ip</span>
+<span class="pi">-</span> <span class="na">hosts</span><span class="pi">:</span> <span class="s">localhost</span>
+  <span class="na">connection</span><span class="pi">:</span> <span class="s">local</span>
+  <span class="na">gather_facts</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">tasks</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">include_vars</span><span class="pi">:</span> <span class="s">roles/ec2_creation/vars/main.yml</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">associate elastic ip to instance</span>
+      <span class="na">ec2_eip</span><span class="pi">:</span>
+        <span class="na">instance_id</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">ec2_info['instance_ids'][0]</span><span class="nv"> </span><span class="s">}}"</span>
+        <span class="na">ip</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['elastic_ip']</span><span class="nv"> </span><span class="s">}}"</span>
+        <span class="na">region</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">instance_values['region']</span><span class="nv"> </span><span class="s">}}"</span></code></pre></figure>
+
+<h2>The <code>ec2_instances</code> bespoke module</h2>
+<p>If you are interested in the module that was built for the purpose of getting a list of your inventory on AWS, you can find it on the <code>library/ec2_instances</code> file. The <code>library</code> folder is the place to put modules not present in ansible. It is heavily based on other ec2 modules already found in the core, and it’s basically a wrapper around the <a href="http://docs.pythonboto.org/en/latest/" target="_blank">python boto library</a>:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+</span>
+<span class="n">DOCUMENTATION</span> <span class="o">=</span> <span class="s">'''
+---
+module: ec2_instances
+short_description: get all instances information from EC2
+description:
+    - This module gets instances information from EC2
+version_added: 1.6
+options:
+    filters:
+      - Optional filters that can be used to limit the results returned. Filters are provided in the form of a dictionary consisting of filter names as the key and filter values as the value. The set of allowable filter names/values is dependent on the request being performed. Check the EC2 API guide for details.
+    required: false
+  instance_ids:
+    description:
+      - A list of strings of instance IDs
+    required: false
+  max_results:
+    description:
+      - The maximum number of paginated instance items per response.
+    required: false
+  ec2_url:
+    description:
+      - URL to use to connect to EC2-compatible cloud (by default the module will use EC2 endpoints)
+    required: false
+    default: null
+    aliases: [ EC2_URL ]
+  ec2_access_key:
+    description:
+      - EC2 access key. If not specified then the EC2_ACCESS_KEY environment variable is used.
+    required: false
+    default: null
+    aliases: [ EC2_ACCESS_KEY ]
+  ec2_secret_key:
+    description:
+      - EC2 secret key. If not specified then the EC2_SECRET_KEY environment variable is used.
+    required: false
+    default: null
+    aliases: [ EC2_SECRET_KEY ]
+  region:
+    description:
+      - the EC2 region to use
+    required: true
+    default: "us-east-1"
+    aliases: [ ec2_region ]
+  validate_certs:
+    description:
+      - When set to "no", SSL certificates will not be validated for boto versions &gt;= 2.6.0.
+    required: false
+    default: "yes"
+    choices: ["yes", "no"]
+    aliases: []
+    version_added: "1.5"
+  profile:
+    description:
+      - uses a boto profile. Only works with boto &gt;= 2.24.0
+    required: false
+    default: null
+    aliases: []
+    version_added: "1.6"
+  security_token:
+    description:
+      - security token to authenticate against AWS
+    required: false
+    default: null
+    aliases: []
+    version_added: "1.6"
+
+requirements: [ "boto" ]
+author: Bernat Rafales &lt;bernat@rafales-mulet.com&gt;
+notes:
+   - This module will get instance info from EC2
+'''</span>
+
+<span class="n">EXAMPLES</span> <span class="o">=</span> <span class="s">'''
+  ec2_instances:
+    region: "eu-west-1"
+'''</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">boto.ec2</span>
+<span class="k">except</span> <span class="nb">ImportError</span><span class="p">:</span>
+    <span class="n">boto_found</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">boto_found</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">argument_spec</span> <span class="o">=</span> <span class="n">ec2_argument_spec</span><span class="p">()</span>
+    <span class="n">argument_spec</span><span class="p">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">'dict'</span><span class="p">),</span>
+            <span class="n">instance_ids</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">'list'</span><span class="p">),</span>
+            <span class="n">max_results</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s">'int'</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">module</span> <span class="o">=</span> <span class="n">AnsibleModule</span><span class="p">(</span>
+        <span class="n">argument_spec</span> <span class="o">=</span> <span class="n">argument_spec</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">boto_found</span><span class="p">:</span>
+        <span class="n">module</span><span class="p">.</span><span class="n">fail_json</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="s">"boto is required"</span><span class="p">)</span>
+
+    <span class="n">ec2</span> <span class="o">=</span> <span class="n">ec2_connect</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+
+    <span class="n">filters</span> <span class="o">=</span> <span class="n">module</span><span class="p">.</span><span class="n">params</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'filters'</span><span class="p">)</span>
+    <span class="n">instance_ids</span> <span class="o">=</span> <span class="n">module</span><span class="p">.</span><span class="n">params</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'instance_ids'</span><span class="p">)</span>
+    <span class="n">max_results</span> <span class="o">=</span> <span class="n">module</span><span class="p">.</span><span class="n">params</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'max_results'</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">reservations</span> <span class="o">=</span> <span class="n">ec2</span><span class="p">.</span><span class="n">get_all_reservations</span><span class="p">(</span><span class="n">instance_ids</span><span class="o">=</span><span class="n">instance_ids</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span> <span class="n">max_results</span><span class="o">=</span><span class="n">max_results</span><span class="p">)</span>
+        <span class="n">instances</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reservations</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">r</span><span class="p">.</span><span class="n">instances</span><span class="p">]</span>
+        <span class="n">module</span><span class="p">.</span><span class="n">exit_json</span><span class="p">(</span><span class="n">changed</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">instances</span><span class="o">=</span><span class="nb">dict</span><span class="p">([(</span><span class="n">i</span><span class="p">.</span><span class="n">tags</span><span class="p">[</span><span class="s">'Name'</span><span class="p">],</span> <span class="n">i</span><span class="p">.</span><span class="nb">id</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">instances</span> <span class="k">if</span> <span class="s">'Name'</span> <span class="ow">in</span> <span class="n">i</span><span class="p">.</span><span class="n">tags</span> <span class="ow">and</span> <span class="n">i</span><span class="p">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s">'terminated'</span><span class="p">]))</span>
+    <span class="k">except</span> <span class="n">boto</span><span class="p">.</span><span class="n">exception</span><span class="p">.</span><span class="n">EC2ResponseError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">module</span><span class="p">.</span><span class="n">fail_json</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+
+<span class="c1"># import module snippets
+</span><span class="kn">from</span> <span class="nn">ansible.module_utils.basic</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">ansible.module_utils.ec2</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span></code></pre></figure>
+
+<p>The important bit is on the last <code>try/except</code> block, in which me make a request using boto and then craft a response that only includes instances in which there is a tag with the <code>'Name'</code> key and the status of the instance is not <code>'terminated'</code>.</p>
+<h2>Final comments</h2>
+<p>In the repository you will find a couple of roles that you may find useful for installing a redis database engine (or just the client).</p>
+
+<p>Please feel free to comment on mistakes, improvements or any other questions you may have on this.</p>
+
+<p>Congratulations for reading this to the end :)</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2014/02/12/check-progress-mysql-database-import/">&laquo; Check progress of a mysql database import</a>
+
+
+  <a class="next" href="/2014/05/11/arm-assembler-raspberry-pi-chapter-18/">ARM assembler in Raspberry Pi – Chapter 18 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

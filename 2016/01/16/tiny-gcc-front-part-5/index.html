@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 5</title>
+  <meta name="description" content="In the last installment of this series we saw how to verify that the sequence of tokens of the input is syntactically valid. Today we will see what we need to give it meaning.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/01/16/tiny-gcc-front-part-5/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 5">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/01/16/tiny-gcc-front-part-5/">
+  <meta property="og:description" content="In the last installment of this series we saw how to verify that the sequence of tokens of the input is syntactically valid. Today we will see what we need to give it meaning.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 5">
+  <meta name="twitter:description" content="In the last installment of this series we saw how to verify that the sequence of tokens of the input is syntactically valid. Today we will see what we need to give it meaning.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 5</h1>
+    
+    <p class="post-meta"><time datetime="2016-01-16T14:49:32+00:00" itemprop="datePublished">Jan 16, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/gcc/">gcc</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/tiny/">tiny</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the last installment of this series we saw how to verify that the sequence of tokens of the input is syntactically valid. Today we will see what we need to give it meaning.
+</p>
+<!--more-->
+
+<p>
+Semantics concerns to the meaning of the program. This means that our sequence of tokens, once they follow some syntax, have meaning in the context of the programming language. In <a href="/2016/01/05/tiny-gcc-front-part-1/">part 1</a> we gave a more or less abstract semantics of tiny. Now, as compiler writers, it is up to us to materialize such semantics in an implementation that fulfills it.
+</p>
+
+<h2>GENERIC</h2>
+
+<p>
+If you recall <a href="/2016/01/06/tiny-gcc-front-part-2/">part 2</a>, the final goal of our front end is creating a GENERIC tree and handing it to the rest of the compiler. Let's talk about bit more about GENERIC trees.
+</p>
+
+<p>
+GENERIC trees are represented using the type <code>tree</code>. A tree can be a <code>NULL_TREE</code> or point to an actual tree. Each tree has a <em>tree code</em> that is specified at the moment of creation. Given a tree we can use the macro <code>TREE_CODE</code> to get the tree code. Most trees, but not all, have a location that we can obtain using the macro <code>EXPR_LOC</code>, if it does not have location it will return <code>UNKNOWN_LOCATION</code>.
+</p>
+
+<p>
+Trees are created using macros <code>build0</code>, <code>build1</code>, <code>build2</code>, ..., <code>build5</code>. The first parameter of each <code>buildN</code> macro is the tree code and the remaining <code>N</code> arguments are trees, called the <em>operands</em>. As an alternative <code>build0_loc</code>, <code>build1_loc</code>, <code>build2_loc</code>, ..., <code>build5_loc</code> can be used instead to create a tree along with a location. The location goes in the first argument and the remaining arguments are the same as in <code>buildN</code>.
+</p>
+
+<p>
+Despite their name, GENERIC trees do not collectively form a tree but a graph. This happens because it is not an error that a tree appears as the operand of two or more trees.
+</p>
+
+<p>
+Each tree of a specific tree code may have associated several attributes. These attributes are accessed using macros. Most of these macros expand in a way that can be used to set the attribute to the tree. So given a tree <code>t</code>, an attribute can be queried doing <code>SOME_TREE_PROPERTY(t)</code> and can be set doing <code>SOME_TREE_PROPERTY(t) = property</code>. These attributes are of different nature, sometimes are other trees, sometimes are boolean values (zero or nonzero), etc.
+</p>
+
+<p>
+GENERIC trees are used to represent many aspects of a program but there are three important classes of trees: declarations, expressions and types.
+</p>
+
+<p>
+Declarations are used to tell the compiler about the existence of something. Variables go into a tree with code <code>VAR_DECL</code>. Labels of the program (used for <code>goto</code>s) go into a <code>LABEL_DECL</code>. tiny does not have functions explicitly but if we declare a function, it goes into a <code>FUNCTION_DECL</code> and each of its parameters would be represented using <code>PARM_DECL</code>.
+</p>
+
+<p>
+Expressions represent trees that can be evaluated. There are a lot of tree codes related to expressions that we will see later. One distinguished node, <code>error_mark_node</code>, will be used as a marker for erroneous trees that may appear during semantic analysis. Given a tree <code>t</code>, the macro <code>error_operand_p(t) </code>returns true if <code>t</code> is <code>error_mark_node</code>.
+</p>
+
+<p>
+Finally, types represent data types. They are represented as trees because most type systems have a recursive structure that fits well in a graph-like structure like GENERIC. Type trees are heavily reused in GENERIC. In tiny we will need tree types for int, float, boolean and strings. Expressions and declarations have type and it can be accessed using <code>TREE_TYPE</code>.
+</p>
+
+<p>
+GENERIC is an intermediate representation that is heavily biased towards a C model of execution (like a relatively high-level assembler). The reason is that GCC was originally a C compiler that later on was extended to support other programming languages. Imperative programming languages, like tiny, fit relatively well in GENERIC. Other programming languages, like functional ones, do not fit so well in GENERIC and a front end for such languages likely uses its own representation that ends being lowered to GENERIC.
+</p>
+
+<h2>Almost GENERIC</h2>
+
+<p>
+Tiny is so simple that we can use GENERIC trees almost directly. Almost, because not all GENERIC trees may have locations so we will pair a tree and a location, to make sure we have a location. Getting the GENERIC tree is, then, as simple as requesting the tree member of the pair. We want to have location in all trees for diagnostic purposes.
+</p>
+
+<p>
+In order to ease using GENERIC trees, we will use a <code>Tree</code> class (mind the uppercase) that will be a very thin wrapper to <code>tree</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include "tree.h"
+</span>
+<span class="k">namespace</span> <span class="n">Tiny</span>
+<span class="p">{</span>
+<span class="k">struct</span> <span class="nc">Tree</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">Tree</span> <span class="p">()</span> <span class="o">:</span> <span class="n">t</span> <span class="p">(</span><span class="n">NULL_TREE</span><span class="p">),</span> <span class="n">loc</span> <span class="p">(</span><span class="n">UNKNOWN_LOCATION</span><span class="p">)</span> <span class="p">{}</span>
+  <span class="n">Tree</span> <span class="p">(</span><span class="n">tree</span> <span class="n">t_</span><span class="p">)</span> <span class="o">:</span> <span class="n">t</span> <span class="p">(</span><span class="n">t_</span><span class="p">),</span> <span class="n">loc</span> <span class="p">(</span><span class="n">EXPR_LOCATION</span> <span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="p">{}</span>
+  <span class="n">Tree</span> <span class="p">(</span><span class="n">tree</span> <span class="n">t_</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc_</span><span class="p">)</span> <span class="o">:</span> <span class="n">t</span> <span class="p">(</span><span class="n">t_</span><span class="p">),</span> <span class="n">loc</span> <span class="p">(</span><span class="n">loc_</span><span class="p">)</span> <span class="p">{}</span>
+  <span class="n">Tree</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">t_</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc_</span><span class="p">)</span> <span class="o">:</span> <span class="n">t</span> <span class="p">(</span><span class="n">t_</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()),</span> <span class="n">loc</span> <span class="p">(</span><span class="n">loc_</span><span class="p">)</span> <span class="p">{}</span>
+
+  <span class="n">location_t</span>
+  <span class="n">get_locus</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">loc</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kt">void</span>
+  <span class="n">set_locus</span> <span class="p">(</span><span class="n">location_t</span> <span class="n">loc_</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">loc_</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">tree</span>
+  <span class="n">get_tree</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">t</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">tree_code</span>
+  <span class="n">get_tree_code</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">TREE_CODE</span> <span class="p">(</span><span class="n">t</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kt">void</span>
+  <span class="n">set_tree</span> <span class="p">(</span><span class="n">tree</span> <span class="n">t_</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t_</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kt">bool</span>
+  <span class="n">is_error</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">error_operand_p</span> <span class="p">(</span><span class="n">t</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kt">bool</span>
+  <span class="n">is_null</span> <span class="p">()</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">t</span> <span class="o">==</span> <span class="n">NULL_TREE</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">static</span> <span class="n">Tree</span>
+  <span class="n">error</span> <span class="p">()</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">Tree</span> <span class="p">(</span><span class="n">error_mark_node</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">Tree</span>
+  <span class="n">get_type</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">TREE_TYPE</span> <span class="p">(</span><span class="n">t</span><span class="p">);</span>
+  <span class="p">}</span>
+
+<span class="nl">private:</span>
+  <span class="n">tree</span> <span class="n">t</span><span class="p">;</span>
+  <span class="n">location_t</span> <span class="n">loc</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+A GENERIC tree is actually a pointer, so comparison by identity is possible. For simplicity, let's teach <code>Tree</code> to do identity comparisons as well.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kr">inline</span> <span class="kt">bool</span> <span class="k">operator</span><span class="o">==</span><span class="p">(</span><span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()</span> <span class="o">==</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">();</span> <span class="p">}</span>
+<span class="kr">inline</span> <span class="kt">bool</span> <span class="k">operator</span><span class="o">!=</span><span class="p">(</span><span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="o">!</span><span class="p">(</span><span class="n">t1</span> <span class="o">==</span> <span class="n">t2</span><span class="p">);</span> <span class="p">}</span></code></pre></figure>
+
+<p>
+For convenience we will also wrap the creation of <code>Tree</code>s into a set of <code>build_tree</code> overloaded functions.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kr">inline</span> <span class="n">Tree</span>
+<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">build1_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
+<span class="p">}</span>
+
+<span class="kr">inline</span> <span class="n">Tree</span>
+<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">build2_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
+<span class="p">}</span>
+
+<span class="kr">inline</span> <span class="n">Tree</span>
+<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">build3_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
+		     <span class="n">t3</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
+<span class="p">}</span>
+
+<span class="kr">inline</span> <span class="n">Tree</span>
+<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">,</span>
+	    <span class="n">Tree</span> <span class="n">t4</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">build4_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
+		     <span class="n">t3</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t4</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
+<span class="p">}</span>
+
+<span class="kr">inline</span> <span class="n">Tree</span>
+<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">,</span>
+	    <span class="n">Tree</span> <span class="n">t4</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t5</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">build5_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
+		     <span class="n">t3</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t4</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t5</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2>Scope</h2>
+
+<p>
+In the definition of tiny we also talked about a stack of mappings from identifiers to values that we collectively called the <em>scope</em>. Note that the mappings in the scope, as defined in the tiny definition, are a dynamic entity so the exact value of the mapping will likely not be known at compile time. That said, the mapping itself must exist. We will represent this mapping in a class called <code>SymbolMapping</code>. It will map identifiers (i.e. strings) to <code>SymbolPtr</code>s (later on we will see what is a <code>SymbolPtr</code>).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">SymbolMapping</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+
+  <span class="kt">void</span> <span class="n">insert</span> <span class="p">(</span><span class="n">SymbolPtr</span> <span class="n">s</span><span class="p">);</span>
+  <span class="n">SymbolPtr</span> <span class="n">get</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">str</span><span class="p">)</span> <span class="k">const</span><span class="p">;</span>
+
+<span class="nl">private:</span>
+
+  <span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span> <span class="n">SymbolPtr</span><span class="o">&gt;</span> <span class="n">Map</span><span class="p">;</span>
+  <span class="n">Map</span> <span class="n">map</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+As you can see it is a very thin wrapper to a map of strings to Symbol (for this reason sometimes a structure like this is called a <em>symbol table</em>).
+</p>
+
+<p>
+<code>SymbolMapping::insert</code> adds a new <code>Symbol</code> into the map using its name as the key. It also checks that the name is not being added twice: this is not possible in tiny.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">SymbolMapping</span><span class="o">::</span><span class="n">insert</span> <span class="p">(</span><span class="n">SymbolPtr</span> <span class="n">s</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">Map</span><span class="o">::</span><span class="n">iterator</span><span class="p">,</span> <span class="kt">bool</span><span class="o">&gt;</span> <span class="n">p</span>
+    <span class="o">=</span> <span class="n">map</span><span class="p">.</span><span class="n">insert</span> <span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">make_pair</span> <span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">get_name</span> <span class="p">(),</span> <span class="n">s</span><span class="p">));</span>
+
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">second</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+<code>SymbolMapping::get</code> returns the mapped <code>Symbol</code> for the given string. Since it may happen that there is no such mapping this function may return a nul <code>Symbol</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">SymbolPtr</span>
+<span class="n">SymbolMapping</span><span class="o">::</span><span class="n">get</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">str</span><span class="p">)</span> <span class="k">const</span>
+<span class="p">{</span>
+  <span class="n">Map</span><span class="o">::</span><span class="n">const_iterator</span> <span class="n">it</span> <span class="o">=</span> <span class="n">map</span><span class="p">.</span><span class="n">find</span> <span class="p">(</span><span class="n">str</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">it</span> <span class="o">!=</span> <span class="n">map</span><span class="p">.</span><span class="n">end</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="k">return</span> <span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="k">return</span> <span class="n">SymbolPtr</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Class <code>Scope</code> is, as we said, a stack of <code>SymbolMapping</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Scope</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">SymbolMapping</span> <span class="o">&amp;</span>
+  <span class="n">get_current_mapping</span> <span class="p">()</span>
+  <span class="p">{</span>
+    <span class="n">gcc_assert</span> <span class="p">(</span><span class="o">!</span><span class="n">map_stack</span><span class="p">.</span><span class="n">empty</span> <span class="p">());</span>
+    <span class="k">return</span> <span class="n">map_stack</span><span class="p">.</span><span class="n">back</span> <span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kt">void</span> <span class="n">push_scope</span> <span class="p">();</span>
+  <span class="kt">void</span> <span class="n">pop_scope</span> <span class="p">();</span>
+
+  <span class="n">Scope</span> <span class="p">();</span>
+
+  <span class="n">SymbolPtr</span> <span class="n">lookup</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">str</span><span class="p">);</span>
+
+<span class="nl">private:</span>
+  <span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">SymbolMapping</span><span class="o">&gt;</span> <span class="n">MapStack</span><span class="p">;</span>
+  <span class="n">MapStack</span> <span class="n">map_stack</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+We can manage the current symbol mapping using <code>Scope::push_scope()</code> and <code>Scope::pop_scope()</code>. The former will be used when we need a fresh mapping (as it will happen when handling <code>if</code>, <code>while</code> and <code>for</code> statements). <code>Scope::get_current_mapping</code> returns the current mapping (i.e. the one that was created in the last push_scope that has not been <em>popped</em> yet).
+</p>
+
+<p>
+Function <code>Scope::lookup</code> is used to get the last mapping for a given string (or null if there is no such mapping).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">SymbolPtr</span>
+<span class="n">Scope</span><span class="o">::</span><span class="n">lookup</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">str</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">MapStack</span><span class="o">::</span><span class="n">reverse_iterator</span> <span class="n">map</span> <span class="o">=</span> <span class="n">map_stack</span><span class="p">.</span><span class="n">rbegin</span> <span class="p">();</span>
+       <span class="n">map</span> <span class="o">!=</span> <span class="n">map_stack</span><span class="p">.</span><span class="n">rend</span> <span class="p">();</span> <span class="n">map</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">SymbolPtr</span> <span class="n">sym</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">get</span> <span class="p">(</span><span class="n">str</span><span class="p">))</span>
+	<span class="p">{</span>
+	  <span class="k">return</span> <span class="n">sym</span><span class="p">;</span>
+	<span class="p">}</span>
+    <span class="p">}</span>
+  <span class="k">return</span> <span class="n">SymbolPtr</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+We have to traverse the stack from the top (end of the <code>MapStack</code>) to the bottom (beginning of the <code>MapStack</code>), so we use a <code>reverse_iterator</code> for this.
+</p>
+
+<p>
+<code>Scope::push_scope</code> and <code>Scope::pop_scope</code> have obvious implementations.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Scope</span><span class="o">::</span><span class="n">push_scope</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">map_stack</span><span class="p">.</span><span class="n">push_back</span> <span class="p">(</span><span class="n">SymbolMapping</span><span class="p">());</span>
+<span class="p">}</span>
+
+<span class="kt">void</span>
+<span class="n">Scope</span><span class="o">::</span><span class="n">pop_scope</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="o">!</span><span class="n">map_stack</span><span class="p">.</span><span class="n">empty</span><span class="p">());</span>
+  <span class="n">map_stack</span><span class="p">.</span><span class="n">pop_back</span> <span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2>Symbol</h2>
+
+<p>
+We will use the class <code>Symbol</code> to represent a named entity of a tiny program. So far the only named entities we have in tiny are variables. Other languages may have types, constants and functions in their set of entities with names. <code>Symbol</code> class would be used as well for such entities.
+</p>
+
+<p>
+There will be a single Symbol object for each named instance, so this class is mostly used by reference. Similar to what we did with tokens in <a href="/2016/01/08/tiny-gcc-front-part-3/">part 3</a>, we will define <code>SymbolPtr</code> and <code>const_SymbolPtr</code> as smart pointers. We have already used <code>SymbolPtr</code> in classes <code>Scope</code> and <code>SymbolMapping</code> above.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">tr1</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Symbol</span><span class="o">&gt;</span> <span class="n">SymbolPtr</span><span class="p">;</span>
+<span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">tr1</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">Symbol</span><span class="o">&gt;</span> <span class="n">const_SymbolPtr</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Tiny is so simple that we only need to keep the name of a symbol (something slightly redundant since GENERIC will have the name somewhere as well) and the associated <code>VAR_DECL</code> tree. In a language with other kind of symbols we would probably want to keep the kind of the symbol and we would probably store other kind of <code>_DECL</code> trees.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Symbol</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">Symbol</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="o">&amp;</span><span class="n">name_</span><span class="p">)</span> <span class="o">:</span> <span class="n">name</span> <span class="p">(</span><span class="n">name_</span><span class="p">),</span> <span class="n">decl</span> <span class="p">(</span><span class="n">error_mark_node</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">size</span> <span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">std</span><span class="o">::</span><span class="n">string</span>
+  <span class="n">get_name</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">name</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kt">void</span>
+  <span class="n">set_tree_decl</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">decl_</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">decl_</span><span class="p">.</span><span class="n">get_tree_code</span><span class="p">()</span> <span class="o">==</span> <span class="n">VAR_DECL</span><span class="p">);</span>
+    <span class="n">decl</span> <span class="o">=</span> <span class="n">decl_</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">Tree</span>
+  <span class="n">get_tree_decl</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">decl</span><span class="p">;</span>
+  <span class="p">}</span>
+
+<span class="nl">private:</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">name</span><span class="p">;</span>
+  <span class="n">Tree</span> <span class="n">decl</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<h3>Current layout</h3>
+
+<p>
+Our <code>gcc-src/gcc/tiny</code> directory now looks like this. 
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">gcc-src/gcc/tiny
+├── config-lang.in
+├── lang-specs.h
+├── Make-lang.in
+├── tiny1.cc
+├── tiny-buffered-queue.h
+├── tiny-lexer.cc
+├── tiny-lexer.h
+├── tiny-parser.cc
+├── tiny-parser.h
+├── tiny-scope.cc
+├── tiny-scope.h
+├── tinyspec.cc
+├── tiny-symbol.cc
+├── tiny-symbol.h
+├── tiny-symbol-mapping.cc
+├── tiny-symbol-mapping.h
+├── tiny-token.cc
+├── tiny-token.h
+└── tiny-tree.h</code></pre></figure>
+
+<p>
+Today we will stop here. We have seen the objects that will be required for the semantic analysis itself. In the next part we will change the parser to generate GENERIC trees that will represent the semantics of our program.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/10/tiny-gcc-front-part-4/">&laquo; A tiny GCC front end – Part 4</a>
+
+
+  <a class="next" href="/2016/01/17/tiny-gcc-front-part-6/">A tiny GCC front end – Part 6 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

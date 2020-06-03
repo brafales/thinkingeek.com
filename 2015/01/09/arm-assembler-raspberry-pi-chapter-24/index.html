@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>ARM assembler in Raspberry Pi – Chapter 24</title>
+  <meta name="description" content="Today we will continue with nested functions.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/01/09/arm-assembler-raspberry-pi-chapter-24/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="ARM assembler in Raspberry Pi – Chapter 24">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/01/09/arm-assembler-raspberry-pi-chapter-24/">
+  <meta property="og:description" content="Today we will continue with nested functions.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="ARM assembler in Raspberry Pi – Chapter 24">
+  <meta name="twitter:description" content="Today we will continue with nested functions.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">ARM assembler in Raspberry Pi – Chapter 24</h1>
+    
+    <p class="post-meta"><time datetime="2015-01-09T13:40:22+00:00" itemprop="datePublished">Jan 9, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/raspberry-pi/">Raspberry Pi</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/arm/">arm</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/assembler/">assembler</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/raspberry/">raspberry</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Today we will continue with nested functions.
+</p>
+
+<!--more-->
+
+<h2>Sorting</h2>
+<p>
+We will first take a detour. The C function <code>qsort</code> can be used to sort any kind of array. Its C signature is the following.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">qsort</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">base</span><span class="p">,</span>
+     <span class="kt">size_t</span> <span class="n">nmemb</span><span class="p">,</span>
+     <span class="kt">size_t</span> <span class="n">size</span><span class="p">,</span>
+     <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">compar</span><span class="p">)(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">));</span></code></pre></figure>
+
+<p>
+<code>qsort</code> returns <code>void</code>, this is, it does not return anything because it performs the sort <em>in place</em>. This means that we will pass a (potentially unsorted) array called <code>base</code> of length <code>nmemb</code> to <code>qsort</code>. When <code>qsort</code> returns, the elements in this array will be sorted. If <code>qsort</code> were able to just sort a specific kind of arrays it would be rather limited. In order to be able to sort any array, <code>qsort</code> requires the <code>size</code> of each element in the array. Note that the array is passed by reference (otherwise the in place sorting would not be possible): <code>void*</code> is the C way to say «I accept an address to any kind of data».
+</p>
+
+<p>We will come back later to the <code>compar</code> bit of <code>qsort</code>.</p>
+
+<h3>Print an array</h3>
+
+<p>
+Before we sort an array, we need a way to examine it. We will use for that a function <code>print_array</code> that prints an array of integers.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+</pre></td><td class="code"><pre>/* print-array.s */
+
+.data
+
+/* declare an array of 10 integers called my_array */
+.align 4
+my_array: .word 82, 70, 93, 77, 91, 30, 42, 6, 92, 64
+
+/* format strings for printf */
+/* format string that prints an integer plus a space */
+.align 4
+integer_printf: .asciz "%d "
+/* format string that simply prints a newline */
+.align 4
+newline_printf: .asciz "\n"
+
+.text
+
+print_array:
+    /* r0 will be the address of the integer array */
+    /* r1 will be the number of items in the array */
+    push {r4, r5, r6, lr}  /* keep r4, r5, r6 and lr in the stack */
+
+    mov r4, r0             /* r4 ← r0. keep the address of the array */
+    mov r5, r1             /* r5 ← r1. keep the number of items */
+    mov r6, #0             /* r6 ← 0.  current item to print */
+
+    b .Lprint_array_check_loop /* go to the condition check of the loop */
+
+    .Lprint_array_loop:
+      /* prepare the call to printf */
+      ldr r0, addr_of_integer_printf  /* r0 ← &amp;integer_printf */
+      /* load the item r6 in the array in address r4.
+         elements are of size 4 bytes so we need to multiply r6 by 4 */
+      ldr r1, [r4, +r6, LSL #2]       /* r1 ← *(r4 + r6 &lt;&lt; 2)
+                                         this is the same as
+                                         r1 ← *(r4 + r6 * 4) */
+      bl printf                       /* call printf */
+
+      add r6, r6, #1                  /* r6 ← r6 + 1 */
+    .Lprint_array_check_loop: 
+      cmp r6, r5               /* perform r6 - r5 and update cpsr */
+      bne .Lprint_array_loop   /* if cpsr states that r6 is not equal to r5
+                                  branch to the body of the loop */
+
+    /* prepare call to printf */
+    ldr r0, addr_of_newline_printf /* r0 ← &amp;newline_printf */
+    bl printf
+    
+    pop {r4, r5, r6, lr}   /* restore r4, r5, r6 and lr from the stack */
+    bx lr                  /* return */
+
+addr_of_integer_printf: .word integer_printf
+addr_of_newline_printf: .word newline_printf
+
+.globl main
+main:
+    push {r4, lr}             /* keep r4 and lr in the stack */
+
+    /* prepare call to print_array */
+    ldr r0, addr_of_my_array  /* r0 ← &amp;my_array */
+    mov r1, #10               /* r1 ← 10
+                                 our array is of length 10 */
+    bl print_array            /* call print_array */
+
+    mov r0, #0                /* r0 ← 0 set errorcode to 0 prior returning from main */
+    pop {r4, lr}              /* restore r4 and lr in the stack */
+    bx lr                     /* return */
+
+addr_of_my_array: .word my_array
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The code above is pretty straightforward and it does not feature anything that has not been seen in previous installments. Running it simply prints the current contents of the array.
+</p>
+
+<figure class="highlight"><pre><code class="language-shell" data-lang="shell"><span class="nv">$ </span>./print-array 
+82 70 93 77 91 30 42 6 92 64 </code></pre></figure>
+
+<h3>Comparison</h3>
+
+<p>
+Above, when we talked about <code>qsort</code> we skipped the <code>compar</code> parameter. What is <code>compar</code>? It is a an address to a function. The funky syntax for C tells us that this function, if it is ever called, will be passed two addreses (again, it does not care what they are, so they are <code>void*</code>) and returns an integer. The <a href="http://man7.org/linux/man-pages/man3/qsort.3.html" title="manual of qsort">manual of qsort</a> explains that this function has to return lower than zero, zero or greater than zero. If the object in the address of the first parameter of <code>compar</code> is <em>lower</em> than the object in the address of the second parameter, then it has to return lower than zero. If they are <em>equal</em>, it should return zero. If the first object is <em>greater</em> than the second, then it should return greater than zero.
+</p>
+
+<p>
+If you wonder why the parameters of <code>compar</code> are actually <code>const void*</code> rather than <code>void*</code>, it is the C way of telling us that the data of the referenced objects cannot change during the comparison. This may sound obvious given that changing things is not the job of a comparison function. Passing them by reference would let us to change them. So this is reminder that we should not.
+</p>
+
+<p>
+Since our array is an array of integers we will have to compare integers: let's write a function that, given two pointers to integers (i.e. addresses) behaves as stated above.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+</pre></td><td class="code"><pre>integer_comparison:
+    /* r0 will be the address to the first integer */
+    /* r1 will be the address to the second integer */
+    ldr r0, [r0]    /* r0 ← *r0
+                       load the integer pointed by r0 in r0 */
+    ldr r1, [r1]    /* r1 ← *r1
+                       load the integer pointed by r1 in r1 */
+
+    cmp r0, r1      /* compute r0 - r1 and update cpsr */
+    moveq r0, #0    /* if cpsr means that r0 == r1 then r0 ←  0 */
+    movlt r0, #-1   /* if cpsr means that r0 &lt;  r1 then r0 ← -1 */
+    movgt r0, #1    /* if cpsr means that r0 &gt;  r1 then r0 ←  1 */
+    bx lr           /* return */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Function <code>integer_comparison</code> does not feature anything new either: it simply avoids branches by using predication as we saw in chapter 11.
+</p>
+
+<p>
+Now we have the last missing bit to be able to call <code>qsort</code>. Here is a program that prints (only <code>main</code> is shown) the array twice, before sorting it and after sorting it.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+</pre></td><td class="code"><pre>.globl main
+main:
+    push {r4, lr}             /* keep r4 and lr in the stack */
+
+    /* prepare call to print_array */
+    ldr r0, addr_of_my_array  /* r0 ← &amp;my_array */
+    mov r1, #10               /* r1 ← 10
+                                 our array is of length 10 */
+    bl print_array            /* call print_array */
+
+    /* prepare call to qsort */
+    /*
+    void qsort(void *base,
+         size_t nmemb,
+         size_t size,
+         int (*compar)(const void *, const void *));
+    */
+    ldr r0, addr_of_my_array  /* r0 ← &amp;my_array
+                                 base */
+    mov r1, #10               /* r1 ← 10
+                                 nmemb = number of members
+                                 our array is 10 elements long */
+    mov r2, #4                /* r2 ← 4
+                                 size of each member is 4 bytes */
+    ldr r3, addr_of_integer_comparison
+                              /* r3 ← &amp;integer_comparison
+                                 compar */
+    bl qsort                  /* call qsort */
+
+    /* now print again to see if elements were sorted */
+    /* prepare call to print_array */
+    ldr r0, addr_of_my_array  /* r0 ← &amp;my_array */
+    mov r1, #10               /* r1 ← 10
+                                 our array is of length 10 */
+    bl print_array            /* call print_array */
+
+    mov r0, #0                /* r0 ← 0 set errorcode to 0 prior returning from main */
+    pop {r4, lr}              /* restore r4 and lr in the stack */
+    bx lr                     /* return */
+
+addr_of_my_array: .word my_array
+addr_of_integer_comparison : .word integer_comparison
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+If we put everything together, we can verify that our array is effectively sorted after the call to the <code>qsort</code> function.
+</p>
+
+<figure class="highlight"><pre><code class="language-shell" data-lang="shell"><span class="nv">$ </span>./sort-array 
+82 70 93 77 91 30 42 6 92 64 
+6 30 42 64 70 77 82 91 92 93 </code></pre></figure>
+
+<h3>What is going on?</h3>
+
+<p>
+C function <code>qsort</code> implements a sorting algorithm (the C Standard does not specify which one must be but it is usually a fine-tuned version of <a href="http://en.wikipedia.org/wiki/Quicksort" title="quicksort">quicksort</a>) which at some point will require to compare two elements. To do this, <code>qsort</code> calls the function <code>compar</code>.
+</p>
+
+<h2>Count how many comparisons happen</h2>
+
+<p>
+Now, we want to count how many comparisons (i.e., how many times <code>integer_comparison</code> is called) when sorting the array. We could change <code>integer_comparison</code> so it increments a global counter.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">.data
+global_counter: .word 0
+
+.text
+integer_comparison_count_global:
+    /* r0 will be the address to the first integer */
+    /* r1 will be the address to the second integer */
+    push {r4, r5}   /* keep callee-saved registers */
+    ldr r0, [r0]    /* r0 ← *r0
+                       load the integer pointed by r0 in r0 */
+    ldr r1, [r1]    /* r1 ← *r1
+                       load the integer pointed by r1 in r1 */
+
+    cmp r0, r1      /* compute r0 - r1 and update cpsr */
+    moveq r0, #0    /* if cpsr means that r0 == r1 then r0 ←  0 */
+    movlt r0, #-1   /* if cpsr means that r0 &lt;  r1 then r0 ← -1 */
+    movgt r0, #1    /* if cpsr means that r0 &gt;  r1 then r0 ←  1 */
+
+    ldr r4, addr_of_global_counter /* r4 ← &amp;global_counter */
+    ldr r5, [r4]    /* r5 ← *r4 */ 
+    add r5, r5, #1  /* r5 ← r5 + 1 */
+    str r5, [r4]    /* *r4 ← r5 */
+
+    pop {r4, r5}    /* restore callee-saved registers */
+    bx lr           /* return */
+addr_of_global_counter: .word global_counter</code></pre></figure>
+
+<p>
+But this post is about nested functions so we will use nested functions. Recall that nested functions can access local variables of their enclosing functions. So we will use a local variable of <code>main</code> as the counter and a nested function (of <code>main</code>) that performs the comparison and updates the counter.
+</p>
+
+<p>
+In the last chapter we ended with a short discussion about nested functions. A downside of nested functions it that a pointer to a nested function requires two things: the address of the function and the lexical scope. If you check again the previous example where we call <code>qsort</code>, you will see that we do not mention anywhere the lexical scope. And there is a reason for that, it is not possible to pass it to <code>qsort</code>. In C, functions cannot be nested so a pointer to a function can just be the address of the function.
+</p>
+
+<h2>Trampoline</h2>
+
+<p>
+We will continue using the convention of the last chapter: <code>r10</code> will have the lexical scope upon the entry of the function. But <code>qsort</code>, when calls <code>integer_compare_count</code> will not set it for us: we cannout count on <code>r10</code> having a meaningful value when called from <code>qsort</code>. This means that <code>qsort</code> should actually call something that first sets <code>r10</code> with the right value and then jumps to <code>integer_compare_count</code>. We will call this ancillary code (or pseudofunction) a <em>trampoline</em>. The technique used here is similar to the one used by <a href="https://gcc.gnu.org/onlinedocs/gcc/Nested-Functions.html">GCC</a> described in <a href="http://www-cs-students.stanford.edu/~blynn/files/lexic.pdf">Lexical Closures for C++ (Thomas M. Breuel, USENIX C++ Conference Proceedings, October 17-21, 1988)</a>.
+</p>
+
+<p>
+The trampoline is a small, always the same, sequence of instructions that behaves like a function and its only purpose is to set <code>r10</code> and then make an indirect call to the nested function. Since the sequence of instructions is always the same, the instructions themselves look like a <em>template</em>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+</pre></td><td class="code"><pre>.Laddr_trampoline_template : .word .Ltrampoline_template /* we will use this below */
+.Ltrampoline_template:
+    .Lfunction_called: .word 0x0
+    .Llexical_scope: .word 0x0
+    push {r4, r5, r10, lr}           /* keep callee-saved registers */
+    ldr r4, .Lfunction_called        /* r4 ← function called */
+    ldr r10, .Llexical_scope         /* r10 ← lexical scope */
+    blx r4                           /* indirect call to r4 */
+    pop {r4, r5, r10, lr}            /* restore callee-saved registers */
+    bx lr                            /* return */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+I used the word template because while the instructions are not going to change, there are two items in the trampoline, labeled <code>function_called</code> and <code>lexical_scope</code>, that will have to be appropriately set before using the trampoline.
+</p>
+
+<p>
+It may be easier to understand if you consider the code above as if it were data: see it as an array of integers. The first two integers, <code>function_called</code> and <code>lexical_scope</code>, are still zero but will be set at some point. The remaining elements in the array are other integers (we do not care which ones) that happen to encode ARM instructions. The cool thing is that these instructions refer to the two first integers, so by changing them we are indirectly changing what the trampoline does. This trampoline takes 8 words, so 32 bytes.
+</p>
+
+<p>
+Let's start with this example.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td><td class="code"><pre>/* trampoline-sort-arrays.s */
+
+.data
+
+/* declare an array of 10 integers called my_array */
+.align 4
+my_array: .word 82, 70, 93, 77, 91, 30, 42, 6, 92, 64
+
+/* format strings for printf */
+/* format string that prints an integer plus a space */
+.align 4
+integer_printf: .asciz "%d "
+/* format string that simply prints a newline */
+.align 4
+newline_printf: .asciz "\n"
+.align 4 /* format string for number of comparisons */
+comparison_message: .asciz "Num comparisons: %d\n"
+
+.text
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The function <code>print_array</code> will be the same as above. Next is <code>main</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+</pre></td><td class="code"><pre>.globl main
+main:
+    push {r4, r5, r6, fp, lr} /* keep callee saved registers */
+    mov fp, sp                /* setup dynamic link */
+
+    sub sp, sp, #4            /* counter will be in fp - 4 */
+    /* note that now the stack is 8-byte aligned */
+
+    /* set counter to zero */
+    mov r4, #0        /* r4 ← 0 */
+    str r4, [fp, #-4] /* counter ← r4 */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Nothing fancy here, we set the dynamic link, allocate space in the stack for the counter and set it to zero.
+</p>
+
+<p>
+Now we make room for the trampoline in the stack. Recall that our trampoline takes 32 bytes.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
+67
+68
+69
+</pre></td><td class="code"><pre>    /* Make room for the trampoline */
+    sub sp, sp, #32 /* sp ← sp - 32 */
+    /* note that 32 is a multiple of 8, so the stack
+       is still 8-byte aligned */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now we will copy the trampoline template into the stack storage we just allocated. We do this with a loop that copies a word (4 bytes) at a time.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+</pre></td><td class="code"><pre>    /* copy the trampoline into the stack */
+    mov r4, #32                        /* r4 ← 32 */
+    ldr r5, .Laddr_trampoline_template /* r4 ← &amp;trampoline_template */
+    mov r6, sp                         /* r6 ← sp */
+    b .Lcopy_trampoline_loop_check     /* branch to copy_trampoline_loop_check */
+
+    .Lcopy_trampoline_loop:
+        ldr r7, [r5]     /* r7 ← *r5 */
+        str r7, [r6]     /* *r6 ← r7 */
+        add r5, r5, #4   /* r5 ← r5 + 4 */
+        add r6, r6, #4   /* r6 ← r6 + 4 */
+        sub r4, r4, #4   /* r4 ← r4 - 4 */
+    .Lcopy_trampoline_loop_check:
+        cmp r4, #0                  /* compute r4 - 0 and update cpsr */
+        bgt .Lcopy_trampoline_loop  /* if cpsr means that r4 &gt; 0
+                                       then branch to copy_trampoline_loop */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In the loop above, <code>r4</code> counts how many bytes remain to copy. <code>r5</code> and <code>r6</code> are pointers inside the (source) trampoline and the (destination) stack, respectively. Since we copy 4 bytes at a time, all three registers are updated by 4.
+</p>
+
+<p>
+Now we have the trampoline copied in the stack. Recall, it is just an array of words, the two first of which must be updated. The first 4 bytes must be the address of function to be called, i.e. <code>integer_comparison_count</code> and the second 4 bytes must be the static link, i.e. <code>fp</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">88
+89
+90
+91
+92
+93
+94
+95
+96
+</pre></td><td class="code"><pre>    /* setup the trampoline */
+    ldr r4, addr_of_integer_comparison_count
+                       /* r4 ← &amp;integer_comparison_count */
+    str r4, [fp, #-36] /* *(fp - 36) ← r4 */
+                       /* set the function_called in the trampoline
+                          to be &amp;integer_comparison_count */
+    str fp, [fp, #-32]  /* *(fp - 32) ← fp */
+                        /* set the lexical_scope in the trampoline
+                           to be fp */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Recall that our trampoline takes 32 bytes but in the stack we also have the counter. This is the reason why the trampoline starts in <code>fp - 36</code> (this is also the address of the first word of the trampoline, of course). The second word is then at <code>fp - 32</code>.
+</p>
+
+<p>
+Now we proceed like in the sort example above: we print the array before sorting it and after sorting it. Before printing the sorted array, we will also print the number of comparisons that were performed.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+</pre></td><td class="code"><pre>   /* prepare call to print_array */
+    ldr r0, addr_of_my_array /* r0 ← &amp;my_array */
+    mov r1, #10              /* r1 ← 10
+                                our array is of length 10 */
+    bl print_array           /* call print_array */
+
+    /* prepare call to qsort */
+    /*
+    void qsort(void *base,
+         size_t nmemb,
+         size_t size,
+         int (*compar)(const void *, const void *));
+    */
+    ldr r0, addr_of_my_array /* r0 ← &amp;my_array
+                                base */
+    mov r1, #10              /* r1 ← 10
+                                nmemb = number of members
+                                our array is 10 elements long */
+    mov r2, #4               /* r2 ← 4
+                                size of each member is 4 bytes */
+    sub r3, fp, #28          /* r3 ← fp - 28 */
+    bl qsort                 /* call qsort */
+
+    /* prepare call to printf */
+    ldr r1, [fp, #-4]                    /* r1 ← counter */
+    ldr r0, addr_of_comparison_message   /* r0 ← &amp;comparison_message */
+    bl printf                            /* call printf */
+
+    /* now print again the array to see if elements were sorted */
+    /* prepare call to print_array */
+    ldr r0, addr_of_my_array  /* r0 ← &amp;my_array */
+    mov r1, #10               /* r1 ← 10
+                                 our array is of length 10 */
+    bl print_array            /* call print_array */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Note that the argument <code>compar</code> passed to qsort (line 123) is not the address of the nested function but the trampoline. In fact, it is not the trampoline but its third word since, as we know, the two first words of the trampoline are the address of the nested function to call and the lexical scope (that we set earlier, lines 91 and 94).
+</p>
+
+<p>
+Finally we return from main as usual.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">139
+140
+141
+142
+143
+144
+145
+146
+</pre></td><td class="code"><pre>    mov r0, #0                /* r0 ← 0 set errorcode to 0 prior returning from main */
+
+    mov sp, fp
+    pop {r4, r5, r6, fp, lr}      /* restore callee-saved registers */
+    bx lr                     /* return */
+
+addr_of_my_array: .word my_array
+addr_of_comparison_message : .word comparison_message
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The nested comparison function is next.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+</pre></td><td class="code"><pre>    /* nested function integer comparison */
+    addr_of_integer_comparison_count : .word integer_comparison_count
+    integer_comparison_count:
+        /* r0 will be the address to the first integer */
+        /* r1 will be the address to the second integer */
+        push {r4, r5, r10, fp, lr} /* keep callee-saved registers */
+        mov fp, sp                 /* setup dynamic link */
+
+        ldr r0, [r0]    /* r0 ← *r0
+                           load the integer pointed by r0 in r0 */
+        ldr r1, [r1]    /* r1 ← *r1
+                           load the integer pointed by r1 in r1 */
+     
+        cmp r0, r1      /* compute r0 - r1 and update cpsr */
+        moveq r0, #0    /* if cpsr means that r0 == r1 then r0 ←  0 */
+        movlt r0, #-1   /* if cpsr means that r0 &lt;  r1 then r0 ← -1 */
+        movgt r0, #1    /* if cpsr means that r0 &gt;  r1 then r0 ←  1 */
+
+        ldr r4, [fp, #8]  /* r4 ← *(fp + 8)
+                             get static link in the stack */
+        ldr r5, [r4, #-4] /* r5 ← counter
+                             get value of counter */
+        add r5, r5, #1    /* r5 ← r5 + 1 */
+        str r5, [r4, #-4] /* counter ← r5
+                             update counter */
+
+        mov sp, fp        /* restore stack */
+        pop {r4, r5, r10, fp, lr} /* restore callee-saved registers */
+        bx lr           /* return */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+As you can see, the nested function expects <code>r10</code> to be correctly set. This is what the trampoline does.
+</p>
+
+<h2>Harvard architecture</h2>
+
+<p>
+If you try to run the program as shown, it will probably work. But it will do it by chance. The reason is that we are featuring some simple form of self modifying code.
+</p>
+
+<p>
+The Raspberry Pi processor features a <a href="http://en.wikipedia.org/wiki/Modified_Harvard_architecture">modified Harvard architecture</a>. This means that at some point there exists a distinction between instructions memory (<code>.text</code>) and the data memory (<code>.data</code>). Nowadays there are not many processors that feature a strict distinction between instruction and data memory (so at some point the program and the data are both in <em>main memory</em>, commonly called the RAM) but such differentiation is kept for <em><a href="http://en.wikipedia.org/wiki/CPU_cache">caches</a></em>.
+</p>
+<p>
+A cache is a smaller and faster memory, that sits between the processor and the main memory. It is used to speed up memory accesses since most of the time such accesses happen close to other memory accesses (i.e. accessing elements of an array, different local variables in the stack or one instruction after the other in implicit sequencing) or close in time (i.e. accessing several times the same local variable or executing the same instruction when the code is in a loop).
+</p>
+<p>
+Most modern processors feature distinguished caches for data (called the <em>data cache</em>) and instructions (called the <em>instruction cache</em>). The reason for such differentiation is that accessing to memory to execute instruction has a different pattern than accessing to memory to load/store data. It is beneficial to make such distinction but it comes at some price: when a program manipulates data that later will be executed as instructions (like we did with the trampoline, but also when the operating system loads a program in memory) the view of the two caches respect to the program state becomes incoherent: changes that we did in the data will have effect in the data cache but not in the instruction cache. Conversely, since the instruction cache will only get data from the main memory (and not from the data cache), we need to <em>write back</em> all the changes we did in the data cache to the main memory (this is called <em>flushing</em> the cache). We also have to make sure the instruction cache effectively gets the instructions from the memory, rather than reusing previously loaded instructions (which would be stale now), so we have to <em>invalidate</em> (or clear) the instruction cache.
+</p>
+
+<p>
+In ARM the instructions that flush and invalidate caches are privileged operations (done through coprocessor instructions on the coprocessor 15 which manages the memory system of the CPU). This means that only the operating system can execute such instructions. As you see, user code may have to request a cache clear. Linux provides a <code>cacheflush</code> system call for this purpose.
+Recall that in chapter 19 we saw ho to make system calls.</p>
+
+<p>
+<a href="http://lxr.free-electrons.com/source/arch/arm/kernel/traps.c#L597">According to the Linux kernel</a>, register r0 must contain the address of the beginning of the region to be flushed and invalidated. <code>r1</code> must contain the address of the first byte that will not be invalidated. <code>r2</code> must be zero. The <a href="http://lxr.free-electrons.com/source/arch/arm/include/uapi/asm/unistd.h#L422">cacheflush service number</a>, that has to be set in <code>r7</code> is <code>0xf0002</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">    push {r7}          /* keep r7 because we are going to modify it */
+    mov r7, #0xf0000   /* r7 ← 0xf0000 */
+    add r7, r7, #2     /* r7 ← r7 + 2. So r7 ← 0xf0002
+                          We do this in two steps because
+                          we cannot encode 0xf0002 in
+                          the instruction */
+    mov r0, sp         /* r0 ← sp */
+    add r1, sp, #32    /* r1 ← sp + 32 */
+    mov r2, #0         /* r2 ← 0 */
+    swi 0              /* system call */
+    pop  {r7}          /* restore r7 */</code></pre></figure>
+
+<p>
+As an alternative we can call an internal function implemented in <code>libgcc</code> (<a href="https://gcc.gnu.org/onlinedocs/gccint/Libgcc.html">the GCC low-level runtime library</a>) called <a href="https://gcc.gnu.org/onlinedocs/gccint/Miscellaneous-routines.html">__clear_cache</a>. This function will internally call the Linux service.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">98
+99
+100
+101
+</pre></td><td class="code"><pre>    /* prepare call to __clear_cache */
+    mov r0, sp       /* r0 ← sp */
+    add r1, sp, #32  /* r1 ← sp + 32 */
+    bl __clear_cache /* call __clear_cache */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+We will invalidate and flush the caches right after setting up the trampoline (lines 89 to 94).
+</p>
+
+<p>
+Now it only remains to run our program.
+</p>
+
+<figure class="highlight"><pre><code class="language-shell" data-lang="shell"><span class="nv">$ </span>./trampoline-sort-array 
+82 70 93 77 91 30 42 6 92 64 
+Num comparisons: 22
+6 30 42 64 70 77 82 91 92 93 </code></pre></figure>
+
+<p>
+You can see the full listing <a href="https://github.com/rofirrim/raspberry-pi-assembler/blob/master/chapter24/trampoline-sort-array.s">here</a>.
+</p>
+
+<h2>Discussion</h2>
+
+<p>
+Given that nested functions require a lexical scope, they cannot be trivially passed as plain addresses to other functions. Today we have seen that by using a trampoline it is possible to pass them to functions that do not allow passing a lexical scope. The price is having to copy a template, the trampoline, having to set it up with the proper values. We also have to flush caches in order to avoid executing wrong code. It is complicated but doable.
+</p>
+
+<p>
+Having to flush the cache is undesirable (although not required in all architectures) and may cause a severe degradation of performance. Performance-critical pieces of code typically would not want to do this.
+</p>
+
+<p>
+A serious concern, though, with the trampoline approach relates to the fact that we need an executable stack. A modern operating system, like Linux, can mark regions of memory to be readable, writable or executable. A region of memory that is not executable may contain instructions but if we branch to that region the processor will signal a fault, and the operating system will likely kill our process. Being able to disable execution of specific memory regions is done for security purposes. Most of the time one does not have to execute instructions that are found in stack or <code>.data</code> section. Only <code>.text</code> makes sense in these cases to be executable.
+</p>
+
+<p>
+If you check what we did above, we actually copied some code (which was in <code>.text</code>) into the stack and then, <code>qsort</code> branched to the stack. This is because our programs allow an executable stack. Executable stacks are linked to common program vulnerability exploits like <a href="http://en.wikipedia.org/wiki/Buffer_overflow#Executable_space_protection">buffer overflows</a>.
+</p>
+
+<p>
+As we've seen in this chapter and in the previous one, nested functions come with several downsides, so it is not surprising that several programming languages do not provide support for them.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/01/03/dvd-with-bogus-permissions-ubuntu/">&laquo; Read DVDs with bogus permissions in Ubuntu</a>
+
+
+  <a class="next" href="/2015/02/26/array-array/">When an array is not an array &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

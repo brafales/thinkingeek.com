@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 7</title>
+  <meta name="description" content="In previous chapters we saw how the input source was lexed, parsed and semantically analysed and we looked at how the symbols and data types are represented. But we haven&#39;t looked at what happens once the semantic analysis finishes. In this installment we&#39;re going to talk about the AST.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2018/08/25/walk-through-flang-part-7/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 7">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2018/08/25/walk-through-flang-part-7/">
+  <meta property="og:description" content="In previous chapters we saw how the input source was lexed, parsed and semantically analysed and we looked at how the symbols and data types are represented. But we haven&#39;t looked at what happens once the semantic analysis finishes. In this installment we&#39;re going to talk about the AST.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 7">
+  <meta name="twitter:description" content="In previous chapters we saw how the input source was lexed, parsed and semantically analysed and we looked at how the symbols and data types are represented. But we haven&#39;t looked at what happe...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 7</h1>
+    
+    <p class="post-meta"><time datetime="2018-08-25T17:41:18+00:00" itemprop="datePublished">Aug 25, 2018</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In previous chapters we saw how the input source was lexed, parsed and semantically analysed and we looked at how the symbols and data types are represented. But we haven't looked at what happens once the semantic analysis finishes. In this installment we're going to talk about the AST.
+</p>
+<!--more-->
+
+<h2>Abstract Syntax Tree</h2>
+
+<p>
+Fortran has two kinds of statements: non-executable and executable. The former declare properties about entities of the program and we saw in the previous chapter that these entities or symbols are represented in a symbol table. There is usually not much more to do beyond registering and remembering the attributes implied by a non-executable statement.
+</p>
+
+<p>
+Executable statements, on the other hand, describe the computation that our Fortran program has to do. So we need a mechanism to represent that computation. At some point we will use this representation to generate a program that does exactly the intended computation by the Fortran source. A common way to represent this is using an AST, or abstract syntax tree.
+</p>
+
+<p>
+ASTs are called <em>abstract</em> because they do not represent all the lexical and syntactical details of the source. Instead, they represent the fundamental parts of the language that are going to be relevant for the computation. The flang AST does exactly that.
+</p>
+
+<h2>Example</h2>
+
+<p>
+Lets consider this very simple function below
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="k">FUNCTION</span><span class="w"> </span><span class="n">ADD</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">)</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">ADD</span><span class="w">
+
+    </span><span class="n">ADD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="w">
+</span><span class="k">END</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h3>Symbol table</h3>
+
+<p>
+In the last chapter we talked about the symbol table but we didn't consider any specific example neither we attempted to dump any of the symbol tables. Now it is a good opportunity to do this.
+</p>
+
+<p>
+The flang driver allows us to pass debug flags to <code>flang1</code> using <code>-Hq,x,y</code> (and to <code>flang2</code> using <code>-Mq,x,y</code>). The numbers <code>x</code> and <code>y</code> are documented in the flang documentation (file <code>coding.html</code>). We can dump the symbol table doing <code>-Hq,5,1</code>
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>flang <span class="nt">-c</span> test.f90 <span class="nt">-Hq</span>,5,1</code></pre></figure>
+
+<p>
+When we request debug information, flang will create a file named <code>&lt;name&gt;.qbf</code> for every given <code>&lt;name&gt;.f90</code> compiled. In our case <code>test.qdbf</code>.
+</p>
+
+<figure class="highlight"><figcaption>test.qdbf</figcaption><pre><code class="language-txt" data-lang="txt">F90 PARSER begins
+{flang after parser
+
+add                                      integer entry
+sptr: 624  hashlk: 0   nmptr: 5015  dtype: 6  scope: 0  lineno: 1  enclfunc: 0
+dcld: 1  ccsym: 0   entstd: 0   entnum: 0
+endline: 5   symlk: 1   paramct: 2   dpdsc: 2
+funcline: 1   bihnum: 0   fval: 627   pure: 0  impure: 0   recur:0
+adjarr:0  aftent:0  assumshp:0  private:0
+   gsame: 0
+altname: 0
+Parameters:
+sptr =  625, a
+sptr =  626, b
+
+a                                        integer variable
+sptr: 625  hashlk: 0   nmptr: 5019  dtype: 6  scope: 624  lineno: 1  enclfunc: 0
+dcld:1   ccsym:0   save:0   ref:0   dinit:0   vol:0   ptrv:0  cvlen:0
+address: 0   sc:3(SC_DUMMY)   symlk: 1   midnum: 0   socptr: 0   autobj: 0
+addrtkn:0  eqv:0  hccsym:0  alloc:0  arg:0  seq:1  nml:0  assn:0
+private:0  sdsc: 0  ptroff: 0  descr: 0
+altname:0
+optarg:0   intent:INOUT
+
+b                                        integer variable
+sptr: 626  hashlk: 0   nmptr: 5021  dtype: 6  scope: 624  lineno: 1  enclfunc: 0
+dcld:1   ccsym:0   save:0   ref:0   dinit:0   vol:0   ptrv:0  cvlen:0
+address: 0   sc:3(SC_DUMMY)   symlk: 1   midnum: 0   socptr: 0   autobj: 0
+addrtkn:0  eqv:0  hccsym:0  alloc:0  arg:0  seq:1  nml:0  assn:0
+private:0  sdsc: 0  ptroff: 0  descr: 0
+altname:0
+optarg:0   intent:INOUT
+
+add                                      integer variable
+sptr: 627  hashlk: 0   nmptr: 5015  dtype: 6  scope: 624  lineno: 0  enclfunc: 0
+dcld:1   ccsym:0   save:0   ref:0   dinit:0   vol:0   ptrv:0  cvlen:0
+address: 0   sc:3(SC_DUMMY)   symlk: 1   midnum: 0   socptr: 0   autobj: 0
+addrtkn:0  eqv:0  hccsym:0  alloc:0  arg:0  seq:1  nml:0  assn:1
+private:0  sdsc: 0  ptroff: 0  descr: 0
+altname:0
+  result   optarg:0   intent:INOUT
+...</code></pre></figure>
+
+<p>&lt;/code&gt;
+The dump of the table is not super easy to read but basically we see four entries. Each entry starts with the name of the symbol and the kind of symbol. The next lines are several attributes of the symbol. The set of attributes dumped changes for each kind of symbol.
+<p>
+<p>
+In our example we only have two kinds of symbols: a first <code>add</code> which is an entry (which is the way flang names a <code>FUNCTION</code>) then <code>a</code>, <code>b</code> and another <code>add</code>. The second <code>add</code> is there because it represents the <em>result-name</em> of the <code>FUNCTION</code> (had we used RESULT(myname) in the FUNCTION statement we would not have had repeated symbol names). In general repeated names are not a problem (sometimes it happens in Fortran) but it in this case, note that the scope of the variables is 624 which is the id of the symbol. The id of symbols that entail scopes like <code>FUNCTION</code>, <code>SUBROUTINE</code>, <code>MODULE</code> is used to define a scoping relationship. Also note that the variables are marked to have a storage-class of SC_DUMMY. In Fortran parlance a dummy-argument is a formal parameter.
+</p>
+
+<h3>AST</h3>
+
+<p>
+Ok, now we have seen what flang knows (or at least shows in the dumps) about the symbols. Let's see the AST it generates. We can get the AST using <code>-Hq,4,256</code>. It is possible to combine several <code>-Hq</code> flags so we can see at the same time several internal dumps.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>flang <span class="nt">-c</span> test.f90 <span class="nt">-Hq</span>,5,1 <span class="nt">-Hq</span>,4,256</code></pre></figure>
+
+
+
+<figure class="highlight"><figcaption>test.qdbf</figcaption><pre><code class="language-txt" data-lang="txt">...
+AST Table
+
+null        hshlk/std:    0 opt=(0,0)
+aptr:    1  &lt;null_ast&gt;
+
+constant    hshlk/std:    0  type:integer opt=(0,0)
+aptr:    2  sptr:  609 (0)
+
+constant    hshlk/std:    0  type:integer opt=(0,0)
+aptr:    3  sptr:  611 (1)
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:    4  sptr:    1 (..sqrt)
+
+unaryop     hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:    5  lop :    4  optype:28   ptr0
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:    6  sptr:    2 (.sqrt)
+
+unaryop     hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:    7  lop :    6  optype:28   ptr1
+
+ident       hshlk/std:    0  type:character*1  alias:    0  callfg:0 opt=(0,0)
+aptr:    8  sptr:    3 (.dsqrt)
+
+unaryop     hshlk/std:    0  type:character*1  alias:    0  callfg:0 opt=(0,0)
+aptr:    9  lop :    8  optype:28   ptr0c
+
+constant    hshlk/std:    0  type:integer*8 opt=(0,0)
+aptr:   10  sptr:  610 (0)
+
+constant    hshlk/std:    0  type:integer*8 opt=(0,0)
+aptr:   11  sptr:  612 (1)
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   12  sptr:  625 (a)
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   13  sptr:  626 (b)
+
+binop       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   14  lop :   12  rop:   13  optype:1
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   15  sptr:  627 (add)
+
+assign      hshlk/std:    1  type:integer opt=(0,0)
+aptr:   16  dest:   15  src:   14
+
+end         hshlk/std:    2 opt=(0,0)
+aptr:   17
+...</code></pre></figure>
+
+
+<p>
+For reasons I have not looked into them yet, the AST contains references to a couple of preregistered symbols <code>.sqrt</code> and <code>.dsqrt</code> (they look like to related to the corresponding Fortran intrinsics) and a couple of constants 0 and 1. Why no other preregistered symbols or constants appear is a bit puzzling to me. That said, the interesting bits of this dump are the following
+</p>
+
+
+<figure class="highlight"><figcaption>test.qdbf</figcaption><pre><code class="language-txt" data-lang="txt">...
+AST Table
+
+...
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   12  sptr:  625 (a)
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   13  sptr:  626 (b)
+
+binop       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   14  lop :   12  rop:   13  optype:1
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   15  sptr:  627 (add)
+
+assign      hshlk/std:    1  type:integer opt=(0,0)
+aptr:   16  dest:   15  src:   14
+
+end         hshlk/std:    2 opt=(0,0)
+aptr:   17
+...</code></pre></figure>
+
+
+<p>
+An AST is made of nodes. A node represents some computation. Sometimes the computation is almost no computation, like just a constant or a reference to a variable. Some other times the computation is compound of other computations. This is, other nodes. Recall that in line 4 our Fortran program is doing
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">4
+</pre></td><td class="code"><pre><span class="w">    </span><span class="n">ADD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+It is possible to relate that statement to the AST dump above. Let's see, that statement is in Fortran parlance an assignment statement. Flang represents it using a node for assignments.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">assign      hshlk/std:    1  type:integer opt=(0,0)
+aptr:   16  dest:   15  src:   14</code></pre></figure>
+
+
+<p>
+<code>assign</code> is the kind of the node, in this case this node represents an assignment. The <code>type</code> of the operation is integer. <code>aptr</code> means the <code>id</code> of this node (remember that these id, even if just numbers, are unrelated to the id's used for symbols or data types and the precise id number could be the same). Now we have the operands of this node, which are other computations, i.e. other AST nodes. In this case the destination (<code>dest</code>) is encoded in the node 15 and the source (<code>src</code>) in the node 14. What are the destination and the source of an assignment? They are the left and right-hand side of the assignment, respectively.
+</p>
+
+<p>
+The left-hand side is <code>ADD</code> in our Fortran program. Should be encoded in the tree 15.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   15  sptr:  627 (add)</code></pre></figure>
+
+
+<p>
+Indeed, we could check the symbol table above and see that 627 is exactly the result name <code>add</code>. So good so far.
+</p>
+
+<p>
+The right-hand side of our assignment is <code>A + B</code> and it is encoded in the tree 14.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">binop       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   14  lop :   12  rop:   13  optype:1</code></pre></figure>
+
+
+<p>
+This node is a bit more interesting because it is a binary operation (<code>binop</code>) (again of type <code>integer</code>). The left and right-hand sides of a binary operations are named by flang as <code>lop</code> and <code>rop</code> respectively. We can check the corresponding AST nodes.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   12  sptr:  625 (a)
+
+ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
+aptr:   13  sptr:  626 (b)</code></pre></figure>
+
+
+<p>
+Looks sensible.
+</p>
+
+<h2>Kinds and attributes of AST</h2>
+
+<p>
+Flang has about 160 ASTs. They are defined in the file <code>tools/flang1/utils/ast/ast.n</code>. This file is in a troff-like syntax which is not particularly readable. The form is relatively simple and we can extract information using grep.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ grep -A2 "\.ST" tools/flang1/utils/ast/ast.n
+.SI null
+This AST type represents the AST at location 0 in the AST table.
+Generally, the pointer (index) value of zero will not appear in
+--
+.SI ident LVAL EXPR
+This node is a leaf node in the AST and represents an
+identifer which is fully resolved (declared).
+--
+.SI constant EXPR
+.lp
+Leaf node representing a constant.
+--
+.SI label
+.lp
+Leaf node representing a label.
+--
+.SI binop EXPR
+.lp
+Binary Operator node.
+--
+.SI unaryop EXPR
+.lp
+Unary Operator node.
+...</code></pre></figure>
+
+
+<p style="padding: 1em; background-color: #efe;">
+File <code>tools/flang1/utils/ast/ast.n</code> is also used to generate a similar one in the build directory named <code>tools/flang1/utils/ast/ast.out.n</code>. The latter
+includes extra information of the memory layout of the nodes. However the relevant attributes should already be documented in the former. Theoretically it should be possible to generate Sphinx documentation from this file (like it is already done with other similar files) but this does not seem to be implemented yet.
+</p>
+
+<p>
+For each <code>.SM</code> entry in <code>ast.n</code>, look at the following entries <code>.SI</code>, <code>.SE</code>, <code>.FL</code> and <code>.OV</code>.
+<p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Meaning</th>
+<th>Accessor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.SM&nbsp;NAME</code></td>
+<td>Kind of AST node: <code>BINOP</code>, <code>UNOP</code>, <code>ID</code>, etc..</td>
+<td><code>A_TYPEG(ast)</code> will return <code>NAME</code>.<br />
+<code>A_TYPEP(ast, NAME)</code> is possible but less common.</td>
+</tr>
+<tr>
+<td><code>.SI&nbsp;name</code></td>
+<td>Textual description of the node: for debugging only</td>
+<td><code>astb.atypes[A_TYPEG(i)]</code>
+&lt;/tr&gt;
+<tr>
+<td><code>.FL&nbsp;NAME</code></td>
+<td>Name of a flag (boolean value) of this node.</td>
+<td><code>A_<strong>NAME</strong>G(ast)</code><br /><code>A_<strong>NAME</strong>P(ast, bool-value)</code></td>
+</tr>
+<tr>
+<td><code>.SE&nbsp;NAME</code></td>
+<td>Name of an attribute of this AST, usually returning an id of another AST or data type.
+<td><code>A_<strong>NAME</strong>G(ast)</code><br /><code>A_<strong>NAME</strong>P(ast, id)</code></td>
+&lt;/tr&gt;
+<tr>
+<td><code>.OV&nbsp;NAME</code></td>
+<td>Used for attributes of integer nature that are not an id of an entity (like a kind or a hash link).
+<td><code>A_<strong>NAME</strong>G(ast)</code><br /><code>A_<strong>NAME</strong>P(ast, value)</code></td>
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+<p>
+For instance, AST nodes that represent a binary operation have this information, according to <code>ast.n</code>.
+</p>
+
+<ul>
+<li>Kind of node: <code>BINOP</code></li>
+<li><code>CALLFG</code> (flag). <q>Set if a function reference appears in the left and/or right operand.</q> (for instance in <code>2.3 + SQRT(1.2)</code>)</li>
+<li><code>DTYPE</code>. <q>Data type of the result of the operation</q></li>
+<li><code>LOP</code>. <q>AST pointer to left (first) operand</q></li>
+<li><code>OPTYPE</code>. <q>Type of operator (see <code>OP_</code> macros in <code>ast.h</code>)</q></li>
+<li><code>ROP</code>. <q>AST pointer to right (second) operand</q></li>
+<li><code>ALIAS</code>. <q>If node evaluates to a constant, this field locates the constant node representing this value</q></li>
+</ul>
+
+<h3>The gory details</h3>
+
+<p>
+If you are really interested on seeing how an AST is stored, just take a look at <code>tools/flang1/utils/ast/ast.h</code> in the build directory. You will see that there is a global variable <code>astb </code>which represents the global block that stores all the ASTs. A single AST node is represented using a struct of the type <code>AST</code>.
+</p>
+<p>
+The names of the nodes are stored in <code>astb.atypes</code>, indexed by the type of the node (i.e. <code>A_TYPEG(ast)</code>).
+</p>
+<p>
+The field <code>astb.attr</code> stores some attributes intended to simplify some checks.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cm">/* AST attributes: for fast AST checking -- astb.attr is a table indexed         
+ * by A_&lt;type&gt;                                                                   
+ */</span>                                                                              
+<span class="cp">#define __A_LVAL 1                                                               
+#define __A_EXPR 2                                                               
+</span>                                                                                 
+<span class="cp">#define A_ISLVAL(a) (astb.attr[a]&amp;__A_LVAL)                                      
+#define A_ISEXPR(a) (astb.attr[a]&amp;__A_EXPR)     </span></code></pre></figure>
+
+
+<p>
+The <code>astb</code> global variable also stores other info. We will discuss some of that extra info later in this chapter.
+</p>
+
+
+<h2>Creation of an AST</h2>
+
+<p>
+ASTs are created in many places of the compiler but semantic analysis is going to create the initial set that will be used by further analysis and transformations in the compiler.
+</p>
+
+<h3>Low level creation</h3>
+
+<p>
+To create an AST node we can use the function <code>new_node</code>. This is a low level function that will return a new node with the given kind.
+</p>
+
+
+<figure class="highlight"><figcaption>ast.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">int</span>
+<span class="nf">new_node</span><span class="p">(</span><span class="kt">int</span> <span class="n">type</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">nd</span><span class="p">;</span>
+
+  <span class="n">nd</span> <span class="o">=</span> <span class="n">STG_NEXT</span><span class="p">(</span><span class="n">astb</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">nd</span> <span class="o">&gt;</span> <span class="n">MAXAST</span> <span class="o">||</span> <span class="n">astb</span><span class="p">.</span><span class="n">stg_base</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">errfatal</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+  <span class="n">A_TYPEP</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">type</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">nd</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+This function basically allocates a new ast in <code>astb</code>. The macro <code>STG_NEXT</code> expands to the call <code>stg_next((STG *)&amp;name.stg_base, 1)</code>. The function <code>stg_next</code> is a bit too long to explain today but basically reserves a number of data and returns the first element allocated, as an integer of course. It is a generic function but as it is applied to <code>astb</code> it is used to allocate ASTs.
+</p>
+<p>
+Due to implementation details elsewhere there is a maximum number of ASTs we can allocate, so we check this. The number is fairly large 0x0400_0000 (and also gives us 5 extra bits in the top of the identifier if we ever need them).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define MAXAST   67108864</span></code></pre></figure>
+
+
+<p>
+Next thing this function does it setting the kind of the node. The kind of the node is called <code>TYPE</code> in flang. <code>A_TYPEP</code> is the setter we need to use.
+</p>
+
+<h3>Constructors</h3>
+
+<p>
+While <code>new_node</code> will give us a node it is pretty bare. Most of the time our nodes have essential information that we will always need to create them correctly. For instance a binary operation always will have the kind of operation performed, the left hand side, the right hand side and the type of the operation. As such flang provides many helpers that ease creating those 
+nodes. Their names are of the form mk_*.
+</p>
+
+<p>
+Flang seems to distinguish, conventionally, the creation of statement ASTs from other ASTs. So there is a generic <code>mk_stmt</code>. The code uses this to signal the AST is actually a statement. As a special element it receives a <code>DTYPE</code> to state the data type of the statement. Statements where there is not an actual data computed, like control flow statements, are created with a data type of 0.
+</p>
+
+
+<figure class="highlight"><figcaption>ast.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">int</span>
+<span class="nf">mk_stmt</span><span class="p">(</span><span class="kt">int</span> <span class="n">stmt_type</span><span class="p">,</span> <span class="n">DTYPE</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">ast</span><span class="p">;</span>
+
+  <span class="n">ast</span> <span class="o">=</span> <span class="n">new_node</span><span class="p">(</span><span class="n">stmt_type</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">A_DTYPEP</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">dtype</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">ast</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Some statements have dedicated constuctors like <code>mk_assn_stmt</code>, that is used to create an assignment statement. You can see the data type, the destination (the left hand side of the assignment) and the source (the right hand side). <code>dest</code> and <code>source</code> are ASTs (although not made obvious in the prototype).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span>
+<span class="nf">mk_assn_stmt</span><span class="p">(</span><span class="kt">int</span> <span class="n">dest</span><span class="p">,</span> <span class="kt">int</span> <span class="n">source</span><span class="p">,</span> <span class="n">DTYPE</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">ast</span><span class="p">;</span>
+  <span class="n">ast</span> <span class="o">=</span> <span class="n">mk_stmt</span><span class="p">(</span><span class="n">A_ASN</span><span class="p">,</span> <span class="n">dtype</span><span class="p">);</span>
+  <span class="n">A_DESTP</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">dest</span><span class="p">);</span>
+  <span class="n">A_SRCP</span><span class="p">(</span><span class="n">ast</span><span class="p">,</span> <span class="n">source</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">ast</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<h2>Statement descriptor</h2>
+
+<p>
+Flang ASTs are going to represent two different things:
+</p>
+<ul>
+<li>Expressions</li>
+<li>Statements</li>
+</ul>
+
+<p>
+Expressions will have a type and denote a computation which mostly revolves about evaluating the expression to determine its value. Statements are instead executed, rather than evaluated. Or put differently, they are evaluated just for their side-effects. Because statements have side-effects the order in which we execute them may be important.
+</p>
+
+<p>
+Sometimes it does not matter because there is no way to tell. For instance in the example below, it does not matter that <code>A = 3</code> is executed after or before the first PRINT statement, we can't simply tell the order. But we can't run the second <code>PRINT</code> before the first <code>PRINT</code> or execute the assignment after the second <code>PRINT</code> as that would be an observably different execution of the program.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="w">
+</span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"HI"</span><span class="w">
+</span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">A</span></code></pre></figure>
+
+
+<p>
+Because not all ASTs are statements, flang decouples information that is strictly for statements in another structure called the Statement Descriptor (STD). It is an attribute of an AST that represents a statement and it is accessible via <code>A_STDP</code> and <code>A_STDG</code> as expected.
+</p>
+
+<p>
+The STD data structure is relatively simple. The most relevant attributes are the the following.
+</p>
+
+<table>
+<thead>
+<tr>
+<th>Attribute</th><th>Meaning</th><th>Accessor</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+<td><code>ast</code></td>
+<td>The AST that is described by this STD. Contains an AST identifier</td>
+<td><code>STD_AST(std)</code></td>
+</tr>
+
+<tr>
+<td><code>next</code></td>
+<td>The STD that follows this STD. This is a STD identifier</td>
+<td><code>STD_NEXT(std)</code></td>
+</tr>
+
+<tr>
+<td><code>prev</code></td>
+<td>The STD that precedes this STD. This is a STD identifier</td>
+<td><code>STD_PREV(std)</code></td>
+</tr>
+
+<tr>
+<td><code>label</code></td>
+<td>The label symbol of this statement if it has one. This is a SPTR</td>
+<td><code>STD_LABEL(std)</code></td>
+</tr>
+
+<tr>
+<td><code>lineno</code></td>
+<td>The line number of this statement</td>
+<td><code>STD_LINENO(std)</code></td>
+</tr>
+
+<tr>
+<td><code>findex</code></td>
+<td>This is the file index. It identifies the file that contains the statement. It changes because of <code>INCLUDE</code> lines and preprocessor <code>#include</code> directives. The identifier is a FIH (File Information Header) that we haven't discussed yet. </td>
+<td><code>STD_FINDEX(std)</code></td>
+</tr>
+
+</tbody>
+</table>
+
+<h3>Creation of an STD</h3>
+
+<p>
+To create an STD for a an AST the function <code>mk_std</code> can be used. This will only link (bidirectionally) the STD and the AST but we still need to place the statement itself.
+</p>
+
+<p>
+In the early stages of the compiler, the semantic actions of the parser are responsible for most of the creations of ASTs and STDs in the compiler. Because the creation of statements often happens in the order of the program there is a convenient function <code>add_stmt</code> that will do a <code>mk_std</code> to the new AST and then place the STD as the last one. Sometimes AST of statements have to be placed before or after other STDs and this can be achieved with helpers like <code>add_stmt_after</code> and <code>add_stmt_before</code>.
+</p>
+
+<p>
+The file <code>ast.c</code> contains many other functions useful to manipulate placement of statements. Note that where the code expects an statement it means an identifier of an STD, not an AST.
+</p>
+
+<h2>Summary</h2>
+
+<p>
+In this chapter we have seen the structure that flang uses to represent the computations performed by our Fortran program.
+</p>
+
+<ul>
+<li>The computation is represented using an AST. An AST is a data structure formed by AST nodes.</li>
+<li>There are about 160 different kinds of AST nodes. Each kind represents some different form of computation, ranging from simpler ones like just references to variables or constants to more complex ones like binary operands and statements.</li>
+<li>Each kind of node has different attributes. Each attribute has its own accessors. Some of these attributes are ASTs, SPTRs or DTYPEs.</li>
+<li>Some ASTs represent Fortran statements, where the order is important. The extra information of statements is decoupled from regular AST in a data structure called STD.</li>
+<li>STDs concern about ordering of the fortran statements.</li>
+</ul>
+
+<p>
+In the next installment of this series we will look at ASTs a bit more, in particular we have not considered statements that change the control flow.
+</p>
+</td></tr></td></tr></td></tr></tbody></table></p></p></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2018/05/31/setting-and-deleting-cookies-in-go/">&laquo; Setting and deleting cookies in Go</a>
+
+
+  <a class="next" href="/2018/10/05/serverless-framework-a-small-example/">Serverless framework: a small example &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,2930 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 6</title>
+  <meta name="description" content="In part 5 we described the objects that we will need to semantically analyze a tiny program. In current part we will extend the parser of part 4 to do the semantic analysis and create the GENERIC trees.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/01/17/tiny-gcc-front-part-6/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 6">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/01/17/tiny-gcc-front-part-6/">
+  <meta property="og:description" content="In part 5 we described the objects that we will need to semantically analyze a tiny program. In current part we will extend the parser of part 4 to do the semantic analysis and create the GENERIC trees.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 6">
+  <meta name="twitter:description" content="In part 5 we described the objects that we will need to semantically analyze a tiny program. In current part we will extend the parser of part 4 to do the semantic analysis and create the GENERIC t...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 6</h1>
+    
+    <p class="post-meta"><time datetime="2016-01-17T22:43:09+00:00" itemprop="datePublished">Jan 17, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/gcc/">gcc</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/tiny/">tiny</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In part 5 we described the objects that we will need to semantically analyze a tiny program. In current part we will extend the parser of part 4 to do the semantic analysis and create the GENERIC trees.
+</p>
+
+<!--more-->
+
+<h2>Semantic values</h2>
+
+<p>
+If you recheck <a href="/2016/01/10/tiny-gcc-front-part-4/">part 4</a> you will see that several <code>parse_xxx</code> functions returned a false boolean value when there was a syntax error, true otherwise. If we are just checking if the input is syntactically valid this will do. But we want to compute something more interesting thus we need something a bit more useful. What if we were able to compute a value representing what the part of the language <em>does</em>. This set of values that are computed by a syntax rule are commonly called <em>semantic values</em>.
+</p>
+<p>
+Tiny is a simple language that will require only a single semantic value: a <code>Tree</code> (recall that it is just a wrapper to GENERIC trees). If the parsing succeeds, the tree will express what the input does. If parsing fails it will simply return <code>error_mark_node</code>.
+</p>
+
+<h2>Variable declaration</h2>
+
+<p>
+Let's recall the syntax of a variable declaration.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+</p>
+
+<p>
+Recall that a variable declaration statement adds a new mapping for the 〈identifier〉 in the topmost mapping of the scope. Let's see how we have to change <code>parse_variable_declaration</code> to do this.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+</pre></td><td class="code"><pre><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_variable_declaration</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">VAR</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">identifier</span> <span class="o">=</span> <span class="n">expect_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">identifier</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">COLON</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">Tree</span> <span class="n">type_tree</span> <span class="o">=</span> <span class="n">parse_type</span> <span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">type_tree</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span><span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">SEMICOLON</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">scope</span><span class="p">.</span><span class="n">get_current_mapping</span> <span class="p">().</span><span class="n">get</span> <span class="p">(</span><span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">()))</span>
+    <span class="p">{</span>
+      <span class="n">error_at</span> <span class="p">(</span><span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+		<span class="s">"variable '%s' already declared in this scope"</span><span class="p">,</span>
+		<span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">());</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+  <span class="n">SymbolPtr</span> <span class="n">sym</span> <span class="p">(</span><span class="k">new</span> <span class="n">Symbol</span> <span class="p">(</span><span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">()));</span>
+  <span class="n">scope</span><span class="p">.</span><span class="n">get_current_mapping</span> <span class="p">().</span><span class="n">insert</span> <span class="p">(</span><span class="n">sym</span><span class="p">);</span>
+
+  <span class="n">Tree</span> <span class="n">decl</span> <span class="o">=</span> <span class="n">build_decl</span> <span class="p">(</span><span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">VAR_DECL</span><span class="p">,</span>
+			  <span class="n">get_identifier</span> <span class="p">(</span><span class="n">sym</span><span class="o">-&gt;</span><span class="n">get_name</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">()),</span>
+			  <span class="n">type_tree</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
+
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="o">!</span><span class="n">stack_var_decl_chain</span><span class="p">.</span><span class="n">empty</span> <span class="p">());</span>
+  <span class="n">stack_var_decl_chain</span><span class="p">.</span><span class="n">back</span> <span class="p">().</span><span class="n">append</span> <span class="p">(</span><span class="n">decl</span><span class="p">);</span>
+
+  <span class="n">sym</span><span class="o">-&gt;</span><span class="n">set_tree_decl</span> <span class="p">(</span><span class="n">decl</span><span class="p">);</span>
+
+  <span class="n">Tree</span> <span class="n">stmt</span>
+    <span class="o">=</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">DECL_EXPR</span><span class="p">,</span> <span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">void_type_node</span><span class="p">,</span> <span class="n">decl</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="n">stmt</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+We first parse the syntactic elements of a variable declaration. We skip the initial var in lines 4 to 8. In line 10 we keep the identifier token because it will be used later. We skip the colon in lines 17 to 21. In line 23 we parse the type (by calling <code>parse_type</code>, more on this later) and finally in line 31 we skip the semicolon.
+</p>
+<p>
+Now the semantic checks of a variable declaration can start. In line 33, we check if the current mapping of the scope already contains a mapping for the identifier. If there is such a mapping, this is an error and we give up, otherwise we create a new symbol (line 39) using the given identifier and we insert it into the current mapping (line 40).
+</p>
+<p>
+Now we need to create some GENERIC for this new variable declaration (line 43). It will have a tree code of <code>VAR_DECL</code>. The first operand of that tree is an <code>IDENTIFIER_NODE</code> for the identifier itself. These trees are shared in GENERIC: two identical identifiers will use the same tree. For this reason we need to request an <code>IDENTIFIER_NODE</code> rather than creating it manually. We do that calling the (GCC-provided) function <code>get_identifier</code> (line 44). The second operand that we will need is the type of the declaration. This was obtained in an earlier call to <code>parse_type</code>. Note that we are calling the (GCC-provided) function <code>build_decl</code>. This is so because there is an extra step (setting some internal type and operation mode of the declaration) that has to be performed for a <code>VAR_DECL</code>. Function <code>build_decl</code> takes care of that for us and it is in practice like calling <code>build2_loc</code>.
+</p>
+
+<p>
+In line 50 we associate the new <code>Symbol</code> with the <code>VAR_DECL</code> we have created. We do this because every time we need to refer to an existing variable in GENERIC we will need to use a <code>VAR_DECL</code>. But it cannot be a new <code>VAR_DECL</code> every time since this would mean a new variable with the same name. So we just keep a single <code>VAR_DECL</code> in a <code>Symbol</code> so we can reuse it as many times as needed.
+</p>
+
+<p>
+The <code>VAR_DECL</code> is also kept in the top list of the stack <code>stack_var_decl_chain</code>. We will need this later when we talk about blocks.
+</p>
+
+<h2>Types</h2>
+
+<p>
+A variable declaration has a type.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code>
+</p>
+
+<p>
+In part 5 we classified nodes in three kinds: declarations, expressions and types. In GENERIC, types are represented obviously as trees. Some basic types have dedicated trees, other may have to be constructed. For tiny we will use <code>integer_type_node</code>, <code>float_type_node</code>, <code>boolean_type_node</code> and <code>void_type_node</code>. The last one will be used to designate that the computed value of an expression is of no interest (i.e. the expression is computed only for its side-effects).
+</p>
+
+<p>
+Our <code>parse_type</code> will return either <code>integer_type_node</code> or <code>float_type_node</code> as we do not allow other types in a variable declaration.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_type</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+
+  <span class="k">switch</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
+    <span class="p">{</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INT</span><span class="o">:</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">integer_type_node</span><span class="p">;</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">FLOAT</span><span class="o">:</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">float_type_node</span><span class="p">;</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="nl">default:</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">t</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+An additional type will be used for string-literals but let's postpone discussing it until then.
+</p>
+
+<h2>Variable assignment</h2>
+
+<p>
+Ok, now we can declare variables. Let's assign them some value.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈assignment〉&ensp;→&ensp;〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code>
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+</pre></td><td class="code"><pre><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_assignment_statement</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">identifier</span> <span class="o">=</span> <span class="n">expect_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">identifier</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">SymbolPtr</span> <span class="n">sym</span>
+    <span class="o">=</span> <span class="n">query_variable</span> <span class="p">(</span><span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">(),</span> <span class="n">identifier</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">sym</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="o">!</span><span class="n">sym</span><span class="o">-&gt;</span><span class="n">get_tree_decl</span> <span class="p">().</span><span class="n">is_null</span> <span class="p">());</span>
+  <span class="n">Tree</span> <span class="n">var_decl</span> <span class="o">=</span> <span class="n">sym</span><span class="o">-&gt;</span><span class="n">get_tree_decl</span> <span class="p">();</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">assig_tok</span> <span class="o">=</span> <span class="n">expect_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">ASSIG</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">assig_tok</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">first_of_expr</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+
+  <span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">SEMICOLON</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">var_decl</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">error_at</span> <span class="p">(</span><span class="n">first_of_expr</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+		<span class="s">"cannot assign value of type %s to variable '%s' of type %s"</span><span class="p">,</span>
+		<span class="n">print_type</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()),</span> <span class="n">sym</span><span class="o">-&gt;</span><span class="n">get_name</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">(),</span>
+		<span class="n">print_type</span> <span class="p">(</span><span class="n">var_decl</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()));</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">Tree</span> <span class="n">assig_expr</span> <span class="o">=</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">MODIFY_EXPR</span><span class="p">,</span> <span class="n">assig_tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+				<span class="n">void_type_node</span><span class="p">,</span> <span class="n">var_decl</span><span class="p">,</span> <span class="n">expr</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="n">assig_expr</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In lines 4 to 9 we gather the identifier at the left hand side of the assignment token <code>:=</code>. Next we will query in the current scope the Symbol associated to this identifier, lines 11 to 17. We skip the assignment token and then we parse the expression.
+</p>
+
+<p>
+In line 37 we enforce the tiny rule that the right hand side of the assignment has to have the same type as the type of the variable in the left hand side. For the diagnostic we will need a function <code>print_type</code> that we will see below.
+</p>
+
+<p>
+The GENERIC tree that is used to express the update of a variable is <code>MODIFY_EXPR</code> and has two operands: the variable being updated and the new value for it. And that's it.
+</p>
+
+<h2>Expressions</h2>
+
+<p>
+In part 4 we used a Pratt parser to parse expressions. Now it is time to extend it so it creates GENERIC trees that represent the expressions of the program.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉
+</p>
+
+<h3>Null denotations</h3>
+
+<p>
+Recall that a Pratt parser works by decomposing the expression into a null denotation and then a left denotation. The null denotation receives as a parameter the current token. In the expression grammar of tiny, null denotations handle primaries and unary operands.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">null_denotation</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
+    <span class="p">{</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code> | 〈identifier〉 |〈integer-literal〉 | 〈float-literal〉 | 〈string-literal〉
+〈integer-literal〉&ensp;→&ensp;〈digit〉+
+〈float-literal〉&ensp;→&ensp;〈digit〉+<code><strong>.</strong></code>〈digit〉* | <code><strong>.</strong></code>〈digit〉+
+〈string-literal〉&ensp;→&ensp;<code><strong>"</strong></code>〈any-character-except-newline-or-double-quote〉*<code><strong>"</strong></code>
+</p>
+
+<p>
+When we encounter an identifier, we have to look it up in the scope (this was defined in part 5). The expression is just its <code>VAR_DECL</code> that we stored in the <code>Symbol</code> when it was declared.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IDENTIFIER</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">SymbolPtr</span> <span class="n">s</span> <span class="o">=</span> <span class="n">scope</span><span class="p">.</span><span class="n">lookup</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">());</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+	  <span class="p">{</span>
+	    <span class="n">error_at</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+		      <span class="s">"variable '%s' not declared in the current scope"</span><span class="p">,</span>
+		      <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">());</span>
+	    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+	  <span class="p">}</span>
+	<span class="k">return</span> <span class="n">Tree</span> <span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">get_tree_decl</span> <span class="p">(),</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Note that using <code>Tree</code> rather than the GENERIC <code>tree</code> is essential for primaries. In the code above <code>s-&gt;get_tree_decl()</code> returns a tree with the location of the variable declaration. We could use this tree but for diagnostics purposes we want the location where the variable is being referenced.
+</p>
+
+<p>
+For literals, the literal itself encodes the value. So the text of the token will have to be interpreted as the appropiate value. For integers we can just use <code>atoi</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">18
+19
+20
+21
+22
+23
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INTEGER_LITERAL</span><span class="o">:</span>
+      <span class="c1">// We should check the range. See note below</span>
+      <span class="k">return</span> <span class="nf">Tree</span> <span class="p">(</span><span class="n">build_int_cst_type</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">,</span>
+				       <span class="n">atoi</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">())),</span>
+		   <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+      <span class="k">break</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p style="padding: 0.7em; background-color: bisque;">
+Note: we still have to check that the value represented by the token lies in the valid range of the integer type. Let's ignore this for now.
+</p>
+
+<p>
+Real literals are similar.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
+25
+26
+27
+28
+29
+30
+31
+32
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">REAL_LITERAL</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">REAL_VALUE_TYPE</span> <span class="n">real_value</span><span class="p">;</span>
+	<span class="n">real_from_string3</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">real_value</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">(),</span>
+			   <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">float_type_node</span><span class="p">));</span>
+
+	<span class="k">return</span> <span class="n">Tree</span> <span class="p">(</span><span class="n">build_real</span> <span class="p">(</span><span class="n">float_type_node</span><span class="p">,</span> <span class="n">real_value</span><span class="p">),</span>
+		     <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+For a real literal we have to invoke the (GCC-provided) function <code>real_from_string3</code> (line 27) to get a real value representation from a string. This function expects the <em>machine</em> (i.e. architecture dependent) mode of the type, that we can obtain using <code>TYPE_MODE</code>. It returns its value in a <code>REAL_VALUE_TYPE</code> that then can be used to build a real constant tree using the (GCC-provided) function <code>build_real</code>.
+</p>
+
+<p>
+Likewise with string literals.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">33
+34
+35
+36
+37
+38
+39
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">STRING_LITERAL</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">str</span> <span class="o">=</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">();</span>
+	<span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">c_str</span> <span class="o">=</span> <span class="n">str</span><span class="p">.</span><span class="n">c_str</span> <span class="p">();</span>
+	<span class="k">return</span> <span class="n">Tree</span> <span class="p">(</span><span class="n">build_string_literal</span> <span class="p">(</span><span class="n">strlen</span> <span class="p">(</span><span class="n">c_str</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">c_str</span><span class="p">),</span>
+		     <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+To create a string literal we use the (GCC-provided) function <code>build_string_literal</code>. For practical reasons our string literal will contain the NULL terminator, otherwise the string literal itself will not be useable in C functions (more on this later).
+</p>
+
+<p>
+While the type GENERIC trees created for integer and real literals was obviously <code>integer_type_node</code> and <code>float_type_node</code>, it is not so clear for string literals. The tree created by build_string_literal has type pointer to a character type. Pointer types have a tree code of <code>POINTER_TYPE</code> and the <em>pointee</em> type is found in <code>TREE_TYPE</code>.
+Sometimes we will need to check if an expression has the type of a string literal, so we will use the following auxiliar function.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="nf">is_string_type</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">type</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">TYPE_P</span> <span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()));</span>
+  <span class="k">return</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree_code</span> <span class="p">()</span> <span class="o">==</span> <span class="n">POINTER_TYPE</span>
+	 <span class="o">&amp;&amp;</span> <span class="n">TYPE_MAIN_VARIANT</span> <span class="p">(</span><span class="n">TREE_TYPE</span> <span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()))</span> <span class="o">==</span> <span class="n">char_type_node</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+In the function above, <code>TYPE_MAIN_VARIANT </code>returns the main variant of the pointee of the given pointer type and checks if it is <code>char_type_node</code>. In C parlance, this function checks if <code>type</code> represents the type «<code>char *</code>».
+</p>
+
+<p>
+Back to the nullary denotation: a parenthesized expression like <code><strong>(</strong></code> e <code><strong>)</strong></code> just parses the expression e and returns its tree.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LEFT_PAREN</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">();</span>
+	<span class="n">tok</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">RIGHT_PAREN</span><span class="p">)</span>
+	  <span class="n">error_at</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="s">"expecting ')' but %s found</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+		    <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_token_description</span> <span class="p">());</span>
+	<span class="k">else</span>
+	  <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+	<span class="k">return</span> <span class="n">Tree</span> <span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Unary plus operator actually does nothing in tiny but it can only be applied to integer and float expressions.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PLUS</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_PLUS</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+	  <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">integer_type_node</span>
+	    <span class="o">||</span> <span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">float_type_node</span><span class="p">)</span>
+	  <span class="p">{</span>
+	    <span class="n">error_at</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+		      <span class="s">"operand of unary plus must be int or float but it is %s"</span><span class="p">,</span>
+		      <span class="n">print_type</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()));</span>
+	    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+	  <span class="p">}</span>
+	<span class="k">return</span> <span class="n">Tree</span> <span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">());</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now we can define the <code>print_type</code> function that we use to print human readable names for the types.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">print_type</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">type</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">TYPE_P</span> <span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()));</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">void_type_node</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s">"void"</span><span class="p">;</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">integer_type_node</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s">"int"</span><span class="p">;</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">float_type_node</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s">"float"</span><span class="p">;</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">is_string_type</span> <span class="p">(</span><span class="n">type</span><span class="p">))</span>
+      <span class="k">return</span> <span class="s">"string"</span><span class="p">;</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">type</span> <span class="o">==</span> <span class="n">boolean_type_node</span><span class="p">)</span>
+      <span class="k">return</span> <span class="s">"boolean"</span><span class="p">;</span>
+  <span class="k">else</span>
+      <span class="k">return</span> <span class="s">"&lt;&lt;unknown-type&gt;&gt;"</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Note that <code>print_type</code> uses the <code>is_string_type</code> function we defined above.
+</p>
+
+<p>
+Unary minus operator is similar to the plus operator but it negates its operand.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">MINUS</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_MINUS</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+	  <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">integer_type_node</span>
+	    <span class="o">||</span> <span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">float_type_node</span><span class="p">)</span>
+	  <span class="p">{</span>
+	    <span class="n">error_at</span> <span class="p">(</span>
+	      <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+	      <span class="s">"operand of unary minus must be int or float but it is %s"</span><span class="p">,</span>
+	      <span class="n">print_type</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()));</span>
+	    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+	  <span class="p">}</span>
+
+	<span class="n">expr</span>
+	  <span class="o">=</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">NEGATE_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">(),</span> <span class="n">expr</span><span class="p">);</span>
+	<span class="k">return</span> <span class="n">expr</span><span class="p">;</span>
+      <span class="p">}</span></code></pre></figure>
+
+<p>
+A GENERIC tree with tree code <code>NEGATE_EXPR</code> computes the negation of its operand.
+</p>
+
+<p>
+Unary not operator computes the logical negation of its boolean argument.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">NOT</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_LOGICAL_NOT</span><span class="p">);</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+	  <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">boolean_type_node</span><span class="p">)</span>
+	  <span class="p">{</span>
+	    <span class="n">error_at</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+		      <span class="s">"operand of logical not must be a boolean but it is %s"</span><span class="p">,</span>
+		      <span class="n">print_type</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()));</span>
+	    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+	  <span class="p">}</span>
+
+	<span class="n">expr</span> <span class="o">=</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">TRUTH_NOT_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">boolean_type_node</span><span class="p">,</span>
+			   <span class="n">expr</span><span class="p">);</span>
+	<span class="k">return</span> <span class="n">expr</span><span class="p">;</span>
+      <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The GENERIC tree code for a logical negation is <code>TRUTH_NOT_EXPR</code>.
+</p>
+
+<p>
+Finally, any other token is a syntax error, so diagnose them as usual. This completes the handling of null denotations.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">84
+85
+86
+87
+88
+</pre></td><td class="code"><pre>    <span class="nl">default:</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="err">}</span>
+<span class="err">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h3>Left denotations</h3>
+
+<p>
+Left denotations are used for infix operators.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">left_denotation</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">BinaryHandler</span> <span class="n">binary_handler</span> <span class="o">=</span> <span class="n">get_binary_handler</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">());</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">binary_handler</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="k">return</span> <span class="p">(</span><span class="k">this</span><span class="o">-&gt;*</span><span class="n">binary_handler</span><span class="p">)</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="n">left</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+If you recall from part 4, we used the function <code>get_binary_handler</code> to get a handler of our binary expression and then dispatch to it the handling of the current token. In contrast to the version of <code>left_denotation</code> in part 4, in addition to the token we will have to pass the left tree (computed by a call to <code>null_denotation</code> or <code>left_denotation</code>, possibly in a recursive way).
+</p>
+
+<p>
+Now come a bunch of expression handlers for binary operators. We will focus on the most interesting ones. You can find the remaining ones in <a href="https://github.com/rofirrim/gcc-tiny/blob/master/gcc/tiny/tiny-parser.cc">the tiny parser</a>. Let's start with the addition.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">binary_plus</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">right</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_PLUS</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">right</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="n">Tree</span> <span class="n">tree_type</span> <span class="o">=</span> <span class="n">coerce_binary_arithmetic</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">left</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">right</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">tree_type</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="k">return</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">PLUS_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">tree_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+We parse the right hand side (recall that the token <code>tok</code> has already been consumed in <code>parse_expression</code>). Now using the left hand side and the right hand side we have to compute the resulting type of this binary operator. We call <code>coerce_binary_arithmetic</code> that returns the type of the binary operation and may modify its input trees, more on this below. Finally we construct a GENERIC tree with code <code>PLUS_EXPR</code> that is used to represent binary addition.
+</p>
+
+<p>
+Function <code>coerce_binary_arithmetic</code> simply applies the rules of tiny regarding arithmetic operations: operating two integers or two floats returns integer and float respectively. Mixing a float and an integer returns a float value. The integer operand, thus, must be first converted to a float. The tree code <code>FLOAT_EXPR</code> is used to convert from integer to float.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">coerce_binary_arithmetic</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="o">*</span><span class="n">left</span><span class="p">,</span> <span class="n">Tree</span> <span class="o">*</span><span class="n">right</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">left_type</span> <span class="o">=</span> <span class="n">left</span><span class="o">-&gt;</span><span class="n">get_type</span> <span class="p">();</span>
+  <span class="n">Tree</span> <span class="n">right_type</span> <span class="o">=</span> <span class="n">right</span><span class="o">-&gt;</span><span class="n">get_type</span> <span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">left_type</span><span class="p">.</span><span class="n">is_error</span> <span class="p">()</span> <span class="o">||</span> <span class="n">right_type</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">left_type</span> <span class="o">==</span> <span class="n">right_type</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">left_type</span> <span class="o">==</span> <span class="n">integer_type_node</span> <span class="o">||</span> <span class="n">left_type</span> <span class="o">==</span> <span class="n">float_type_node</span><span class="p">)</span>
+	<span class="p">{</span>
+	  <span class="k">return</span> <span class="n">left_type</span><span class="p">;</span>
+	<span class="p">}</span>
+    <span class="p">}</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">((</span><span class="n">left_type</span> <span class="o">==</span> <span class="n">integer_type_node</span> <span class="o">&amp;&amp;</span> <span class="n">right_type</span> <span class="o">==</span> <span class="n">float_type_node</span><span class="p">)</span>
+	   <span class="o">||</span> <span class="p">(</span><span class="n">left_type</span> <span class="o">==</span> <span class="n">float_type_node</span> <span class="o">&amp;&amp;</span> <span class="n">right_type</span> <span class="o">==</span> <span class="n">integer_type_node</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">left_type</span> <span class="o">==</span> <span class="n">integer_type_node</span><span class="p">)</span>
+	<span class="p">{</span>
+	  <span class="o">*</span><span class="n">left</span> <span class="o">=</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">FLOAT_EXPR</span><span class="p">,</span> <span class="n">left</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">float_type_node</span><span class="p">,</span>
+			      <span class="n">left</span><span class="o">-&gt;</span><span class="n">get_tree</span> <span class="p">());</span>
+	<span class="p">}</span>
+      <span class="k">else</span>
+	<span class="p">{</span>
+	  <span class="o">*</span><span class="n">right</span> <span class="o">=</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">FLOAT_EXPR</span><span class="p">,</span> <span class="n">right</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+			       <span class="n">float_type_node</span><span class="p">,</span> <span class="n">right</span><span class="o">-&gt;</span><span class="n">get_tree</span> <span class="p">());</span>
+	<span class="p">}</span>
+      <span class="k">return</span> <span class="n">float_type_node</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="c1">// i.e. int + boolean</span>
+  <span class="n">error_at</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+	    <span class="s">"invalid operands of type %s and %s for operator %s"</span><span class="p">,</span>
+	    <span class="n">print_type</span> <span class="p">(</span><span class="n">left_type</span><span class="p">),</span> <span class="n">print_type</span> <span class="p">(</span><span class="n">right_type</span><span class="p">),</span>
+	    <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_token_description</span> <span class="p">());</span>
+  <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Subtraction and multiplication are exactly the same code but the GENERIC tree is <code>MINUS_EXPR</code> and <code>MULT_EXPR</code> respectively.
+</p>
+
+<p>
+Binary division is a bit more interesting. When both operands are integer, we will do an integer division, otherwise a real division. Each operation is represented using different tree codes.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">binary_div</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">right</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_DIV</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">right</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">left</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">==</span> <span class="n">integer_type_node</span>
+      <span class="o">&amp;&amp;</span> <span class="n">right</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">==</span> <span class="n">integer_type_node</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Integer division (truncating, like in C)</span>
+      <span class="k">return</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">TRUNC_DIV_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">integer_type_node</span><span class="p">,</span>
+			 <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="c1">// Real division</span>
+      <span class="n">Tree</span> <span class="n">tree_type</span> <span class="o">=</span> <span class="n">coerce_binary_arithmetic</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">left</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">right</span><span class="p">);</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">tree_type</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+	<span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+      <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">tree_type</span> <span class="o">==</span> <span class="n">float_type_node</span><span class="p">);</span>
+
+      <span class="k">return</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">RDIV_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">tree_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Modulus is similar to division but there is no real modulus operation, so this case diagnoses an error. The tree code for the integer modulus is <code>TRUNC_MOD_EXPR</code>.
+</p>
+
+<p>
+All handlers for relational operators <code><strong>==</strong></code>, <code><strong>!=</strong></code>, <code><strong>&lt;</strong></code>, <code><strong>&gt;</strong></code>, <code><strong>&lt;=</strong></code> and <code><strong>&gt;=</strong></code> have the same code. Only their tree codes change.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">binary_equal</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">right</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_EQUAL</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">right</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="n">Tree</span> <span class="n">tree_type</span> <span class="o">=</span> <span class="n">coerce_binary_arithmetic</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">left</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">right</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">tree_type</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="k">return</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">EQ_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">boolean_type_node</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span>
+		     <span class="n">right</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Tree codes for <code><strong>!=</strong></code>, <code><strong>&lt;</strong></code>, <code><strong>&gt;</strong></code>, <code><strong>&lt;=</strong></code> and <code><strong>&gt;=</strong></code> are (respectively) <code>NE_EXPR</code>, <code>LT_EXPR</code>, <code>GT_EXPR</code>, <code>LE_EXPR</code> and <code>GE_EXPR</code>.
+</p>
+
+<p>
+Likewise, binary logical operators <code><strong>and</strong></code> and <code><strong>or</strong></code> only differ in their tree codes.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">binary_logical_and</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">right</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_EQUAL</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">right</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">check_logical_operands</span> <span class="p">(</span><span class="n">tok</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+
+  <span class="k">return</span> <span class="n">build_tree</span> <span class="p">(</span><span class="n">TRUTH_ANDIF_EXPR</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">boolean_type_node</span><span class="p">,</span>
+		     <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+The tree code for logical or is <code>TRUTH_ORIF_EXPR</code>. Function <code>check_logical_operands</code> simply verifies that both operands are logical.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">check_logical_operands</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">right</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">left</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">boolean_type_node</span>
+      <span class="o">||</span> <span class="n">right</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">boolean_type_node</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">error_at</span> <span class="p">(</span>
+	<span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+	<span class="s">"operands of operator %s must be boolean but they are %s and %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+	<span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_token_description</span> <span class="p">(),</span> <span class="n">print_type</span> <span class="p">(</span><span class="n">left</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()),</span>
+	<span class="n">print_type</span> <span class="p">(</span><span class="n">right</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()));</span>
+      <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+And we are done with the expressions!
+</p>
+
+<h2>Write statement</h2>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈write〉&ensp;→&ensp;<code><strong>write</strong></code> 〈expression〉 <code><strong>;</strong></code>
+</p>
+
+<p>
+A write statement is not particularly complicated at first.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre></td><td class="code"><pre><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_write_statement</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="c1">// write_statement -&gt; "write" expression ";"</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">WRITE</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">first_of_expr</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">();</span>
+
+  <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">SEMICOLON</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now we have to print the value of the expression. To do this we will emit a call to <code>printf</code> with the appropiate format conversion: <code>%d</code> for integers, and <code>%f</code> for floats. For strings, we will simply call <code>puts</code> (although we could have called printf with a format conversion <code>%s</code>).
+</p>
+
+<p>
+Let's see the case for integers.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+</pre></td><td class="code"><pre>  <span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">==</span> <span class="n">integer_type_node</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// printf("%d\n", expr)</span>
+      <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format_integer</span> <span class="o">=</span> <span class="s">"%d</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+      <span class="n">tree</span> <span class="n">args</span><span class="p">[]</span>
+	<span class="o">=</span> <span class="p">{</span><span class="n">build_string_literal</span> <span class="p">(</span><span class="n">strlen</span> <span class="p">(</span><span class="n">format_integer</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">format_integer</span><span class="p">),</span>
+	   <span class="n">expr</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()};</span>
+
+      <span class="n">Tree</span> <span class="n">printf_fn</span> <span class="o">=</span> <span class="n">get_printf_addr</span> <span class="p">();</span>
+
+      <span class="n">tree</span> <span class="n">stmt</span>
+	<span class="o">=</span> <span class="n">build_call_array_loc</span> <span class="p">(</span><span class="n">first_of_expr</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">integer_type_node</span><span class="p">,</span>
+				<span class="n">printf_fn</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="mi">2</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+
+      <span class="k">return</span> <span class="n">stmt</span><span class="p">;</span>
+    <span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In line 31 we build a call to the print function (represented in <code>printf_fn</code>). In this call we will pass two arguments, that we have in the array <code>args</code>. The first argument is the format string, so we build a string literal "%d\n" (line 25, mind the NULL terminator) and the second is our expression of type integer (line 26). Function <code>build_call_array_loc</code> is provided by GCC.
+</p>
+
+<p>
+To be able to call <code>printf</code> we need first to obtain its declaration, i.e. a <code>FUNCTION_DECL</code>. But for some reason, though, GENERIC trees do not allow calling a <code>FUNCTION_DECL</code> directly, it has to be done through an address to the function declaration. Function <code>get_printf_addr</code> thus, returns an address to a function declaration of <code>printf</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+</pre></td><td class="code"><pre><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">get_printf_addr</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">printf_fn</span><span class="p">.</span><span class="n">is_null</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">tree</span> <span class="n">fndecl_type_param</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+	<span class="n">build_pointer_type</span> <span class="p">(</span>
+	  <span class="n">build_qualified_type</span> <span class="p">(</span><span class="n">char_type_node</span><span class="p">,</span>
+				<span class="n">TYPE_QUAL_CONST</span><span class="p">))</span> <span class="cm">/* const char* */</span>
+      <span class="p">};</span>
+      <span class="n">tree</span> <span class="n">fndecl_type</span>
+	<span class="o">=</span> <span class="n">build_varargs_function_type_array</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span>
+					     <span class="n">fndecl_type_param</span><span class="p">);</span>
+
+      <span class="n">tree</span> <span class="n">printf_fn_decl</span> <span class="o">=</span> <span class="n">build_fn_decl</span> <span class="p">(</span><span class="s">"printf"</span><span class="p">,</span> <span class="n">fndecl_type</span><span class="p">);</span>
+      <span class="n">DECL_EXTERNAL</span> <span class="p">(</span><span class="n">printf_fn_decl</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+      <span class="n">printf_fn</span>
+	<span class="o">=</span> <span class="n">build1</span> <span class="p">(</span><span class="n">ADDR_EXPR</span><span class="p">,</span> <span class="n">build_pointer_type</span> <span class="p">(</span><span class="n">fndecl_type</span><span class="p">),</span> <span class="n">printf_fn_decl</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">printf_fn</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+To avoid repeatedly creating function declarations to the same <code>printf</code> function, our <code>Parser</code> class will keep a <code>printf_fn</code> tree with the address to <code>printf</code>. The first time we request the address of <code>printf</code> it will be a <code>NULL_TREE</code> so we will have to compute it.
+</p>
+
+<p>
+Functions, like variables, have type. We need to create a function with a variable number of arguments that returns integer and has one fixed argument of type <code>const char*</code>. This is because the definition in C of printf is <code>int printf(const char*, ...)</code>. The type <code>const char*</code> is created by constructing a pointer type to a const qualified version of the <code>char_type_node</code> (line 7). Then we build the function type itself (line 12).
+</p>
+
+<p>
+Once we have the function type, we can build the declaration as a variable argument function (line 15). This function will not be defined by tiny, but it will come elsewhere, so we set that property in the declaration itself by marking it as <code>DECL_EXTERNAL</code> (line 16). Finally we build an ADDR_EXPR which simply returns a pointer to the type of the function type. This tree represents the address to the function. This is what the function will return.
+</p>
+
+<p>
+Back to the implementation of the write statement, the case for float is similar to that of the integer but requires us to convert the float value into a double value, because this is how it works in C.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()</span> <span class="o">==</span> <span class="n">float_type_node</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// printf("%f\n", (double)expr)</span>
+      <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">format_float</span> <span class="o">=</span> <span class="s">"%f</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+      <span class="n">tree</span> <span class="n">args</span><span class="p">[]</span>
+	<span class="o">=</span> <span class="p">{</span><span class="n">build_string_literal</span> <span class="p">(</span><span class="n">strlen</span> <span class="p">(</span><span class="n">format_float</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">format_float</span><span class="p">),</span>
+	   <span class="n">convert</span> <span class="p">(</span><span class="n">double_type_node</span><span class="p">,</span> <span class="n">expr</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">())};</span>
+
+      <span class="n">Tree</span> <span class="n">printf_fn</span> <span class="o">=</span> <span class="n">get_printf_addr</span> <span class="p">();</span>
+
+      <span class="n">tree</span> <span class="n">stmt</span>
+	<span class="o">=</span> <span class="n">build_call_array_loc</span> <span class="p">(</span><span class="n">first_of_expr</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">integer_type_node</span><span class="p">,</span>
+				<span class="n">printf_fn</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="mi">2</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+
+      <span class="k">return</span> <span class="n">stmt</span><span class="p">;</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>
+To convert the float into a double we invoke the GCC <code>convert</code> function that will require an <a href="https://github.com/rofirrim/gcc-tiny/blob/master/gcc/tiny/tiny-convert.cc">extra file with some generic boilerplate</a>. That file is not interesting enough to put it here. Alternatively a <code>CONVERT_EXPR</code> tree could be used instead.
+</p>
+
+<p>
+Finally to print a string, we just call <code>puts</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">is_string_type</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()))</span>
+    <span class="p">{</span>
+      <span class="c1">// Alternatively we could use printf('%s\n', expr) instead of puts(expr)</span>
+      <span class="n">tree</span> <span class="n">args</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="n">expr</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()};</span>
+
+      <span class="n">Tree</span> <span class="n">puts_fn</span> <span class="o">=</span> <span class="n">get_puts_addr</span> <span class="p">();</span>
+
+      <span class="n">tree</span> <span class="n">stmt</span>
+	<span class="o">=</span> <span class="n">build_call_array_loc</span> <span class="p">(</span><span class="n">first_of_expr</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="n">integer_type_node</span><span class="p">,</span>
+				<span class="n">puts_fn</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">stmt</span><span class="p">;</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>
+In contrast to <code>printf</code>, <code>puts</code> is not a variable argument function, so its type is constructed slightly different. Everything else is the same.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">get_puts_addr</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">puts_fn</span><span class="p">.</span><span class="n">is_null</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">tree</span> <span class="n">fndecl_type_param</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+	<span class="n">build_pointer_type</span> <span class="p">(</span>
+	  <span class="n">build_qualified_type</span> <span class="p">(</span><span class="n">char_type_node</span><span class="p">,</span>
+				<span class="n">TYPE_QUAL_CONST</span><span class="p">))</span> <span class="cm">/* const char* */</span>
+      <span class="p">};</span>
+      <span class="n">tree</span> <span class="n">fndecl_type</span>
+	<span class="o">=</span> <span class="n">build_function_type_array</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">fndecl_type_param</span><span class="p">);</span>
+
+      <span class="n">tree</span> <span class="n">puts_fn_decl</span> <span class="o">=</span> <span class="n">build_fn_decl</span> <span class="p">(</span><span class="s">"puts"</span><span class="p">,</span> <span class="n">fndecl_type</span><span class="p">);</span>
+      <span class="n">DECL_EXTERNAL</span> <span class="p">(</span><span class="n">puts_fn_decl</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+      <span class="n">puts_fn</span>
+	<span class="o">=</span> <span class="n">build1</span> <span class="p">(</span><span class="n">ADDR_EXPR</span><span class="p">,</span> <span class="n">build_pointer_type</span> <span class="p">(</span><span class="n">fndecl_type</span><span class="p">),</span> <span class="n">puts_fn_decl</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">puts_fn</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Having handled all valid types, this completes our write statement.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">error_at</span> <span class="p">(</span><span class="n">first_of_expr</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span>
+		<span class="s">"value of type %s is not a valid write operand"</span><span class="p">,</span>
+		<span class="n">print_type</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_type</span> <span class="p">()));</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="n">gcc_unreachable</span> <span class="p">();</span>
+<span class="err">}</span></code></pre></figure>
+
+<h2>Blocks</h2>
+
+<p>
+Both a tiny program and statements if, while and for statements have in their syntax 〈statement〉*. In addition, if, while and for statements introduce a new symbol mapping in each of its 〈statement〉*. The top level is actually not that different if we understand that the program has a top level symbol mapping.
+</p>
+
+<p>
+This suggests that, whenever we are going to parse a 〈statement〉*, the same process will happen: a) we will push a new symbol mapping b) parse the statements c) pop the scope.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">enter_scope</span> <span class="p">();</span>
+<span class="n">parse_statement_seq</span> <span class="p">(</span><span class="n">done</span><span class="p">);</span>
+<span class="n">leave_scope</span> <span class="p">();</span></code></pre></figure>
+
+<p>
+Functions enter_scope and leave_scope will make sure a new symbol mapping is pushed/popped.
+</p>
+
+<p>
+GENERIC trees represent mappings using a <code>BIND_EXPR</code>. A <code>BIND_EXPR</code> will contain a list of statements and also a list of <code>VAR_DECL</code>s related to the variable declarations in the current symbol mapping. Recall that when we declared a variable, one of the things we did is adding the variable into a stack of lists called <code>stack_var_decl_chain</code>. This is the list we will use to gather all the <code>VAR_DECL</code>s in a mapping.
+</p>
+
+<p>
+Unfortunately at this point, GENERIC makes things a bit complicated because of another kind of tree called block. Let's explain this seeing the code of <code>enter_scope</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="code"><pre><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">enter_scope</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">scope</span><span class="p">.</span><span class="n">push_scope</span> <span class="p">();</span>
+
+  <span class="n">TreeStmtList</span> <span class="n">stmt_list</span><span class="p">;</span>
+  <span class="n">stack_stmt_list</span><span class="p">.</span><span class="n">push_back</span> <span class="p">(</span><span class="n">stmt_list</span><span class="p">);</span>
+
+  <span class="n">stack_var_decl_chain</span><span class="p">.</span><span class="n">push_back</span> <span class="p">(</span><span class="n">TreeChain</span> <span class="p">());</span>
+  <span class="n">stack_block_chain</span><span class="p">.</span><span class="n">push_back</span> <span class="p">(</span><span class="n">BlockChain</span> <span class="p">());</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+We first push a new symbol mapping (line 4). And then we have three stacks: a first stack of lists of statements, a second stack of lists var declarations and a third stack of chains of blocks (lines 7 to 10). 
+</p>
+
+<p>
+<code>TreeStmtList</code> is just a tiny wrapper around <code>STATEMENT_LIST</code>. This is a tree used to represent lists of statements.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">TreeStmtList</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">TreeStmtList</span> <span class="p">()</span> <span class="o">:</span> <span class="n">list</span> <span class="p">(</span><span class="n">alloc_stmt_list</span> <span class="p">())</span> <span class="p">{}</span>
+  <span class="n">TreeStmtList</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">t</span><span class="p">)</span> <span class="o">:</span> <span class="n">list</span> <span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">())</span> <span class="p">{}</span>
+
+  <span class="kt">void</span>
+  <span class="n">append</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">t</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">append_to_statement_list</span> <span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="o">&amp;</span><span class="n">list</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">tree</span>
+  <span class="n">get_tree</span> <span class="p">()</span> <span class="k">const</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">list</span><span class="p">;</span>
+  <span class="p">}</span>
+
+<span class="nl">private:</span>
+  <span class="n">tree</span> <span class="n">list</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+Functions <code>alloc_stmt_list</code> and <code>append_to_statement_list</code> are GCC-provided and do the obvious things.
+</p>
+
+<p>
+<code>TreeChain</code> and <code>BlockChain</code> are conceptually singly-linked lists implemented using GENERIC trees. In fact they work exactly the same, but unfortunately a different accessor has to be used for each. To reduce the differences both have been wrapped in two classes that inherit from a generic one.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">Append</span><span class="p">&gt;</span> <span class="k">struct</span> <span class="nc">TreeChainBase</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">first</span><span class="p">;</span>
+  <span class="n">Tree</span> <span class="n">last</span><span class="p">;</span>
+
+  <span class="n">TreeChainBase</span> <span class="p">()</span> <span class="o">:</span> <span class="n">first</span> <span class="p">(),</span> <span class="n">last</span> <span class="p">()</span> <span class="p">{}</span>
+
+  <span class="kt">void</span>
+  <span class="n">append</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">t</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">gcc_assert</span> <span class="p">(</span><span class="o">!</span><span class="n">t</span><span class="p">.</span><span class="n">is_null</span><span class="p">());</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">first</span><span class="p">.</span><span class="n">is_null</span><span class="p">())</span>
+      <span class="p">{</span>
+	<span class="n">first</span> <span class="o">=</span> <span class="n">last</span> <span class="o">=</span> <span class="n">t</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="k">else</span>
+      <span class="p">{</span>
+	<span class="n">Append</span> <span class="p">()</span> <span class="p">(</span><span class="n">last</span><span class="p">,</span> <span class="n">t</span><span class="p">);</span>
+	<span class="n">last</span> <span class="o">=</span> <span class="n">t</span><span class="p">;</span>
+      <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">tree_chain_append</span>
+<span class="p">{</span>
+  <span class="kt">void</span> <span class="k">operator</span><span class="p">()</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">t</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span> <span class="n">TREE_CHAIN</span> <span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">get_tree</span><span class="p">())</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">get_tree</span><span class="p">();</span> <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">TreeChain</span> <span class="o">:</span> <span class="n">TreeChainBase</span><span class="o">&lt;</span><span class="n">tree_chain_append</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">block_chain_append</span>
+<span class="p">{</span>
+  <span class="kt">void</span> <span class="k">operator</span><span class="p">()</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">t</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">a</span><span class="p">)</span> <span class="p">{</span> <span class="n">BLOCK_CHAIN</span> <span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">get_tree</span><span class="p">())</span> <span class="o">=</span> <span class="n">a</span><span class="p">.</span><span class="n">get_tree</span><span class="p">();</span> <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">BlockChain</span> <span class="o">:</span> <span class="n">TreeChainBase</span><span class="o">&lt;</span><span class="n">block_chain_append</span><span class="o">&gt;</span>
+<span class="p">{</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+We keep the first tree and the last one in order to handle this list. The <code>Append</code> process has been abstracted away since a <code>TreeChain</code> must use <code>TREE_CHAIN</code> and <code>BlockChain</code> must use <code>BLOCK_CHAIN</code>.
+</p>
+
+<p>
+So, what are these two stacks of <code>TreeChain</code> and <code>BlockChain</code>? <code>TreeChain</code> will be used for the <code>VAR_DECL</code>s. So the append you saw in line 48 of <code>parse_variable_declaration</code> above is actually appending to the top <code>TreeChain</code> in <code>stack_var_decl_chain</code>.
+</p>
+
+<p>
+<code>BlockChain</code> is used for a chain of blocks that GENERIC requires us to maintain. Each block, a GENERIC tree of tree code <code>BLOCK</code>, has a list of <code>VAR_DECL</code>s. This list is the same as the <code>BIND_EXPR</code> representing the symbol mapping. Blocks also have a list of subblocks and a parent context. This parent context is another block, except for the topmost one that will be a function declaration, more on this below.
+</p>
+
+<p>
+The complexity arises when we have several sibling blocks. We have to gather them in a way that when we leave their containing block: a) we set the containing block as the parent of the blocks b) that containing block has a list of subblocks. And this is where the <code>BlockChain</code> is used.
+</p>
+
+<p>
+All this complex process happens in <code>leave_scope</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+</pre></td><td class="code"><pre><span class="n">Parser</span><span class="o">::</span><span class="n">TreeSymbolMapping</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">leave_scope</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">TreeStmtList</span> <span class="n">current_stmt_list</span> <span class="o">=</span> <span class="n">get_current_stmt_list</span> <span class="p">();</span>
+  <span class="n">stack_stmt_list</span><span class="p">.</span><span class="n">pop_back</span> <span class="p">();</span>
+
+  <span class="n">TreeChain</span> <span class="n">var_decl_chain</span> <span class="o">=</span> <span class="n">stack_var_decl_chain</span><span class="p">.</span><span class="n">back</span> <span class="p">();</span>
+  <span class="n">stack_var_decl_chain</span><span class="p">.</span><span class="n">pop_back</span> <span class="p">();</span>
+
+  <span class="n">BlockChain</span> <span class="n">subblocks</span> <span class="o">=</span> <span class="n">stack_block_chain</span><span class="p">.</span><span class="n">back</span> <span class="p">();</span>
+  <span class="n">stack_block_chain</span><span class="p">.</span><span class="n">pop_back</span> <span class="p">();</span>
+
+  <span class="n">tree</span> <span class="n">new_block</span>
+    <span class="o">=</span> <span class="n">build_block</span> <span class="p">(</span><span class="n">var_decl_chain</span><span class="p">.</span><span class="n">first</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
+		   <span class="n">subblocks</span><span class="p">.</span><span class="n">first</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
+		   <span class="cm">/* supercontext */</span> <span class="n">NULL_TREE</span><span class="p">,</span> <span class="cm">/* chain */</span> <span class="n">NULL_TREE</span><span class="p">);</span>
+
+  <span class="c1">// Add the new block to the current chain of blocks (if any)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">stack_block_chain</span><span class="p">.</span><span class="n">empty</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">stack_block_chain</span><span class="p">.</span><span class="n">back</span> <span class="p">().</span><span class="n">append</span> <span class="p">(</span><span class="n">new_block</span><span class="p">);</span>
+    <span class="p">}</span>
+
+  <span class="c1">// Set the subblocks to have the new block as their parent</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">tree</span> <span class="n">it</span> <span class="o">=</span> <span class="n">subblocks</span><span class="p">.</span><span class="n">first</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">();</span> <span class="n">it</span> <span class="o">!=</span> <span class="n">NULL_TREE</span><span class="p">;</span>
+       <span class="n">it</span> <span class="o">=</span> <span class="n">BLOCK_CHAIN</span> <span class="p">(</span><span class="n">it</span><span class="p">))</span>
+    <span class="n">BLOCK_SUPERCONTEXT</span> <span class="p">(</span><span class="n">it</span><span class="p">)</span> <span class="o">=</span> <span class="n">new_block</span><span class="p">;</span>
+
+  <span class="n">tree</span> <span class="n">bind_expr</span>
+    <span class="o">=</span> <span class="n">build3</span> <span class="p">(</span><span class="n">BIND_EXPR</span><span class="p">,</span> <span class="n">void_type_node</span><span class="p">,</span> <span class="n">var_decl_chain</span><span class="p">.</span><span class="n">first</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
+	      <span class="n">current_stmt_list</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">new_block</span><span class="p">);</span>
+
+  <span class="n">TreeSymbolMapping</span> <span class="n">tree_scope</span><span class="p">;</span>
+  <span class="n">tree_scope</span><span class="p">.</span><span class="n">bind_expr</span> <span class="o">=</span> <span class="n">bind_expr</span><span class="p">;</span>
+  <span class="n">tree_scope</span><span class="p">.</span><span class="n">block</span> <span class="o">=</span> <span class="n">new_block</span><span class="p">;</span>
+
+  <span class="n">scope</span><span class="p">.</span><span class="n">pop_scope</span><span class="p">();</span>
+
+  <span class="k">return</span> <span class="n">tree_scope</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+We get the current list of statements and we pop them from the stack of statement lists (lines 4 and 5). Likewise for the list of <code>VAR_DECL</code>s (lines 7 to 8). And again for the current chain of blocks (lines 10 and 11). Now we have to build a new block using the (GCC-provided) function <code>build_block</code>. Its first operand will be the list of <code>VAR_DECL</code>s, its second is the list of sub blocks that we may have gathered. We cannot set yet the parent (called the <em>supercontext</em>) so we leave it is a <code>NULL_TREE</code>. This block does not have any chain, yet, either, so the fourth operand is also <code>NULL_TREE</code>.
+</p>
+
+<p>
+Then, if this block is not the topmost one, it has to be added to the current block chain (lines 19 to 21). The topmost block will not be enclosed anywhere, this is why the stack might be empty (see line 11).
+</p>
+
+<p>
+When we create the blocks, we leave their parent empty (line 16). Now it is the right moment to take all the subblocks and set their parent (i.e. their supercontext) to the newly created block (lines 25 to 27). This is required because <code>BLOCK</code>s are somehow doubly-linked: the current block knows its subblocks and each subblock knows its parent.
+</p>
+
+<p>
+Now we can create a <code>BIND_EXPR</code> (line 29). Its first operand is the list of <code>VAR_DECL</code>s. The same as the block we have just created. The second operand is the list of statements and the third operand is the block we have just created.
+</p>
+
+<p>
+This function does not return a single <code>Tree</code> but a <code>TreeMapping</code> that is just a tuple containing both the just created <code>bind_expr</code> and the just created <code>block</code> (lines 33 to 35). The block is only required in the top level statement. Any other statement will use <code>bind_expr</code>.
+</p>
+
+<p>
+Finally we pop the symbol mapping and return (line 37).
+</p>
+
+<h2>Statement sequences</h2>
+<p>
+Ok, <code>enter_scope</code> and <code>leave_scope</code> are to be called after and before 〈statement〉* but we still have to parse the statements themselves.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_statement_seq</span> <span class="p">(</span><span class="kt">bool</span> <span class="p">(</span><span class="n">Parser</span><span class="o">::*</span><span class="n">done</span><span class="p">)</span> <span class="p">())</span>
+<span class="p">{</span>
+  <span class="c1">// Parse statements until done and append to the current stmt list;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;*</span><span class="n">done</span><span class="p">)</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">Tree</span> <span class="n">stmt</span> <span class="o">=</span> <span class="n">parse_statement</span> <span class="p">();</span>
+      <span class="n">get_current_stmt_list</span> <span class="p">().</span><span class="n">append</span> <span class="p">(</span><span class="n">stmt</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+In contrast to most <code>parse_xxx</code> functions, this one does not return a <code>Tree</code>. What it does instead is appending each parsed statement to the current statement list. Recall that <code>enter_scope</code> and <code>leave_scope</code> update the stack of statement list, thus the current one is always the one in the top of the stack.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">TreeStmtList</span> <span class="o">&amp;</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">get_current_stmt_list</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">stack_stmt_list</span><span class="p">.</span><span class="n">back</span> <span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2>Program</h2>
+
+<p>
+Since this post is already too long, let's end with what we have to do for a tiny program.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+</pre></td><td class="code"><pre><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_program</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="c1">// Built type of main "int (int, char**)"</span>
+  <span class="n">tree</span> <span class="n">main_fndecl_type_param</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">integer_type_node</span><span class="p">,</span>					     <span class="cm">/* int */</span>
+    <span class="n">build_pointer_type</span> <span class="p">(</span><span class="n">build_pointer_type</span> <span class="p">(</span><span class="n">char_type_node</span><span class="p">))</span> <span class="cm">/* char** */</span>
+  <span class="p">};</span>
+  <span class="n">tree</span> <span class="n">main_fndecl_type</span>
+    <span class="o">=</span> <span class="n">build_function_type_array</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">main_fndecl_type_param</span><span class="p">);</span>
+  <span class="c1">// Create function declaration "int main(int, char**)"</span>
+  <span class="n">main_fndecl</span> <span class="o">=</span> <span class="n">build_fn_decl</span> <span class="p">(</span><span class="s">"main"</span><span class="p">,</span> <span class="n">main_fndecl_type</span><span class="p">);</span>
+
+  <span class="c1">// Enter top level scope</span>
+  <span class="n">enter_scope</span> <span class="p">();</span>
+  <span class="c1">// program -&gt; statement*</span>
+  <span class="n">parse_statement_seq</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">Parser</span><span class="o">::</span><span class="n">done_end_of_file</span><span class="p">);</span>
+  <span class="c1">// Append "return 0;"</span>
+  <span class="n">tree</span> <span class="n">resdecl</span>
+    <span class="o">=</span> <span class="n">build_decl</span> <span class="p">(</span><span class="n">UNKNOWN_LOCATION</span><span class="p">,</span> <span class="n">RESULT_DECL</span><span class="p">,</span> <span class="n">NULL_TREE</span><span class="p">,</span> <span class="n">integer_type_node</span><span class="p">);</span>
+  <span class="n">DECL_RESULT</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">)</span> <span class="o">=</span> <span class="n">resdecl</span><span class="p">;</span>
+  <span class="n">tree</span> <span class="n">set_result</span>
+    <span class="o">=</span> <span class="n">build2</span> <span class="p">(</span><span class="n">INIT_EXPR</span><span class="p">,</span> <span class="n">void_type_node</span><span class="p">,</span> <span class="n">DECL_RESULT</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">),</span>
+	      <span class="n">build_int_cst_type</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+  <span class="n">tree</span> <span class="n">return_stmt</span> <span class="o">=</span> <span class="n">build1</span> <span class="p">(</span><span class="n">RETURN_EXPR</span><span class="p">,</span> <span class="n">void_type_node</span><span class="p">,</span> <span class="n">set_result</span><span class="p">);</span>
+
+  <span class="n">get_current_stmt_list</span> <span class="p">().</span><span class="n">append</span> <span class="p">(</span><span class="n">return_stmt</span><span class="p">);</span>
+
+  <span class="c1">// Leave top level scope, get its binding expression and its main block</span>
+  <span class="n">TreeSymbolMapping</span> <span class="n">main_tree_scope</span> <span class="o">=</span> <span class="n">leave_scope</span> <span class="p">();</span>
+  <span class="n">Tree</span> <span class="n">main_block</span> <span class="o">=</span> <span class="n">main_tree_scope</span><span class="p">.</span><span class="n">block</span><span class="p">;</span>
+
+  <span class="c1">// Finish main function</span>
+  <span class="n">BLOCK_SUPERCONTEXT</span> <span class="p">(</span><span class="n">main_block</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">())</span> <span class="o">=</span> <span class="n">main_fndecl</span><span class="p">;</span>
+  <span class="n">DECL_INITIAL</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">)</span> <span class="o">=</span> <span class="n">main_block</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">();</span>
+  <span class="n">DECL_SAVED_TREE</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">)</span> <span class="o">=</span> <span class="n">main_tree_scope</span><span class="p">.</span><span class="n">bind_expr</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">();</span>
+
+  <span class="n">DECL_EXTERNAL</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">DECL_PRESERVE_P</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="c1">// Convert from GENERIC to GIMPLE</span>
+  <span class="n">gimplify_function_tree</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">);</span>
+
+  <span class="c1">// Insert it into the graph</span>
+  <span class="n">cgraph_node</span><span class="o">::</span><span class="n">finalize_function</span> <span class="p">(</span><span class="n">main_fndecl</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+
+  <span class="n">main_fndecl</span> <span class="o">=</span> <span class="n">NULL_TREE</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In order for our program to be able to start, we need a <code>main</code> function (like in C). We do this in lines 4 to 12. This is similar to what we did for the <code>printf</code> and <code>puts</code> functions.
+</p>
+
+<p>
+Then we enter the top level scope. We parse the sequence of statements (line 17). Before leaving the current scope, we want to return 0, to signal that the program ends correctly. We will append a return expression to the current statement list. Before we can return anything, though, in GENERIC we first need to create a <code>RESULT_DECL</code> declaration (lines 19 to 21) and initialize it with some value using a <code>INIT_EXPR</code> (lines 22 to 24). Now we can create a return expression that, aside from returning, initializes the return <em>variable</em> (line 25). Finally we append it to the current statement list (line 27).
+</p>
+
+<p>
+Now we leave the scope, this returns a pair of trees <code>block</code> and <code>bind_expression</code>. We have to set the parent (i.e. the supercontext) of the <code>block</code> to the main function, since it is the topmost block (line 34). Then we set the main block of the function  (line 35) and the code proper of the function to be <code>bind_expr</code> (line 36). Then we make sure the main function is not set as extern because it is being defined by ourselves (line 38) and we tell the compiler to preserve it, otherwise it would be removed since nobody is explicitly using it (line 39).
+</p>
+
+<p>
+Now, we have to convert this function from GENERIC to GIMPLE (line 42) by calling the (GCC-provided) <code>gimplify_function_tree</code>. GIMPLE is a subset of GENERIC that is used by the middle end. Once converted the function can be queued for compilation in later passes of the compiler (line 45).
+</p>
+
+<h2>Smoke test</h2>
+
+<p>
+At this point our tiny front end is starting to be useful. A very basic smoketest that should work is the following one.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp"># test.tiny
+</span><span class="n">var</span> <span class="n">a</span> <span class="o">:</span> <span class="kt">int</span><span class="p">;</span>
+<span class="n">a</span> <span class="o">:=</span> <span class="mi">42</span><span class="p">;</span>
+<span class="n">write</span> <span class="n">a</span><span class="p">;</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcctiny <span class="nt">-o</span> <span class="nb">test </span>test.tiny 
+<span class="nv">$ </span>./test 
+42</code></pre></figure>
+
+<p>Yay!</p>
+
+<h2>Wrap-up</h2>
+
+<p>
+Ok, that post was again a long one. I have skipped some statements (read, if, while and for) that we will see in the next chapter but at least now we can play with assignment and the write statement.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/16/tiny-gcc-front-part-5/">&laquo; A tiny GCC front end – Part 5</a>
+
+
+  <a class="next" href="/2016/01/19/tiny-gcc-front-part-7/">A tiny GCC front end – Part 7 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

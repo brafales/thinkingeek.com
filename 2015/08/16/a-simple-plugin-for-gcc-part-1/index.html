@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A simple plugin for GCC – Part 1</title>
+  <meta name="description" content="GCC&#39;s C and C++ compilers provide several extensions to address several programming needs not covered in the standards. One of these is the warn_unused_result attribute. This attribute warns us that we are discarding the result of a function. Unfortunately, for C++ it does not always work as expected.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2015/08/16/a-simple-plugin-for-gcc-part-1/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A simple plugin for GCC – Part 1">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2015/08/16/a-simple-plugin-for-gcc-part-1/">
+  <meta property="og:description" content="GCC&#39;s C and C++ compilers provide several extensions to address several programming needs not covered in the standards. One of these is the warn_unused_result attribute. This attribute warns us that we are discarding the result of a function. Unfortunately, for C++ it does not always work as expected.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A simple plugin for GCC – Part 1">
+  <meta name="twitter:description" content="GCC&#39;s C and C++ compilers provide several extensions to address several programming needs not covered in the standards. One of these is the warn_unused_result attribute. This attribute warns us...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A simple plugin for GCC – Part 1</h1>
+    
+    <p class="post-meta"><time datetime="2015-08-16T20:07:22+00:00" itemprop="datePublished">Aug 16, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+GCC's C and C++ compilers provide several extensions to address several programming needs not covered in the standards. One of these is the <code>warn_unused_result</code> attribute. This attribute warns us that we are discarding the result of a function. Unfortunately, for C++ it does not always work as expected.
+</p>
+<!--more-->
+<h2>Function calls in C/C++</h2>
+<p>
+In contrast to many programming languages, C and C++ allow the programmer to ignore the result of a function. This is useful in those situations where the programmer is only interested in the <em>side-effects</em> of the function call (this includes returning extra information through variables passed by reference).
+</p>
+<p>
+A typical case is the <code>printf</code> family of functions. These function returns the number of characters written. This number may be a negative value if some input/output error happens or a positive number but lower than the characters we expected to write if there is not enough space in the output (as it happens with <code>snprintf</code>/<code>vsnprintf</code>). Almost no programmer bothers to check the result of these functions because their failure is a sign of a much deeper problem.
+</p>
+
+<p>&lt;/p&gt;
+This means that most calls (probably 99% of them) to <code>printf</code> are just
+&lt;/p&gt;</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"hello world</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span></code></pre></figure>
+
+<p>
+rather than
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="n">printf</span><span class="p">(</span><span class="s">"hello world</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="n">abort</span><span class="p">();</span> <span class="c1">// or some more elaborate error handling...</span></code></pre></figure>
+
+<p>
+That said, some functions may return values that is essential for the programmer not to discard them. A classical example is <code>malloc</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span> <span class="c1">// A memory leak happens right here</span></code></pre></figure>
+
+<p>
+GCC has an attribute <code>warn_unused_result</code> that can be specified for functions whose value cannot be ignored. This is used for diagnostics.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span>
+<span class="kt">int</span><span class="o">*</span> <span class="nf">new_int</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+
+<span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">new_int</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+The code above will cause gcc to emit a warning.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcc <span class="nt">-c</span> test.c
+test.c: In <span class="k">function</span> ‘g’:
+test.c:6:5: warning: ignoring <span class="k">return </span>value of ‘new_int’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     new_int<span class="o">()</span><span class="p">;</span>
+     ^</code></pre></figure>
+
+<p>
+For C, this attribute gives predictable results. For instance if we return a structure by value it also works.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="k">typedef</span> <span class="k">struct</span> <span class="n">A</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="o">*</span><span class="n">addr</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">A</span><span class="p">;</span>
+
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span>
+<span class="n">A</span> <span class="nf">build_A</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+
+<span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">build_A</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcc <span class="nt">-c</span> test.c
+test.c: In <span class="k">function</span> ‘g’:
+test.c:11:5: warning: ignoring <span class="k">return </span>value of ‘build_A’, declared with attribute warn_unused_result <span class="o">[</span><span class="nt">-Wunused-result</span><span class="o">]</span>
+     build_A<span class="o">()</span><span class="p">;</span>
+     ^</code></pre></figure>
+
+<p>
+But surprisingly it does not work for C++.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>g++ <span class="nt">-c</span> test.c
+<span class="c"># no warnings even with -Wall</span></code></pre></figure>
+
+<h3>What is going on?</h3>
+
+<p>
+C++ is much, much more complicated than C. And even apparently identical code carries much more semantic load in C++ than its equivalent C code. One of the things that C++ has that C does not are <em>destructors</em>. Consider the following code
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">B</span>
+<span class="p">{</span>
+   <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+   <span class="o">~</span><span class="n">B</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="n">B</span> <span class="nf">f</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">f</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+In line 11 of the code above, the function call creates a temporary value that looks like unused. But it is not, since this value is a class type and that class type has a non-trivial destructor (and a <em>user-defined</em> destructor is never trivial), the code must invoke the destructor to destroy this temporary value. So, what at first looks like a discarded value, it happens to be used. The following code tries to represent what actually happens: a temporary is created with the call to <code>f</code> and then immediately destroyed.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">9
+10
+11
+12
+</pre></td><td class="code"><pre><span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">B</span> <span class="n">_temp</span><span class="p">(</span> <span class="n">f</span><span class="p">()</span> <span class="p">);</span> <span class="n">_temp</span><span class="p">.</span><span class="n">B</span><span class="o">::~</span><span class="n">B</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+If a class does not have a user-defined destructor, the compiler will generate one for the user. Sometimes, that <q>compiler-defined</q> destructor does not have to do anything. It exists internally in the compiler but it will generate no tangible code in our program. These destructors are called trivial. Trivial destructors happen when all the fields (and base classes) of a class type are of basic type (integer, pointer, reference, array of basic types, etc.) or of class type (or an array of) with a trivial destructor as well. Our class A shown above has a trivial destructor because its unique field is of type pointer to int, so a basic type.
+</p>
+
+<p>
+For the cases where the destructor is trivial, the compiler will not emit any other call to the destructor, so the temporary object goes effectively unused. We would want these cases to be diagnosed.
+</p>
+
+<p>
+With a motivation already set, we can now move on to implement this in GCC as a plugin.
+</p>
+
+<h2>GCC plugins</h2>
+
+<p>
+Ok, GCC is a rather old compiler (according to Wikipedia, its first release was in 1987) but it has evolved these years to gain new functionalities. One of these functionalities is being extensible via plugins. Plugins let us to extend the compiler without getting ourselves too dirty. GCC codebase, after 28 years, is huge and comes with its own quirks, so writing a plugin is not trivial but, in my opinion, can be very rewarding and revealing on how a real compiler works (for good and bad, of course).
+</p>
+
+<h3>Quick installation</h3>
+
+<p>
+At the moment the plugin interface of GCC follows a model similar to that of Linux modules: API stability is not guaranteed between versions. This means that, more or less our plugins will be tied to specific versions of GCC. This may not be ideal but this is how things are in GCC. For this post we will be using GCC 5.2 (released in June 16th 2015). At the time of writing this post, it is highly unlikely that your distribution provides that compiler version as the system compiler, so we will install it on a directory of our choice. This way we will avoid interferring with the system compiler, a sensitive piece of software that we do not want to break!
+</p>
+
+<p>
+First, create a directory where we will put everything, enter it and download GCC 5.2
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># define a variable BASEDIR that we will use all the time</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">BASEDIR</span><span class="o">=</span><span class="nv">$HOME</span>/gcc-plugins
+<span class="c"># Create the directory, if it does not exist</span>
+<span class="nv">$ </span><span class="nb">mkdir</span> <span class="nt">-p</span> <span class="nv">$BASEDIR</span>
+<span class="c"># Enter the new directory</span>
+<span class="nv">$ </span><span class="nb">cd</span> <span class="nv">$BASEDIR</span>
+<span class="c"># Download gcc using 'wget' ('curl' can be used too)</span>
+<span class="nv">$ </span>wget http://ftp.gnu.org/gnu/gcc/gcc-5.2.0/gcc-5.2.0.tar.bz2
+<span class="c"># Unpack the file</span>
+<span class="nv">$ </span><span class="nb">tar </span>xfj gcc-5.2.0.tar.bz2</code></pre></figure>
+
+<p>
+The next step involves building GCC. First we need to get some software required by GCC itself.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Enter in the source code directory of GCC</span>
+<span class="nv">$ </span><span class="nb">cd </span>gcc-5.2.0
+<span class="c"># And now download the prerequisites</span>
+<span class="nv">$ </span>./contrib/download_prerequisites</code></pre></figure>
+
+<p>
+Now, <strong>create a build directory</strong> sibling to <code>gcc-5.2.0</code> and make sure you enter it.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># We are in gcc-5.2.0, go up one level</span>
+<span class="nv">$ </span><span class="nb">cd</span> ..
+<span class="c"># Now create the build directory, gcc-build is a sensible name</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>gcc-build
+<span class="c"># Enter the build directory</span>
+<span class="nv">$ </span><span class="nb">cd </span>gcc-build</code></pre></figure>
+
+<p>
+Now configure the compiler and build it. In this step we will specify where the compiler will be installed. <strong>Make sure that you are in <code>gcc-build</code></strong>! This step takes several minutes (about 15 minutes or so, depending on your machine) but you only have to do it once.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Define an installation path, it must be an absolute path!</span>
+<span class="c"># '$BASEDIR/gcc-install' seems an appropiate place</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">INSTALLDIR</span><span class="o">=</span><span class="nv">$BASEDIR</span>/gcc-install
+<span class="c"># Configure GCC</span>
+<span class="nv">$ </span>../gcc-5.2.0/configure <span class="nt">--prefix</span><span class="o">=</span><span class="nv">$INSTALLDIR</span> <span class="nt">--enable-languages</span><span class="o">=</span>c,c++
+<span class="c"># Build 'getconf _NPROCESSORS_ONLN' will return the number of threads</span>
+<span class="c"># we can use, in order to build GCC in parallel</span>
+<span class="nv">$ </span>make <span class="nt">-j</span><span class="si">$(</span>getconf _NPROCESSORS_ONLN<span class="si">)</span></code></pre></figure>
+
+<p>
+Now install it
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make <span class="nb">install</span></code></pre></figure>
+
+<p>
+Now check the installation
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Create a convenience variable for the path of GCC</span>
+<span class="nv">$ </span><span class="nb">export </span><span class="nv">GCCDIR</span><span class="o">=</span><span class="nv">$INSTALLDIR</span>/bin
+<span class="nv">$ $GCCDIR</span>/g++ <span class="nt">--version</span>
+g++ <span class="o">(</span>GCC<span class="o">)</span> 5.2.0
+Copyright <span class="o">(</span>C<span class="o">)</span> 2015 Free Software Foundation, Inc.
+This is free software<span class="p">;</span> see the <span class="nb">source </span><span class="k">for </span>copying conditions.  There is NO
+warranty<span class="p">;</span> not even <span class="k">for </span>MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</code></pre></figure>
+
+<p>
+That's it. You can find much more information about installing <a href="https://gcc.gnu.org/install/">here</a>.
+</p>
+
+<h2>Skeleton of our plugin</h2>
+
+<p>
+In order to build a plugin for GCC, GCC installation installs a directory full of C++ headers representing its internal structures. We can now where these headers are installed using GCC itself.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ $GCCDIR</span>/g++ <span class="nt">-print-file-name</span><span class="o">=</span>plugin
+/some/path/gcc-install/lib/gcc/x86_64-unknown-linux-gnu/5.2.0/plugin</code></pre></figure>
+
+<p>
+Let's first create a directory where we will put our plugin.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">mkdir</span> <span class="nv">$BASEDIR</span>/gcc-plugins
+<span class="nv">$ </span><span class="nb">cd </span>gcc-plugins</code></pre></figure>
+
+<p>
+While we can compile writing the commands, it soon becomes tedious, so let's write a <code>Makefile</code>. We will use our just installed GCC 5.2, so make sure to fill the Makefile varialbe <code>GCCDIR</code> below with the value of your <code>$GCCDIR</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-make" data-lang="make"><span class="nv">GCCDIR</span> <span class="o">=</span> <span class="o">{</span> put here the value of your <span class="nv">${GCCDIR}</span> <span class="o">}</span>
+
+<span class="nv">CXX</span> <span class="o">=</span> <span class="nv">$(GCCDIR)</span>/g++
+<span class="c"># Flags for the C++ compiler: enable C++11 and all the warnings, -fno-rtti is required for GCC plugins
+</span><span class="nv">CXXFLAGS</span> <span class="o">=</span> <span class="nt">-std</span><span class="o">=</span>c++11 <span class="nt">-Wall</span> <span class="nt">-fno-rtti</span> 
+<span class="c"># Workaround for an issue of -std=c++11 and the current GCC headers
+</span><span class="nv">CXXFLAGS</span> <span class="o">+=</span> <span class="nt">-Wno-literal-suffix</span>
+
+<span class="c"># Determine the plugin-dir and add it to the flags
+</span><span class="nv">PLUGINDIR</span><span class="o">=</span><span class="nf">$(</span><span class="nb">shell</span> <span class="nv">$(CXX)</span> <span class="nt">-print-file-name</span><span class="o">=</span>plugin<span class="nf">)</span>
+<span class="nv">CXXFLAGS</span> <span class="o">+=</span> <span class="nt">-I</span><span class="nv">$(PLUGINDIR)</span>/include
+
+<span class="c"># top level goal: build our plugin as a shared library
+</span><span class="nl">all</span><span class="o">:</span> <span class="nf">warn_unused.so</span>
+
+<span class="nl">warn_unused.so</span><span class="o">:</span> <span class="nf">warn_unused.o</span>
+	<span class="nv">$(CXX)</span> <span class="nv">$(LDFLAGS)</span> <span class="nt">-shared</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nv">$&lt;</span>
+
+<span class="nl">warn_unused.o </span><span class="o">:</span> <span class="nf">warn_unused.cc</span>
+	<span class="nv">$(CXX)</span> <span class="nv">$(CXXFLAGS)</span> <span class="nt">-fPIC</span> <span class="nt">-c</span> <span class="nt">-o</span> <span class="nv">$@</span> <span class="nv">$&lt;</span>
+
+<span class="nl">clean</span><span class="o">:</span>
+	<span class="nb">rm</span> <span class="nt">-f</span> warn_unused.o warn_unused.so
+
+<span class="nl">check</span><span class="o">:</span> <span class="nf">warn_unused.so</span>
+	<span class="nv">$(CXX)</span> <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> <span class="nt">-x</span> c++ /dev/null <span class="nt">-o</span> /dev/null
+
+<span class="nl">.PHONY</span><span class="o">:</span> <span class="nf">all clean check</span></code></pre></figure>
+
+<p>
+This makefile by default will only build the plugin. If we want to test it, we can use <code>make check</code>. Currently the <code>check</code> rule compiles an empty file (actually <code>/dev/null</code>) but this is enough to test it for now.
+</p>
+
+<p>
+Now we need to write some code for the file <code>warn_unused.cc</code>. As a starter, let's make a plugin that does nothing but prove it works.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+</pre></td><td class="code"><pre><span class="cp">#include &lt;iostream&gt;
+</span>
+<span class="c1">// This is the first gcc header to be included</span>
+<span class="cp">#include "gcc-plugin.h"
+#include "plugin-version.h"
+</span>
+<span class="c1">// We must assert that this plugin is GPL compatible</span>
+<span class="kt">int</span> <span class="n">plugin_is_GPL_compatible</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="nf">plugin_init</span> <span class="p">(</span><span class="k">struct</span> <span class="nc">plugin_name_args</span> <span class="o">*</span><span class="n">plugin_info</span><span class="p">,</span>
+	     <span class="k">struct</span> <span class="nc">plugin_gcc_version</span> <span class="o">*</span><span class="n">version</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="c1">// We check the current gcc loading this plugin against the gcc we used to</span>
+  <span class="c1">// created this plugin</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">plugin_default_version_check</span> <span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">gcc_version</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"This GCC plugin is for version "</span> <span class="o">&lt;&lt;</span> <span class="n">GCCPLUGIN_VERSION_MAJOR</span>
+	<span class="o">&lt;&lt;</span> <span class="s">"."</span> <span class="o">&lt;&lt;</span> <span class="n">GCCPLUGIN_VERSION_MINOR</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+      <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="c1">// Let's print all the information given to this plugin!</span>
+
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Plugin info</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"===========</span><span class="se">\n\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Base name: "</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">base_name</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Full name: "</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">full_name</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Number of arguments of this plugin:"</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span>
+    <span class="n">argc</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">argc</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Argument "</span> <span class="o">&lt;&lt;</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="s">": Key: "</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">].</span>
+	<span class="n">key</span> <span class="o">&lt;&lt;</span> <span class="s">". Value: "</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">value</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+    <span class="p">}</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">version</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Version string of the plugin: "</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span>
+      <span class="n">version</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">help</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Help string of the plugin: "</span> <span class="o">&lt;&lt;</span> <span class="n">plugin_info</span><span class="o">-&gt;</span><span class="n">help</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Version info</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"============</span><span class="se">\n\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Base version: "</span> <span class="o">&lt;&lt;</span> <span class="n">version</span><span class="o">-&gt;</span><span class="n">basever</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Date stamp: "</span> <span class="o">&lt;&lt;</span> <span class="n">version</span><span class="o">-&gt;</span><span class="n">datestamp</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Dev phase: "</span> <span class="o">&lt;&lt;</span> <span class="n">version</span><span class="o">-&gt;</span><span class="n">devphase</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Revision: "</span> <span class="o">&lt;&lt;</span> <span class="n">version</span><span class="o">-&gt;</span><span class="n">devphase</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Configuration arguments: "</span> <span class="o">&lt;&lt;</span> <span class="n">version</span><span class="o">-&gt;</span>
+    <span class="n">configuration_arguments</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+  <span class="n">std</span><span class="o">::</span><span class="n">cerr</span> <span class="o">&lt;&lt;</span> <span class="s">"Plugin successfully initialized</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now we can build the plugin.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make
+/some/path/gcc-install/bin/g++ <span class="nt">-std</span><span class="o">=</span>c++11 <span class="nt">-Wall</span> <span class="nt">-Wno-literal-suffix</span> <span class="nt">-I</span>/home/roger/soft/gcc/gcc-5.2/lib/gcc/x86_64-unknown-linux-gnu/5.2.0/plugin/include <span class="nt">-fPIC</span> <span class="nt">-c</span> <span class="nt">-o</span> warn_unused.o warn_unused.cc
+/some/path/gcc-install/bin/g++ <span class="nt">-shared</span> <span class="nt">-o</span> warn_unused.so warn_unused.o</code></pre></figure>
+
+<p>
+And test if it works
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>make check
+/some/path/gcc-install/bin/g++ <span class="nt">-fplugin</span><span class="o">=</span>./warn_unused.so <span class="nt">-c</span> <span class="nt">-x</span> c++ /dev/null <span class="nt">-o</span> /dev/null
+Plugin info
+<span class="o">===========</span>
+
+Base name: warn_unused
+Full name: ./warn_unused.so
+Number of arguments of this plugin:0
+
+Version info
+<span class="o">============</span>
+
+Base version: 5.2.0
+Date stamp: 20150716
+Dev phase: 
+Revision: 
+Configuration arguments: ../gcc-5.2.0/configure <span class="nt">--enable-languages</span><span class="o">=</span>c,c++ <span class="nt">--prefix</span><span class="o">=</span>/some/path/gcc-install
+
+Plugin successfully initialized</code></pre></figure>
+
+<p>
+It works. Great!
+</p>
+
+<h3>How it works</h3>
+
+<p>
+Plugins are implemented using <a href="https://en.wikipedia.org/wiki/Dynamic_loading">dynamic libraries</a>. We use the flag <code>-fplugin=file.so</code>, where <code>file.so</code> is the dynamic library that implements our plugin. GCC loads the dynamic library and invokes the function <code>plugin_init</code>. This function is used to initialize the plugin and to register itself inside the compiler. In its current state, our plugin does nothing but verify the version of GCC compatible with this plugin and show some information passed by GCC during loading.
+</p>
+
+<h4>Our plugin license must be compatible with GCC</h4>
+
+<p>
+Since plugins are somehow integrated with the code of GCC we have to assert in our code that the license of the plugin is <a href="http://gplv3.fsf.org/wiki/index.php/Compatible_licenses">GPL compatible</a> by declaring a global variable <code>plugin_is_GPL_compatible</code>.
+</p>
+
+<h3>Next steps</h3>
+
+<p>
+Now that we have the basic infrastructure to build plugins we can continue developing our plugin. But this post is long enough so let's postpone this until the next time.
+</p>
+
+<p>
+You can find the supporting code for this post <a href="https://github.com/rofirrim/gcc-plugins/tree/master/blog_01">here</a>. Make sure you fix the <code>GCCDIR</code> variable in the <code>Makefile</code>.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2015/07/04/arm-assembler-raspberry-pi-chapter-25/">&laquo; ARM assembler in Raspberry Pi – Chapter 25</a>
+
+
+  <a class="next" href="/2015/08/16/simple-plugin-gcc-part-2/">A simple plugin for GCC – Part 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

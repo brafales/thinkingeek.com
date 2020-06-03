@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 4</title>
+  <meta name="description" content="Now that we have a stream of tokens we can start performing syntactic analysis.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/01/10/tiny-gcc-front-part-4/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 4">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/01/10/tiny-gcc-front-part-4/">
+  <meta property="og:description" content="Now that we have a stream of tokens we can start performing syntactic analysis.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 4">
+  <meta name="twitter:description" content="Now that we have a stream of tokens we can start performing syntactic analysis.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 4</h1>
+    
+    <p class="post-meta"><time datetime="2016-01-10T17:00:10+00:00" itemprop="datePublished">Jan 10, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/gcc/">gcc</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/tiny/">tiny</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Now that we have a stream of tokens we can start performing syntactic analysis.
+</p>
+
+<!--more-->
+
+<h2>Syntactic correctness</h2>
+
+<p>
+The lexer is providing us a stream of tokens. But we still have to check if such sequence forms a valid program.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="code"><pre><span class="k">var</span> <span class="n">i</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="n">i</span> <span class="p">:=</span> <span class="m">1</span><span class="p">;</span>
+<span class="n">i</span> <span class="p">:=</span> <span class="p">)</span><span class="n">i</span> <span class="p">+</span><span class="m">1</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+All the tokens in the program above are valid tokens, but the second assignment statement (line 3) is not an assignment statement because there is an incorrect token <code><strong>)</strong></code> after <code><strong>:=</strong></code>. On the other hand, the following program
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+</pre></td><td class="code"><pre><span class="k">if</span> <span class="m">3</span> <span class="k">then</span> <span class="k">end</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+is syntactically valid but semantically incorrect because the condition expression does not have boolean type but integer type.
+</p>
+
+<p>
+The syntactical analyzer will detect invalid token sequences but will not assess their semantic validity.
+</p>
+
+<h2>Recognizer</h2>
+
+<p>
+There is an extense and interesting bibliography about language recognition, but this is a blog not a compilers crash course so we will have to cut down the explanation: we will build a recursive descent recognizer based on the syntax description of <a href="/2016/01/05/tiny-gcc-front-part-1/">part 1</a>. If you are interested in parsing techniques an excellent (and a tad bit expensive too) reference is <a href="http://dickgrune.com/Books/PTAPG_2nd_Edition/">Parsing Techniques: A Practical Guide</a> by Grune and Jacobs.
+</p>
+
+<p>
+The strategy is very intuitive. Recognizing a rule like 〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code> requires recognizing the elements in the right hand side of the rule. When an element in the right hand side is just a token (like <code><strong>var</strong></code>, <code><strong>:</strong></code> or <code><strong>;</strong></code>) then we only have to verify that the next token is of the expected kind at that point. When the element in the right hand side is another rule (like 〈identifier〉 or 〈type〉) we will just recursively recognize the rule. An element of the form w* is equivalent to a rule like 〈rule〉&ensp;→&ensp; ϵ | w〈rule〉 (where ϵ means an empty sequence of elements). An element of the form w+ is equivalent to a rule like 〈rule〉&ensp;→&ensp; w | w〈rule〉.
+</p>
+
+<p>
+Some rules are of the form 〈rule〉&ensp;→&ensp;A | B | C. In such case we have to choose which A, B or C are going to recognize. We can break the tie peeking the current token. If each A, B or C start with different tokens, our problem is solved. If this is not the case, then we may have to peek some more tokens. Tiny is such a simple language that no more than one token will have to be peeked. When the alternative involves an empty sequence of tokens (like w* above) then we will consider that ϵ matches if the current token cannot start any of the alternatives.
+</p>
+
+<h2>Parser interface</h2>
+
+<p>
+In our implementation the syntactic and semantic analysis will be performed at the same time. Not that it has to be this way. For bigger languages splitting these two steps may be more appropiate. Tiny is so small that doing it is not worth. That said, in this post we will only focus on the syntactic recognition. For now, we only need to know that, upon recognizing a rule, a semantic value may be computed. What exactly this semantic value is, is not important now.
+</p>
+
+<p>
+Since we will combine syntactic and semantic analysis we will call this step parsing. A <code>Parser</code> class will drive the parsing process.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Parser</span>
+<span class="p">{</span>
+  <span class="c1">// ...</span>
+<span class="nl">public:</span>
+  <span class="n">Parser</span> <span class="p">(</span><span class="n">Lexer</span> <span class="o">&amp;</span><span class="n">lexer_</span><span class="p">)</span> <span class="o">:</span> <span class="n">lexer</span> <span class="p">(</span><span class="n">lexer_</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+  <span class="c1">// ...</span>
+<span class="nl">private:</span>
+  <span class="n">Lexer</span> <span class="o">&amp;</span><span class="n">lexer</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+The parser will get tokens from the lexer, so we pass a reference to the lexer (recall that he lexer will synthesize tokens from the input file).
+</p>
+
+<p>
+The main goal of our parser is parsing a program. So we will have a <code>parse_program</code> method.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Parser</span>
+<span class="p">{</span>
+  <span class="c1">// ...</span>
+<span class="nl">public:</span>
+  <span class="n">Parser</span> <span class="p">(</span><span class="n">Lexer</span> <span class="o">&amp;</span><span class="n">lexer_</span><span class="p">)</span> <span class="o">:</span> <span class="n">lexer</span> <span class="p">(</span><span class="n">lexer_</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+  <span class="kt">void</span> <span class="n">parse_program</span><span class="p">();</span>
+  <span class="c1">// ...</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>
+Ideally <code>parse_program</code> should return a semantic value, but at this moment we do not care.
+</p>
+
+<p>
+Let's recall the syntax of 〈program〉
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈program〉&ensp;→&ensp;〈statement〉*
+</p>
+
+<p>
+As said above 〈statement〉* is equivalent to 〈rule〉&ensp;→&ensp;ϵ|〈statement〉〈rule〉. We will call this rule 〈statement-seq〉. Like this.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈statement-seq〉&ensp;→&ensp;ϵ | 〈statement〉〈statement-seq〉
+</p>
+
+<p>
+Inside a 〈program〉 the 〈statement-seq〉 ends when the end-of-file is found. This suggests that we just have to keep parsing statements until we find an end-of-file and a possible implementation of <code>parse_program</code> does this.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_program</span> <span class="p">()</span>
+<span class="p">{</span>
+   <span class="n">parse_statement_seq</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+and similarly, <code>parse_statement_seq</code>
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_statement_seq</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="c1">// Parse statements until done and append to the current stmt list;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">lexer</span><span class="p">.</span><span class="n">peek</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">get_id</span><span class="p">()</span> <span class="o">!=</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END_OF_FILE</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">parse_statement</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+This is fine but if you check the syntax of tiny, you will see that the condition of finalization of a 〈statement-seq〉 is not always the end of file. Sometimes can be <code><strong>end</strong></code> (in the then or else part of an if statement, int the body for statement and in the body of a while statement) and sometimes is <code><strong>else</strong></code> (in the then part of an if statement). So this means that <code>parse_statement_seq</code> can be reused if we parameterize the finalization condition. Something like this.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_statement_seq</span> <span class="p">(</span><span class="kt">bool</span> <span class="p">(</span><span class="n">Parser</span><span class="o">::*</span><span class="n">done</span><span class="p">)</span> <span class="p">())</span>
+<span class="p">{</span>
+  <span class="c1">// Parse statements until done and append to the current stmt list;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="k">this</span><span class="o">-&gt;*</span><span class="n">done</span><span class="p">)</span> <span class="p">())</span>
+    <span class="p">{</span>
+      <span class="n">parse_statement</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+And now we rewrite <code>parse_program</code> like.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">done_end_of_file</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END_OF_FILE</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_program</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">parse_statement_seq</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">Parser</span><span class="o">::</span><span class="n">done_end_of_file</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Now we can proceed to parse a statement. Let's recall the syntax of a statement.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈statement〉&ensp;→&ensp;〈declaration〉 | 〈assignment〉 | 〈if〉 | 〈while〉 | 〈for〉 | 〈read〉 | 〈write〉
+</p>
+
+<p>
+Now we have one of those alternatives. Fortunately tiny is so simple that is easy to tell by just peeking the current token which kind of statement it can be.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_statement</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
+    <span class="p">{</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">VAR</span><span class="o">:</span>
+      <span class="n">parse_variable_declaration</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IF</span><span class="o">:</span>
+      <span class="n">parse_if_statement</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">WHILE</span><span class="o">:</span>
+      <span class="n">parse_while_statement</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">FOR</span><span class="o">:</span>
+      <span class="n">parse_for_statement</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">READ</span><span class="o">:</span>
+      <span class="n">parse_read_statement</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">WRITE</span><span class="o">:</span>
+      <span class="n">parse_write_statement</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IDENTIFIER</span><span class="o">:</span>
+      <span class="n">parse_assignment_statement</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="nl">default:</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">t</span><span class="p">);</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+We peek the current token and we check which statement it can initiate. If no statement can be initiated given the current token, the we call a diagnostic function with the unexpected token. We do some minimal error recovery by skiping all tokens until a semicolon is found.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">unexpected_token</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">t</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">error_at</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="s">"unexpected %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">get_token_description</span> <span class="p">());</span>
+<span class="p">}</span>
+
+<span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">skip_after_semicolon</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END_OF_FILE</span> <span class="o">&amp;&amp;</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">SEMICOLON</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">SEMICOLON</span><span class="p">)</span>
+    <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+<code>error_at</code> is a function that tells GCC to emit a diagnostic in the given location we just complain of an unexpected token. For instance the following erroneous program.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="mi">3</span><span class="p">;</span></code></pre></figure>
+
+<p>
+will emit the following diagnostic.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ gcctiny -c foo.tiny
+foo.tiny:1:1: error: unexpected integer literal
+
+ 3;
+ ^</code></pre></figure>
+
+<p>
+If the front end has signaled any error, once it finishes, GCC will stop and return a non-zero error code. So no assembler is emitted at all for erroneous inputs.
+</p>
+
+<p>
+A user-friendly front end, though, should attempt to continue in order to diagnose more errors to the user. A front end that stops at the first error may be OK but then forces the user to repeatedly invoke the compiler to discover new errors. It seems, thus, sensible to try to diagnose as much as possible each invocation of the compiler (some compilers have a configurable error limit to avoid spending more time diagnosing errors than doing useful work). This implies that after an error has been diagnosed the front end has to recover from it. To do this the front end will have to use some error recovery strategy.
+</p>
+<p>
+The strategy that we will use for tiny is rather simple and it is commonly known as <em>panic mode</em>. When an un expected token appears, the parser attempts to advance the input to some sensible position. Here we skip after a semicolon in the hope that a correct statement will start there. Note that error recovery is always a <em>best effort</em>. Until the compiler is able to read the mind of the programmer, it can only guess where the real error happened. It is not unlikely that a cascade of errors is generated because the parsing restarts in the wrong place. It is not the case of tiny but <a href="http://tgceec.tumblr.com/">some programming languages are noticeably hard when it comes to diagnosing syntactic errors</a>.
+</p>
+
+<h2>Parsing statements</h2>
+
+<p>
+Ok, now we can parse a program and its statement sequence. Let's see how we parse each individual statement.
+</p>
+
+<p>
+A variable declaration statement has the following form.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+</p>
+
+<p>
+So a straightforward implementation of a parser of this statement is the one below.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_variable_declaration</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">VAR</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">identifier</span> <span class="o">=</span> <span class="n">expect_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">identifier</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">COLON</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_semicolon</span> <span class="p">();</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_type</span> <span class="p">())</span>
+     <span class="k">return</span><span class="p">;</span>
+ 
+  <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">SEMICOLON</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Here we use a function <code>skip_token</code> that given a token id, checks if the current token has that same id. If it has, it just skips it and returns true. Otherwise diagnoses an error and returns false. When skip_token fails (i.e. returns false) we immediately go to panic mode and give up parsing the current statement. As you can see this code quickly becomes tedious and repetitive. No wonder there exist tools, like <a href="http://www.antlr.org/">ANTLR</a> by Terence Parr, that automate the code generation of recursive descent recognizers.
+</p>
+
+<p>
+Function <code>skip_token</code> simply forwards to <code>expect_token</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">TokenId</span> <span class="n">token_id</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">expect_token</span> <span class="p">(</span><span class="n">token_id</span><span class="p">)</span> <span class="o">!=</span> <span class="n">const_TokenPtr</span> <span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Function <code>expect_token</code> checks the current token. If its id is the same as the one we expect, it skips and returns it, otherwise it diagnoses an error and returns an empty pointer (i.e. a null pointer).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">const_TokenPtr</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">expect_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">TokenId</span> <span class="n">token_id</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">token_id</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="n">t</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">error_at</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_locus</span> <span class="p">(),</span> <span class="s">"expecting %s but %s found</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+		<span class="n">get_token_description</span> <span class="p">(</span><span class="n">token_id</span><span class="p">),</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">get_token_description</span> <span class="p">());</span>
+      <span class="k">return</span> <span class="n">const_TokenPtr</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+When parsing a variable declaration we invoke a <code>parse_type</code> function, that parses the rule 〈type〉.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code>
+</p>
+
+<p>
+Its associated parsing function is rather obvious too.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_type</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+
+  <span class="k">switch</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
+    <span class="p">{</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INT</span><span class="o">:</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">FLOAT</span><span class="o">:</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="nl">default:</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">t</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Note that we return a boolean because we want the caller know if the parsing of the type succeeded.
+</p>
+
+<p>
+Another interesting statement is the if-statement. Let's recall its syntax definition.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code>
+&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code>
+</p>
+
+<p>
+As shown, deriving a parse function for the rule 〈if〉 is not obvious because the two forms share a lot of elements. It may help to split the rule 〈if〉 in two rules follows.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈if〉&ensp;→&ensp;〈if-then〉 <code><strong>end</strong></code>
+&emsp;&emsp; | 〈if-then〉 <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈if-then〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉*
+</p>
+
+<p>
+From this definition it is clear that we have to parse first an <code><strong>if</strong></code>, followed by an expression, followed by a <code><strong>then</strong></code> and followed by a statement sequence. In this case the statement sequence will finish when we encounter an <code><strong>end</strong></code> or an <code><strong>else</strong></code> token. If we find an <code><strong>end</strong></code> we are done parsing the if statement. If we find an <code><strong>else</strong></code>, it means that we still have to parse a statement sequence (this time the sequence finishes only if we encounter an <code><strong>end</strong></code>) and then an <code><strong>end</strong></code> token.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_if_statement</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">IF</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">skip_after_end</span> <span class="p">();</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="n">parse_expression</span> <span class="p">();</span>
+
+  <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">THEN</span><span class="p">);</span>
+
+  <span class="n">parse_statement_seq</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">Parser</span><span class="o">::</span><span class="n">done_end_or_else</span><span class="p">);</span>
+
+  <span class="n">const_TokenPtr</span> <span class="n">tok</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">ELSE</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Consume 'else'</span>
+      <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">ELSE</span><span class="p">);</span>
+
+      <span class="n">parse_statement_seq</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">Parser</span><span class="o">::</span><span class="n">done_end</span><span class="p">);</span>
+      <span class="c1">// Consume 'end'</span>
+      <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">END</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Consume 'end'</span>
+      <span class="n">skip_token</span> <span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">END</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
+      <span class="n">skip_after_end</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Function <code>skip_after_end</code> is similar to <code>skip_after_semicolon</code> but with an <code><strong>end</strong></code> token. Note that these <code>skip_<em>x</em></code> functions must protect themselves from an unexpected end of file.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">skip_after_end</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END_OF_FILE</span> <span class="o">&amp;&amp;</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+      <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+    <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">()</span> <span class="o">==</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">END</span><span class="p">)</span>
+    <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Remaining statements are parsed likewise and they do not bear special complexity except for a pervasive rule appearing in several of the statements: expression. This rule is so special that has its own parsing technique.
+</p>
+
+<h2>Parsing expressions</h2>
+
+<p>
+Parsing expressions is complex because the sublanguage of expressions must be flexible enough to express lots of different kinds of computations. Expressions can be understood as being formed by two kinds of elements: <em>operators</em> that most of the time correspond with some punctuation (or keywords like <code><strong>or</strong></code>, <code><strong>and</strong></code> and <code><strong>not</strong></code>) and <em>operands</em> that correspond to other expressions (usually a subset of the expression sublanguage). Operators have an <em>arity</em>, which means the number of operands they operate, and a <q><em>fixity</em></q> which defines the position of the operator respect its operands in the syntax. Arity of most operators is either <em>unary</em>, a single operand, or <em>binary</em>, two operands (some languages have <em>ternary</em> operators like the <a href="https://en.wikipedia.org/wiki/%3F:">conditional operator</a> though they may need to include extra operators). When it comes to <q>fixity</q> operators can be <em>prefix</em>, the operands appear after the operator, or <em>postfix</em>, the operands appear before the operator. For binary operators an extra <em>fixity</em> is possible called <em>infix</em>: the operator appears between the two operands.
+</p>
+
+<p>
+Some programming languages have only prefix operators (in some form the LISP family works this way) This simplifies a lot the syntactic analysis as all unary expressions are of the form 〈op〉 〈operand1〉 and all binary expressions of the form 〈op〉 〈operand1〉 〈operand2〉. Some notations (like the <a href="https://en.wikipedia.org/wiki/Reverse_Polish_notation">Reverse Polish notation</a>) only use postfix operators, this has the same advantages as using only prefix operators.
+</p>
+
+<p>
+While using prefix or postfix notation may be OK, most programming languages, including tiny, choose to use a notation closer, though not exactly the same, to the mathematical notation of arithmetic where most operators are infix. Infix notation introduces an additional problem though: it is ambiguous unless we define some <em>operator priority</em> and <em>associativity</em>. Operator priority, following the rules of <a href="https://en.wikipedia.org/wiki/Order_of_operations">basic arithmetic</a>, is what tells us that a * b + c is equivalent to (a*b) + c and not a * (b + c). Associativity is what tells us that a + b + c is (a + b) + c and not a + (b + c). Associativity is most of the time left-to-right, like in the case of a + b + c, but it can be right-to-left like in exponentiation. Tiny does not not have exponentiation so all binary operators will associate left-to-right. In addition, some operators will be unary like -x or +x or <code><strong>not</strong></code> x. Parentheses <code><strong>(</strong></code> and <code><strong>)</strong></code> can be used to change the priority of operands if needed.
+</p>
+
+<p>
+Let's recall first the definition of expressions in tiny.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉
+</p>
+
+<p>
+This definition is not very useful because it does not define the priority of the operators. We defined, though, the priority of the operators in a table.
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>Operators</th><th>Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>(unary)<code>+</code> (unary)<code>-</code></td><td>Highest priority</td>
+</tr>
+<tr>
+  <td><code>*</code> <code>/</code> <code>%</code></td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td>(binary)<code>+</code> (binary)<code>-</code></td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td><code>==</code> <code>!=</code> <code>&lt;</code> <code>&lt;=</code> <code>&gt;</code> <code>&gt;=</code></td><td>&nbsp;</td>
+</tr>
+<tr>
+  <td><code>not</code>, <code>and</code>, <code>or</code></td><td>Lowest priority</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+By following the table of priorities above, it is possible to derive the following syntax. The lower the level, the higher the priority of the operand.
+<p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈expression〉&ensp;→&ensp;〈sixth-level〉
+〈sixth-level〉&ensp;→&ensp; <code><strong>not</strong></code> 〈sixth-level〉
+&emsp;&emsp; | 〈sixth-level〉 <code><strong>and</strong></code> 〈fifth-level〉
+&emsp;&emsp; | 〈sixth-level〉 <code><strong>or</strong></code> 〈fifth-level〉
+&emsp;&emsp; | 〈fifth-level〉
+〈fifth-level〉&ensp;→&ensp;〈fifth-level〉 <code><strong>&lt;</strong></code> 〈third-level〉
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>&lt;=</strong></code> 〈fourth-level〉
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>&gt;</strong></code> 〈fourth-level〉
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>&gt;=</strong></code> 〈fourth-level〉
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>==</strong></code> 〈fourth-level〉
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>!=</strong></code> 〈fourth-level〉
+&emsp;&emsp; | 〈fourth-level〉
+〈fourth-level〉&ensp;→&ensp;〈fourth-level〉 <code><strong>+</strong></code> 〈third-level〉
+&emsp;&emsp; | 〈fourth-level〉 <code><strong>-</strong></code> 〈third-level〉
+&emsp;&emsp; | 〈third-level〉
+〈third-level〉&ensp;→&ensp;〈third-level〉 <code><strong>*</strong></code> 〈second-level〉
+&emsp;&emsp; | 〈third-level〉 <code><strong>/</strong></code> 〈second-level〉
+&emsp;&emsp; | 〈third-level〉 <code><strong>%</strong></code> 〈second-level〉
+&emsp;&emsp; | 〈second-level〉
+〈second-level〉&ensp;→&ensp;<code><strong>+</strong></code>〈second-level〉
+&emsp;&emsp; | <code><strong>-</strong></code>〈second-level〉
+&emsp;&emsp; | 〈first-level〉
+〈first-level〉&ensp;→&ensp;〈primary〉
+</p>
+
+<p>
+By restricting lower priority expressions in the right hand side of an expression (but allowing lower or equal priority expressions in the left hand side) we automatically force a left-to-right association. This is why a + b + c cannot be parsed as a + (b + c) because it would mean that in the right hand side of the first + directly appears another + operand, which is not possible because it has the same priority and we explicitly disallowed that in the syntax above.
+</p>
+
+<p>
+Unfortunately we cannot apply our algorithm because some of the rules are <em>left-recursive</em>. A left-recursive rule is of the form 〈rule〉&ensp;→&ensp;〈rule〉X. This means that our algorithm to parse the rule would need first to parse the rule but without having consumed any token from the input. So it would lead use to an infinite recursion. It is, indeed, possible to rewrite the rule so it is not left-recursive. For instance, 〈third-level〉 (and similarly the other left-recursive rules) can be rewritten as
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈third-level〉&ensp;→&ensp;〈second-level〉 <code><strong>*</strong></code> 〈third-level〉
+&emsp;&emsp; | 〈second-level〉 <code><strong>/</strong></code> 〈third-level〉
+&emsp;&emsp; | 〈second-level〉 <code><strong>%</strong></code> 〈third-level〉
+&emsp;&emsp; | 〈second-level〉
+</p>
+
+<p>
+but unfortunately this would change the association of the expressions: now they would be associated right-to-left. Most tiny operators will behave associatively (because the mathematical properties of the operations) so it would not make much difference in terms of evaluation but the integer division operator is not associative. Consider
+</p>
+
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">write</span> <span class="m">100</span><span class="p">/</span><span class="m">10</span><span class="p">/</span><span class="m">2</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+If we evaluate (100/10)/2 the result is 5. If we evaluate 100/(10/2) the result is 20. Since the semantics of the language call for left-to-right association the result in tiny must be 5.
+</p>
+
+<p>
+Clearly we need another strategy: priority parsing.
+</p>
+
+<p>
+The notion of priority appears more or less naturally in the syntax of expressions. Can we use it to get a more or less sensible algorithm? The answer is yes, it is called a <a href="https://en.wikipedia.org/wiki/Pratt_parser">Pratt parser</a> and it is suprisingly simple yet powerful.
+</p>
+
+<h2>Pratt parser for expressions&lt;/h3&gt;
+
+<p>
+A Pratt parser defines the concept of <em>binding power</em> as some sort of priority number: the higher the binding power the more priority the operand has. This parser associates three extra values to the tokens of expressions: a <em>left binding power</em>, a <em>null denotation</em> function and a <em>left denotation</em> function.
+</p>
+
+<p>
+Parsing an expression requires a <em>right binding power</em>. A top level expression will use the lowest priority possible. Then the parser starts by peeking the current token t<sub>1</sub> and skipping it. Then it invokes the null denotation function of t<sub>1</sub>. If this token cannot appear at this point then its null denotation function will diagnose an error and the parsing will end at this point. Otherwise the null denotation function will do something (that may include advancing the token stream, more on this later). Once we are back from the null denotation, the parser checks if the current right binding power is lower or than that of the current token (call it t<sub>2</sub>, but note that it may not be the next one after t<sub>1</sub>). If it is not, parsing ends here. Otherwise the parser skips the token and the left denotation function is invoked on t<sub>2</sub>. The left denotation function (will do something, including advancing the current token, more on this later). Once we are back from the left denotation we will check again if the current token has a higher left binding power than the current right binding power and proceed likewise.
+</p>
+
+<p>
+Ok, I tried, but the explanation above is rather dense. Behold the stunning simplicity of this parser at its core.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// This is a Pratt parser</span>
+<span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_expression</span> <span class="p">(</span><span class="kt">int</span> <span class="n">right_binding_power</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">const_TokenPtr</span> <span class="n">current_token</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+  <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">null_denotation</span> <span class="p">(</span><span class="n">current_token</span><span class="p">))</span>
+     <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">right_binding_power</span> <span class="o">&lt;</span> <span class="n">left_binding_power</span> <span class="p">(</span><span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">()))</span>
+    <span class="p">{</span>
+      <span class="n">current_token</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span><span class="p">();</span>
+      <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">left_denotation</span> <span class="p">(</span><span class="n">current_token</span><span class="p">))</span>
+         <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_expression</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">parse_expression</span><span class="p">(</span><span class="n">LBP_LOWEST</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Intuitively the idea is that while we encounter tokens of higher priority than the priority of the expression we need to parse them first, otherwise if we find a lower priority token we stop parsing. This only makes sense if we recursively invoke <code>parse_expression</code>, that we will.
+</p>
+
+<p>
+First let's see the null denotations. They represent the action that we have to do when we find a token at the <em>beginning</em> of an expression.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+</pre></td><td class="code"><pre><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">null_denotation</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
+    <span class="p">{</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IDENTIFIER</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INTEGER_LITERAL</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">REAL_LITERAL</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">STRING_LITERAL</span><span class="o">:</span>
+      <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LEFT_PAREN</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">())</span>
+           <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+	<span class="n">tok</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
+	<span class="k">return</span> <span class="n">skip_token</span><span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">RIGHT_PAREN</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PLUS</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_PLUS</span><span class="p">))</span>
+           <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">MINUS</span><span class="o">:</span>
+      <span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_MINUS</span><span class="p">))</span>
+           <span class="k">return</span> <span class="nb">false</span>
+        <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">NOT</span><span class="o">:</span>
+      <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_LOGICAL_NOT</span><span class="p">))</span>
+           <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+	<span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="nl">default:</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+<p>
+There is little to do now for identifiers, real, integer and string literals. So they trivially return true (lines 6 to 10).
+</p>
+<p>
+If the current token is <code><strong>(</strong></code> (line 11) it means that we have to parse a whole expression. So we do by recursively invoking <code>parse_expression</code> (with the lowest priority possible, as if it were a top-level expression). When we return from parse_expression we have to make sure that the current token is <code><strong>)</strong></code> (line 16).
+</p>
+<p>
+If the current token is +, - or not (lines 18, 24, 30) it means that this is a unary operator. We will invoke parse_expression recursively with the appropiate priority for each operand (<code>LBP_UNARY_PLUS</code>, <code>LBP_UNARY_NEG</code>, <code>LBP_LOGICAL_NOT</code>, more on this later).
+</p>
+<p>
+It may not be obvious now, but <code>tok</code>, is not the current token in the input stream but the previous one since <code>parse_expression</code> already skipped <code>tok</code> before calling <code>null_denotation</code>.
+</p>
+
+<p>
+The left denotation will be called for each token that can appear in an <em>infix</em> position. In tiny they will just be operators but sometimes other punctuation may appear.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">left_denotation</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">BinaryHandler</span> <span class="n">binary_handler</span> <span class="o">=</span> <span class="n">get_binary_handler</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">());</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">binary_handler</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
+      <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="p">}</span>
+
+  <span class="k">return</span> <span class="p">(</span><span class="k">this</span><span class="o">-&gt;*</span><span class="n">binary_handler</span><span class="p">)</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Rather than making a relatively large switch (like we did in <code>null_denotation</code>), here we call a function that given a token will return us a pointer to the member function that implements the left denotation for token <code>tok</code>. We could have taken the same approach in the <code>null_denotation</code> function but given that there are much less unary operators it looked like unnecesary.
+</p>
+
+<p>
+By using X-Macros again we define our binary handlers for further consumption.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Lexer</span> <span class="p">{</span>
+  <span class="c1">// ...</span>
+<span class="nl">private:</span>
+  <span class="k">typedef</span> <span class="kt">bool</span> <span class="p">(</span><span class="n">Parser</span><span class="o">::*</span><span class="n">BinaryHandler</span><span class="p">)</span> <span class="p">(</span><span class="n">const_TokenPtr</span><span class="p">);</span>
+  <span class="n">BinaryHandler</span> <span class="n">get_binary_handler</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">id</span><span class="p">);</span>
+
+<span class="cp">#define BINARY_HANDLER_LIST                                                    \
+  BINARY_HANDLER (plus, PLUS)                                                  \
+  BINARY_HANDLER (minus, MINUS)                                                \
+  BINARY_HANDLER (mult, ASTERISK)                                              \
+  BINARY_HANDLER (div, SLASH)                                                  \
+  BINARY_HANDLER (mod, PERCENT)                                                \
+                                                                               \
+  BINARY_HANDLER (equal, EQUAL)                                                \
+  BINARY_HANDLER (different, DIFFERENT)                                        \
+  BINARY_HANDLER (lower_than, LOWER)                                           \
+  BINARY_HANDLER (lower_equal, LOWER_OR_EQUAL)                                 \
+  BINARY_HANDLER (greater_than, GREATER)                                       \
+  BINARY_HANDLER (greater_equal, GREATER_OR_EQUAL)                             \
+                                                                               \
+  BINARY_HANDLER (logical_and, AND)                                            \
+  BINARY_HANDLER (logical_or, OR)
+</span>
+<span class="cp">#define BINARY_HANDLER(name, _)                                                \
+  bool binary_##name (const_TokenPtr tok);
+</span>  <span class="n">BINARY_HANDLER_LIST</span>
+<span class="cp">#undef BINARY_HANDLER
+</span>  <span class="c1">// ...</span>
+<span class="p">};</span></code></pre></figure>
+
+
+Function get_binary handler is implemented using <code>BINARY_HANDLER_LIST</code>.
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Parser</span><span class="o">::</span><span class="n">BinaryHandler</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">get_binary_handler</span> <span class="p">(</span><span class="n">TokenId</span> <span class="n">id</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">id</span><span class="p">)</span>
+    <span class="p">{</span>
+<span class="cp">#define BINARY_HANDLER(name, token_id)                                         \
+  case Tiny::token_id:                                                         \
+    return &amp;Parser::binary_##name;
+</span>      <span class="n">BINARY_HANDLER_LIST</span>
+<span class="cp">#undef BINARY_HANDLER
+</span>    <span class="nl">default:</span>
+      <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Now we can provide implementations of the binary operators. At this point all of them will look the same, so let's consider only the binary addition.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">binary_plus</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_PLUS</span><span class="p">))</span>
+     <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+Finally we are only missing to define the left binding power of our tokens: recall that the higher is this number, the higher is the priority. This numbers fulfill the priority defined in the table above.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">enum</span> <span class="n">binding_powers</span>
+<span class="p">{</span>
+  <span class="c1">// Highest priority</span>
+  <span class="n">LBP_HIGHEST</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+
+  <span class="n">LBP_UNARY_PLUS</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>  <span class="c1">// Used only when the null denotation is +</span>
+  <span class="n">LBP_UNARY_MINUS</span> <span class="o">=</span> <span class="n">LBP_UNARY_PLUS</span><span class="p">,</span> <span class="c1">// Used only when the null denotation is -</span>
+
+  <span class="n">LBP_MUL</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+  <span class="n">LBP_DIV</span> <span class="o">=</span> <span class="n">LBP_MUL</span><span class="p">,</span>
+  <span class="n">LBP_MOD</span> <span class="o">=</span> <span class="n">LBP_MUL</span><span class="p">,</span>
+
+  <span class="n">LBP_PLUS</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+  <span class="n">LBP_MINUS</span> <span class="o">=</span> <span class="n">LBP_PLUS</span><span class="p">,</span>
+
+  <span class="n">LBP_EQUAL</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="n">LBP_DIFFERENT</span> <span class="o">=</span> <span class="n">LBP_EQUAL</span><span class="p">,</span>
+  <span class="n">LBP_LOWER_THAN</span> <span class="o">=</span> <span class="n">LBP_EQUAL</span><span class="p">,</span>
+  <span class="n">LBP_LOWER_EQUAL</span> <span class="o">=</span> <span class="n">LBP_EQUAL</span><span class="p">,</span>
+  <span class="n">LBP_GREATER_THAN</span> <span class="o">=</span> <span class="n">LBP_EQUAL</span><span class="p">,</span>
+  <span class="n">LBP_GREATER_EQUAL</span> <span class="o">=</span> <span class="n">LBP_EQUAL</span><span class="p">,</span>
+
+  <span class="n">LBP_LOGICAL_AND</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+  <span class="n">LBP_LOGICAL_OR</span> <span class="o">=</span> <span class="n">LBP_LOGICAL_AND</span><span class="p">,</span>
+  <span class="n">LBP_LOGICAL_NOT</span> <span class="o">=</span> <span class="n">LBP_LOGICAL_AND</span><span class="p">,</span>
+
+  <span class="c1">// Lowest priority</span>
+  <span class="n">LBP_LOWEST</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">};</span>
+
+
+<span class="kt">int</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">left_binding_power</span> <span class="p">(</span><span class="n">const_TokenPtr</span> <span class="n">token</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">token</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
+    <span class="p">{</span>
+    <span class="c1">//</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">ASTERISK</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_MUL</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">SLASH</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_DIV</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PERCENT</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_MOD</span><span class="p">;</span>
+    <span class="c1">//</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PLUS</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_PLUS</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">MINUS</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_MINUS</span><span class="p">;</span>
+    <span class="c1">//</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">EQUAL</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_EQUAL</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">DIFFERENT</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_DIFFERENT</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">GREATER</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_GREATER_THAN</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">GREATER_OR_EQUAL</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_GREATER_EQUAL</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LOWER</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_LOWER_THAN</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LOWER_OR_EQUAL</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_LOWER_EQUAL</span><span class="p">;</span>
+    <span class="c1">//</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">OR</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_LOGICAL_OR</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">AND</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_LOGICAL_AND</span><span class="p">;</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">NOT</span><span class="o">:</span>
+      <span class="k">return</span> <span class="n">LBP_LOGICAL_NOT</span><span class="p">;</span>
+    <span class="c1">// Anything that cannot appear in an infix position</span>
+    <span class="c1">// is given the lowest priority</span>
+    <span class="nl">default:</span>
+      <span class="k">return</span> <span class="n">LBP_LOWEST</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<h2>Wrap-up</h2>
+
+<p>
+Phew. This has been long. But now we are in a position to recognize the syntax of tiny. In the next chapter we will assess the semantic validity of the input.
+</p>
+
+<p>
+That's all for today.
+</p>
+</h2></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/08/tiny-gcc-front-part-3/">&laquo; A tiny GCC front end – Part 3</a>
+
+
+  <a class="next" href="/2016/01/16/tiny-gcc-front-part-5/">A tiny GCC front end – Part 5 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Walk-through flang – Part 4</title>
+  <meta name="description" content="In the last installment we saw how flang splits the input in tokens. Once we have the tokens identified we need to parse them.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/09/03/walk-through-flang-part-4/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Walk-through flang – Part 4">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/09/03/walk-through-flang-part-4/">
+  <meta property="og:description" content="In the last installment we saw how flang splits the input in tokens. Once we have the tokens identified we need to parse them.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Walk-through flang – Part 4">
+  <meta name="twitter:description" content="In the last installment we saw how flang splits the input in tokens. Once we have the tokens identified we need to parse them.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 4</h1>
+    
+    <p class="post-meta"><time datetime="2017-09-03T14:55:03+00:00" itemprop="datePublished">Sep 3, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last installment we saw how flang splits the input in tokens. Once we have the tokens identified we need to parse them.
+<!--more--></p>
+
+<h2>Top level parser routines</h2>
+
+<p>
+The top-level parser routine in flang1 is called, not unexpectedly, <code>parser</code>. It is invoked by main right after all the initialization has happened for each program unit in the input file.
+</p>
+
+<p>
+Parsing as we mentioned in the last chapter happens in two passes. A first one gets the token from the user code and as a side effect generates an intermediate file. This intermediate file is stored in the global variable <code>astb.astfil</code>, contrarily to what the name suggests it does not contain an AST per se but a simplified rendition of the tokens we found in the user code. The second pass gets the tokens from this intermediate file.
+</p>
+
+<p>
+The first step is identified by the global variable <code>sem.which_pass</code> being set to <code>0</code>. After a few more initialization steps, <code>parser</code> calls <code>_parser</code>. Where all the interesting stuff happens.
+</p>
+
+<p>
+Function <code>_parser</code> is basically a big loop which parses a statement at a time. In the code below <code>LOOP</code> is just a macro that expands to <code>while(TRUE)</code>. It starts by reading the first token of the statement. Recall that <code>get_token</code> will either tokenize (scan) the user code or get the token from the intermediate file depending on which parsing pass we are (we can expect, except for errors, that in the two passes the sequence of tokens obtained will be the same).
+</p>
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"> <span class="k">static</span> <span class="kt">void</span>
+ <span class="nf">_parser</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+ <span class="p">{</span>
+   <span class="cm">/* ... omitted lines ... */</span>
+   <span class="n">LOOP</span>
+   <span class="p">{</span>
+     <span class="n">parse_init</span><span class="p">();</span>
+     <span class="cm">/* loop once for each token in current Fortran stmt: */</span>
+     <span class="n">tkntyp</span> <span class="o">=</span> <span class="n">get_token</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctknval</span><span class="p">);</span> <span class="cm">/* first token of a statement */</span>
+     <span class="cm">/* ... omitted lines ... */</span>
+   <span class="p">}</span> <span class="cm">/* end foreach statement LOOP */</span>
+ <span class="p">}</span></code></pre></figure>
+
+<p>
+<em>Parsing</em> is commonly used to mean a language recognizer that is able to associate some actions, usually called <em>semantic actions</em>, when parts of the language are recognized. If our recognizer is only able to say whether the input is a valid Fortran program, then it is of little use for a compiler. We need to be able to react to the parts of the language because the designers have assigned meaning (semantics) to them. And this is what the Fortran parser has to do as well.
+</p>
+
+<h2>The grammar</h2>
+
+<p>
+The syntax of programming languages can be described using a grammar and Fortran is no exception. A grammar in this context is basically a set of rules (called <em>productions</em>) of the form <code>Variable ::= Sequence-of-Tokens-and-Variables</code>. For instance we can define the form of an assignment-statement in Fortran using the following rule.
+</p>
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">&lt;assignment&gt; ::= &lt;var ref&gt; = &lt;expression&gt;</code></pre></figure>
+
+<p>
+In the rule above for <code>&lt;assignment&gt;</code>, <code>=</code> is just a token and <code>&lt;var ref&gt;</code> and <code>&lt;expressions&gt;</code> are productions.
+</p>
+
+<p>
+At this point we can unveil where the Fortran grammar used by flang is defined. It is in the file <code>flang/tools/flang1/utils/prstab/gram.txt</code>. This file does not define a grammar for the whole Fortran language but it does this at the level of statement. This is, the grammar faithfully describes the form of each statement but does not describe the overall form of the program unit or constructs that are compound of several statements (like an <code>if-construct</code> or a <code>do-construct</code>). The syntax of those will have to be handled elsewhere.
+</p>
+
+<p>
+The top-level rule of the grammar is <code>&lt;stmt&gt;</code>, because as stated above the grammar only describes the syntax of a single statement.
+</p>
+
+<figure class="highlight"><figcaption>flang/tools/flang1/utils/prstab/gram.txt</figcaption><pre><code class="language-txt" data-lang="txt">&lt;stmt&gt; ::= &lt;stbeg&gt; &lt;statement&gt; &lt;stend&gt;
+
+&lt;stbeg&gt; ::=
+
+&lt;stend&gt; ::=
+
+&lt;statement&gt; ::= &lt;prog title&gt;  |
+                &lt;nii&gt; &lt;nim&gt; &lt;entry statement&gt; |
+                &lt;declaration&gt; |
+                &lt;nii&gt; &lt;nim&gt; &lt;simple stmt&gt; |
+                &lt;nii&gt; &lt;nim&gt; &lt;GOTO stmt&gt;   |
+                &lt;nii&gt; &lt;nim&gt; &lt;control stmt&gt; |
+                &lt;nii&gt; &lt;nim&gt; &lt;format stmt&gt;  |
+		&lt;null stmt&gt; |
+                &lt;end&gt; &lt;end stmt&gt;     |
+                &lt;empty file&gt;   |
+		INCLUDE &lt;quoted string&gt; |
+		&lt;nii&gt; &lt;nim&gt; OPTIONS |
+		&lt;nis&gt; &lt;nii&gt; CONTAINS |
+		&lt;directive&gt;
+
+# ... many more lines omitted ...</code></pre></figure>
+
+<p>
+As you can see a rule may have several variants or alternatives. These alternatives are numbered starting from one, this is <code>&lt;statement&gt; ::= &lt;prog title&gt;</code> is the alternative 1, and &lt;nii&gt; &lt;nim&gt; &lt;entry statement&gt; is the alternative 2. This numbering schema will be relevant when we talk about semantic analysis later.
+</p>
+
+<p>
+You may be wondering how the tokens used in the grammar (like <code>CONTAINS</code> above) are related to the internal tokens used by the scanner (i.e.<code> TK_CONTAINS</code>). The relationship is defined in the file flang/tools/flang1/utils/prstab/gram.tki&lt;/code&gt;.
+</p>
+
+<figure class="highlight"><figcaption>flang/tools/flang1/utils/prstab/gram.tki</figcaption><pre><code class="language-txt" data-lang="txt">END   TK_EOL
+&lt;END stmt&gt; TK_ENDSTMT
+&lt;empty file&gt; TK_EMPTYFILE
+&lt;id name&gt;  TK_IDENT
+&lt;letter&gt;   TK_LETTER
+&lt;integer&gt;  TK_ICON
+&lt;int kind const&gt;  TK_K_ICON
+&lt;real&gt;     TK_RCON
+&lt;double&gt;   TK_DCON
+&lt;fmtstr&gt;   TK_FMTSTR
+&lt;quad&gt;   TK_QCON
+&lt;complex&gt;  TK_CCON
+# ... a few lines omitted ...
+'//' TK_CONCAT
+'(/' TK_ACB
+'/)' TK_ACE
+(      TK_LPAREN
+)      TK_RPAREN
++      TK_PLUS
+-      TK_MINUS
+*      TK_STAR
+
+# ... many more lines omitted ...</code></pre></figure>
+
+<p>
+A few files are generated at build time using these two files via the tool <code>prstab</code> found in <code>tools/flang1/utils/prstab</code> (we are going to ignore that tool because it is written in a style that makes it frankly unfathomable, we may go through it some day but not in a near future).
+</p>
+<ul>
+<li><code>gramtk.h</code> is a bunch of defines for the tokens used by the scanner.</li>
+
+<figure class="highlight"><figcaption>gramtk.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cp">#define TK_EOL                                 321
+#define TK_ENDSTMT                              38
+#define TK_EMPTYFILE                            52
+#define TK_IDENT                                56
+#define TK_LETTER                               63
+</span><span class="c1">// ... and many more ...</span></code></pre></figure>
+
+<li><code>gramnt.h</code> is a bunch of defines for the rules of the grammar. Here <code>nt</code> means <em>non-terminals</em> as the tokens are often called terminals (as they cannot generate anything). Those identifiers are not directly used by the code but the parser, as we will see below, will need to internally represent them.</li>
+<li><code>gramsm.h</code> is a bunch of defines for the different alternatives of the rules of the grammar, as mentioned above the different alternatives of a rule are numbered starting from 1.</li>
+
+<figure class="highlight"><figcaption>gramsm.h</figcaption><pre><code class="language-c" data-lang="c"><span class="cp">#define SYSTEM_GOAL_SYMBOL1                      0
+#define STMT1                                    1
+#define STBEG1                                   2
+#define STEND1                                   3
+#define STATEMENT1                               4
+#define STATEMENT2                               5
+#define STATEMENT3                               6
+#define STATEMENT4                               7
+#define STATEMENT5                               8
+#define STATEMENT6                               9
+#define STATEMENT7                              10
+#define STATEMENT8                              11
+#define STATEMENT9                              12
+#define STATEMENT10                             13
+#define STATEMENT11                             14
+#define STATEMENT12                             15
+#define STATEMENT13                             16
+#define STATEMENT14                             17
+#define III1                                    18
+</span><span class="c1">// ... and many more ...</span></code></pre></figure>
+
+<li><code>gramdf.h</code> is a set of tables used by the parsing algorithm that we will discuss below.</li>
+</ul>
+
+<h2>Parser algorithm: LR(1)</h2>
+
+<p>
+As a I mentioned above the parser will use a grammar to parse each statement. In computer science, grammars are generative devices, i.e. they define a set of words that will ultimately be the language. What we really want, though is, given a grammar that generates Fortran statements obtain an algorithm that recognizes Fortran statements. And not only this, but we want the recognizer also allows us to associate semantic actions to the different parts of the statement (i.e. parse properly).
+</p>
+<p>
+There is an abundant literature of algorithms that given a grammar can in many cases generate an algorithm that can recognize the language generated by the grammar. In the particular case of flang the algorithm used, as I mentioned above, is a bottom-up parser. In a bottom-up parser we read tokens but we don't immediately react to them until we identify that they form a part of the language (this step is called a <em>reduction</em>). For instance if we see the following sequence of tokens (end-of-statement is represented with ↲).
+<p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">A = 1↲</code></pre></figure>
+
+
+<p>
+we know that after the token ↲ we have seen an <code>assignment-statement</code> and we want to react accordingly. A compiler typically will create some internal representation that means <q>assign 1 to the variable A</q> (how it does this is not important at this point yet). Recognizing this fact means that we can <em>reduce</em> A = 1 into the <code>&lt;assignment&gt;</code>. 
+</p>
+
+<div style="background-color: #fee; padding: 1em;">
+The rule <code>&lt;assignment&gt;</code> used in the examples is not exactly the one used by flang. The real one includes a couple more elements that I omitted for the sake of the explanation.
+</div>
+
+<p>
+This reduction process happens as the input is read. Advancing through the input is called shift (which explains why bottom-up parsers are often called shift/reduce parsers). In the example below ↓ will mean the position of the input, which starts at the beginning of the statement and ends after the end-of-statement. I am using a simplified form of what happens really in the flang grammar, but should be enough to understand the process.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">↓A=1↲                             [shift]
+A↓=1↲                             [reduce: &lt;var ref&gt; ::= A]
+&lt;var ref&gt;↓=1↲                     [shift]
+&lt;var ref&gt;=↓1↲                     [shift]
+&lt;var ref&gt;=1↓↲                     [reduce: &lt;integer constant&gt; ::= 1]
+&lt;var ref&gt;=&lt;integer constant&gt;↓↲    [reduce: &lt;expression&gt; ::= &lt;integer constant&gt;]
+&lt;var ref&gt;=&lt;expression&gt;↓↲          [reduce: &lt;assignment&gt; ::= &lt;var ref&gt; = &lt;expression&gt;]
+&lt;assignment&gt;↲↓                    [shift leads to end of parsing]</code></pre></figure>
+
+
+<p>
+The key in a bottom-up algorithm is knowing whether we have to shift or reduce and if reducing, which rule of the grammar has to be used. Once a reduction has been chosen, all the elements of the right hand side of the rule (recall it is a sequence of tokens and rules) will appear immediately before (to the left of) the ↓ so we just replace all them with the left hand side of the rule used for the reduction. The exact details are beyond the scope of this post. But suffice to know for now that the algorithm used by flang is a LR(1) (you may have heard of LALR(1) because of <code>yacc</code>/<code>bison</code>, LR(1) is just a more general version of it).
+</p>
+
+<p>
+So now _parser uses the LR(1) algorithm to parse the statement. We can complete a bit more the function <code>_parser</code> now.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"> <span class="k">static</span> <span class="kt">void</span>
+ <span class="nf">_parser</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+ <span class="p">{</span>
+   <span class="cm">/* ... omitted lines ... */</span>
+   <span class="n">LOOP</span>
+   <span class="p">{</span>
+     <span class="n">parse_init</span><span class="p">();</span>
+     <span class="cm">/* loop once for each token in current Fortran stmt: */</span>
+     <span class="n">tkntyp</span> <span class="o">=</span> <span class="n">get_token</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctknval</span><span class="p">);</span> <span class="cm">/* first token of a statement */</span>
+     <span class="cm">/* ... omitted lines ... */</span>
+     <span class="n">LOOP</span>
+     <span class="p">{</span>
+
+        <span class="cm">/* Determine if there is a reduction to be done otherwise just shift */</span>
+    
+       <span class="n">tkntyp</span> <span class="o">=</span> <span class="n">get_token</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctknval</span><span class="p">);</span> <span class="cm">/* next token in the statement */</span>  
+     <span class="p">}</span> <span class="cm">/* end foreach token LOOP */</span>  
+   <span class="p">}</span> <span class="cm">/* end foreach statement LOOP */</span>
+ <span class="p">}</span></code></pre></figure>
+
+
+<p>
+The complicated part above is determining if there is a reduction to be done. To do this the LR(1) algorithm uses a finite automaton that represents all the possible things that can be before the ↓. The particular state is represented in the flang parser using the variable <code>cstate</code>. The initial state for parsing is the state 1 and is reinitialized per every statement in the function <code>parse_init</code> (among other stuff used by the LR(1) algorithm itself). 
+</p>
+<p>
+Note that a rule with alternatives like <code>&lt;rule&gt; ::= A | B | C | &hellip;</code> will actually imply several possible reductions <code>&lt;rule&gt; ::= A</code>, <code>&lt;rule&gt; ::= B</code>, <code>&lt;rule&gt; ::= C</code>, <code>&hellip;</code>. So the set of all possible reductions in the parser is all the alternatives of all the rules encoded in the defines of <code>gramsm.h</code> above (e.g. <code>STATEMENT1</code>, <code>STATEMENT2</code>, etc.).
+</p>
+<p>
+In each state of the LR(1) automaton there will be a number of potential reductions (I repeat it here: each reduction is one rule alternative of the grammar) that can be done. The table <code>fred</code> tells us the set of those reductions. The 1 in LR(1) means that we use one token of look ahead to know exactly which of the reductions is to be done. The table <code>fred</code> is actually a table of pairs <code>(start, end)</code> that define the potential reductions associated with the current state.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">start</span> <span class="o">=</span> <span class="n">fred</span><span class="p">[</span><span class="n">cstate</span><span class="p">];</span>       
+<span class="n">end</span> <span class="o">=</span> <span class="n">fred</span><span class="p">[</span><span class="n">cstate</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> 
+<span class="k">if</span> <span class="p">(</span><span class="n">start</span> <span class="o">&gt;</span> <span class="n">end</span><span class="p">)</span>            
+  <span class="k">break</span><span class="p">;</span> <span class="cm">/* no reduction */</span> </code></pre></figure>
+
+
+<p>
+Now the parser needs to check each reduction against the current token (in <code>tkntyp</code>). So it loops each possible reduction.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">start</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">end</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// for each reduction</span>
+  <span class="n">jstart</span> <span class="o">=</span> <span class="n">lset</span><span class="p">[</span><span class="n">nset</span><span class="p">[</span><span class="n">i</span><span class="p">]];</span>        
+  <span class="n">jend</span> <span class="o">=</span> <span class="n">lset</span><span class="p">[</span><span class="n">nset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+The table <code>nset</code> maps from the reduction alternative to a look ahead set. I'm not exactly sure but I think this allows mapping different reduction alternatives to the same set of look ahead tokens (it looks plausible to me having different reductions in different states that end using the same set of look ahead tokens). With that look ahead set, we can query the <code>lset</code> table. This is a table of tuples again (like <code>fred</code> above) indexed by the look ahead set that denote a range of tokens in the table of look ahead tokens <code>ls</code> (more on this table below). Now the code does a binary search where it searches the token <code>tkntyp</code> in the look ahead set of the current reduction.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"> <span class="k">while</span> <span class="p">(</span><span class="n">jstart</span> <span class="o">&lt;=</span> <span class="n">jend</span><span class="p">)</span> <span class="p">{</span>  <span class="c1">// for each token    </span>
+   <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="n">jstart</span> <span class="o">+</span> <span class="n">jend</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span> 
+   <span class="n">t</span> <span class="o">=</span> <span class="n">ls</span><span class="p">[</span><span class="n">ptr</span><span class="p">];</span>                
+   <span class="k">if</span> <span class="p">(</span><span class="n">t</span> <span class="o">==</span> <span class="n">tkntyp</span><span class="p">)</span>            
+     <span class="k">goto</span> <span class="n">perform_reduction</span><span class="p">;</span>   
+   <span class="k">if</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;</span> <span class="n">tkntyp</span><span class="p">)</span>             
+     <span class="n">jstart</span> <span class="o">=</span> <span class="n">ptr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>         
+   <span class="k">else</span>                        
+     <span class="n">jend</span> <span class="o">=</span> <span class="n">ptr</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>           
+ <span class="p">}</span> <span class="c1">// for each token</span>
+<span class="err">}</span> <span class="c1">// for each reduction</span>
+<span class="k">break</span><span class="p">;</span> <span class="cm">/* no reduction found */</span>  </code></pre></figure>
+
+
+<p>
+The code above uses the table <code>ls</code>. The table <code>ls</code> is a sequence of sorted sequences of token identifiers. So the tuple in <code>lset</code> tuple points us to the start and end of one of those sorted sequences. That range is then used for the binary search itself. If the token is found the parser goes to <code>perform_reduction</code>. Otherwise it tries all the other reductions. If no reduction is found then it will just proceed to do a shift.
+</p>
+
+<p>
+A non-obvious precondition here is that the grammar fulfills the requirements of LR(1) which means that, for a given state, it is not possible both to have to do a reduction or a shift or two different reductions. This is why the code can eagerly assume that if a reduction is found that one is the right one to execute. Conversely, if no reduction is possible the only thing left to do is to shift.
+</p>
+
+<h3>Perform a reduction</h3>
+
+<p>
+Performing a reduction entails replacing a number of elements before ↓ with the right hand side of the reduced rule. So we keep in <code>rednum</code> the reduction identifier (the look ahead is not relevant anymore here). The table <code>prod</code> will map the current reduction with a rule alternative as defined above in <code>gramsm.h</code> (e.g. <code>STATEMENT1</code>, <code>STATEMENT2</code>, etc.). We also need to keep the current token in a global variable for communication purposes with other parts of the code that we will see below.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="nl">perform_reduction:</span>    
+  <span class="n">rednum</span> <span class="o">=</span> <span class="n">prod</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>   
+  <span class="n">sem</span><span class="p">.</span><span class="n">tkntyp</span> <span class="o">=</span> <span class="n">tkntyp</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+One of the nice things of the LR(1) algorithm is that it is possible to use a simple stack to represent the sequence of elements before ↓. Shifts will push new values onto the stack and a reduce will pop 0 values or more from it. flang1 actually uses two stacks (both with the same size): <code>pstack</code> where the states of the LR(1) automaton are stored and <code>sst</code> where the <em>semantic values</em> are stored. More on this later. The variable <code>stktop</code> tracks the top of the two stacks. Table <code>len</code> contains the number of elements on the right hand side of the rule alternative. For the  example above, this means going from <code>&lt;var ref&gt; = &lt;expression&gt;</code>↓ to <code>&lt;assignment&gt;↓</code>. A table called <code>len</code> gives us the length of the current reduction. For the case of <code>&lt;assignment&gt;</code> its length would be 3.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">newtop</span> <span class="o">=</span> <span class="n">stktop</span> <span class="o">-</span> <span class="n">len</span><span class="p">[</span><span class="n">rednum</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Now that we have identified some part of the language a semantic action can be run.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM2</span><span class="p">)</span>                                 
+  <span class="n">p_semant1</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span> 
+<span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM3</span><span class="p">)</span>                            
+  <span class="n">p_semant2</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span> 
+<span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM4</span><span class="p">)</span>                            
+  <span class="n">p_semant3</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span> 
+<span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM5</span><span class="p">)</span>                            
+  <span class="n">p_semantio</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span>
+<span class="k">else</span>                                               
+  <span class="n">p_semsmp</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span>  </code></pre></figure>
+
+
+<p>
+Flang classifies the reductions in 5 sets depending on their number. Each set is defined in the grammar via the special separator <code>.B</code> (possibly means block but whatever). Variables <code>p_semant1</code>, <code>p_semant2</code>, <code>p_semant3</code>, <code>p_semantio</code> and <code>p_semsmp</code> are a tuple of pointer to functions. There is a pointer per parsing pass (first or second pass). The pointer points to a semantic function that is given the rule alternative and the new top of the stack (before we add the rule of the reduction to it).
+</p>
+
+<p>
+After the semantic action has been executed (which is not strictly related to the LR(1) algorithm itself per se, just a process that fits very conveniently so we can actually parse) we have to update the state of the LR(1) automaton to represent the new state. The automaton must now represent the state that results from having applied the reduction. The table <code>lhs</code> returns the rule identifier (the one that contains the particular rule alternative <code>rednum</code>) as defined in <code>gramnt.h </code>above. Function next_state computes the next state given the current state (in <code>pstack</code>) and the next symbol. For shifts, as we will see below, this symbol is a token but for reductions is a rule because we have somehow read a <em>whole</em> rule (this is, something that the rule can generate).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">nstate</span> <span class="o">=</span> <span class="n">next_state</span><span class="p">(</span><span class="n">pstack</span><span class="p">[</span><span class="n">newtop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">lhs</span><span class="p">[</span><span class="n">rednum</span><span class="p">]);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">nstate</span> <span class="o">==</span> <span class="n">NOSTATE</span><span class="p">)</span>
+  <span class="k">goto</span> <span class="n">issue_error</span><span class="p">;</span>
+<span class="k">else</span> <span class="p">{</span>
+  <span class="n">cstate</span> <span class="o">=</span> <span class="n">nstate</span><span class="p">;</span>
+  <span class="n">pstack</span><span class="p">[</span><span class="n">newtop</span><span class="p">]</span> <span class="o">=</span> <span class="n">nstate</span><span class="p">;</span>
+  <span class="n">stktop</span> <span class="o">=</span> <span class="n">newtop</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+If the transition is invalid for the current state and symbol, <code>next_state</code> returns <code>NOSTATE</code> which means a syntactic error. This is handled later.
+</p>
+
+<h3>Shift</h3>
+
+<p>
+Regardless of whether a reduction has happened or not a shift always happens. Shifting is much simpler because in practice means just updating the LR(1) automaton to the new state.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">nstate</span> <span class="o">=</span> <span class="n">next_state</span><span class="p">(</span><span class="n">cstate</span><span class="p">,</span> <span class="n">tkntyp</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+At this point the parser has to handle a syntactic infelicity in the flang grammar: complex constants. Complex constants in Fortran 90 are of the form <code>(part, part)</code> where part is either a constant name (like FOO) or a signed integer or real constant. So complex constants like <code>(-1.2, +3.4)</code> are valid but not <code>(-1.2 + 3.4, 3.4)</code>. Flang, though, accepts the latter case as an extension. Or maybe because it is not feasible to constrain the grammar for this case (the result might not be a grammar valid for LR(1)) or it is too difficult to change the scanner to handle a complex constant as a whole token. The net result is that in some cases a comma (<code>,</code>) that does not have a valid transition may have one if a complex comma is used instead.
+</p>
+
+
+<figure class="highlight"><figcaption>flang/tools/flang1/utils/prstab/gram.txt</figcaption><pre><code class="language-txt" data-lang="txt">elp ::= (
+constant ::=  # several other rules 
+   &lt;elp&gt; &lt;expression&gt; &lt;cmplx comma&gt; &lt;expression&gt; )</code></pre></figure>
+
+
+<p>
+So the parser gives a second chance to a troubled comma.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">nstate</span> <span class="o">==</span> <span class="n">NOSTATE</span><span class="p">)</span> <span class="p">{</span>
+  <span class="cm">/* tpr 535
+   * the grammar cannot be modified to support complex
+   * constants of the form '( const-expr , const-expr )' but
+   * can modified if a special token is returned for ',' (i.e.,
+   * a "complex comma").
+   * if a syntax error occurs when the current token is a comma,
+   * check if a "complex comma" is legal; if so, continue
+   * by parsing as if we have a complex constant, and semant
+   * will determine if the real &amp; imag parts are constants.
+   */</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">tkntyp</span> <span class="o">==</span> <span class="n">TK_COMMA</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">nstate</span> <span class="o">=</span> <span class="n">next_state</span><span class="p">(</span><span class="n">cstate</span><span class="p">,</span> <span class="n">TK_CMPLXCOMMA</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">nstate</span> <span class="o">!=</span> <span class="n">NOSTATE</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">DBGBIT</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">fprintf</span><span class="p">(</span><span class="n">gbl</span><span class="p">.</span><span class="n">dbgfil</span><span class="p">,</span> <span class="s">"&gt;&gt;&gt; comma changed to complex comma %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span>
+                <span class="n">gbl</span><span class="p">.</span><span class="n">lineno</span><span class="p">);</span>
+      <span class="k">goto</span> <span class="n">read_trans</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span></code></pre></figure>
+
+
+<p>
+otherwise a <code>NOSTATE</code> at this point just means a syntactical error that must be handled at this point (note that this label is inside the block of the <code>if (nstate == NOSTATE)</code>).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="nl">issue_error:</span>
+  <span class="n">error</span><span class="p">(</span><span class="mi">34</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">gbl</span><span class="p">.</span><span class="n">lineno</span><span class="p">,</span> <span class="n">prettytoken</span><span class="p">(</span><span class="n">tkntyp</span><span class="p">,</span> <span class="n">ctknval</span><span class="p">),</span> <span class="n">CNULL</span><span class="p">);</span>
+  <span class="n">sem</span><span class="p">.</span><span class="n">psfunc</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span> <span class="cm">/* allow no stmt func defs */</span>
+  <span class="k">break</span><span class="p">;</span>
+<span class="err">}</span></code></pre></figure>
+
+
+<p>
+The variable <code>sem.psfunc</code> is used for a deprecated feature in Fortran called statement-function-statement which we can ignore for now. It is just enough to know that they look like assignments so they have to be handled very carefully. Not sure, but probably the parser disables them at this point for sanity later.
+</p>
+
+<p>
+If the transition is a valid one we just increment the stacks, allocating more space for them if needed. We keep the new state and the semantic value of the current token. We finally move to the new state by updating <code>cstate</code>.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="n">stktop</span><span class="o">++</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">stktop</span> <span class="o">&gt;=</span> <span class="n">sst_size</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">sst_size</span> <span class="o">+=</span> <span class="n">SST_SIZE</span><span class="p">;</span>
+  <span class="n">pstack</span> <span class="o">=</span> <span class="p">(</span><span class="n">PSTACK</span> <span class="o">*</span><span class="p">)</span><span class="n">sccrelal</span><span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">pstack</span><span class="p">,</span>
+                              <span class="p">((</span><span class="n">UINT</span><span class="p">)((</span><span class="n">sst_size</span><span class="p">)</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">PSTACK</span><span class="p">))));</span>
+  <span class="n">sst</span> <span class="o">=</span> <span class="p">(</span><span class="n">SST</span> <span class="o">*</span><span class="p">)</span><span class="n">sccrelal</span><span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">sst</span><span class="p">,</span> <span class="p">((</span><span class="n">UINT</span><span class="p">)((</span><span class="n">sst_size</span><span class="p">)</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">SST</span><span class="p">))));</span>
+  <span class="n">assert</span><span class="p">(</span><span class="n">pstack</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">"parser:stack ovflw"</span><span class="p">,</span> <span class="n">stktop</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+  <span class="n">assert</span><span class="p">(</span><span class="n">sst</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">"parser:stack ovflw"</span><span class="p">,</span> <span class="n">stktop</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="n">pstack</span><span class="p">[</span><span class="n">stktop</span><span class="p">]</span> <span class="o">=</span> <span class="n">nstate</span><span class="p">;</span>
+<span class="n">SST_SYMP</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">stktop</span><span class="p">],</span> <span class="n">ctknval</span><span class="p">);</span>
+<span class="n">cstate</span> <span class="o">=</span> <span class="n">nstate</span><span class="p">;</span>                                                                          </code></pre></figure>
+
+
+
+<p>
+At this point we may have to end the parsing for the current statement in case we reach an end of line. The flag <code>endflg</code> is set to 1 if we have just finished the current program unit, in which case the parsing ends (<code>main</code> will reinvoke <code>parser</code> to parse the next program units). Also the code checks whether we have reached the end of the file when the program unit has not ended yet: this is a severe error reported using <code>errsev</code>. The extra check for <code>!scn.multiple_stmts</code> is there because <code>gbl.eof_flag</code> may have been set when reading a line with more than one statement (separated by <code>;</code>). It will have been unset when the scanner moves on to the last statement of the line, though.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">tkntyp</span> <span class="o">==</span> <span class="n">TK_EOL</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">endflg</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">goto</span> <span class="n">parse_done</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">scn</span><span class="p">.</span><span class="n">multiple_stmts</span> <span class="o">&amp;&amp;</span> <span class="n">gbl</span><span class="p">.</span><span class="n">eof_flag</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">errsev</span><span class="p">(</span><span class="mi">22</span><span class="p">);</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">mod_cnt</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">mod_sym</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">sem</span><span class="p">.</span><span class="n">submod_sym</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">goto</span> <span class="n">parse_done</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<h2>Semantic actions</h2>
+
+<p>
+When the parser recognizes syntactically a part of the program we want to be able to run some semantic actions with that part. These semantic actions include extra checks that cannot be represented in the grammar (i.e. redeclaring a variable) and also to do something with these parts of the language like creating an intermediate representation that will be later used to generate code.
+</p>
+
+<p>
+Semantic actions are executed when a reduction happens. Conceptually it is like calling a function in which we pass the <em>semantic values</em> of the right hand side of the reduced rule. We can also understand that the result of the semantic function will be another semantic value, computed as the semantic value of the left hand side rule of the reduced rule.
+</p>
+
+<p>
+In practice there is not one function per reduction. If you recall above we saw this code:
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM2</span><span class="p">)</span>                                 
+  <span class="n">p_semant1</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span> 
+<span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM3</span><span class="p">)</span>                            
+  <span class="n">p_semant2</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span> 
+<span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM4</span><span class="p">)</span>                            
+  <span class="n">p_semant3</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span> 
+<span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">rednum</span> <span class="o">&lt;</span> <span class="n">SEM5</span><span class="p">)</span>                            
+  <span class="n">p_semantio</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span>
+<span class="k">else</span>                                               
+  <span class="n">p_semsmp</span><span class="p">[</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span><span class="p">](</span><span class="n">rednum</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sst</span><span class="p">[</span><span class="n">newtop</span><span class="p">]);</span>  </code></pre></figure>
+
+
+<p>
+They are defined earlier in parser.c like this. Note that <code>p_semant2</code> has an empty field for the first component of the tuple.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="cm">/*  Function pointers indexed by sem.which_pass */</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">p_semant1</span><span class="p">[])(</span><span class="kt">int</span><span class="p">,</span> <span class="n">SST</span> <span class="o">*</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="n">semant1</span><span class="p">,</span> <span class="n">semant1</span><span class="p">};</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">p_semant2</span><span class="p">[])(</span><span class="kt">int</span><span class="p">,</span> <span class="n">SST</span> <span class="o">*</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">semant2</span><span class="p">};</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">p_semant3</span><span class="p">[])(</span><span class="kt">int</span><span class="p">,</span> <span class="n">SST</span> <span class="o">*</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="n">psemant3</span><span class="p">,</span> <span class="n">semant3</span><span class="p">};</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">p_semantio</span><span class="p">[])(</span><span class="kt">int</span><span class="p">,</span> <span class="n">SST</span> <span class="o">*</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="n">psemantio</span><span class="p">,</span> <span class="n">semantio</span><span class="p">};</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">p_semsmp</span><span class="p">[])(</span><span class="kt">int</span><span class="p">,</span> <span class="n">SST</span> <span class="o">*</span><span class="p">)</span> <span class="o">=</span> <span class="p">{</span><span class="n">psemsmp</span><span class="p">,</span> <span class="n">semsmp</span><span class="p">};</span></code></pre></figure>
+
+
+<p>
+Also right after the first token of the statement (before we enter the loop for the rest of the tokens of the statement), <code>p_semant1</code> and <code>p_semant2</code> are updated (not sure why <code>p_semant1[0]</code> needs any fixing because apparently it is not modified anywhere else in the code).
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/parser.c</figcaption><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">sem</span><span class="p">.</span><span class="n">which_pass</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="cm">/*
+     * For the first pass, we want to semantically analyze expressions
+     * only if they occur within a declaration statement.  Also, there
+     * are semantic actions shared by the semantic analysis routines
+     * for declaration and executable statements; for the first
+     * pass, we only want these actions to be performed only if they
+     * occur within the declarations statements.
+     */</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">is_declaration</span><span class="p">(</span><span class="n">tkntyp</span><span class="p">)</span> <span class="o">||</span>
+            <span class="p">(</span><span class="n">tkntyp</span> <span class="o">==</span> <span class="n">TK_GENERIC</span> <span class="o">&amp;&amp;</span> <span class="n">sem</span><span class="p">.</span><span class="n">type_mode</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="cm">/* generic tbp */</span>
+       <span class="p">)</span> <span class="p">{</span>
+        <span class="n">p_semant1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">semant1</span><span class="p">;</span>
+        <span class="n">p_semant2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">semant2</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">p_semant2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">psemant2</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">gbl</span><span class="p">.</span><span class="n">nowarn</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">is_declaration</span><span class="p">(</span><span class="n">tkntyp</span><span class="p">))</span> <span class="p">{</span>
+        <span class="cm">/* warnings issued in first pass for declarations */</span>
+        <span class="n">gbl</span><span class="p">.</span><span class="n">nowarn</span> <span class="o">=</span> <span class="n">TRUE</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">gbl</span><span class="p">.</span><span class="n">nowarn</span> <span class="o">=</span> <span class="n">FALSE</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+The special <code>psemant2</code> pointer is just a function that does nothing. It is used for all the statements in the first parsing pass that are not declarations (i.e. executable statements like an assignment or an if-statement starting an if-construct). Similarly for functions <code>psemant3</code>, <code>psemantio</code> and <code>psemsmp</code> used above in the definition of p_semant3, p_semantio and p_semsmp respectively.
+</p>
+
+
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/psemant2.c</figcaption><pre><code class="language-c" data-lang="c"><span class="kt">void</span>
+<span class="nf">psemant2</span><span class="p">(</span><span class="kt">int</span> <span class="n">rednum</span><span class="p">,</span> <span class="n">SST</span> <span class="o">*</span><span class="n">top</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">SST_ASTP</span><span class="p">(</span><span class="n">LHS</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+
+<p>
+These functions all receive the reduction rule as the first parameter and the stack of semantic actions as the second one, always called <code>top</code> (or otherwise some macros will stop 
+working!, <code>LHS</code> above is just an alias of top using a macro). They are defined in the files with their own name (except for <code>semant1</code> which is defined in <code>semant.c</code>). These routines can access the right hand side semantic values of the reduction using the macro <code>RHS(n)</code> where n starts from 1.
+</p>
+
+<p>
+Typically these routines have a giant switch statement with the value of rednum to handle each reduction specifically. Recall that rednum will be one of the values defined in <code>gramsm.h</code> above.
+</p>
+
+<p>
+The semantic value itself is a generic structure that allows encoding several types of data. We will see with more detail how these routines work in the next chapter.
+</p>
+
+<h2>Parsing example</h2>
+
+<p>
+It is possible to see the parser in action passing the following flags <code>-Hq,0,1 -Hq,1,1 -Hq,2,1</code>. Consider the following silly program:
+</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span><span class="w">
+    </span><span class="n">X</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+    </span><span class="n">X</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.3</span><span class="p">;</span><span class="w"> </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">X</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">PROGRAM</span><span class="w"> </span><span class="n">MAIN</span></code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>flang <span class="nt">-c</span> test.f90 <span class="nt">-Hq</span>,0,1 <span class="nt">-Hq</span>,1,1 <span class="nt">-Hq</span>,2,1</code></pre></figure>
+
+
+<p>
+The first statement <code>PROGRAM MAIN </code>is parsed with the following debug output.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">F90 PARSER begins
+-----  First Parse  -----
+
+tkntyp: PROGRAM tknval: 0 lineno: 1 
+     prod(   2) &lt;stbeg&gt; ::=
+tkntyp: &lt;id name&gt; tknval: 0 (main) lineno: 1 
+tkntyp: END tknval: 0 lineno: 1 
+     prod(  33) &lt;id&gt; ::= &lt;id name&gt;
+     prod(  45) &lt;routine id&gt; ::= PROGRAM &lt;id&gt;
+     prod(  23) &lt;prog title&gt; ::= &lt;routine id&gt; |
+     prod(   4) &lt;statement&gt; ::= &lt;prog title&gt;  |
+     prod(   3) &lt;stend&gt; ::=
+     prod(   1) &lt;stmt&gt; ::= &lt;stbeg&gt; &lt;statement&gt; &lt;stend&gt;</code></pre></figure>
+
+
+<p>
+Lines starting with <code>tnktyp</code> is the token returned by the scanner as requested by the parser. Every line of the form <code>prod(  n)</code> is a reduction (shifts are not shown in the debug because are usually uninteresting as nothing happens but updating the LR(1) automaton and the stacks). <code>END</code> is a special token that means <em>end-of-statement</em> and as such is not encoded in the rules.
+</p>
+<p>
+As you can see many rules are reduced by they have empty right hand sides. These are called nullary reductions and their sole purpose is to cause a side-effect (e.g. changes in the internal semantic state or emitting diagnostics) when calling the semantic routines. Nullary productions are reduced in the right order by the parser once a valid token is found. You can also see that the parser may need to reduce several times before advancing the next token. This happens here once the token <code>END</code> has been scanned.
+</p>
+
+<p>
+The next statement <code>X = 1</code> performs a similar process.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">tkntyp: &lt;id name&gt; tknval: 0 (x) lineno: 2 
+     prod(   2) &lt;stbeg&gt; ::=
+     prod(  19) &lt;nii&gt; ::=
+     prod(  20) &lt;nim&gt; ::=
+     prod( 765) &lt;psfunc&gt; ::=
+tkntyp: = tknval: 0 lineno: 2 
+     prod(  33) &lt;id&gt; ::= &lt;id name&gt;
+     prod(  32) &lt;ident&gt; ::= &lt;id&gt;
+     prod( 627) &lt;var ref&gt; ::=    &lt;ident&gt;  |
+     prod( 765) &lt;psfunc&gt; ::=
+tkntyp: &lt;integer&gt; tknval: 1 lineno: 2 
+tkntyp: END tknval: 0 lineno: 2 
+     prod( 665) &lt;constant&gt; ::=   &lt;integer&gt;  |
+     prod( 597) &lt;primary&gt; ::= &lt;constant&gt; |
+     prod( 584) &lt;expression&gt; ::= &lt;primary&gt;   |
+     prod( 764) &lt;assignment&gt; ::= &lt;psfunc&gt; &lt;var ref&gt; &lt;psfunc&gt; = &lt;expression&gt;
+     prod( 742) &lt;simple stmt&gt; ::= &lt;assignment&gt; |
+     prod(   7) &lt;statement&gt; ::= &lt;nii&gt; &lt;nim&gt; &lt;simple stmt&gt; |
+     prod(   3) &lt;stend&gt; ::=
+     prod(   1) &lt;stmt&gt; ::= &lt;stbeg&gt; &lt;statement&gt; &lt;stend&gt;</code></pre></figure>
+
+
+<p>
+Except for the nullary reductions, the process looks relatively similar to the reduction process we showed above when talking about the parsing. As I mentioned above, the nullary productions are used for the semantic process. Here <code>nii</code> means "<strong>n</strong>ot <strong>i</strong>nside <strong>i</strong>nterface" (certainly you cannot have an assignment inside an INTERFACE construct) and <code>nim</code> means "<strong>n</strong>ot <strong>i</strong>nside <strong>m</strong>odule" (an assignment is not valid in the specification part of a MODULE). The semantic actions of these nullary reductions will diagnose these cases.
+</p>
+
+<p>
+A similar process happens with the rest of the statements: the line <code>X = 2.3; PRINT *, X</code> has two statements so you will see two parses. One for <code>X = 2.3</code> and another for <code>PRINT *, X</code>.
+</p>
+
+<p>
+At some point you will see
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">-----  Second Parse  -----</code></pre></figure>
+
+
+<p>
+And the parser will apparently parse exactly the same statements as in the first pass with the same tokens. This time, though, the semantic actions called are different.
+</p>
+
+<h2>Wrap-up</h2>
+
+<ul>
+<li>The top-level parser process is invoked for each program unit.</li>
+<li>Each statement of the program unit is then parsed individually using a LR(1) parsing algorithm.</li>
+<li>The LR(1) parsing algorithm is generated using the grammar in the file <code>gram.txt</code> and the tokens in <code>gram.tki</code>. The tables required by the algorithm itself are generated by the tool <code>prstab</code>. This grammar describes the syntax of a single statement.</li>
+<li>When the LR(1) parser reduces the input to a rule it invokes a semantic function.</li>
+<li>different semantic functions may be used in the first and second pass of the parser.</li>
+<li>The LR(1) parser only parses a single statement at a time. Thus, something else (spoiler: the semantic functions) will have to make sure that the sequence of statements make sense for a Fortran program.</li>
+</ul>
+
+<p>
+In the next chapter we will see in more detail the semantic functions and all the semantic information used by the parser itself.
+</p>
+</p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/07/29/walk-through-flang-part-3/">&laquo; Walk-through flang – Part 3</a>
+
+
+  <a class="next" href="/2017/10/07/walk-through-flang-part-5/">Walk-through flang – Part 5 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

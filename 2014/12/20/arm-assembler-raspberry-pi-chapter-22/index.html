@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>ARM assembler in Raspberry Pi – Chapter 22</title>
+  <meta name="description" content="Several times in previous chapters we have talked about ARM as an architecture that has several features aimed at embedding systems. In embedded systems memory is scarce and expensive, so designs that help reduce the memory footprint are very welcome. Today we will see another of these features: the Thumb instruction set.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2014/12/20/arm-assembler-raspberry-pi-chapter-22/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="ARM assembler in Raspberry Pi – Chapter 22">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2014/12/20/arm-assembler-raspberry-pi-chapter-22/">
+  <meta property="og:description" content="Several times in previous chapters we have talked about ARM as an architecture that has several features aimed at embedding systems. In embedded systems memory is scarce and expensive, so designs that help reduce the memory footprint are very welcome. Today we will see another of these features: the Thumb instruction set.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="ARM assembler in Raspberry Pi – Chapter 22">
+  <meta name="twitter:description" content="Several times in previous chapters we have talked about ARM as an architecture that has several features aimed at embedding systems. In embedded systems memory is scarce and expensive, so designs t...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">ARM assembler in Raspberry Pi – Chapter 22</h1>
+    
+    <p class="post-meta"><time datetime="2014-12-20T13:08:02+00:00" itemprop="datePublished">Dec 20, 2014</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/raspberry-pi/">Raspberry Pi</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/arm/">arm</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/assembler/">assembler</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Several times in previous chapters we have talked about ARM as an architecture that has several features aimed at embedding systems. In embedded systems memory is scarce and expensive, so designs that help reduce the memory footprint are very welcome. Today we will see another of these features: the Thumb instruction set.
+</p>
+<!--more-->
+<h2>The Thumb instruction set</h2>
+<p>
+In previous installments we have been working with the ARMv6 instruction set (the one implemented in the Raspberry Pi). In this instruction set, all instructions are 32-bit wide, so every instruction takes 4 bytes. This is a common design since the arrival of <a href="http://en.wikipedia.org/wiki/Reduced_instruction_set_computing">RISC processors</a>. That said, in some scenarios such codification is overkill in terms of memory consumption: many platforms are very simple and rarely need all the features provided by the instruction set. If only they could use a subset of the original instruction set that can be encoded in a smaller number of bits!
+</p>
+<p>
+So, this is what the <strong>Thumb instruction set</strong> is all about. They are a reencoded subset of the ARM instructions that take only 16 bits per instructions. This means that we will have to waive away some instructions. As a benefit our code density is higher: most of the time we will be able to encode the code of our programs in half the space.
+</p>
+<h3>Support of Thumb in Raspbian</h3>
+<p>
+While the processor of the Raspberry Pi properly supports Thumb, there is still some software support that unfortunately is not provided by Raspbian. This means that we will be able to write
+some snippets in Thumb but in general this is not supported (if you try to use Thumb for a full C program you will end with a <code>sorry, unimplemented</code> message by the compiler).
+</p>
+<h2>Instructions</h2>
+<p>
+Thumb provides about 45 instructions (of about 115 in ARMv6). The narrower codification of 16 bit means that we will be more limited in what we can do in our code. Registers are split into two sets: <em>low registers</em>, <code>r0</code> to <code>r7</code>, and <em>high registers</em>, <code>r8</code> to <code>r15</code>. Most instructions can only fully work with low registers and some others have limited behaviour when working with high registers.
+</p>
+<p>
+Also, Thumb instructions cannot be predicated. Recall that almost every ARM instruction can be made conditional depending on the flags in the <code>cpsr</code> register. This is not the case in Thumb where only the branch instruction is conditional.
+</p>
+<p>
+Mixing ARM and Thumb is only possible at function level: a function must be wholly ARM or Thumb, it cannot be a mix of the two instruction sets. Recall that our Raspbian system does not support Thumb so at some point we will have to jump from ARM code to Thumb code. This is done using the instruction (available in both instruction sets) <code>blx</code>. This instruction behaves like the <code>bl</code> instruction we use for function calls but changes the state of the processor from ARM to Thumb (or Thumb to ARM).
+</p>
+<p>
+We also have to tell the assembler that some portion of assembler is actually Thumb while the other is ARM. Since by default the assembler expects ARM, we will have to change to Thumb at some point.
+</p>
+
+<h2>From ARM to Thumb</h2>
+<p>
+Let's start with a very simple program returning an error code of 2 set in Thumb.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td><td class="code"><pre>/* thumb-first.s */
+.text
+
+.code 16     /* Here we say we will use Thumb */
+.align 2     /* Make sure instructions are aligned at 2-byte boundary */
+
+thumb_function:
+    mov r0, #2   /* r0 ← 2 */
+    bx lr        /* return */
+    
+.code 32     /* Here we say we will use ARM */
+.align 4     /* Make sure instructions are aligned at 4-byte boundary */
+
+.globl main
+main:
+    push {r4, lr}
+    
+    blx thumb_function /* From ARM to Thumb we use blx */
+
+    pop {r4, lr}
+    bx lr
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Thumb instructions in our thumb_function actually resemble ARM instructions. In fact most of the time there will not be much difference. As stated above, Thumb instructions are more limited in features than their ARM counterparts.
+</p>
+
+<p>
+If we run the program, it does what we expect.
+</p>
+
+<figure class="highlight"><pre><code class="language-shell" data-lang="shell"><span class="nv">$ </span>./thumb-first<span class="p">;</span> <span class="nb">echo</span> <span class="nv">$?</span>
+2</code></pre></figure>
+
+<p>
+How can we tell our program actually mixes ARM and Thumb? We can use <code>objdump -d</code> to dump the instructions of our <code>thumb-first.o</code> file.
+</p>
+
+<figure class="highlight"><pre><code class="language-shell" data-lang="shell"><span class="nv">$ </span>objdump  <span class="nt">-d</span> thumb-first.o 
+
+thumb-first.o:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 &lt;thumb_function&gt;:
+   0:	2002      	movs	r0, <span class="c">#2</span>
+   2:	4770      	bx	lr
+   4:	e1a00000 	nop			<span class="p">;</span> <span class="o">(</span>mov r0, r0<span class="o">)</span>
+   8:	e1a00000 	nop			<span class="p">;</span> <span class="o">(</span>mov r0, r0<span class="o">)</span>
+   c:	e1a00000 	nop			<span class="p">;</span> <span class="o">(</span>mov r0, r0<span class="o">)</span>
+
+00000010 &lt;main&gt;:
+  10:	e92d4010 	push	<span class="o">{</span>r4, lr<span class="o">}</span>
+  14:	fafffff9 	blx	0 &lt;thumb_function&gt;
+  18:	e8bd4010 	pop	<span class="o">{</span>r4, lr<span class="o">}</span>
+  1c:	e12fff1e 	bx	lr</code></pre></figure>
+
+<p>
+Check <code>thumb_function</code>: its two instructions are encoded in just two bytes (instruction <code>bx lr</code> is at offset 2 of <code>mov r0, #2</code>. Compare this to the instructions in <code>main</code>: each one is at offset 4 of its predecessor instruction. Note that some padding was added by the assembler at the end of the <code>thumb_function</code> in form of <code>nop</code>s (that should not be executed, anyway).
+</p>
+
+<h2>Calling functions in Thumb</h2>
+
+<p>
+In in Thumb we want to follow the AAPCS convention like we do when in ARM mode, but then some oddities happen. Consider the following snippet where <code>thumb_function_1</code> calls <code>thumb_function_2</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">.code 16     /* Here we say we will use Thumb */
+.align 2     /* Make sure instructions are aligned at 2-byte boundary */
+thumb_function_2:
+    /* Do something here */
+    bx lr
+
+thumb_function_1:
+    push {r4, lr}
+    bl thumb_function_2
+    pop {r4, lr}    /* ERROR: cannot use lr in pop  in Thumb mode */
+    bx lr</code></pre></figure>
+
+<p>
+Unfortunately, this will be rejected by the assembler. If you recall from chapter 10, in ARM push and pop are mnemonics for <code>stmdb sp!</code> and <code>ldmia sp!</code>, respectively. But in Thumb mode <code>push</code> and <code>pop</code> are instructions on their own and so they are more limited: <code>push</code> can only use low registers and <code>lr</code>, <code>pop</code> can only use low registers and <code>pc</code>. The behaviour of these two instructions almost the same as the ARM mnemomics. So, you are now probably wondering why these two special cases for <code>lr</code> and <code>pc</code>. This is the trick: in Thumb mode <code>pop {pc}</code> is equivalent to pop the value <code>val</code> from the stack and then do <code>bx val</code>. So the two instruction sequence: <code>pop {r4, lr}</code> followed by <code>bx lr</code> becomes simply <code>pop {r4, pc}</code>.
+</p>
+
+<p>
+So, our code will look like this.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* thumb-call.s */
+.text
+
+.code 16     /* Here we say we will use Thumb */
+.align 2     /* Make sure instructions are aligned at 2-byte boundary */
+
+thumb_function_2:
+    mov r0, #2
+    bx lr   /* A leaf Thumb function (i.e. a function that does not call
+               any other function so it did not have to keep lr in the stack)
+               returns using "bx lr" */
+
+thumb_function_1:
+    push {r4, lr}
+    bl thumb_function_2 /* From Thumb to Thumb we use bl */
+    pop {r4, pc}  /* This is how we return from a non-leaf Thumb function */
+
+.code 32     /* Here we say we will use ARM */
+.align 4     /* Make sure instructions are aligned at 4-byte boundary */
+.globl main
+main:
+    push {r4, lr}
+
+    blx thumb_function_1 /* From ARM to Thumb we use blx */
+
+    pop {r4, lr}
+    bx lr</code></pre></figure>
+
+<h2>From Thumb to ARM</h2>
+
+<p>
+Finally we may want to call an ARM function from Thumb. As long as we stick to AAPCS everything should work correctly. The Thumb instruction to call an ARM function is again <code>blx</code>. Following is an example of a small program that says "Hello world" four times calling <code>printf</code>, a function in the C library that in Raspbian is of course implemented using ARM instructions.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">/* thumb-first.s */
+
+.text
+
+.data
+message: .asciz "Hello world %d\n"
+    
+.code 16     /* Here we say we will use Thumb */
+.align 2     /* Make sure instructions are aligned at 2-byte boundary */
+thumb_function:
+    push {r4, lr}         /* keep r4 and lr in the stack */
+    mov r4, #0            /* r4 ← 0 */
+    b check_loop          /* unconditional branch to check_loop */
+    loop:        
+       /* prepare the call to printf */
+       ldr r0, addr_of_message  /* r0 ← &amp;message */
+       mov r1, r4               /* r1 ← r4 */
+       blx printf               /* From Thumb to ARM we use blx.
+                                   printf is a function
+                                   in the C library that is implemented
+                                   using ARM instructions */
+       add r4, r4, #1           /* r4 ← r4 + 1 */
+    check_loop:
+       cmp r4, #4               /* compute r4 - 4 and update the cpsr */
+       blt loop                 /* if the cpsr means that r4 is lower than 4 
+                                   then branch to loop */
+
+    pop {r4, pc}          /* restore registers and return from Thumb function */
+.align 4
+addr_of_message: .word message
+    
+.code 32     /* Here we say we will use ARM */
+.align 4     /* Make sure instructions are aligned at 4-byte boundary */
+.globl main
+main:  
+    push {r4, lr}      /* keep r4 and lr in the stack */
+    blx thumb_function /* from ARM to Thumb we use blx  */       
+    pop {r4, lr}       /* restore registers */
+    bx lr              /* return */</code></pre></figure>
+
+<h2>To know more</h2>
+<p>
+In next installments we will go back to ARM, so if you are interested in Thumb, you may want to check this <a href="http://infocenter.arm.com/help/topic/com.arm.doc.qrc0006e/QRC0006_UAL16.pdf">Thumb 16-bit Instruction Set Quick Reference Card</a> provided by ARM. When checking that card, be aware that the processor of the Raspberry Pi only implements ARMv6T, not ARMv6T2.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2014/08/23/arm-assembler-raspberry-pi-chapter-21/">&laquo; ARM assembler in Raspberry Pi – Chapter 21</a>
+
+
+  <a class="next" href="/2015/01/02/arm-assembler-raspberry-pi-chapter-23/">ARM assembler in Raspberry Pi – Chapter 23 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

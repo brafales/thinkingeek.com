@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Introduction to the gfortran array descriptor</title>
+  <meta name="description" content="With the approval of Fortran 90, its array capabilities were largely improved. While still far from languages like APL, the extra functionality required a rethinking of the concept array in Fortran. This led to the need for array descriptors in the language.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/01/14/gfortran-array-descriptor/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Introduction to the gfortran array descriptor">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/01/14/gfortran-array-descriptor/">
+  <meta property="og:description" content="With the approval of Fortran 90, its array capabilities were largely improved. While still far from languages like APL, the extra functionality required a rethinking of the concept array in Fortran. This led to the need for array descriptors in the language.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Introduction to the gfortran array descriptor">
+  <meta name="twitter:description" content="With the approval of Fortran 90, its array capabilities were largely improved. While still far from languages like APL, the extra functionality required a rethinking of the concept array in Fortran...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Introduction to the gfortran array descriptor</h1>
+    
+    <p class="post-meta"><time datetime="2017-01-14T23:27:43+00:00" itemprop="datePublished">Jan 14, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>With the approval of Fortran 90, its array capabilities were largely improved. While still far from languages like APL, the extra functionality required a rethinking of the concept array in Fortran. This led to the need for array descriptors in the language.</p>
+
+<!--more-->
+
+<h2>A zoo of arrays</h2>
+
+<p>
+Many programming languages have a concept of array, as a very essential kind of aggregated data type where all the elements of the aggregation are of the same type and can be accessed by some indexing mechanism usually an integer expression. Beyond that basic functionality, languages differ.
+</p>
+
+<p>
+In pre-Fortran 90 arrays were pretty simple and their size could only be a compile-time constant or an expression of the parameters of the functions. This is, there were not dynamic arrays of any kind in Fortran 77. This changed in Fortran 90 with the introduction of 4 kinds of arrays:
+</p>
+
+<ul>
+<li><em>Explicit-shape</em>. These are the traditional arrays in Fortran 77. They have a dimension specification where all the elements are of the form <code>U</code> or <code>L:U</code>. These expressions are either integer constants or computed using the parameters of the current function (in Fortran a parameter of the function is called a <em>dummy argument</em>).</li>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">  </span><span class="c1">! Array of 10 integer elements from 1 to 10</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">)</span><span class="w"> </span><span class="c1">! Array of 10 integer elements from 0 to 9</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">M</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">:</span><span class="mi">19</span><span class="p">)</span><span class="w"> </span><span class="c1">! Array (of rank 2) of 400 integer elements.</span><span class="w">
+                       </span><span class="c1">! First rank is indexed from 1 to 20</span><span class="w">
+                       </span><span class="c1">! Second rank is indexed from 0 to 19</span><span class="w">
+
+</span><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">)</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="c1">! Array of rank 2 of N * (M+1) elements</span><span class="w">
+                         </span><span class="c1">! First rank from 1 to N</span><span class="w">
+                         </span><span class="c1">! Second rank from 1 to M + 1</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span></code></pre></figure>
+
+<li><em>Assumed-size</em>. In these arrays we omit the upper bound of the last rank and we use * instead. This means that we cannot really know the extent of such rank at all. This form of array is only valid for dummy arguments (i.e. arrays that are parameters of the function). </li>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">)</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w">      </span><span class="c1">! Rank 1 array with lower bound 1 but of unknown size</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="o">*</span><span class="p">)</span><span class="w">    </span><span class="c1">! Rank 1 array with lower bound 0 but of unknown size</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">M</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="w">  </span><span class="c1">! Rank 2 array</span><span class="w">
+                       </span><span class="c1">! First rank is indexed from 1 to 20</span><span class="w">
+                       </span><span class="c1">! Second rank is indexed from 1 but has an unknown upper bound</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span></code></pre></figure>
+
+These arrays are conceptually equivalent to C ones as parameters. For instance, the last one is in practice equivalent to a parameter declaration <code>int c[][20]</code>.
+<li><em>Assumed-shape</em>. In this case all dimensions specifications lack an upper bound but a lower bound is allowed, otherwise assumed 1. This is only valid for dummy arguments again. Its size will be inferred from the actual argument associated during the function call.</li>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span><span class="p">(</span><span class="n">A</span><span class="p">,</span><span class="w"> </span><span class="n">B</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">)</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(:)</span><span class="w">      </span><span class="c1">! Rank 1, with lower bound 1 and upper bound only known at runtime</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">0</span><span class="p">:)</span><span class="w">     </span><span class="c1">! Rank 1, with lower bound 0 and upper bound only known at runtime</span><span class="w">
+  </span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">M</span><span class="p">(:,</span><span class="w"> </span><span class="mi">0</span><span class="p">:)</span><span class="w">  </span><span class="c1">! Rank 2 array</span><span class="w">
+                       </span><span class="c1">! First rank has lower bound 1 but upper bound only known at runtime</span><span class="w">
+                       </span><span class="c1">! Second rank has lower bound 0 but upper bound only known at runtime</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span></code></pre></figure>
+
+<li><em>Deferred-shape</em>. In this case all dimensions specifications lack lower and upper bound. This is only valid for arrays that are <code>ALLOCATABLE</code> or <code>POINTER</code>. Note that in some cases these may look like assumed-shape. Their sizes and bounds are inferred from argument association or after an <code>ALLOCATE</code> statement.</li>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="k">ALLOCATABLE</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(:)</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="k">POINTER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">M</span><span class="p">(:,</span><span class="w"> </span><span class="p">:)</span></code></pre></figure>
+
+While <code>POINTER</code> and <code>ALLOCATABLE</code> seem the same thing they represent different ideas. <code>POINTER</code> arrays are references to other arrays (including anonymous ones obtained through <code>ALLOCATE</code>). An <code>ALLOCATABLE</code> array means an array that if allocated, its size is determined at runtime.
+</ul>
+
+<p>
+As you can see both assumed-shape and deferred-shape raise the bar of complexity of arrays. The reason is that we have to be able to compute their sizes at runtime. Fortran 90 introduces <code>LBOUND</code>, <code>UBOUND</code> and <code>SIZE</code> intrinsics that allow us to query the boundaries and number of elements of an array, or one of its dimensions. For explicit-shape either these values are constant, so they can be computed by the compiler, or must depend on parameters so we still can relatively easy compute those in runtime without too much effort. But for assumed-shape and deferred-shape, this property becomes so general that we need to have the boundaries of the array somewhere.
+</p>
+
+<p>
+A sensible place to do this is in the array itself.
+<p>
+
+<h2>Dope vectors</h2>
+
+<p>
+Historically, arrays are convenient because they can be just represented with an address to the first element. All other information that is required is usually available at compile time (type size, size of the dimension if they are constant, etc). For arrays whose size is non-constant, like the explicit-shape arrays D above, it is a minor complication but not too hard basically because the size of the array does not change. Assumed-size are like explicit-shape except that their full size and last-rank upper bound is unknown (this restriction pervades all the language in inconvenient ways but is not a technical problem per se).
+</p>
+
+<p>
+Now consider assumed-shape and deferred-shape. How can we tell the sizes of the array in runtime? Well, as we said above we will need to store this in the array itself. This is usually called a <em>dope vector</em> or an array descriptor. The name suggests that the array itself is not any longer just an address to the first element but some more information. Another way to regard these descriptors are <em>fat pointers</em>. This is, pointers that encode more than an address.
+</p> 
+
+<p>
+In order to give some latitude to implementors, standards do not fully specify all the details and as such array descriptors are not mandated anywhere in the standard (although probably noted as a possible solution). This means that every Fortran 90 implementation can choose the array descriptor it wants. This also means that Fortran code in one compiler is not interoperable with other Fortran compilers. While this may sound terrible, it is usually not a concern due to the niche status of Fortran. But sometimes is, so the <a href="http://chasm-interop.sourceforge.net/">Chasm project</a> can help in this case.
+</p>
+
+<h2>gfortran array descriptor</h2>
+
+<p>
+GNU Fortran, also called gfortran, is the Fortran 90/95/2003/2008... implementation available in the GNU Compiler Collection. Its array descriptor looks like this in C++ (adapted from the gfortran sources).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">descriptor_dimension</span>
+<span class="p">{</span>
+  <span class="kt">ptrdiff_t</span> <span class="n">stride</span><span class="p">;</span>
+  <span class="kt">ptrdiff_t</span> <span class="n">lower_bound</span><span class="p">;</span>
+  <span class="kt">ptrdiff_t</span> <span class="n">upper_bound</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">template</span> <span class="o">&lt;</span><span class="kt">int</span> <span class="n">Rank</span><span class="p">,</span> <span class="k">typename</span> <span class="nc">Type</span><span class="p">&gt;</span>
+<span class="k">struct</span> <span class="nc">descriptor</span> <span class="p">{</span>
+  <span class="n">Type</span> <span class="o">*</span><span class="n">base_addr</span><span class="p">;</span>
+  <span class="kt">size_t</span> <span class="n">offset</span><span class="p">;</span>
+  <span class="kt">ptrdiff_t</span> <span class="n">dtype</span><span class="p">;</span>
+  <span class="n">descriptor_dimension</span> <span class="n">dim</span><span class="p">[</span><span class="n">Rank</span><span class="p">];</span>
+<span class="p">};</span></code></pre></figure>
+
+
+<p>
+The descriptor keeps the address where the array starts in <code>base_addr</code> field. In this case Type will never be an array and it will always be a scalar type or a derived type (structs in Fortran parlance). We will see later the meaning of the <code>offset</code> field. Field <code>dtype</code> encodes data type information described below. Finally, for each rank (i.e. dimension), the descriptor encodes a stride, we will see later why it is needed, the lower bound and upper bound of the rank.
+</p>
+
+<p>
+Field <code>dtype</code> encodes three things: the rank of the array, the element type and the size of the element type. It is currently laid like this (because the code suggest it will have to change for Fortran 2008).
+</p>
+
+<table>
+<tr>
+<td>
+<strong>Bits</strong>
+</td>
+<td style="text-align: right;">
+63/31..6
+</td>
+<td style="text-align: right;">
+5..3
+</td>
+<td style="text-align: right;">
+2..0
+</td>
+</tr>
+<tr>
+<td>
+<strong>Meaning</strong>
+</td>
+<td>
+size of the element type
+</td>
+<td>
+element type
+</td>
+<td>
+rank of the array
+</td>
+</tr>
+</table>
+
+<p>
+The element type can take the following values
+<p>
+
+<table>
+<thead>
+<tr><th>Fortran type</th><th>Value</th></tr>
+</thead>
+<tbody>
+<tr><td>INTEGER</td><td>1</td></tr>
+<tr><td>LOGICAL</td><td>2</td></tr>
+<tr><td>REAL</td><td>3</td></tr>
+<tr><td>COMPLEX</td><td>4</td></tr>
+<tr><td>Any derived type</td><td>5</td></tr>
+<tr><td>CHARACTER</td><td>6</td></tr>
+</tbody>
+</table>
+
+
+<p>
+This descriptor is used both for assumed-shape and deferred-shape arrays.
+</p>
+
+<h2>Creation of the descriptor</h2>
+
+<p>
+Consider the following Fortran code
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span><span class="p">()</span><span class="w">
+    </span><span class="kt">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="k">ALLOCATABLE</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(:,</span><span class="w"> </span><span class="p">:)</span><span class="w">
+
+    </span><span class="k">ALLOCATE</span><span class="p">(</span><span class="n">A</span><span class="p">(</span><span class="mi">-1</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="mi">9</span><span class="p">))</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">SUBROUTINE</span><span class="w"> </span><span class="n">SUB</span></code></pre></figure>
+
+
+<p>
+Here gfortran will allocate in the stack a local variable <code>A</code> for a descriptor of rank 2 and then it initializes it with the proper values. First let's see the SIZE of this array: (5 - (-1) + 1) * (9 - 2 + 1) = 56. So we need to allocate 56 integers. The address to this storage is stored in <code>base_address</code>. The code would look like this in C++
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">descriptor</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">,</span> <span class="kt">signed</span> <span class="kt">int</span><span class="o">&gt;</span> <span class="n">A</span><span class="p">;</span>
+<span class="n">A</span><span class="p">.</span><span class="n">base_address</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">signed</span> <span class="kt">int</span><span class="p">[</span><span class="mi">56</span><span class="p">];</span></code></pre></figure>
+
+
+<p>
+We need to remember the boundaries.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// rank 1</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
+<span class="c1">// rank 2</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="mi">9</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+The field stride, states how many elements we skip effectively every time we increment the index of that rank. For rank 1 is always easy, only 1 element is skipped.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+For rank 2, we skip all the elements of rank 1. In this case 7 (there are 7 elements ranging from -1 to 5, recall that both ends are included).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">7</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+If our array had rank 3, the stride of rank 3 would account the stride of rank 2 and rank 1, so it would be 56 (= 7 * 8).
+</p>
+
+<p>
+Also we need to store the appropriate info in <code>dtype</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="c1">// rank</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="c1">//  element type (INTEGER == 1)</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dtype</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">);</span>
+<span class="c1">// size of this INTEGER, by default 4</span>
+<span class="n">A</span><span class="p">.</span><span class="n">dtype</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">4</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span><span class="p">);</span></code></pre></figure>
+
+
+<p>
+Of course, all the above can be simplified as
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="p">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="mi">266</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+We are still missing the <code>offset</code> field in our array descriptor. The purpose of this field will be obvious when we index elements using the descriptor. It contains a value that compensates for lower bounds being other than zero. In our case, our lower bounds are -1 and 2. The element (i, j) of our array will be the i + j * 7 (this 7 is the stride of rank 1!). For the lower bound elements, this is when i = -1 and j = 2 we want the previous expression evaluate to zero. Thus we want i + j * 7 + offset = 0. This is offset = -(i + j * 7), substituting the value of i and j by -1 and 2 respectively we have that offset = -13.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="o">-</span><span class="mi">13</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+And now we have our array descriptor fully initialized.
+</p>
+
+<h3>In general</h3>
+
+<p>
+For an <code>ALLOCATE(X(l<sub>1</sub>:u<sub>1</sub>, l<sub>2</sub>:u<sub>2</sub>, ..., l<sub>n</sub>:u<sub>n</sub>)</code> the descriptor is initialized like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">size = (  (u&lt;sub&gt;1&lt;/sub&gt; - l&lt;sub&gt;1&lt;/sub&gt; + 1)
+        * (u&lt;sub&gt;2&lt;/sub&gt; - l&lt;sub&gt;2&lt;/sub&gt; + 1)
+        * ...
+        * (u&lt;sub&gt;n&lt;/sub&gt; - l&lt;sub&gt;n&lt;/sub&gt; + 1) )
+X.base_address = new T[ size ];
+
+// rank 1
+X.dim[0].lower_bound = l&lt;sub&gt;1&lt;/sub&gt;;
+X.dim[0].upper_bound = u&lt;sub&gt;1&lt;/sub&gt;;
+X.dim[0].stride = 1;
+// rank 2
+X.dim[1].lower_bound = l&lt;sub&gt;2&lt;/sub&gt;;
+X.dim[1].upper_bound = u&lt;sub&gt;2&lt;/sub&gt;;
+X.dim[1].stride = (u&lt;sub&gt;1&lt;/sub&gt; - l&lt;sub&gt;1&lt;/sub&gt; + 1) * X.dim[0].stride;
+...
+// rank n
+X.dim[n-1].lower_bound = l&lt;sub&gt;n&lt;/sub&gt;;
+X.dim[n-1].upper_bound = u&lt;sub&gt;n&lt;/sub&gt;;
+X.dim[n-1].stride = (u&lt;sub&gt;n-1&lt;/sub&gt; - l&lt;sub&gt;n-1&lt;/sub&gt; + 1) * X.dim[n-2].stride;
+
+X.dtype = n | (element_type &lt;&lt; 3) | (element_size &lt;&lt; 6)
+
+X.offset = - (  l&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride
+              + l&lt;sub&gt;1&lt;/sub&gt; * X.dim[1].stride
+              + ...
+              + l&lt;sub&gt;n&lt;/sub&gt; * X.dim[n - 1].stride );</code></pre></figure>
+
+
+<h2>Accessing elements using the descriptor</h2>
+
+<p>
+Now that our descriptor is fully initialized, we will want to access element <code>A(i, j)</code>. We need to compute its address in memory. But first we need to locate the element <code>(i, j)</code> of our array. We need to compute its <em>linear index</em>. The linear index basically tells us, starting from 0, what is the position of the element inside the array.
+</p>
+
+<p>
+In general this means that given an array <code>X</code> of rank n with descriptor, the linear index of <code>X(i<sub>1</sub>, i<sub>2</sub>, ..., i<sub>n</sub>)</code> will be
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = (i&lt;sub&gt;1&lt;/sub&gt; - X.dim[0].lower_bound) * X.dim[0].stride
+   + (i&lt;sub&gt;2&lt;/sub&gt; - X.dim[1].lower_bound) * X.dim[1].stride
+   + ...
+   + (i&lt;sub&gt;n&lt;/sub&gt; - X.dim[n-1].lower_bound) * X.dim[n-1].stride;</code></pre></figure>
+
+
+<p>
+We can distribute the multiplication of the stride to get
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = i&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride - X.dim[0].lower_bound * X.dim[0].stride
+   + i&lt;sub&gt;2&lt;/sub&gt; * X.dim[1].stride - X.dim[1].lower_bound * X.dim[1].stride
+   + ...
+   + i&lt;sub&gt;n&lt;/sub&gt; * X.dim[n-1].stride - X.dim[n-1].lower_bound * X.dim[n-1].stride;</code></pre></figure>
+
+
+<p>
+and then regroup additions and subtractions
+<p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = i&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride
+   + i&lt;sub&gt;2&lt;/sub&gt; * X.dim[1].stride
+   + ...
+   + i&lt;sub&gt;n&lt;/sub&gt; * X.dim[n-1].stride
+
+   - X.dim[0].lower_bound * X.dim[0].stride
+   - X.dim[1].lower_bound * X.dim[1].stride
+   - ...
+   - X.dim[n-1].lower_bound * X.dim[n-1].stride;</code></pre></figure>
+
+
+<p>
+Recall that <codd>offset&lt;/code&gt; field above? In general it will be
+&lt;/p&gt;
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">   X.offset = - (  X.dim[0].lower_bound * X.dim[0].stride
+                 + X.dim[1].lower_bound * X.dim[1].stride
+                 + ...
+                 + X.dim[n-1].lower_bound * X.dim[n-1].stride );</code></pre></figure>
+
+
+<p>
+if we distribute the minus sign
+<p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">   X.offset = - X.dim[0].lower_bound * X.dim[0].stride
+              - X.dim[1].lower_bound * X.dim[1].stride
+              - ...
+              - X.dim[n-1].lower_bound * X.dim[n-1].stride;</code></pre></figure>
+
+
+<p>
+and this is exactly what we have above. So the linear index can be rewritten as
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = i&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride
+   + i&lt;sub&gt;2&lt;/sub&gt; * X.dim[1].stride
+   + ...
+   + i&lt;sub&gt;n&lt;/sub&gt; * X.dim[n-1].stride
+   + X.offset;</code></pre></figure>
+
+
+<p>
+Ok, now we have the linear index, but we still need to compute the address of the element. The linear index is very useful because we know each element in the array takes the same amount of storage in bytes, so we only have to multiply it by the element size (<code>es</code>). The element size is found encoded in the field <code>dtype</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">es = (X.dtype &gt;&gt; 6);</code></pre></figure>
+
+
+<p>
+So we only have to scale the linear index by the number of bytes of each element.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">ob = es * li;</code></pre></figure>
+
+
+<p>
+This offset in bytes (<code>ob</code>) still has to be added to the base address to get the element address (<code>ea</code>).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">ea = X.base_address + ob;</code></pre></figure>
+
+
+<p>
+And <code>ea</code> contains the address of the element.
+</p>
+
+<h2>Other operations that involve creation of array descriptors</h2>
+
+<p>
+Besides the <code>ALLOCATE</code> statement, a Fortran compiler may need to create descriptors in other cases. For instance when passing an array to a function that expects an assumed-shape array or during pointer assignment. In fact pointer assignment is rather cool because it allows to <em>remap</em> the indices of an array. Consider for instance the following example.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="k">TARGET</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="p">,</span><span class="w"> </span><span class="k">POINTER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">P</span><span class="w">
+
+</span><span class="n">P</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="mi">8</span><span class="p">)</span></code></pre></figure>
+
+
+<p>
+Here what we are doing is kind of a window of 3x7 elements over A. Elements are mapped like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">P(1, 1) =&gt; A(3, 2)
+P(2, 1) =&gt; A(4, 2)
+P(3, 1) =&gt; A(5, 2)
+P(1, 2) =&gt; A(3, 3)
+P(2, 2) =&gt; A(4, 3)
+P(3, 2) =&gt; A(5, 3)
+...
+P(1, 7) =&gt; A(3, 8)
+P(2, 7) =&gt; A(4, 8)
+P(3, 7) =&gt; A(5, 8)</code></pre></figure>
+
+
+<p>
+How is the array descriptor of P initialized in this case? First the base address of the array will not be set to the base address of A but to the element A(3, 2).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">P</span><span class="p">.</span><span class="n">base_address</span> <span class="o">=</span> <span class="o">&lt;&lt;</span><span class="n">address</span> <span class="n">of</span> <span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">&gt;&gt;</span></code></pre></figure>
+
+
+<p>
+The lower and upper bound of the first rank is 1 and 3 respectively. The stride, as usually in the first rank is 1.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+In the second rank, lower bound and upper bound is 1 to 7. Here the stride is 10. Why is it 10, because between two consecutive indexes of the second rank there still are 10 elements.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">lower_bound</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">upper_bound</span> <span class="o">=</span> <span class="mi">7</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Field dtype will contain 266 again because this is a rank 2 array of INTEGERs of 4 bytes each.
+</p>
+
+<p>
+Field offset will be -11, this is exactly <code>-( 1 + 1 * 10 )</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">P</span><span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="o">-</span><span class="mi">11</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+All this works because P is actually just a <em>skewed</em> version of A but with shorter bounds. This is why the base address is not A(1, 1) but A(3, 2) and everything else, but the bounds of course, is the same.
+</p>
+
+<p>
+Now consider the same case but we change the pointer assignment to be
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="n">P</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="mi">8</span><span class="p">)</span></code></pre></figure>
+
+
+<p>
+Now the mapping looks like this
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">P(1, 1) =&gt; A(3, 2)
+P(2, 1) =&gt; A(5, 2)
+P(1, 2) =&gt; A(3, 3)
+P(2, 2) =&gt; A(5, 3)
+...
+P(1, 7) =&gt; A(3, 8)</code></pre></figure>
+
+
+<p>
+How to achieve this? Note first that the rank 1 is now skipping every other element. This is equivalent to a stride of 2 in rank 1. Also note that now the offset has to compensate for this extra multiplication. So instead of -11 it is -12? Why, check the formula for the offset and you will see that we are multiplying the lower bound of each rank per its stride. So - ( 1 * 2 + 1 * 10 ) = -12.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">lbound</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">ubound</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">lbound</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">ubound</span> <span class="o">=</span> <span class="mi">7</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<span class="n">p</span><span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="o">-</span><span class="mi">12</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Yet another example
+</p>
+
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="n">P</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">:</span><span class="mi">8</span><span class="p">:</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+
+<p>
+Now the mapping is
+
+</p>
+
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">P(1, 1) =&gt; A(3, 2)
+P(2, 1) =&gt; A(5, 2)
+P(1, 2) =&gt; A(3, 5)
+P(2, 2) =&gt; A(5, 5)
+P(1, 3) =&gt; A(3, 8)
+P(2, 3) =&gt; A(5, 8)</code></pre></figure>
+
+
+<p>
+and the required array descriptor is the following
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">lbound</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">ubound</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">lbound</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">ubound</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="n">stride</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
+<span class="n">P</span><span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="o">-</span><span class="mi">32</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Check the stride for the second rank. Now it is 30 because we are going in steps of three, so the original stride was 10 now it is 30. Obviously this requires also adjusting the offset.
+</p>
+
+<p>
+Nice, isn't it? :)
+</p>
+</p></p></codd></p></p></p></p></p></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/12/03/not-write-c-front-part-3/">&laquo; How (not) to write a C++ front end – Part 3</a>
+
+
+  <a class="next" href="/2017/02/25/compilation-array-expressions-fortran/">Compilation of array expressions in Fortran &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

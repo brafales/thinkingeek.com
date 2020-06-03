@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>How (not) to write a C++ front end – Part 3</title>
+  <meta name="description" content="In the previous installment we talked about the parsing technology we used, which looks like the canonical academic approach to parsing. In this chapter we will see some dificulties we encountered along the years.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/12/03/not-write-c-front-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="How (not) to write a C++ front end – Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/12/03/not-write-c-front-part-3/">
+  <meta property="og:description" content="In the previous installment we talked about the parsing technology we used, which looks like the canonical academic approach to parsing. In this chapter we will see some dificulties we encountered along the years.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="How (not) to write a C++ front end – Part 3">
+  <meta name="twitter:description" content="In the previous installment we talked about the parsing technology we used, which looks like the canonical academic approach to parsing. In this chapter we will see some dificulties we encountered ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">How (not) to write a C++ front end – Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2016-12-03T14:33:34+00:00" itemprop="datePublished">Dec 3, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the previous installment we talked about the parsing technology we used, which looks like the canonical academic approach to parsing. In this chapter we will see some dificulties we encountered along the years.
+</p>
+
+<!--more-->
+
+<h2>A tiny preprocessor</h2>
+
+<p>
+Mercurium supports C, C++ and Fortran. C and C++ share many similarities so it is handy to share as many things as possible between the two front ends. Many of the tools we used work on text file inputs. Unfortunately they do not provide any sane parameterization nor modularization mechanism. So we wrote a very small tool that we called the tiny preprocessor <code>tpp</code>. It acts like a C++ preprocessor but does not handle C macros or anything: its goal is basically mix input split in several files into a single file. It also allows conditional expansion.
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">/*!if SOMETHING*/
+a b c
+/*!include "a.file" */
+/*!endif*/
+k l m
+/*!include "another.file" */</code></pre></figure>
+
+<p>
+Example outputs
+</p>
+
+<div style="display: flex;">
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="nv">$ </span>tpp test.in <span class="nt">-o</span> out
+<span class="nv">$ </span><span class="nb">cat </span>out
+
+
+
+
+k l m
+
+contents of another.file
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="code"><pre><span class="nv">$ </span>tpp test.in <span class="nt">-DSOMETHING</span> <span class="nt">-o</span> out
+<span class="nv">$ </span><span class="nb">cat </span>out
+
+a b c
+
+contents of a.file
+
+k l m
+
+contents of another.file
+</pre></td></tr></tbody></table></code></pre></figure>
+
+</div>
+
+<p>
+This tool is used to generate the lexers of C and C++ out of a single unified lexer file and to generate the grammars of C, C++ and Fortran. The main language is kept in the main grammar file, but subparts of it are stored in different files, so the grammar is easy to modularize. More on grammars later.
+</p>
+
+<h2>Lexing, should be easy, right?</h2>
+
+<h3>The right angle</h3>
+
+<p>
+As a first step, the input is tokenized. Fortunately C++ is relatively easy to tokenize. That said there are a few special things we want to support correctly. One of them is the &gt; token. Historically, in C++03, the following did not compile.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;vector&gt;
+</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&gt;</span> <span class="n">a</span><span class="p">;</span></code></pre></figure>
+
+<p>
+the reason being the <code>&gt;&gt;</code> which was interpreted as the shift right operator (as in <code>a &gt;&gt; 1</code>). So the programmer was forced to add a blank like in <code>std::vector&lt;std::vector&lt;int&gt; &amp;gt</code>. C++11 lifted this restriction so it had to be possible to allow <code>&gt;&gt;</code> in either usage. This is something very easy to support by a handmade parser but it is not so easy in our case.
+</p>
+
+<p>
+The solution to this problem is (ab)using a feature of the Flex lexer. By doing some lookahead we can distinguish the different kind of token. A single &gt; is just &gt;
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="o">&gt;</span>           <span class="p">{</span> <span class="n">parse_token_text</span><span class="p">();</span> <span class="n">update_location</span><span class="p">();</span> <span class="k">return</span> <span class="sc">'&gt;'</span><span class="p">;</span> <span class="p">}</span></code></pre></figure>
+
+<p>
+but if <code>&gt;</code> is just before another <code>&gt;</code> then, we consume the first one and we call it <code>AB1</code> (angular bracket 1).
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="o">&gt;/&gt;</span>         <span class="p">{</span> <span class="n">parse_token_text</span><span class="p">();</span> <span class="n">update_location</span><span class="p">();</span> <span class="k">return</span> <span class="n">AB1</span><span class="p">;</span> <span class="p">}</span></code></pre></figure>
+
+<p>
+actually there is a case where we do not want to do this: <code>&gt;&gt;=</code>. Again we will consume only the first <code>&gt;</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="o">&gt;/&gt;</span><span class="p">[</span><span class="o">^=</span><span class="p">]</span>     <span class="p">{</span> <span class="n">parse_token_text</span><span class="p">();</span> <span class="n">update_location</span><span class="p">();</span> <span class="k">return</span> <span class="n">AB1</span><span class="p">;</span> <span class="p">}</span></code></pre></figure>
+
+<p>
+all other possible cases are handled as usual.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="o">&gt;&gt;</span>          <span class="p">{</span> <span class="n">parse_token_text</span><span class="p">();</span> <span class="n">update_location</span><span class="p">();</span> <span class="k">return</span> <span class="n">RIGHT</span><span class="p">;</span> <span class="p">}</span>
+<span class="o">&gt;=</span>          <span class="p">{</span> <span class="n">parse_token_text</span><span class="p">();</span> <span class="n">update_location</span><span class="p">();</span> <span class="k">return</span> <span class="n">GREATER_OR_EQUAL</span><span class="p">;</span> <span class="p">}</span>
+<span class="o">&gt;&gt;=</span>         <span class="p">{</span> <span class="n">parse_token_text</span><span class="p">();</span> <span class="n">update_location</span><span class="p">();</span> <span class="k">return</span> <span class="n">RIGHT_ASSIGN</span><span class="p">;</span> <span class="p">}</span></code></pre></figure>
+
+<p>
+Now when we define the C++ syntax, we will make template-arguments to start by <code>&lt;</code> and end either by <code>&gt;</code> or <code>AB1</code>. As a side effect, an expression of the form <code>a &gt;&gt; b</code> will be formed by the tokens <code>AB1</code> followed <code>&gt;</code> so we may have to allow this case as well.
+</p>
+
+<h3>Raw strings</h3>
+
+<p>
+Other challenges introduced by C++11 are raw strings and standard attributes. Raw strings are a bit hard to tokenize because they have arbitrary delimiters. So the parser must remember the delimiter seen and when it sees the delimiter, finish the special tokenization of a raw string.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">char</span><span class="o">*</span> <span class="n">c2</span> <span class="o">=</span> <span class="s">R"FOO(one\n
+two\n)FOA\n
+three)FOO"</span><span class="p">;</span></code></pre></figure>
+
+<p>
+Here the tokenizer must identify <code>FOO</code> as the delimiter. The string above will be printed as
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">one\n
+two\n)FOA\n
+three</code></pre></figure>
+
+<p>
+To do this, when the tokenizer finds the start of a raw string literal it determines the delimiter. Then it moves to the <em>raw string body</em> mode where all characters but <code>)</code> are consumed. When a <code>)</code> is found, then it goes to a <em>potential suffix</em> mode where potentially we may find the delimiter. It may happen that it is not found, so the characters are appended to the raw literal as if nothing happened and we go back to <em>raw string body</em> mode. If the delimiter is found, then the lexer returns to regular operation and the raw literal ends there.
+</p>
+
+<h3>Standard attributes</h3>
+
+<p>
+Standard attributes also require special handling in the lexing phase. The reason is that a standard attribute is of the form <code>[[ identifier anything-but-two-right-square-brackets-that-is-correctly-parenthesized<sub>opt</sub> ]]</code>. This means that anything that is not <code>(</code>, <code>[</code>, <code>{</code> or <code>}</code>, <code>]</code> and <code>)</code> has to be handled like opaque text, but the brackets have to be handled as syntax (so the parser will be able to enforce the <em>correctly parenthesized</em> part). This again requires special states in the lexer itself that keep track of the parentheses to tell whether a <code>]]</code> marks the end of the attribute.
+</p>
+
+<p>
+Except for these annoying issues, lexing C/C++ is not particularly complicated. Recall that we do context-free parsing so the most complicated thing the lexer will have to do is to preserve a minimal amount of syntax (like it happens with raw string literals or standard attributes).
+</p>
+
+<h2>Parsing simple declarations is not simple</h2>
+
+<p>
+We already saw some of the problems that arise when parsing C++ using a context-free approach and what happens when using Bison GLR algorithm. In this post I want to show some other infelicites that arise due to the lax definition of C++ in its syntax.
+</p>
+
+<p>
+One of the most complicated parts here is the syntax of <code>simple-declaration</code>. Do not let its name confuse you, a <code>simple-declaration</code> can be incredibly complex.
+<p>
+
+<p>
+<code>
+simple-declaration: decl-specifier-seq<sub>opt</sub> init-declarator-list<sub>opt</sub>;
+</code>
+<p>
+
+<p>
+A first interesting thing is that <code>;</code> alone is a valid <code>simple-declaration</code> (though most compilers will warn you that this does not declare anything). Examples of <code>simple-declaration</code> are.
+<p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span> <span class="c1">// decl-specifier-seq=«const int»  init-declarator-list=«x, y»</span>
+<span class="k">struct</span> <span class="nc">A</span> <span class="p">{</span> <span class="kt">int</span> <span class="n">w</span><span class="p">;</span> <span class="p">};</span> <span class="c1">// decl-specifier-seq=«struct A { int w; }» init-declarator-list=«»</span>
+<span class="k">struct</span> <span class="nc">B</span> <span class="p">{</span>
+   <span class="n">B</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span> <span class="c1">// decl-specifier-seq=«» init-declarator-list=«B(int)»</span>
+<span class="p">};</span></code></pre></figure>
+
+
+<p>
+A first problem appears in a trivial declaration like this one.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span> <span class="n">b</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Given that one of the possible <code>decl-specifier</code>s in a <code>decl-specifier-seq</code> is an identifier that describes a <code>type-name</code> (e.g. a <code>class-name</code> or a <code>typedef-name</code>) a parser that follows the grammar as described in the C++ standard will give two possible interpretations: <code>A</code> and <code>b</code> as <code>type-specifiers</code> and an empty <code>init-declarator-list</code> and <code>A</code> as a type-specifier and <code>b </code>as the <code>init-declarator-list</code>. The parser becomes much more creative if we dare to write
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="o">::</span><span class="n">B</span> <span class="n">c</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Now the interpretations are: 3 type-specifiers (<code>A</code>, <code>::B</code> and <code>c</code>), 2 type specifiers (<code>A</code> and <code>::B</code>) plus one <code>init-declarator-list</code> (<code>c</code>), 1 <code>type-specifier</code> (<code>A::B</code>) and one <code>init-declarator-list</code> (<code>c</code>). As you can see, again, the number of interpretations starts to grow unnecessarily.
+</p>
+
+<p>
+At this point we can only enforce some specific syntax. Given that a <code>type-specifier</code> must appear only once, we use it as an <em>anchor</em>. So our <code>simple-declaration</code> looks like this.
+<p>
+
+
+<figure class="highlight"><pre><code class="language-txt" data-lang="txt">simple-declaration: decl-specifier-seq ;
+          | init-declarator-list ;
+          | decl-specifier-seq init-declarator-list ;
+decl-specifier-seq : type-specifier
+          | nontype-decl-specifier-seq type-specifier-seq
+          | type-specifier-seq nontype-decl-specifier-seq
+          | nontype-decl-specifier-seq type-specifier-seq nontype-decl-specifier-seq</code></pre></figure>
+
+
+<p>
+This is, we force the presence of a <code>type-specifier</code> and allow other <code>nontype-specifier</code> around it. This solves the problem except for two issues. First: <code>signed</code>, <code>unsigned</code>, <code>short</code> and <code>long</code> can appear more than once and can also act as <code>type-specifiers</code> if appear alone. This can be fixed with an extra-rule for <code>type-specifier</code> that only allows <code>signed</code>, <code>unsigned</code>, <code>short</code> and <code>long</code> and does not let appear them in <code>nontype-decl-specifier-seq</code>. Later on internally we will add an <code>int</code> <code>type-specifier</code>.
+<p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">short</span> <span class="n">s</span><span class="p">;</span> <span class="c1">// becomes internally as if 'short int s;'</span>
+<span class="k">const</span> <span class="kt">long</span> <span class="kt">long</span> <span class="k">static</span> <span class="n">a</span><span class="p">;</span> <span class="c1">// becomes internally as if 'const long long int static a;'</span></code></pre></figure>
+
+
+<p>
+The second problem is caused by the associativity of <code>::</code>. C++ says that it has to be parsed to build the longest qualified name. This means that <code>A ::b;</code> will always be parsed as <code>A::b</code>. But our parser is not doing this because Bison GLR does not allow specifying the associativity of operators (annoying!). So we need to make sure that if our <code>decl-specifier-seq</code> part ends with something that may be part of a <code>qualified-name</code>, the <code>init-declarator-list</code> does not start with an identifier. For instance
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="o">::</span><span class="n">A</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+has to be parsed as <code>int</code> in the <code>decl-specifier-seq</code> and then <code>::A</code> in the <code>init-declarator-list</code> while
+</p>
+
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">A</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="o">::</span><span class="n">D</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+has to be parsed as <code>A&lt;int&gt;::D</code> in the <code>decl-specifier-seq</code> and an empty <code>init-declarator-list</code>. In order to consider <code>::D</code> a declarator it should be written as <code>A&lt;int&gt; (::D)</code>.
+</p>
+
+<p>
+This again means more cases. So what started being a simple-declaration ends being in the Bison grammar something ghastly like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">non_empty_simple_declaration : decl_specifier_seq_0 init_declarator_list ';'
+ | decl_specifier_seq_ended_with_named_type_spec nonglobal_init_declarator_list ';'
+ | init_declarator_list ';'
+ | decl_specifier_alone_seq ';'
+;</code></pre></figure>
+
+
+<p>
+Here <code>decl_specifier_seq_0</code> means it does not end with something that could be pasted to a successive <code>::</code> to form a qualified name. Conversely, <code>decl_specifier_seq_ended_with_named_type_spec</code> means exactly this case and then we force it to be followed by a <code>nonglobal_init_declarator_list</code> which means, this <code>init-declarator-list</code> cannot start with <code>::</code>. Also <code>decl_specifier_alone_seq</code> makes sure that there is a <code>type-specifier</code>: we must accept <code>struct A { int x; };</code> and <code>struct A;</code> here but not <code>const;</code>. Note that <code>int;</code> would be accepted but a warning would be emitted as nothing is declared here either.
+</p>
+
+<p>
+At this point one may start thinking if using a grammar was a good idea in first place and maybe a handwritten recursive-descent parser would have been better.
+</p>
+</p></p></p></p></p></p></p></p></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/11/27/exploring-aarch64-assembler-chapter-6/">&laquo; Exploring AArch64 assembler – Chapter 6</a>
+
+
+  <a class="next" href="/2017/01/14/gfortran-array-descriptor/">Introduction to the gfortran array descriptor &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

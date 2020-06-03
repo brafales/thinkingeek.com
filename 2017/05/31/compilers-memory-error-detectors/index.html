@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Compilers as a memory error detectors</title>
+  <meta name="description" content="This is a small anecdote of something that happened me the other day.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/05/31/compilers-memory-error-detectors/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Compilers as a memory error detectors">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/05/31/compilers-memory-error-detectors/">
+  <meta property="og:description" content="This is a small anecdote of something that happened me the other day.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Compilers as a memory error detectors">
+  <meta name="twitter:description" content="This is a small anecdote of something that happened me the other day.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Compilers as a memory error detectors</h1>
+    
+    <p class="post-meta"><time datetime="2017-05-31T22:08:48+00:00" itemprop="datePublished">May 31, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>This is a small anecdote of something that happened me the other day.
+<!--more--></p>
+
+<h2>Internal compiler error</h2>
+
+<p>
+I was building LLVM trunk with GCC 6.2.0 and the compilation failed with some weird internal compiler error of GCC. I restarted the compilation and this time succeeded. And then other builds of LLVM failed, but in other ways. Randomly. With silly errors that vanished after a few retrials.
+</p>
+
+<p>
+Anyone with experience will first assume that there is a bug in GCC, like the program corrupts its own memory due to some memory error. And such assumption would be right yet building LLVM was really good triggering this particular bug. A quick look in GCC's Bugzilla did not reveal anything specific of 6.2.0 so it had to be something else.
+</p>
+
+<p>
+Then it occurred to me that maybe there is a hardware problem. Building LLVM with ninja uses, by default, all the cores of the CPU and some LLVM files are huge. So we have a scenario on I'm able to easily use a big percentage of the memory of my system (16 GiB). What if some physical memory address is wrong but Linux will likely use it under big memory loads?
+</p>
+
+<p>
+So I passed <code>memtestx86</code>, and voilà! Memtest detected that one bit in the physical address <code>0x2e4bd5d28</code> was stuck! No matter what is written in that address, the bit 22 of that (32-bit) address was always set to 1. Compilers are particularly sensitive to this kind of problems because, to save memory, they tend to pack lots of data as bitfields.
+</p>
+
+<p>
+Memtest did not detect any other problem. So the result is that of 16 GiB, 1 bit is wrong! Bummer.
+</p>
+
+<h2>Mitigation</h2>
+
+<p>
+The obvious solution would be replacing the affected DIMM bank. But it seems wasteful for a single bit. That probably would make sense if the errors were all across the memory, but for 1 bit it is hard to justify.
+</p>
+
+<p>
+So we need a way to tell the operating system: hey, don't use that address. Luckily there is a way to tell Linux about this. Not strictly acknowledging that the memory is wrong but just saying that it is "reserved" and as such cannot be used by the operating system.
+</p>
+
+<p>
+To do this is in a modern Debian system you first need to identify the address (in my case 0x2e4bd5d28) and the extent of bytes you want to reserve. In my case, only 1 bit is wrong in an access of 32-bit, so we will want to ignore at least 4 bytes.
+</p>
+
+<p>
+Now modify the file <code>/etc/default/grub</code> and modify the variable <code>GRUB_CMDLINE_LINUX_DEFAULT</code> to include a memmap parameter of this form <code>memmap=bytes$address</code>. Because this file is processed as a script we need to escape two times, so the syntax will be <code>memmap=bytes\\\$address</code>. In my case my Linux command line looks like this:
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">GRUB_CMDLINE_LINUX_DEFAULT</span><span class="o">=</span><span class="s2">"quiet memmap=0x4</span><span class="se">\\\$</span><span class="s2">0x2e4bd5d28"</span></code></pre></figure>
+
+
+<p>
+Now run <code>update-grub</code> to update grub, and restart.
+</p>
+
+<p>
+To check if it works just check the output of <code>dmesg</code>. At the beginning the Linux kernel prints the memory map, mine includes a line like this.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">...
+[    0.000000] user: [mem 0x0000000100000000-0x00000002e4bd5d27] usable
+[    0.000000] user: [mem 0x00000002e4bd5d28-0x00000002e4bd5d2c] reserved
+[    0.000000] user: [mem 0x00000002e4bd5d2d-0x000000043f5fffff] usable
+...</code></pre></figure>
+
+
+<p>
+That reserved block is precisely the address I don't want Linux to use as memory.
+</p>
+
+<p>
+After this change, now I can build LLVM without weird internal compiler errors. Yay!
+</p>
+
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/05/29/exploring-aarch64-assembler-chapter-8/">&laquo; Exploring AArch64 assembler – Chapter 8</a>
+
+
+  <a class="next" href="/2017/06/15/10-years-geek/">10 years of Think In Geek &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Creating and testing a Linked List based Queue in C# using Nunit</title>
+  <meta name="description" content="The Queue&amp;lt;T&amp;gt; class (and Stack&amp;lt;T&amp;gt; too) of the .NET Framework from Microsoft is implemented using an array. While this is a perfectly good approach, I think that a Linked List based implementation could be desired in some situations (specifically when the size of the queue is not fixed). Since the implementation alone would be rather simple for a post, I’ll show you how to implement Unit Testing with the class using Nunit. Although this is a rather simple class to test I think it will show the basic concepts behind unit testing.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2009/07/09/creating-and-testing-a-linked-list-based-queue-in-c-using-nunit/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Creating and testing a Linked List based Queue in C# using Nunit">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2009/07/09/creating-and-testing-a-linked-list-based-queue-in-c-using-nunit/">
+  <meta property="og:description" content="The Queue&amp;lt;T&amp;gt; class (and Stack&amp;lt;T&amp;gt; too) of the .NET Framework from Microsoft is implemented using an array. While this is a perfectly good approach, I think that a Linked List based implementation could be desired in some situations (specifically when the size of the queue is not fixed). Since the implementation alone would be rather simple for a post, I’ll show you how to implement Unit Testing with the class using Nunit. Although this is a rather simple class to test I think it will show the basic concepts behind unit testing.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Creating and testing a Linked List based Queue in C# using Nunit">
+  <meta name="twitter:description" content="The Queue&amp;lt;T&amp;gt; class (and Stack&amp;lt;T&amp;gt; too) of the .NET Framework from Microsoft is implemented using an array. While this is a perfectly good approach, I think that a Linked ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Creating and testing a Linked List based Queue in C# using Nunit</h1>
+    
+    <p class="post-meta"><time datetime="2009-07-09T17:23:22+00:00" itemprop="datePublished">Jul 9, 2009</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/c/">c#</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/nunit/">nunit</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/unit-testing/">unit testing</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>The <a href="http://msdn.microsoft.com/en-us/library/7977ey2c.aspx">Queue&lt;T&gt;</a> class (and <a href="http://msdn.microsoft.com/en-us/library/3278tedw.aspx">Stack&lt;T&gt;</a> too) of the .NET Framework from Microsoft is implemented using an array. While this is a perfectly good approach, I think that a <a href="http://en.wikipedia.org/wiki/Linked_list">Linked List</a> based implementation could be desired in some situations (specifically when the size of the queue is not fixed).</p>
+
+<p>Since the implementation alone would be rather simple for a post, I’ll show you how to implement <a href="http://en.wikipedia.org/wiki/Unit_testing">Unit Testing</a> with the class using <a href="http://www.nunit.org/">Nunit</a>. Although this is a rather simple class to test I think it will show the basic concepts behind unit testing.
+<!--more-->
+First of all let’s begin with the interface of the class. We will call it <em>LinkedListQueue&lt;T&gt;</em>. We basically need the typical operations of a queue.</p>
+
+<p>The interface (without the implementation) is going to be something similar to this:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">LinkedListQueue</span>
+<span class="p">{</span>
+
+    <span class="err">#</span><span class="n">region</span> <span class="n">LinkedListQueue</span> <span class="n">Members</span>
+
+    <span class="k">public</span> <span class="n">T</span> <span class="nf">Dequeue</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">System</span><span class="p">.</span><span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">Enqueue</span><span class="p">(</span><span class="n">T</span> <span class="n">item</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">System</span><span class="p">.</span><span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="n">T</span> <span class="nf">Peek</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">System</span><span class="p">.</span><span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">Clear</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="n">System</span><span class="p">.</span><span class="nf">NotImplementedException</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="kt">int</span> <span class="n">Count</span>
+    <span class="p">{</span>
+        <span class="k">get</span> <span class="p">{</span> <span class="k">throw</span> <span class="k">new</span> <span class="n">System</span><span class="p">.</span><span class="nf">NotImplementedException</span><span class="p">();</span> <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="err">#</span><span class="n">endregion</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The thing about unit testing is to first write the different tests so we know <strong>what we want to test</strong> and then we have to write the code so the tests are passed. Following this convention, now is the time to write some tests using Nunit. To do so, we have to create a new project of type <em>Class Library</em> in Visual Studio (we could have the tests on the same code but it’s better to have it separately so we don’t bloat the real production code). For more information about how to install and set up Nunit I suggest you visit <a href="http://www.nunit.org/">the site</a> for more information. I called the project <em>LinkedListQueueTest</em></p>
+
+<p>Once we have the code, we can start writing tests in a special class which will have this modifier:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="p">[</span><span class="n">TestFixture</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">LinkedListQueueTest</span>
+<span class="p">{}</span></code></pre></figure>
+
+<p>Inside this class we have to write one method for each test we want to perform. It’s usually a good practice to have one test per method on the class you’re testing. In our case, we will begin testing the <em>Enqueue</em> method. To mark a method as a test, we have to add a modifier to it like this:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">void</span> <span class="nf">Dequeue</span><span class="p">()</span>
+<span class="p">{}</span></code></pre></figure>
+
+<p>And in the body of the method, we have to perform the test we need. Usually the tests have a structure: creating an object on which to test, executing the method, and confirm that the result is the same as we expected. Let’s do a simple code for our test:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+<span class="k">public</span> <span class="k">void</span> <span class="nf">Dequeue</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">LinkedListQueue</span> <span class="n">queue</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">LinkedListQueue</span><span class="p">();</span>
+    <span class="c1">//We enqueue some items to test</span>
+    <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+    <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+    <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">3</span><span class="p">);</span>
+    <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">4</span><span class="p">);</span>
+    <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">5</span><span class="p">);</span>
+    <span class="c1">//For each number enqueued we check that is removed properly and in the</span>
+    <span class="c1">//queue order (FIFO)</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">1</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">2</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">3</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">2</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">4</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">5</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+    <span class="n">Assert</span><span class="p">.</span><span class="nf">Throws</span><span class="p">(</span>
+        <span class="k">delegate</span>
+        <span class="p">{</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>I suggest you read the Nunit documentation to see the different assertions you have available.</p>
+
+<p>Now that we wrote our first test, we should start thinking and writing the rest of the tests. To simplify the post, here’s a full class showing some tests that you may have wanted to perform:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Collections.Generic</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Text</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">NUnit.Framework</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="nn">ThinkInGeek.Collections.Generic.Testing</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="n">TestFixture</span><span class="p">]</span>
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">LinkedListQueueTest</span>
+    <span class="p">{</span>
+        <span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Dequeue</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">LinkedListQueue</span> <span class="n">queue</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">LinkedListQueue</span><span class="p">();</span>
+            <span class="c1">//We enqueue some items to test</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">3</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">4</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">5</span><span class="p">);</span>
+            <span class="c1">//For each number enqueued we check that is removed properly and in the</span>
+            <span class="c1">//queue order (FIFO)</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">1</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">2</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">3</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">2</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">4</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">(),</span> <span class="m">5</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">Throws</span><span class="p">(</span>
+                <span class="k">delegate</span>
+                <span class="p">{</span>
+                    <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+                <span class="p">}</span>
+            <span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Enqueue</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">LinkedListQueue</span> <span class="n">queue</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">LinkedListQueue</span><span class="p">();</span>
+            <span class="c1">//We enqueue some items to test and check that the items are inserted correctly</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">2</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">3</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">4</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">5</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">5</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Peek</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">LinkedListQueue</span> <span class="n">queue</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">LinkedListQueue</span><span class="p">();</span>
+            <span class="c1">//We enqueue some items to test</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">3</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">4</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">5</span><span class="p">);</span>
+            <span class="c1">//We check that after a peeking we have the correct value but the item</span>
+            <span class="c1">//is not deleted</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Peek</span><span class="p">(),</span> <span class="m">1</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">5</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Peek</span><span class="p">(),</span> <span class="m">2</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Peek</span><span class="p">(),</span> <span class="m">3</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Peek</span><span class="p">(),</span> <span class="m">4</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">2</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Peek</span><span class="p">(),</span> <span class="m">5</span><span class="p">);</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">1</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Dequeue</span><span class="p">();</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">Throws</span><span class="p">(</span>
+                <span class="k">delegate</span>
+                <span class="p">{</span>
+                    <span class="n">queue</span><span class="p">.</span><span class="nf">Peek</span><span class="p">();</span>
+                <span class="p">}</span>
+            <span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="p">[</span><span class="n">Test</span><span class="p">]</span>
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Clear</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">LinkedListQueue</span> <span class="n">queue</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">LinkedListQueue</span><span class="p">();</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">3</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">4</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Enqueue</span><span class="p">(</span><span class="m">5</span><span class="p">);</span>
+            <span class="n">queue</span><span class="p">.</span><span class="nf">Clear</span><span class="p">();</span>
+            <span class="n">Assert</span><span class="p">.</span><span class="nf">AreEqual</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="n">Count</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>To see how our test behave, we have to open the resulting <em>LinkedListQueueTest.dll</em> in the Nunit tester program. As we have written no real code on the queue class, it’s obvious that our tests will fail. So let’s get our hands dirty and start programming our queue.</p>
+
+<p>I will not go into the details because a linked list based queue is really easy to implement, so here’s the final code of the class:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="nn">ThinkInGeek.Collections.Generic</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">LinkedListQueue</span>
+    <span class="p">{</span>
+        <span class="err">#</span><span class="n">region</span> <span class="n">Node</span> <span class="n">inner</span> <span class="k">class</span>
+
+        <span class="nc">public</span> <span class="k">class</span> <span class="nc">Node</span>
+        <span class="p">{</span>
+            <span class="k">public</span> <span class="n">K</span> <span class="n">Element</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+            <span class="k">public</span> <span class="n">Node</span> <span class="n">NextElement</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+        <span class="p">}</span>
+
+        <span class="err">#</span><span class="n">endregion</span>
+
+        <span class="err">#</span><span class="n">region</span> <span class="n">Private</span> <span class="n">members</span>
+
+        <span class="k">private</span> <span class="kt">int</span> <span class="n">m_count</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+        <span class="k">private</span> <span class="n">Node</span> <span class="n">m_head</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+        <span class="k">private</span> <span class="n">Node</span> <span class="n">m_tail</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+
+        <span class="err">#</span><span class="n">endregion</span>
+
+        <span class="k">public</span> <span class="n">T</span> <span class="nf">Dequeue</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">m_head</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nf">InvalidOperationException</span><span class="p">();</span>
+            <span class="p">}</span>
+            <span class="c1">//We have to return the item on the head and update the new head</span>
+            <span class="n">T</span> <span class="n">currentItem</span> <span class="p">=</span> <span class="n">m_head</span><span class="p">.</span><span class="n">Element</span><span class="p">;</span>
+            <span class="n">m_head</span> <span class="p">=</span> <span class="n">m_head</span><span class="p">.</span><span class="n">NextElement</span><span class="p">;</span>
+            <span class="n">m_count</span><span class="p">--;</span>
+            <span class="k">return</span> <span class="n">currentItem</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Enqueue</span><span class="p">(</span><span class="n">T</span> <span class="n">item</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="c1">//We need to add the item and update the tail</span>
+            <span class="n">Node</span> <span class="n">newNode</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Node</span><span class="p">();</span>
+            <span class="n">newNode</span><span class="p">.</span><span class="n">Element</span> <span class="p">=</span> <span class="n">item</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">m_tail</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">m_tail</span><span class="p">.</span><span class="n">NextElement</span> <span class="p">=</span> <span class="n">newNode</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="n">m_tail</span> <span class="p">=</span> <span class="n">newNode</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">m_head</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">m_head</span> <span class="p">=</span> <span class="n">newNode</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="n">m_count</span><span class="p">++;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="n">T</span> <span class="nf">Peek</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">m_head</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">throw</span> <span class="k">new</span> <span class="nf">InvalidOperationException</span><span class="p">();</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">m_head</span><span class="p">.</span><span class="n">Element</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">Clear</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="n">m_head</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+            <span class="n">m_tail</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+            <span class="n">m_count</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">public</span> <span class="kt">int</span> <span class="n">Count</span>
+        <span class="p">{</span>
+            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">m_count</span><span class="p">;</span> <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The advantage of unit testing is that now the testing is going to be done automatically. The only thing we have to do is open the testing dll file into Nunit and see how’s the outcome. As we’re really good programmers, using the code I showed you, all the tests will pass :)</p>
+
+<p><a href="/wp-content/uploads/2009/07/unittesting.png"><img class="size-medium wp-image-115" title="UnitTesting" src="/wp-content/uploads/2009/07/unittesting-300x228.png" alt="Unit Testing results window" width="300" height="227" /></a></p>
+
+<p>This is a really simple example of how things should be done with unit testing using C# and Nunit, but I hope it can get you started and you can grasp the philosophy of it. For more information I really recommend reading the book <a href="http://www.amazon.com/Pragmatic-Unit-Testing-NUnit-2nd/dp/0977616673/ref=sr_1_1?ie=UTF8&amp;s=books&amp;qid=1247156448&amp;sr=8-1">Pragmatic Unit Testing in C# with NUnit</a>.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2009/06/08/disabling-updatepanels-when-an-asynchronous-postback-is-done/">&laquo; Disabling UpdatePanels when an asynchronous postback in progress</a>
+
+
+  <a class="next" href="/2009/10/12/c-the-and-operators-and-lazy-evaluation/">C#, the "and" operators and lazy evaluation &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

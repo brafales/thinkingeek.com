@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Compilation of array expressions in Fortran</title>
+  <meta name="description" content="As I stated in my previous post, Fortran 90 improved the array capabilities of Fortran. Today we will discuss what are the challenges when compiling array expressions.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/02/25/compilation-array-expressions-fortran/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Compilation of array expressions in Fortran">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/02/25/compilation-array-expressions-fortran/">
+  <meta property="og:description" content="As I stated in my previous post, Fortran 90 improved the array capabilities of Fortran. Today we will discuss what are the challenges when compiling array expressions.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Compilation of array expressions in Fortran">
+  <meta name="twitter:description" content="As I stated in my previous post, Fortran 90 improved the array capabilities of Fortran. Today we will discuss what are the challenges when compiling array expressions.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Compilation of array expressions in Fortran</h1>
+    
+    <p class="post-meta"><time datetime="2017-02-25T23:52:12+00:00" itemprop="datePublished">Feb 25, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/fortran/">Fortran</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>As I stated in my previous post, Fortran 90 improved the array capabilities of Fortran. Today we will discuss what are the challenges when compiling array expressions.</p>
+
+<!--more-->
+<h2>Array expressions</h2>
+<p>A new feature of Fortran 90 is the possibility of expressing array-wise calculations. So it is possible to do this.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">REAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="w">
+ </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span><span class="w">
+ </span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">2.0</span><span class="w">
+ </span><span class="n">C</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span></code></pre></figure>
+
+<p>The first two assignments are correct because Fortran 90 allows promoting (<em>conforming</em> in the Standard parlance) a scalar to an array of some rank. So they set all the N elements of A and B to 1 and 2 respectively.</p>
+
+<p>The third assignment is maybe more interesting. <code>C</code> is assigned the sum of the N elements of A and B. So each <code>C(I)</code> will have the value of <code>A(I) + B(I)</code>.</p>
+
+<p>Not only intrinsic operations can be used in the context of an array expressions. A procedure (i.e. a function or subroutine) that is <code>ELEMENTAL</code> can be called with array arguments, all of the same rank or promoteable to it. If the procedure is a function, it will return an array as well. Many intrinsics are defined as ELEMENTAL and the user can define new ELEMENTAL functions. There are a few reasonable restrictions for ELEMENTAL functions: their arguments and return must be scalars and should not have side effects, so they can be coherently extended to any rank and the order of application of the function should not be relevant. Used judiciously, this can end in very compact and expressive code.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">SAD</span><span class="w">
+ </span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="nb">ANY</span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">))</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+   </span><span class="k">PRINT</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"Some value in A is different to the corresponding in B"</span><span class="w">
+ </span><span class="k">END</span><span class="w"> </span><span class="k">IF</span><span class="w">
+ </span><span class="c1">! Sum of absolute differences</span><span class="w">
+ </span><span class="n">SAD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">SUM</span><span class="p">(</span><span class="nb">ABS</span><span class="p">(</span><span class="n">A</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">B</span><span class="p">))</span></code></pre></figure>
+
+<p>In the examples above the arrays have rank 1, but nothing prevents to use this for arrays of higher rank. Note though, that a lower-ranked array is not conformed to a higher-ranked array, only scalars can be conformed this way. This means that all arrays involved in the array expression will always have the same rank. Not only this, they must have the same <code>SIZE</code> for each rank. This means that the number of elements of each rank should match.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">REAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">M1</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">),</span><span class="w"> </span><span class="n">M2</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">),</span><span class="w"> </span><span class="n">M3</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">)</span><span class="w">
+ </span><span class="c1">! Addition of two matrices </span><span class="w">
+ </span><span class="n">M3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">M1</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">M2</span></code></pre></figure>
+
+<p>Also array sections can be used liberally in the expression as long as the sizes of the ranks match.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="w">
+
+ </span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="mi">-1</span><span class="p">)</span><span class="w">
+  </span><span class="c1">! Reverses A</span><span class="w">
+
+ </span><span class="n">C</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">5</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">-1</span><span class="p">)</span><span class="w">
+  </span><span class="c1">! Does</span><span class="w">
+  </span><span class="c1">!   C(1) = A(3) + B(5)</span><span class="w">
+  </span><span class="c1">!   C(2) = A(4) + B(4)</span><span class="w">
+
+ </span><span class="n">C</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">5</span><span class="p">:</span><span class="mi">4</span><span class="p">:</span><span class="mi">-1</span><span class="p">)</span><span class="w">
+  </span><span class="c1">! Does</span><span class="w">
+  </span><span class="c1">!   C(1) = A(3) + B(5)</span><span class="w">
+  </span><span class="c1">!   C(3) = A(7) + B(4)</span></code></pre></figure>
+
+<p>Finally all this can be applied to pointers as well.</p>
+<h2>Compiling array expressions</h2>
+<p>Seems obvious at first that an array expression like</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span></code></pre></figure>
+
+<p>should be ideally compiled as something like</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>And functionally we want something like that, except that it does not always work. If you check the example above where we reversed an array doing <code>A = A(N:1:-1)</code> because doing</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>is simply wrong.</p>
+
+<p>A way that will always work will be doing first the right hand side of the assignment and keeping it into a temporary, and then move from the temporary to the left hand side. Retaking <code>A = B + C</code> a way could be</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>Which looks wasteful. First because given that the sizes of the rank will match, the two loops will do the same number of iterations for each operand and operation. So we might want to compile this like:</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>This, though, still looks off, basically because in this case we do not need <code>TMP</code> at all.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>This is exactly our intuitive first approach.</p>
+
+<p>Unfortunately this is not always correct. In the reversal of the array, though, we cannot fuse the two loops.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>Note also that this way of reversing an array is rather uninspired as it would be enough iterating up to <code>N/2</code> and then just doing <code>A(I) = A(N - I + 1)</code>.</p>
+<h3>Dependencies</h3>
+<p>We have seen that we may need to introduce a temporary in order to evaluate the right hand side of an array assignment. The question is, can we avoid this and directly write to the result? We have seen that there are cases where this is feasible, can we tell which ones?</p>
+
+<p>Removing <code>TMP</code> means that we will update each element of the left hand side. This is OK as long nothing in the right hand side must evaluate to any of the values written in the right hand side. That would create a dependence and we cannot violate them.</p>
+
+<p>Dependences between array accesses depend on two elements: first the array object subscripted. If the two array objects are clearly different there will never be any dependence.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+ </span><span class="n">C</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="w">   </span><span class="c1">! No dependencies as A, B and C</span><span class="w">
+             </span><span class="c1">! are different arrays.</span></code></pre></figure>
+
+<p>If the two objects are the same, or can potentially be the same (more on this below), then there may be a potential dependency. A conservative and fast (in compilation time) is assume that in this case the dependence exists. This may be overly conservative but makes for a simple implementation.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+</span><span class="n">A</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="n">A</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span><span class="w">   </span><span class="c1">! (*)</span><span class="w">
+
+</span><span class="n">B</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="n">B</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">)</span><span class="w">   </span><span class="c1">! (**)</span></code></pre></figure>
+
+<p>While this is simple approach is safe there is still some room for improvement. If you check the assignment in <code>(*)</code>, we are in practice doing <code>A(I) = A(I) + A(I+1)</code>, with <code>I = 1..5</code>. This means that it there is no dependence between <code>A(I)</code> and <code>A(I+1)</code>. Compare this case with the assignment in <code>(**)</code>. Here in practice we are doing <code>B(I) = B(I) + B(I-1)</code> with <code>I = 2..6</code>. This second case would be reading a value already updated in an earlier iteration. But, note that if instead of <code>I = 2..6</code> we do <code>I = 6..2</code> this would work!</p>
+
+<p>So if the two objects may potentially be the same, we still may want to analyze the indexes because the regions of the array are updated in an order that does not violate dependences. This kind of dependency based optimizations have been extensively studied in the textbook by <a href="https://www.amazon.com/Optimizing-Compilers-Modern-Architectures-Dependence-based/dp/1558602860">Allen and Kennedy</a>. We will not discuss them here, just let’s get the idea that these loop optimizations are useful in this case.</p>
+<h3>Aliasing</h3>
+<p>Before we attempt to analyze the indexes we may want to tell if two objects may refer to the same data in memory. When two names can refer the same data we say that they alias. Fortran makes relatively easy to tell when two objects may or may not alias. We use “may” here because in some times we need to assume they may alias even if they do not in practice. We may not have enough information at this point.</p>
+
+<p>Given two names, they obviously may alias if they have the same name. If they have different names and neither is a <code>POINTER</code> then they do not alias unless both appear in the same <code>EQUIVALENCE</code> set. If only one is <code>POINTER</code> and the other cannot be a <code>TARGET</code> of the pointer, then they do not alias. Otherwise we have to assume they may alias. This includes cases where we operate two <code>POINTER</code>s or a <code>POINTER</code> and a potential <code>TARGET</code> of the first.</p>
+
+<p>An important feature of Fortran is that parameters that are not <code>POINTER</code> never alias with other parameters. This is also valid for arrays.</p>
+<h2>More complicated expressions</h2>
+<p>An array assignment can be more complicated but only in the right hand side. The left hand side is more or less regular in practical terms. For instance consider</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+
+</span><span class="n">D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">B</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span></code></pre></figure>
+
+<p>Note that now we have two subexpressions, the one with T ← A * B and the one with T + C. But this is where the complexity ends. Due to the nature of the right hand side, which cannot have side-effects to the existing variables, it is safe to reuse T all the time. Like this.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">D</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>Note that we may be tempted to scalarize the <code>TMP(I)</code> variable and this would be possible in the case above.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">TMP</span><span class="w">
+
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+  </span><span class="n">TMP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">TMP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">D</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<p>Again, though, we already know this is not something that can be done in general.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+
+</span><span class="n">D</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">B</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">1</span><span class="p">:</span><span class="mi">-1</span><span class="p">)</span></code></pre></figure>
+
+<p>Here we are forced to evaluate the whole <code>D(10:1:-1)</code> first.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+</span><span class="kt">INTEGER</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="w"> </span><span class="n">TMP2</span><span class="w">
+
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">D</span><span class="p">(</span><span class="mi">11</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="w">
+  </span><span class="n">TMP2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">TMP2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">C</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">TMP2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+  </span><span class="n">D</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TMP2</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span></code></pre></figure>
+
+<h2>Non-assignment array expressions</h2>
+<p>If the array expression does not involve any assignment, some of the complexity is simplified. For instance in the expression above <code>ANY(A /= B)</code> this can be modeled as an assignment to a temporary. That temporary does not alias with any other variable, so this can be implemented with a single loop, even in the presence of complex array sections.</p>
+
+<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><span class="kt">LOGICAL</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">TMP</span><span class="p">(</span><span class="n">N</span><span class="p">),</span><span class="w"> </span><span class="n">TMP2</span><span class="w">
+</span><span class="k">DO</span><span class="w"> </span><span class="n">I</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w">
+  </span><span class="n">TMP</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="o">=</span><span class="w"> </span><span class="n">B</span><span class="p">(</span><span class="n">I</span><span class="p">)</span><span class="w">
+</span><span class="k">END</span><span class="w"> </span><span class="k">DO</span><span class="w">
+</span><span class="n">TMP2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">ANY</span><span class="p">(</span><span class="n">TMP</span><span class="p">)</span><span class="w">
+</span><span class="k">IF</span><span class="w"> </span><span class="p">(</span><span class="n">TMP2</span><span class="p">)</span><span class="w"> </span><span class="k">THEN</span><span class="w">
+  </span><span class="err">...</span></code></pre></figure>
+
+<p>Who says that Fortran is not an interesting language for compilers? :)</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/01/14/gfortran-array-descriptor/">&laquo; Introduction to the gfortran array descriptor</a>
+
+
+  <a class="next" href="/2017/03/19/exploring-aarch64-assembler-chapter-7/">Exploring AArch64 assembler – Chapter 7 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

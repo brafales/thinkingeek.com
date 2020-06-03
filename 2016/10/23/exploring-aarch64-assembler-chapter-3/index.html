@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Exploring AArch64 assembler – Chapter 3</title>
+  <meta name="description" content="In the last chapter we saw that instructions may have register operands and immediate operands. We also mentioned that mixing 32-bit and 64-bit register was not allowed. Today we will talk a bit more about register operands.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/10/23/exploring-aarch64-assembler-chapter-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Exploring AArch64 assembler – Chapter 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/10/23/exploring-aarch64-assembler-chapter-3/">
+  <meta property="og:description" content="In the last chapter we saw that instructions may have register operands and immediate operands. We also mentioned that mixing 32-bit and 64-bit register was not allowed. Today we will talk a bit more about register operands.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Exploring AArch64 assembler – Chapter 3">
+  <meta name="twitter:description" content="In the last chapter we saw that instructions may have register operands and immediate operands. We also mentioned that mixing 32-bit and 64-bit register was not allowed. Today we will talk a bit mo...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Exploring AArch64 assembler – Chapter 3</h1>
+    
+    <p class="post-meta"><time datetime="2016-10-23T14:08:10+00:00" itemprop="datePublished">Oct 23, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/aarch64/">AArch64</a>
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In the last chapter we saw that instructions may have register operands and immediate operands. We also mentioned that mixing 32-bit and 64-bit register was not allowed. Today we will talk a bit more about register operands.
+</p>
+
+<!--more-->
+
+<h2>Operators for register operands</h2>
+
+<p>
+Many instructions that take a register as the second source operand of an instruction can also apply some extra operation to the value of that source register. This can be used as a way to increase density of computation by requiring less instructions and also to allow some common operations, e.g. conversions, in one of the operands.
+</p>
+
+<p>
+We can distinguish two kinds of operators here: shifting operators and extending operators.
+</p>
+
+<h3>Shifting operators</h3>
+<p>
+There are three shifting operators in AArch64: LSL, LSR, ASR and ROR. Their syntax is as follows:
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">reg, LSL, #amount
+reg, LSR, #amount
+reg, ASR, #amount
+reg, ROR, #amount</code></pre></figure>
+
+<p>
+where <code>reg</code> can be a 64-bit register <code>Xn</code> or a 32-bit register <code>Wn</code> and <code>amount</code> is a number whose range depends on the register used and ranges from 0 to 31 for 32-bit registers and from 0 to 63 for 64-bit registers.
+</p>
+
+<p>
+Operator <code>LSL</code> performs a <strong>l</strong>ogical <strong>s</strong>hift <strong>l</strong>eft to the value in <code>reg</code> (it does not change the contents of <code>reg</code> though). Shifting <em>n</em> bits to the left means introducing <code>n</code> zeros as the least significant bits and discarding <code>n</code> most significant bits from the original value. Shifting left n-bits is equivalent to multiply to 2<sup>n&lt;/n&gt;.
+&lt;/p&gt;
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add r1, r2, r3, LSL #4 /* r1 ← r2 + (r3 &lt;&lt; 4)
+                          this is the same as
+                          r1 ← r2 + r3 * 16 */
+add r0, r0, r0, LSL #2  /* r0  ← r0 + r0 &lt;&lt; 2
+                           this is the same as
+                           r0 ← r0 + r0 * 4
+                           which happens to be the same as
+                           r0 ← r0 * 5
+                           assuming no overflow happens
+                         */</code></pre></figure>
+
+
+<p>
+Operator LSR performs a <strong>l</strong>ogical <strong>s</strong>hift <strong>r</strong>ight. This operation is the dual of LSL, but zeros are introduced in the <em>n</em> most significant bits and the <em>n</em> least significant bits are discarded. For unsigned arithmetic numbers, this operation is equivalent to division by 2<sup>n</sup>.
+</p>
+
+<p>
+Operator ASR performs an <strong>a</strong>rithmetic <strong>s</strong>hift <strong>r</strong>ight. This is like LSR but instead of introducing zeros in the <em>n</em> most significant bits the most significant bit is replicated <em>n</em> times in the <em>n</em> most significant bits. As in LSR, the <em>n</em> least significant bits are discarded. If the most significant bit of the register is zero, ASR is equivalent to LSR. This shift operator is useful for two's complement numbers as it propagates the sign bit (which would be the most significant bit in the register if interpreted as a binary number) and it can be used for dividing by 2<sup>n</sup> negative numbers as well. A LSR on a two's complement negative number does not make sense for the purpose of a division.
+</p>
+
+<p>
+Operator ROR performs a <strong>ro</strong>tate <strong>r</strong>ight of the register. This is commonly used for cryptography and its usage is less usual than the other shifting operands. A rotation is similar to LSR but rather than dropping bits and introducing zeros, the least signficant bits that would be dropped are introduced as the most significant bits. There is no rotate left because a rotate right can be used for this: just rotate all bits minus the number of steps we want to rotate to the left.
+</p>
+
+<p>
+In AArch64 only a few instructions (mainly logical ones) can use the ROR shifting operator.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov w2, #0x1234            // w2 ← 0x1234
+mov w1, wzr                // w1 ← 0
+orr w0, w1, w2, ROR #4     // w0 ← BitwiseOr(w1, RotateRight(w2, 4))
+                           // this sets w0 to 0x40000123
+orr w0, w1, w2, ROR #28    // w0 ← BitwiseOr(w1, RotateRight(w2, 32-4))
+                           // this is in practice like RotateLeft(w2, 4)
+                           // so this sets w0 to 0x12340</code></pre></figure>
+
+
+<h3>Extending operators</h3>
+
+<p>
+Extending operators main purpose is to widen a narrower value found in a register to match the number of bits for the operation. An extending operator is of the form <em>k</em><code>xt</code><em>w</em>, where <em>k</em> is the kind of integer we want to widen and <em>w</em> is the width of the narrow value. For the former, the kind of integer can be <code>U</code> (unsigned) or <code>S</code> (signed, i.e. two's complement). For the latter the width can be <code>B</code>, <code>H</code> or <code>W</code> which means respectively <strong>b</strong>yte (least 8 significant bits of the register), <strong>h</strong>alf-word (least 16 significant bits of the register) or <strong>w</strong>ord (least significant 32 bits of the register).
+</p>
+
+<p>
+This means that the extending operators are <code>uxtb</code>, <code>sxtb</code>, <code>uxth</code>, <code>sxth</code>, <code>uxtw</code>, <code>sxtw</code>.
+</p>
+
+<p>
+These operators exist because sometimes we have to <em>lift</em> the range of the source value from a smaller bit width to a bigger one. In later chapters we will see many cases where this happens. For instance, it may happen that we need to add a 32-bit register to a 64-bit register. If both registers represent two's complement integers then
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add x0, x1, w2, sxtw  // x0 ← x1 + ExtendSigned32To64(w2)</code></pre></figure>
+
+
+<p>
+There is some kind of context that has to be taken into account when using these extension operators. For instance, the two instructions below have slight different meanings:
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add x0, x1, w2, sxtb // x0 ← x1 + ExtendSigned8To64(w2)
+add w0, w1, w2, sxtb // w0 ← w1 + ExtendSigned8To32(w2)</code></pre></figure>
+
+
+<p>
+In both cases the least significant 8 bits of <code>w2</code> are extended but in the first case they are extended to 64 bit and in the second case to 32-bit. 
+</p>
+
+<h4>Extension and shift</h4>
+
+<p>
+It is possible to extend a value and then shift it left 1, 2, 3 or 4 bits by specifying an amount after the extension operator. For instance
+<p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov x0, #0                // x0 ← 0
+mov x1, #0x1234           // x0 ← 0x1234
+add x2, x0, x1, sxtw #1   // x2 ← x0 + (ExtendSigned16To64(x1) &lt;&lt; 1)
+                          // this sets x2 to 0x2468
+add x2, x0, x1, sxtw #2   // x2 ← x0 + (ExtendSigned16To64(x1) &lt;&lt; 2)
+                          // this sets x2 to 0x48d0
+add x2, x0, x1, sxtw #3   // x2 ← x0 + (ExtendSigned16To64(x1) &lt;&lt; 3)
+                          // this sets x2 to 0x91a0
+add x2, x0, x1, sxtw #4   // x2 ← x0 + (ExtendSigned16To64(x1) &lt;&lt; 4)
+                          // this sets x2 to 0x12340</code></pre></figure>
+
+
+<p>
+This may seem a bit odd and arbitrary at this point but in later chapters we will see that this is actually useful in many cases.
+</p>
+
+<p>
+This is all for today.
+</p>
+</p></p></sup></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/10/08/exploring-aarch64-assembler-chapter-2/">&laquo; Exploring AArch64 assembler – Chapter 2</a>
+
+
+  <a class="next" href="/2016/10/23/exploring-aarch64-assembler-chapter-4/">Exploring AArch64 assembler – Chapter 4 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

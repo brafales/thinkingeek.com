@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>ARM assembler in Raspberry Pi – Chapter 18</title>
+  <meta name="description" content="In this chapter we will delve a bit more into the stack.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2014/05/11/arm-assembler-raspberry-pi-chapter-18/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="ARM assembler in Raspberry Pi – Chapter 18">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2014/05/11/arm-assembler-raspberry-pi-chapter-18/">
+  <meta property="og:description" content="In this chapter we will delve a bit more into the stack.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="ARM assembler in Raspberry Pi – Chapter 18">
+  <meta name="twitter:description" content="In this chapter we will delve a bit more into the stack.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">ARM assembler in Raspberry Pi – Chapter 18</h1>
+    
+    <p class="post-meta"><time datetime="2014-05-11T22:21:58+00:00" itemprop="datePublished">May 11, 2014</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/raspberry-pi/">Raspberry Pi</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In this chapter we will delve a bit more into the stack.
+</p>
+<!--more-->
+
+<h2>Local data</h2>
+
+<p>
+Most of our examples involving data stored in memory (in contrast to data stored in registers) have used <em>global</em> variables. Global variables are global names, i.e. addresses of the memory that we use through labels. These addresses, somehow, pre-exist before the program runs. This is because we define them when defining the program itself.
+</p>
+
+<p>
+Sometimes, though, we may want data stored in memory the existence of which is not tied to the program existence but to the dynamic activation of a function. You may recall from previous chapters, that the stack allows us to store data the lifetime of which is the same as the dynamic activation of a function. This is where we will store <em>local</em> variables, which in contrast to global variables, only exist because the function they belong has been dynamically activated (i.e. called/invoked).
+</p>
+
+<p>
+In chapter 17 we passed a very big array through the stack in order to pass the array by value. This will lead us to the conclusion that, somehow, parameters act as local data, in particular when they are passed through the stack.
+</p>
+
+<h2>The frame pointer</h2>
+<p>
+In ARM, we have plenty of general-purpose registers (up to 16, albeit some of them with very narrow semantics, so actually about 12 are actually useable as general-purpose) and the AAPCS forces us to use registers for the 4 first parameters (<code>r0</code> to <code>r3</code>, note how this is consistent with the fact that these 4 registers are caller-saved while all other registers are callee-saved). Other architectures, like 386, have a lower number of general purpose registers (about 6) and the usual approach when passing data to functions always involves the stack. This is so because with such a small number of registers, passing parameters through registers, would force the caller to save them, usually in the stack or some other memory, which in turn will usually require at least another register for indexing! By using the stack a few more registers are easily available.
+</p>
+<p>
+Up to this point one might wonder why we don't always pass everything through the stack and forget about registers <code>r0</code> to <code>r3</code>. Well, passing through registers is going to be faster as we do not have to mess with loads and stores in the memory. In addition, most functions receive just a few parameters, or at least not much more than 4, so it makes sense to exploit this feature.
+</p>
+<p>
+But then a problem arises, what if we are passing parameters through the stack and at the same time we have local variables. Both entities will be stored in the stack. How can we deal with the two sources of data which happen to be stored in the same memory area?
+</p>
+<p>
+Here is where the concept of <em>frame pointer</em> appears. A frame pointer is a sort of marker in the stack that we will use to tell apart local variables from parameters. I want to emphasize the fact that a frame register is almost always unnecessary and one can always devise ways to avoid it. That said, a frame pointer gives us a consistent solution to access local data and parameters in the stack. Of course, most good things come with a price, and the frame pointer is not an exception: we need to use a register for it. Sometimes this restriction may be unacceptable so we can, almost always, get rid of the frame pointer.
+</p>
+<p>
+Due to its optional nature, the frame pointer is not specified nor mandated by the AAPCS. That said, the usual approach is using register <code>r11</code>. As an extension (apparently undocumented, as far as I have been able to tell) we can use the name <code>fp</code> which is far more informative than just <code>r11</code>. Nothing enforces this choice, we can use any other register as frame pointer. Since we will use <code>fp</code> (i.e. <code>r11</code>) we will have to refrain ourselves from using <code>r11</code> for any other purpose.
+</p>
+
+<h3>Dynamic link of the activation record</h3>
+
+<p>
+&lt;/em&gt;Activation record&lt;/em&gt; is a fancy name to specify the context of a called function. This is, the local data and parameters (if passed through the stack) of that function. When a function is written using a frame pointer some bookkeeping is required to correctly maintain the activation record.
+</p>
+
+<p>
+First lets examine the typical structure of a function.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre>function:
+  /* Keep callee-saved registers */
+  push {r4, lr} /* Keep the callee saved registers */
+  ... /* code of the function */
+  pop {r4, lr}  /* Restore the callee saved registers */
+  bx lr         /* Return from the function */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now let's modify the function to use a frame pointer (in the code snippet below do not mind the <code>r5</code> register that only appears here to keep the stack 8-byte aligned).
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="code"><pre>function:
+  /* Keep callee-saved registers */
+  push {r4, r5, fp, lr} /* Keep the callee saved registers.
+                           We added r5 to keep the stack 8-byte aligned
+                           but the important thing here is fp */
+  mov fp, sp            /* fp ← sp. Keep dynamic link in fp */
+  ... /* code of the function */
+  mov sp, fp            /* sp ← fp. Restore dynamic link in fp */
+  pop {r4, r5, fp, lr}  /* Restore the callee saved registers.
+                           This will restore fp as well */
+  bx lr         /* Return from the function */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Focus on instructions at line 6 and 8. In line 6 we keep the address of the top of the stack in <code>fp</code>. In line 8 we restore the value of the stack using the value kept in <code>fp</code>. Now you should see why I said that the frame pointer is usually unnecessary: if the <code>sp</code> register does not change between lines 6 and 8, having a frame pointer will be pointless, why should we restore a register that didn't change?
+</p>
+
+<p>
+Let's assume for now that the frame pointer is going to be useful. What we did in instruction line 6 is setting the <em>dynamic link</em>. The stack and registers will look like this after we have set it.
+</p>
+
+<p><img src="/wp-content/uploads/2014/05/path4864.png" alt="" width="387" height="420" class="aligncenter size-full wp-image-1469" /></p>
+
+<p>
+As you can see, the <code>fp</code> register will point to the top of the stack. But note that in the stack we have the value of the <em>old</em> <code>fp</code> (the value of the <code>fp</code> in the function that called us). If we assume that our caller also uses a frame pointer, then the <code>fp</code> we kept in the stack of the callee points to the top of the stack when our caller was called.
+</p>
+
+<p>
+But still this looks useless because both registers <code>fp</code> and <code>sp</code> in the current function point to the same position in the stack.
+</p>
+
+<p>
+Let's proceed with the example, make sure you check line 7.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td><td class="code"><pre>function:
+  /* Keep callee-saved registers */
+  push {r4, r5, fp, lr} /* Keep the callee saved registers.
+                           We added r5 to keep the stack 8-byte aligned
+                           but the important thing here is fp */
+  mov fp, sp            /* fp ← sp. Keep dynamic link in fp */
+  sub sp, sp, #8        /* Enlarge the stack by 8 bytes */
+  ... /* code of the function */
+  mov sp, fp            /* sp ← fp. Restore dynamic link in fp */
+  pop {r4, r5, fp, lr}  /* Restore the callee saved registers.
+                           This will restore fp as well */
+  bx lr         /* Return from the function */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now, after line 7, the stack and registers will look like this.
+</p>
+
+<p><img src="/wp-content/uploads/2014/05/path48641.png" alt="" width="412" height="514" class="aligncenter size-full wp-image-1473" /></p>
+
+<p>
+Can you see the range of data from <code>sp</code> to <code>fp</code>? This is the local data of our function. We will keep local variables of a function in this space when using a frame pointer. We simply have to allocate stack space by decreasing the value of <code>sp</code> (and ensuring it is 8-byte aligned per AAPCS requirements).
+</p>
+
+<p>
+Now consider the instruction <code>mov sp, fp</code> near the end of the function. What it does is leaving the state of the registers just like before we enlarged the stack (before the <code>sub sp, sp, #8</code>). And voilà, we have freed all the stack our function was using. A bonus of this approach is that it does not require keeping anywhere the amount of bytes we reserved in the stack. Neat, isn't it?
+</p>
+
+<h3>What about parameters passed in the stack?</h3>
+
+<p>
+A player is still missing in our frame pointer approach: parameters passed through the stack. Let's assume that our function may receive parameters in the stack and we have enlarged the stack by subtracting <code>sp</code>. The whole picture looks like this.
+</p>
+
+<p><img src="/wp-content/uploads/2014/05/path48643.png" alt="path4864" width="412" height="513" class="aligncenter size-full wp-image-1482" /></p>
+
+<p>
+I want you to note that I just lied a bit in the two first figures. In them, the <em>old</em> <code>fp</code> pointer kept in the stack pointed to the top of the stack of the caller. Not exactly, it will point to the <em>base</em> of the local data of the caller, exactly like happens with the <code>fp</code> register in the current function.
+</p>
+
+<h2>Indexing through the frame pointer</h2>
+
+<p>
+When we are using a frame pointer a nice property (that maybe you have already deduced from the figures above) holds: local data is always at lower addresses than the address pointed by <code>fp</code> while parameters passed in the stack (if any) will always be at higher addresses than the one pointed by <code>fp</code>. It must be possible to access both kinds of local data through <code>fp</code>.
+</p>
+
+<p>
+In the following example we will use a function that receives an integer by reference (i.e. an address to an integer) and then squares that integer.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">sq</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">c</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+You may be wondering why the function <code>sq</code> has a parameter by reference (should not it be easier to return a value?), but bear with me for now. We can (should?) implement <code>sq</code> without using a frame pointer due to its simplicity.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre>sq: 
+  ldr r1, [r0]   /* r1 ← (*r0) */
+  mul r1, r1, r1 /* r1 ← r1 * r1 */
+  str r1, [r0]   /* (*r0) ← r1 */
+  bx lr          /* Return from the function */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Now consider the following function that returns the sum of the squares of its five parameters. It uses the function <code>sq</code> defined above.
+</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">sq_sum5</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">,</span> <span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="n">d</span><span class="p">,</span> <span class="kt">int</span> <span class="n">e</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">sq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
+  <span class="n">sq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">b</span><span class="p">);</span>
+  <span class="n">sq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">);</span>
+  <span class="n">sq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">d</span><span class="p">);</span>
+  <span class="n">sq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">e</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">c</span> <span class="o">+</span> <span class="n">d</span> <span class="o">+</span> <span class="n">e</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Parameters <code>a</code>, <code>b</code>, <code>c</code> and <code>d</code> will be passed through registers <code>r0</code>, <code>r1</code>, <code>r2</code>, and <code>r3</code> respectively. The parameter <code>e</code> will be passed through the stack. The function <code>sq</code>, though, expects a reference, i.e. an address, to an integer and registers do not have an address. This means we will have to allocate temporary local storage for these registers. At least one integer will have to be allocated in the stack in order to be able to call <code>sq</code> but for simplicity we will allocate four of them.
+</p>
+
+<p>
+This time we will use a frame pointer to access both the local storage and the parameter <code>e</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+</pre></td><td class="code"><pre>sq_sum5:
+  push {fp, lr}         /* Keep fp and all callee-saved registers. */
+  mov fp, sp            /* Set the dynamic link */
+
+  sub sp, sp, #16      /* sp ← sp - 16. Allocate space for 4 integers in the stack */
+  /* Keep parameters in the stack */
+  str r0, [fp, #-16]    /* *(fp - 16) ← r0 */
+  str r1, [fp, #-12]    /* *(fp - 12) ← r1 */
+  str r2, [fp, #-8]     /* *(fp - 8) ← r2 */
+  str r3, [fp, #-4]     /* *(fp - 4) ← r3 */
+
+  /* At this point the stack looks like this
+     | Value  |  Address(es)
+     +--------+-----------------------
+     |   r0   |  [fp, #-16], [sp]
+     |   r1   |  [fp, #-12], [sp, #4]
+     |   r2   |  [fp, #-8],  [sp, #8]
+     |   r3   |  [fp, #-4],  [sp, #12]
+     |   fp   |  [fp],       [sp, #16]
+     |   lr   |  [fp, #4],   [sp, #20]
+     |   e    |  [fp, #8],   [sp, #24]
+     v
+   Higher
+   addresses
+  */
+
+  sub r0, fp, #16    /* r0 ← fp - 16 */
+  bl sq              /* call sq(&amp;a); */
+  sub r0, fp, #12    /* r0 ← fp - 12 */
+  bl sq              /* call sq(&amp;b); */
+  sub r0, fp, #8     /* r0 ← fp - 8 */
+  bl sq              /* call sq(&amp;c); */
+  sub r0, fp, #4     /* r0 ← fp - 4 */
+  bl sq              /* call sq(&amp;d) */
+  add r0, fp, #8     /* r0 ← fp + 8 */
+  bl sq              /* call sq(&amp;e) */
+
+  ldr r0, [fp, #-16] /* r0 ← *(fp - 16). Loads a into r0 */
+  ldr r1, [fp, #-12] /* r1 ← *(fp - 12). Loads b into r1 */
+  add r0, r0, r1     /* r0 ← r0 + r1 */
+  ldr r1, [fp, #-8]  /* r1 ← *(fp - 8). Loads c into r1 */
+  add r0, r0, r1     /* r0 ← r0 + r1 */
+  ldr r1, [fp, #-4]  /* r1 ← *(fp - 4). Loads d into r1 */
+  add r0, r0, r1     /* r0 ← r0 + r1 */
+  ldr r1, [fp, #8]   /* r1 ← *(fp + 8). Loads e into r1 */
+  add r0, r0, r1     /* r0 ← r0 + r1 */
+
+  mov sp, fp         /* Undo the dynamic link */
+  pop {fp, lr}       /* Restore fp and callee-saved registers */
+  bx lr              /* Return from the function */
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+As you can see, we first store all parameters (but <code>e</code>) in the local storage. This means that we need to enlarge the stack enough, as usual, by subtracting <code>sp</code> (line 5). Once we have the storage then we can do the actual store by using the <code>fp</code> register (lines 7 to 10). Note the usage of negative offsets, because local data will always be in lower addresses than the address in <code>fp</code>. As mentioned above, the parameter <code>e</code> does not have to be stored because it is already in the stack, in a positive offset from <code>fp</code> (i.e. at a higher address than the address in <code>fp</code>).
+</p>
+
+<p>
+Note that, in this example, the frame pointer is not indispensable as we could have used <code>sp</code> to access all the required data (see the representation of the stack in lines 12 to 21).
+</p>
+
+<p>
+In order to call <code>sq</code> we have to pass the addresses of the several integers, so we compute the address by subtracting <code>fp</code> the proper offset and storing it in <code>r0</code>, which will be used for passing the first (and only) parameter of <code>sq</code> (lines 27 to 36). See how, to pass the address of <code>e</code>, we just compute an address with a positive offset (line 35). Finally we add the values by loading them again in <code>r0</code> and <code>r1</code> and using <code>r0</code> to accumulate the additions (lines 38 to 46).
+</p>
+
+<p>
+An example program that calls <code>sq_sum5(1, 2, 3, 4, 5)</code> looks like this.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+</pre></td><td class="code"><pre>/* squares.s */
+.data
+
+.align 4
+message: .asciz "Sum of 1^2 + 2^2 + 3^2 + 4^2 + 5^2 is %d\n"
+
+.text
+
+sq:
+  &lt;&lt;defined above&gt;&gt;
+
+sq_sum5:
+  &lt;&lt;defined above&gt;&gt;
+
+.globl main
+
+main:
+    push {r4, lr}          /* Keep callee-saved registers */
+
+    /* Prepare the call to sq_sum5 */
+    mov r0, #1             /* Parameter a ← 1 */
+    mov r1, #2             /* Parameter b ← 2 */
+    mov r2, #3             /* Parameter c ← 3 */
+    mov r3, #4             /* Parameter d ← 4 */
+
+    /* Parameter e goes through the stack,
+       so it requires enlarging the stack */
+    mov r4, #5             /* r4 ← 5 */
+    sub sp, sp, #8         /* Enlarge the stack 8 bytes,
+                              we will use only the
+                              topmost 4 bytes */
+    str r4, [sp]           /* Parameter e ← 5 */
+    bl sq_sum5             /* call sq_sum5(1, 2, 3, 4, 5) */
+    add sp, sp, #8         /* Shrink back the stack */
+
+    /* Prepare the call to printf */
+    mov r1, r0             /* The result of sq_sum5 */
+    ldr r0, address_of_message
+    bl printf              /* Call printf */
+
+    pop {r4, lr}           /* Restore callee-saved registers */
+    bx lr
+
+
+address_of_message: .word message
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ ./square 
+Sum of 1^2 + 2^2 + 3^2 + 4^2 + 5^2 is 55</code></pre></figure>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2014/05/10/create-configure-ec2-instances-rails-deployment-ansible/">&laquo; How to create and configure EC2 instances for Rails hosting with CentOS using Ansible</a>
+
+
+  <a class="next" href="/2014/05/24/arm-assembler-raspberry-pi-chapter-19/">ARM assembler in Raspberry Pi – Chapter 19 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

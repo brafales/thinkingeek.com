@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A very simple memory pool in C++11</title>
+  <meta name="description" content="I’ve been implementing an algorithm that works on a graph. That algorithm needs to create and destroy lots of nodes and edges to keep track of the algorithm state correctly. The algorithm also needs to be fast in order to be competitive against a similar algorithm that uses sets of stacks instead of graphs. Profiles show that memory allocations are impacting negatively the performance, so maybe a memory pool can help.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2017/11/19/simple-memory-pool/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A very simple memory pool in C++11">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2017/11/19/simple-memory-pool/">
+  <meta property="og:description" content="I’ve been implementing an algorithm that works on a graph. That algorithm needs to create and destroy lots of nodes and edges to keep track of the algorithm state correctly. The algorithm also needs to be fast in order to be competitive against a similar algorithm that uses sets of stacks instead of graphs. Profiles show that memory allocations are impacting negatively the performance, so maybe a memory pool can help.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A very simple memory pool in C++11">
+  <meta name="twitter:description" content="I’ve been implementing an algorithm that works on a graph. That algorithm needs to create and destroy lots of nodes and edges to keep track of the algorithm state correctly. The algorithm also need...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A very simple memory pool in C++11</h1>
+    
+    <p class="post-meta"><time datetime="2017-11-19T19:09:16+00:00" itemprop="datePublished">Nov 19, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>I’ve been implementing an algorithm that works on a graph. That algorithm needs to create and destroy lots of nodes and edges to keep track of the algorithm state correctly. The algorithm also needs to be fast in order to be competitive against a similar algorithm that uses sets of stacks instead of graphs. Profiles show that memory allocations are impacting negatively the performance, so maybe a memory pool can help.</p>
+
+<!--more-->
+
+<h2>Don't reject malloc/free or new/delete lightly</h2>
+
+<p>In C, <code>malloc</code> and <code>free</code> and, in C++, <code>new</code> and <code>delete</code> provide the foundations of dynamic memory. Quite often our applications need dynamic memory because the amount of memory that they will require is not known at compile time. Instead of creating big arrays and limiting the sizes of our inputs, which may not be acceptable, dynamic memory allows us to allocate the memory we need, at runtime.</p>
+
+<p>These facilities give good performance in general because most applications do a lot of work between the allocations and deallocations. They are general enough to perform well in a broad spectrum of applications. There is usually little incentive not to use them.</p>
+
+<p>That said there are applications where the ratio of allocation/deallocation over “real work” is very small. I found myself in that situation, I have an algorithm that uses a graph to represent its state. It creates and destroys many nodes and edges during the computation. Sadly the amount of work between updates in the graph is really small. This means that allocations and deallocations are just observed in the profile as overhead. In these circumstances we are forced to use less general strategies for our dynamic memory. I decided to implement a very simple pool allocator.</p>
+
+<h2>Pool allocator</h2>
+
+<p>In an algorithm like the one I’m trying to make competitive, there is a big number of allocations/deallocations all of them of the same kind of object. This implies that all these objects will take the same amount of storage in memory. This means that if we try to be less general than plain <code>malloc</code> we can do faster allocations.</p>
+
+<p>A pool allocator is a typical approach to this. A chunk of memory, that I will call <em>arena</em>, is allocated by the program. This chunk has enough storage for up to a given number of elements. So we can allocate up to that number of elements using the arena. As the arena itself is nothing but an array, it is very easy to find storage for the allocations. A pool that only uses an arena means that it has a limit of elements it can allocate. I am interested in a pool allocator that can use more than one arena. This means that when all arenas are full, the pool allocator should allocate another arena (of course using <code>malloc</code>).</p>
+
+<p>Perhaps the trickiest part of memory allocation is keeping track of what storage is available for later allocations. We can use two techniques: bitmaps and free lists. A bitmap will assign each bit of an integer (32 or 64 bit) to each position of the arena. When the i-th bit of the bitmap is set to 1, the i-th element in the arena is allocated and can be freed. If set to 0, that element in the arena is free and can be allocated. By using specific instructions like “count leading zeroes” and similar, it is possible to efficiently use bitmaps to tell where is the next free element. There are some downsides: they take extra storage and they are limited to the maximum integer we can use (for efficiency reasons). This means that in practice our arenas will be 32 or 64 elements long. Bitmaps also force us to be a bit clever when allocating memory: the first arena we check should always have available storage (otherwise it should mean we need a new arena) to avoid having to check several bitmaps when finding free storage.</p>
+
+<p>Free lists are a different technique. A single link is threaded through the free elements. This forms a list of free elements that we can use to get the next free item. A free list is easy to maintain during allocation and deallocation. When the free list is empty this means we simply allocate a new arena and initialize the free list. For arenas with lots of elements this means that allocating a new arena may take longer. Also as we can free data from different arenas, the free list may end threading different arenas. This can harm the spatial locality of successive allocations after a bunch of deallocations of objects in different arenas.</p>
+
+<h2>A very simple implementation in C++11</h2>
+
+<p>As this is C++, the pool will be parameterized for each type.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span> <span class="k">struct</span> <span class="nc">minipool</span> <span class="p">{</span></code></pre></figure>
+
+<h3>Items</h3>
+
+<p>An arena is formed by several items. Each item is a union of properly sized and aligned storage to hold <code>T</code> and a pointer to the next free item (it can be null).</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="k">union</span> <span class="n">minipool_item</span> <span class="p">{</span>
+  <span class="nl">private:</span>
+    <span class="k">using</span> <span class="n">StorageType</span> <span class="o">=</span> <span class="k">alignas</span><span class="p">(</span><span class="k">alignof</span><span class="p">(</span><span class="n">T</span><span class="p">))</span> <span class="kt">char</span><span class="p">[</span><span class="k">sizeof</span><span class="p">(</span><span class="n">T</span><span class="p">)];</span>
+
+    <span class="c1">// Points to the next freely available item.</span>
+    <span class="n">minipool_item</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+    <span class="c1">// Storage of the item. Note that this is a union</span>
+    <span class="c1">// so it is shared with the pointer "next" above.</span>
+    <span class="n">StorageType</span> <span class="n">datum</span><span class="p">;</span></code></pre></figure>
+
+<p>This item will have a few methods that we will use later. We have to be able to get and set the next item and also get the storage. We also need a function that given a pointer to <code>T</code> returns a pointer to the item that contains it. We will use this when freeing a <code>T</code>. As this is a <code>union</code> a simple cast will do.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="nl">public:</span>
+    <span class="c1">// Methods for the list of free items.</span>
+    <span class="n">minipool_item</span> <span class="o">*</span><span class="n">get_next_item</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">next</span><span class="p">;</span> <span class="p">}</span>
+    <span class="kt">void</span> <span class="nf">set_next_item</span><span class="p">(</span><span class="n">minipool_item</span> <span class="o">*</span><span class="n">n</span><span class="p">)</span> <span class="p">{</span> <span class="n">next</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="c1">// Methods for the storage of the item.</span>
+    <span class="n">T</span> <span class="o">*</span><span class="nf">get_storage</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">T</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">datum</span><span class="p">);</span> <span class="p">}</span>
+
+    <span class="c1">// Given a T* cast it to a minipool_item*</span>
+    <span class="k">static</span> <span class="n">minipool_item</span> <span class="o">*</span><span class="nf">storage_to_item</span><span class="p">(</span><span class="n">T</span> <span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">minipool_item</span> <span class="o">*</span><span class="n">current_item</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">minipool_item</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">current_item</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="err">}</span><span class="p">;</span> <span class="c1">// minipool_item</span></code></pre></figure>
+
+<h3>Arenas</h3>
+
+<p>Our pool will be made of one or more arenas. An arena is just an array of items and a pointer to the next arena.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// Arena of items. This is just an array of items and a pointer</span>
+  <span class="c1">// to another arena. All arenas are singly linked between them.</span>
+  <span class="k">struct</span> <span class="nc">minipool_arena</span> <span class="p">{</span>
+  <span class="nl">private:</span>
+    <span class="c1">// Storage of this arena.</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">minipool_item</span><span class="p">[]</span><span class="o">&gt;</span> <span class="n">storage</span><span class="p">;</span>
+    <span class="c1">// Pointer to the next arena.</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">minipool_arena</span><span class="o">&gt;</span> <span class="n">next</span><span class="p">;</span></code></pre></figure>
+
+<p>When creating an arena, all the elements inside are free and so they have to be in the free list. We need to chain each item with the consecutive one, except the last one. The arena itself is created using the usual <code>operator new</code> from C++.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// Creates an arena with arena_size items.</span>
+    <span class="n">minipool_arena</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">arena_size</span><span class="p">)</span> <span class="o">:</span> <span class="n">storage</span><span class="p">(</span><span class="k">new</span> <span class="n">minipool_item</span><span class="p">[</span><span class="n">arena_size</span><span class="p">])</span> <span class="p">{</span>
+      <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">arena_size</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">storage</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">].</span><span class="n">set_next_item</span><span class="p">(</span><span class="o">&amp;</span><span class="n">storage</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+      <span class="p">}</span>
+      <span class="n">storage</span><span class="p">[</span><span class="n">arena_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">].</span><span class="n">set_next_item</span><span class="p">(</span><span class="nb">nullptr</span><span class="p">);</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>When creating an arena we need to get the storage so we can correctly update the free list.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// Returns a pointer to the array of items. This is used by the arena</span>
+    <span class="c1">// itself. This is only used to update free_list during initialization</span>
+    <span class="c1">// or when creating a new arena when the current one is full.</span>
+    <span class="n">minipool_item</span> <span class="o">*</span><span class="nf">get_storage</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">storage</span><span class="p">.</span><span class="n">get</span><span class="p">();</span> <span class="err">}</span></code></pre></figure>
+
+<p>Finally, when creating a new arena because the current one is full, we need to link the new one to the current one, so the arenas are linked.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// Sets the next arena. Used when the current arena is full and</span>
+    <span class="c1">// we have created this one to get more storage.</span>
+    <span class="kt">void</span> <span class="nf">set_next_arena</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">minipool_arena</span><span class="o">&gt;</span> <span class="o">&amp;&amp;</span><span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="n">next</span><span class="p">);</span>
+
+      <span class="n">next</span><span class="p">.</span><span class="n">reset</span><span class="p">(</span><span class="n">n</span><span class="p">.</span><span class="n">release</span><span class="p">());</span>
+    <span class="p">}</span>
+  <span class="err">}</span><span class="p">;</span> <span class="c1">// minipool_arena</span></code></pre></figure>
+
+<h3>Data members of the pool</h3>
+
+<p>Our pool basically needs to know the current arena and the free list. As this pool allocates arenas all of the same size, we need to store the size of the arenas.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// Size of the arenas created by the pool.</span>
+  <span class="kt">size_t</span> <span class="n">arena_size</span><span class="p">;</span>
+  <span class="c1">// Current arena. Changes when it becomes full and we want to allocate one</span>
+  <span class="c1">// more object.</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">minipool_arena</span><span class="o">&gt;</span> <span class="n">arena</span><span class="p">;</span>
+  <span class="c1">// List of free elements. The list can be threaded between different arenas</span>
+  <span class="c1">// depending on the deallocation pattern.</span>
+  <span class="n">minipool_item</span> <span class="o">*</span><span class="n">free_list</span><span class="p">;</span></code></pre></figure>
+
+<h3>Creation of the pool</h3>
+
+<p>When creating a pool we need a first arena. So this is what the constructor does.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// Creates a new pool that will use arenas of arena_size.</span>
+  <span class="n">minipool</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">arena_size</span><span class="p">)</span>
+      <span class="o">:</span> <span class="n">arena_size</span><span class="p">(</span><span class="n">arena_size</span><span class="p">),</span> <span class="n">arena</span><span class="p">(</span><span class="k">new</span> <span class="nf">minipool_arena</span><span class="p">(</span><span class="n">arena_size</span><span class="p">)),</span>
+        <span class="n">free_list</span><span class="p">(</span><span class="n">arena</span><span class="o">-&gt;</span><span class="n">get_storage</span><span class="p">())</span> <span class="p">{}</span></code></pre></figure>
+
+<h3>Allocation</h3>
+
+<p>To allocate a new <code>T*</code> we will simply forward the arguments to the constructor of <code>T</code>. But first we need to find storage for the new <code>T</code>.</p>
+
+<p>If our free list is empty (this is, the current arena is full) we will need to create a new arena. We will link the new arena to the current one and then point to it. The new arena brings new free items, so we need to update the free list with the new storage of the arena.</p>
+
+<p>Now that we have storage, it is just a matter of using the free list (which now we know is not empty). We’re going to use the first item of the free list, so we just retrieve the current item and then we update the free list. Now it is only missing to get the storage of the item and initialize the object using a <em>placement</em> <code>new</code>. And return the new object, of course.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="c1">// Allocates an object in the current arena.</span>
+  <span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span><span class="o">...</span> <span class="nc">Args</span><span class="p">&gt;</span> <span class="n">T</span> <span class="o">*</span><span class="nf">alloc</span><span class="p">(</span><span class="n">Args</span> <span class="o">&amp;&amp;</span><span class="p">...</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">free_list</span> <span class="o">==</span> <span class="nb">nullptr</span><span class="p">)</span> <span class="p">{</span>
+      <span class="c1">// If the current arena is full, create a new one.</span>
+      <span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">minipool_arena</span><span class="o">&gt;</span> <span class="n">new_arena</span><span class="p">(</span><span class="k">new</span> <span class="n">minipool_arena</span><span class="p">(</span><span class="n">arena_size</span><span class="p">));</span>
+      <span class="c1">// Link the new arena to the current one.</span>
+      <span class="n">new_arena</span><span class="o">-&gt;</span><span class="n">set_next_arena</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">arena</span><span class="p">));</span>
+      <span class="c1">// Make the new arena the current one.</span>
+      <span class="n">arena</span><span class="p">.</span><span class="n">reset</span><span class="p">(</span><span class="n">new_arena</span><span class="p">.</span><span class="n">release</span><span class="p">());</span>
+      <span class="c1">// Update the free_list with the storage of the just created arena.</span>
+      <span class="n">free_list</span> <span class="o">=</span> <span class="n">arena</span><span class="o">-&gt;</span><span class="n">get_storage</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Get the first free item.</span>
+    <span class="n">minipool_item</span> <span class="o">*</span><span class="n">current_item</span> <span class="o">=</span> <span class="n">free_list</span><span class="p">;</span>
+    <span class="c1">// Update the free list to the next free item.</span>
+    <span class="n">free_list</span> <span class="o">=</span> <span class="n">current_item</span><span class="o">-&gt;</span><span class="n">get_next_item</span><span class="p">();</span>
+
+    <span class="c1">// Get the storage for T.</span>
+    <span class="n">T</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">current_item</span><span class="o">-&gt;</span><span class="n">get_storage</span><span class="p">();</span>
+    <span class="c1">// Construct the object in the obtained storage.</span>
+    <span class="k">new</span> <span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="n">T</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">forward</span><span class="o">&lt;</span><span class="n">Args</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="p">)...);</span>
+
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+  <span class="p">}</span></code></pre></figure>
+
+<h3>Deallocation</h3>
+
+<p>When deallocating an object, we need to put it back in the free list after we have destroyed the object. For simplicity we are going to put it at the beginning of the free list, so it is just a matter of retrieving the item related to the freed pointer and then link it to the free list (that could be empty at this point but it does not matter). Finally, update the free list to start at the freed item.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="kt">void</span> <span class="nf">free</span><span class="p">(</span><span class="n">T</span> <span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Destroy the object.</span>
+    <span class="n">t</span><span class="o">-&gt;</span><span class="n">T</span><span class="o">::~</span><span class="n">T</span><span class="p">();</span>
+
+    <span class="c1">// Convert this pointer to T to its enclosing pointer of an item of the</span>
+    <span class="c1">// arena.</span>
+    <span class="n">minipool_item</span> <span class="o">*</span><span class="n">current_item</span> <span class="o">=</span> <span class="n">minipool_item</span><span class="o">::</span><span class="n">storage_to_item</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
+
+    <span class="c1">// Add the item at the beginning of the free list.</span>
+    <span class="n">current_item</span><span class="o">-&gt;</span><span class="n">set_next_item</span><span class="p">(</span><span class="n">free_list</span><span class="p">);</span>
+    <span class="n">free_list</span> <span class="o">=</span> <span class="n">current_item</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="err">}</span><span class="p">;</span> <span class="c1">// minipool&lt;T&gt;</span></code></pre></figure>
+
+<p>And that’s it. Really simple.</p>
+
+<h2>Example</h2>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include "minipool.h"
+#include &lt;iostream&gt;
+</span>
+<span class="cp">#define TRACE_METHOD() std::cout &lt;&lt; this &lt;&lt; " " &lt;&lt; __PRETTY_FUNCTION__ &lt;&lt; "\n";
+</span>
+<span class="k">struct</span> <span class="nc">Foo</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">42</span><span class="p">;</span>
+  <span class="n">Foo</span><span class="p">()</span> <span class="p">{</span> <span class="n">TRACE_METHOD</span><span class="p">();</span> <span class="p">}</span>
+  <span class="n">Foo</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="o">:</span> <span class="n">x</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="n">TRACE_METHOD</span><span class="p">();</span> <span class="p">}</span>
+  <span class="o">~</span><span class="n">Foo</span><span class="p">()</span> <span class="p">{</span> <span class="n">TRACE_METHOD</span><span class="p">();</span> <span class="p">};</span>
+<span class="p">};</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+  <span class="n">minipool</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span> <span class="n">mp</span><span class="p">(</span><span class="mi">256</span><span class="p">);</span>
+
+  <span class="n">Foo</span> <span class="o">*</span><span class="n">p1</span> <span class="o">=</span> <span class="n">mp</span><span class="p">.</span><span class="n">alloc</span><span class="p">();</span>
+  <span class="n">Foo</span> <span class="o">*</span><span class="n">p2</span> <span class="o">=</span> <span class="n">mp</span><span class="p">.</span><span class="n">alloc</span><span class="p">(</span><span class="mi">44</span><span class="p">);</span>
+
+  <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"p1-&gt;x="</span> <span class="o">&lt;&lt;</span> <span class="n">p1</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"p2-&gt;x="</span> <span class="o">&lt;&lt;</span> <span class="n">p2</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">;</span>
+
+  <span class="n">mp</span><span class="p">.</span><span class="n">free</span><span class="p">(</span><span class="n">p1</span><span class="p">);</span>
+  <span class="n">mp</span><span class="p">.</span><span class="n">free</span><span class="p">(</span><span class="n">p2</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<h2>Did it help?</h2>
+
+<p>In my case yes, it does help. Using malloc/free instead of a pool makes the program two times slower.</p>
+
+<p>But <em>your mileage may vary</em> so make sure you benchmark your program before and after. Few things are sadder than optimizing something that won’t have any impact.</p>
+
+<h2>Where to go from here?</h2>
+
+<p>OK. This is very simple and it fulfills my original needs. But it can be improved of course. Some ideas follow:</p>
+
+<ul>
+<li>It is easy to do mistakes using this allocator. In particular double-frees. So we may want to extend it with consistency checks. For instance, adding a <code>Policy</code> template parameter defaulted to no operations (for efficiency) so it can be set to a hypothetical <code>DebugMemory</code> policy that checks the operations.</li>
+<li>What about memory leaks? Adding a memory leak checker (also policy controlled for efficiency)</li>
+<li>What about bulk destructions? If we destroy the memory pool the memory is released but the destructors of the remaining objects are not invoked! Options include making this an error (as if this were a memory leak) or bulk destroy all the objects. The last option is very convenient for computations that need to allocate temporary data and want to release it at once. This is not trivial because we have a free list but not a "used list"!</li>
+<li>What about exceptions?</li>
+<li>What about <code>alloc</code> and <code>free</code> using a <code>minipool&lt;T&gt;::ptr</code> (or similar) instead of a raw <code>T*</code>. This would allow us to safely call <code>delete</code> with these pointers but comes at cost that each pointer now needs to know its pool.</li>
+</ul>
+
+<p>Happy hacking.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2017/11/05/exploring-aarch64-assembler-chapter-9/">&laquo; Exploring AArch64 assembler – Chapter 9</a>
+
+
+  <a class="next" href="/2018/03/18/walk-through-flang-part-6/">Walk-through flang – Part 6 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

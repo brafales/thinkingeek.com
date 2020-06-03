@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Subversioning a Rails App</title>
+  <meta name="description" content="The time when application versions where stored in different folders or in zip files has ended. Today we have great tools like Subversion or CVS. This tools must be known by everybody, but for those who aren&#39;t known, they are applications that control versions of files. While developing a Ruby on Rails application it&#39;s good to use a system like Subversion. In this howto I&#39;ll explain my experience subversioning my Rails app.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2007/06/22/subversioning-a-rails-app/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Subversioning a Rails App">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2007/06/22/subversioning-a-rails-app/">
+  <meta property="og:description" content="The time when application versions where stored in different folders or in zip files has ended. Today we have great tools like Subversion or CVS. This tools must be known by everybody, but for those who aren&#39;t known, they are applications that control versions of files. While developing a Ruby on Rails application it&#39;s good to use a system like Subversion. In this howto I&#39;ll explain my experience subversioning my Rails app.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Subversioning a Rails App">
+  <meta name="twitter:description" content="The time when application versions where stored in different folders or in zip files has ended. Today we have great tools like Subversion or CVS. This tools must be known by everybody, but for thos...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Subversioning a Rails App</h1>
+    
+    <p class="post-meta"><time datetime="2007-06-22T16:02:02+00:00" itemprop="datePublished">Jun 22, 2007</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Javier Segura</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/uncategorized/">Uncategorized</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+
+ •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/ruby-on-rails/">ruby on rails</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/tags/subversion/">subversion</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>The time when application versions where stored in different folders or in zip files has ended. Today we have great tools like Subversion or CVS. This tools must be known by everybody, but for those who aren't known, they are applications that control versions of files.</p>
+
+<p>While developing a Ruby on Rails application it's good to use a system like Subversion. In this howto I'll explain my experience subversioning my Rails app.</p>
+<!--more-->
+<p>The first step is to create a subversion repository. Mine is created with a web interface in my hosting account, if you can control your subversion repositories and you don't know how to create it the chapter <a href="http://svnbook.red-bean.com/nightly/en/svn.reposadmin.create.html">Creating and Configuring your Repository</a> from SVN book may be useful. My repository url is (for example) http://someaccount.somehosting/myapp.</p>
+
+<p>For subversioning a rails app we need, of course, a rails app. We'll create a dummy app for testing. After that we have to import this directory structure to our repository</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">jsegura@ibook:~/dev/rails <span class="nv">$ </span>rails demo
+      create 
+      create  app/controllers
+      create  app/helpers
+      create  app/models
+      create  app/views/layouts
+      create  config/environments
+jsegura@ibook:~/dev/rails<span class="nv">$ </span>svn import demo http://someaccount.somehosting/demo <span class="nt">-m</span> <span class="s2">"Rails import"</span></code></pre></figure>
+
+<p>The next actions have to be done in a working copy, the directory demo is no longer necessary.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">jsegura@ibook:~/dev/rails <span class="nv">$ </span><span class="nb">rm</span> <span class="nt">-rf</span> demo
+jsegura@ibook:~/dev/rails <span class="nv">$ </span></code></pre></figure>
+
+<p>After obtaining the working copy we have to prepare our repository for developers usage. The steps are:</p>
+<ol>
+
+   <li>Removing temp files</li>
+   <li>Removing log files</li>
+</ol>
+
+<p>To remove these files doesn't mean "they are unnecessary", only means "there is unnecessary for these files to stay in the repo" :-).</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span>svn remove log/&lt;strong&gt;
+D         log/development.log
+D         log/production.log
+D         log/server.log
+D         log/test.log
+jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span>svn propset svn:ignore <span class="s2">"*.log"</span> log/
+property <span class="s1">'svn:ignore'</span> <span class="nb">set </span>on <span class="s1">'log'</span>
+jsegura@ibook:~/dev/rails/demo svn
+svn            svndumpfilter  svnserve       svnversion     
+svnadmin       svnlook        svnsync       
+jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span>svn ci <span class="nt">-m</span> <span class="s2">"Remove and ignore log files"</span>
+Sending        demo/log
+Deleting       demo/log/development.log
+Deleting       demo/log/production.log
+Deleting       demo/log/server.log
+Deleting       demo/log/test.log
+
+Committed revision 3.</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span>svn remove tmp/&lt;/strong&gt;
+D         tmp/cache
+D         tmp/pids
+D         tmp/sessions
+D         tmp/sockets
+jsegura@ibook:~/dev/rails/demo svn propset svn:ignore <span class="s2">"*"</span> tmp/
+property <span class="s1">'svn:ignore'</span> <span class="nb">set </span>on <span class="s1">'tmp'</span>
+jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span>svn ci <span class="nt">-m</span> <span class="s2">"Remove and ignore temp files"</span>
+Sending        demo/tmp
+Deleting       demo/tmp/cache
+Deleting       demo/tmp/pids
+Deleting       demo/tmp/sessions
+Deleting       demo/tmp/sockets
+
+Committed revision 4.</code></pre></figure>
+
+<p>To end up, the only final step is not subversion the config for accessing the database.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span>svn propset svn:ignore <span class="s2">"database.yml"</span> config/
+property <span class="s1">'svn:ignore'</span> <span class="nb">set </span>on <span class="s1">'config'</span>
+
+jsegura@ibook:~/dev/rails/cdemo<span class="nv">$ </span>svn ci <span class="nt">-m</span> <span class="s2">"Ignoring database.yml"</span>
+Sending        demo/config
+
+Committed revision 5.
+jsegura@ibook:~/dev/rails/demo<span class="nv">$ </span></code></pre></figure>
+
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/">&laquo; Create your own local domain with DHCP and BIND</a>
+
+
+  <a class="next" href="/2007/06/23/developing-javascript-involved-web-applications-with-firebug/">Developing Javascript involved web applications with Firebug &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 11</title>
+  <meta name="description" content="Our tiny language features a few types: int, float, bool, string and arrays of those types. We can even declare new type names based on other types but it still missing a record type. Today we will address this.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/09/05/tiny-gcc-front-part-11/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 11">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/09/05/tiny-gcc-front-part-11/">
+  <meta property="og:description" content="Our tiny language features a few types: int, float, bool, string and arrays of those types. We can even declare new type names based on other types but it still missing a record type. Today we will address this.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 11">
+  <meta name="twitter:description" content="Our tiny language features a few types: int, float, bool, string and arrays of those types. We can even declare new type names based on other types but it still missing a record type. Today we will...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 11</h1>
+    
+    <p class="post-meta"><time datetime="2016-09-05T20:38:47+00:00" itemprop="datePublished">Sep 5, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Our tiny language features a few types: <code>int</code>, <code>float</code>, <code>bool</code>, <code>string</code> and arrays of those types. We can even declare new type names based on other types but it still missing a record type. Today we will address this.
+</p>
+<!--more-->
+<h2>Record types</h2>
+<p>
+Before we added arrays to tiny, the value of our variables was simple, atomic, non-structured at all. When we introduced arrays we let a single variable denote several values, but all the values have to be of the same type. We are missing the possibility of representing several values of different types: we need a record type (or tuple type).
+</p>
+
+<p>
+Record types are constructed using an ordered set of types. We will need to refer the elements of such set in some way. We could access the field using some index derived from its order (e.g. the first element could be indexed using a zero, the second element using one). Usually, though, the elements of the record are given names, so the name can be used to refer to the element. While both approaches are feasible using names is probably easier for the programmer. In tiny we will use names.
+</p>
+
+<h2>Syntax</h2>
+<p>
+Similar to arrays, we will need special syntax to define a record type. A record type is made of a sequence of pairs of names and types that we will call <em>fields</em>. First let's see how to declare a field.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈field-declaration〉&ensp;→&ensp;〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+</p>
+
+<p>
+A field declaration has the same syntax as a variable/type declaration but without an initial <code>var</code>/<code>type</code>. A keyword is not needed because a field declaration will always appear inside a record type.<br />
+<small>Recall that * means the previous element of the language repeated zero or more times</small>
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉&ensp;→&ensp;<code><strong>record</strong></code> 〈field-declaration〉* <code><strong>end</strong></code>
+</p>
+
+<p>
+For instance we can declare a variable with a record type made of two floats x and y, like this.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">one_point</span> <span class="p">:</span> <span class="k">record</span> <span class="n">x</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="n">y</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="k">end</span><span class="p">;</span></code></pre></figure>
+
+<p>
+In chapter 10 we introduced type declarations, so we can declare a <code>point</code> type of record type.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">type</span> <span class="n">point</span> <span class="p">:</span> <span class="k">record</span> <span class="n">x</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="n">y</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="k">end</span><span class="p">;</span></code></pre></figure>
+
+<p>
+This way we can now declare several points without having to repeat the record type. There is a reason for this that we will discuss below.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">p1</span> <span class="p">:</span> <span class="n">point</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">p2</span> <span class="p">:</span> <span class="n">point</span><span class="p">;</span></code></pre></figure>
+
+<p>
+We need a way to access the field of a record type inside an expression or in the left hand side of an assignment. We will add a new 〈primary〉 expression.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code>
+&emsp;&emsp; | 〈identifier〉
+&emsp;&emsp; | 〈integer-literal〉
+&emsp;&emsp; | 〈float-literal〉
+&emsp;&emsp; | 〈string-literal〉
+&emsp;&emsp; | 〈array-element〉
+&emsp;&emsp; | 〈field-access〉
+〈field-access〉&ensp;→&ensp;〈primary〉 <code><strong>.</strong></code> 〈identifier〉
+</p>
+
+<p>
+For instance, fields of <code>p1</code> and <code>p2</code> can be accessed like this.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="n">p1</span><span class="p">.</span><span class="n">x</span> <span class="p">:=</span> <span class="m">1.2</span><span class="p">;</span>
+<span class="k">if</span> <span class="n">p2</span><span class="p">.</span><span class="n">y</span> <span class="p">&lt;</span> <span class="m">3.4</span> <span class="k">then</span>
+  <span class="n">p1</span><span class="p">.</span><span class="n">x</span> <span class="p">:=</span> <span class="n">p2</span><span class="p">.</span><span class="n">y</span> <span class="p">+</span> <span class="m">3.4</span><span class="p">;</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>
+We still need to clarify the priority between an 〈array-element〉 and a 〈field-access〉. The following expressions (assuming they are valid given appropiate types for the variable <code>a</code> and the field <code>b</code>)
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="n">a</span><span class="p">.</span><span class="n">b</span><span class="p">[</span><span class="m">1</span><span class="p">]</span>
+<span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">].</span><span class="n">b</span>
+<span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">].</span><span class="n">b</span><span class="p">[</span><span class="m">2</span><span class="p">]</span></code></pre></figure>
+
+<p>
+are to be interpreted like
+<p>
+
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="p">(</span><span class="n">a</span><span class="p">).</span><span class="n">b</span><span class="p">[</span><span class="m">1</span><span class="p">]</span>
+<span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">]).</span><span class="n">b</span>
+<span class="p">((</span><span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">]).</span><span class="n">b</span><span class="p">)[</span><span class="m">2</span><span class="p">]</span></code></pre></figure>
+
+
+<h2>Semantics</h2>
+
+<p>
+A record type is a type the values of which is the cartesian product of the values that can be represented by the fields of a record type. A record type with n fields named φ<sub>0</sub>, φ<sub>1</sub>, …, φ<sub>n-1</sub> where each field φ<sub>i</sub> has an associated type τ<sub>i</sub> will be able to represent a value (ε<sub>0</sub>, ε<sub>1</sub>, …, ε<sub>n-1</sub>) where each ε<sub>i</sub> is a value of the type τ<sub>i</sub>. Given a value of record type, we can select a single value of it, in our case using its name.
+</p>
+
+<p>
+Two values of record type are the same only if they come from the same declaration. This means that <code>p1</code> and <code>p2</code> below have different types because their record types come from different declarations, even if their sequences of fields are the same.
+<p>
+
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">p1</span> <span class="p">:</span> <span class="k">record</span> <span class="n">x</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="n">y</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="k">end</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">p2</span> <span class="p">:</span> <span class="k">record</span> <span class="n">x</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="n">y</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="k">end</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+Conversely, below <code>p1</code> and <code>p2</code> are the same, because their record type comes from the same declaration.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">type</span> <span class="n">point</span> <span class="p">:</span> <span class="k">record</span> <span class="n">x</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="n">y</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span> <span class="k">end</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">p1</span> <span class="p">:</span> <span class="n">point</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">p2</span> <span class="p">:</span> <span class="n">point</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+This kind of type equivalence is called <code>equivalence by name</code> in contrast to <code>equivalence by structure</code>. Both have advantages and drawbacks but most programming languages choose the former.
+</p>
+
+<p>
+As we discussed in chapter 10, in a type declaration, we cannot use the type being declared in the type part. So this will be invalid.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">type</span> <span class="n">invalid</span> <span class="p">:</span> <span class="k">record</span> <span class="n">a</span> <span class="p">:</span> <span class="n">invalid</span><span class="p">;</span> <span class="k">end</span><span class="p">;</span></code></pre></figure>
+
+
+<p>
+The name of each field must be unique inside a record. It is possible to have a field with record type.
+</p>
+
+<p>
+An expression of the form 〈primary〉 <code><strong>.</strong></code> 〈identifier〉 is a field access. The primary expression must have record type and 〈identifier〉 must be the name of a field of that record type. The type of a field access is the 〈type〉 as the type of the corresponding field declaration. A field access can be used as the left hand side operator of an assignment and can be used as the operand of a <code>read</code> statement.
+</p>
+
+<h2>Implementation</h2>
+
+<p>
+Now that we have a specification of this extension, we can start implementing it.
+</p>
+
+<h3>Lexer</h3>
+
+<p>
+We need to recognize two new tokens: a new keyword <code><strong>record</strong></code> and the dot operator. So we add bot to our set of tokens.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-token.h b/gcc/tiny/tiny-token.h
+index b1008a6..ed6961c 100644
+</span><span class="p">@@ -42,6 +42,7 @@</span> namespace Tiny
+   TINY_TOKEN (STRING_LITERAL, "string literal")                                \
+   TINY_TOKEN (LEFT_SQUARE, "[")                                                \
+   TINY_TOKEN (RIGHT_SQUARE, "]")                                               \
+<span class="gi">+  TINY_TOKEN (DOT, ".")                                                        \
+</span>                                                                                \
+   TINY_TOKEN_KEYWORD (AND, "and")                                              \
+   TINY_TOKEN_KEYWORD (BOOL, "bool")                                            \
+<span class="p">@@ -56,6 +57,7 @@</span> namespace Tiny
+   TINY_TOKEN_KEYWORD (NOT, "not")                                              \
+   TINY_TOKEN_KEYWORD (OR, "or")                                                \
+   TINY_TOKEN_KEYWORD (READ, "read")                                            \
+<span class="gi">+  TINY_TOKEN_KEYWORD (RECORD, "record")                                        \
+</span>   TINY_TOKEN_KEYWORD (THEN, "then")                                            \
+   TINY_TOKEN_KEYWORD (TO, "to")                                                \
+   TINY_TOKEN_KEYWORD (TRUE_LITERAL, "true")                                    \</code></pre></figure>
+
+
+<p>
+Our existing machinery will handle <code><strong>record</strong></code>, so only the dot must be tokenized. Given the current specification, the dot is relatively simple as long as it is not followed by a number, a <code><strong>.</strong></code> in the code will be the token <code>DOT</code>. This restriction makes sense as we want <code>.1</code> to be a <code>FLOAT_LITERAL</code> not a <code>DOT</code> followed by an <code>INTEGER_LITERAL</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-lexer.cc b/gcc/tiny/tiny-lexer.cc
+index b67470d..a4268c2 100644
+</span><span class="p">@@ -229,6 +229,13 @@</span> Lexer::build_token ()
+ 	case ']':
+ 	  current_column++;
+ 	  return Token::make (RIGHT_SQUARE, loc);
+<span class="gi">+        case '.':
++	  if (!ISDIGIT(peek_input ()))
++	    {
++	      // Only if followed by a non number
++	      current_column++;
++	      return Token::make (DOT, loc);
++	    }
+</span> 	}
+ 
+       // ***************************</code></pre></figure>
+
+
+<h3>Parse a record type</h3>
+
+<p>
+To parse a record type we first have to be able to parse a field declaration. It is pretty straightforward. GENERIC represents field declarations using a <code>FIELD_DECL</code> tree which simply has the name of the field and its type. We also have to make sure to mark the field addressable otherwise the <code><strong>read</strong></code> statement will not work on fields. Note also that we pass a vector of field names so we can diagnose repeated field names (I'm using a vector because the number of fields is usually small and it does not pay to use a more sophisticated data structure).
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gi">+Tree
++Parser::parse_field_declaration (std::vector&lt;std::string&gt; &amp;field_names)
++{
++  // identifier ':' type ';'
++  const_TokenPtr identifier = expect_token (Tiny::IDENTIFIER);
++  if (identifier == NULL)
++    {
++      skip_after_semicolon ();
++      return Tree::error ();
++    }
++
++  skip_token (Tiny::COLON);
++
++  Tree type = parse_type();
++
++  skip_token (Tiny::SEMICOLON);
++
++  if (type.is_error ())
++    return Tree::error ();
++
++  if (std::find (field_names.begin (), field_names.end (),
++		 identifier-&gt;get_str ())
++      != field_names.end ())
++    {
++      error_at (identifier-&gt;get_locus (), "repeated field name");
++      return Tree::error ();
++    }
++  field_names.push_back (identifier-&gt;get_str ());
++
++  Tree field_decl
++    = build_decl (identifier-&gt;get_locus (), FIELD_DECL,
++		  get_identifier (identifier-&gt;get_str ().c_str ()),
++		  type.get_tree());
++  TREE_ADDRESSABLE (field_decl.get_tree ()) = 1;
++
++  return field_decl;
++}</span></code></pre></figure>
+
+
+<p>
+Now that we can parse a field declaration, let's parse a record type. First lets extend <code>parse_type</code> so it forwards to <code>parse_record</code> when it finds the token <code>RECORD</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -630,6 +720,9 @@</span> Parser::parse_type ()
+           type = TREE_TYPE (s-&gt;get_tree_decl ().get_tree ());
+       }
+       break;
+<span class="gi">+    case Tiny::RECORD:
++      type = parse_record ();
++      break;
+</span>     default:
+       unexpected_token (t);
+       return Tree::error ();</code></pre></figure>
+
+
+<p>
+Parsing a record type is not particularly complex. Once we have skipped the <code><strong>record</strong></code> keyword we keep parsing field declarations until we find an <code><strong>end</strong></code> keyword. A record type in GENERIC is represented using a <code>RECORD_TYPE</code> tree, so we will have to create first an empty <code>RECORD_TYPE</code> tree. Field declarations must have their <code>DECL_CONTEXT</code> set to this <code>RECORD_TYPE</code> (so they know of which record type they are fields). The set of fields in a <code>RECORD_TYPE</code> is chained using <code>TREE_CHAIN</code>. The code simply remembers the first field and the last one so it can chain each field with the previous one. Finally the first field is used to set the <code>TYPE_FIELDS</code> attribute of the <code>RECORD_TYPE</code>. At this point we also need to request to GCC to lay out this type. The reason is that a <code>RECORD_TYPE</code> will have to be represented in memory in a way that can hold all the field values, the function <code>layout_type</code> makes sure each field gets the appropiate location in the record type.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gi">+Tree
++Parser::parse_record ()
++{
++  // "record" field-decl* "end"
++  const_TokenPtr record_tok = expect_token (Tiny::RECORD);
++  if (record_tok == NULL)
++    {
++      skip_after_semicolon ();
++      return Tree::error ();
++    }
++
++  Tree record_type = make_node(RECORD_TYPE);
++  Tree field_list, field_last;
++  std::vector&lt;std::string&gt; field_names;
++
++  const_TokenPtr next = lexer.peek_token ();
++  while (next-&gt;get_id () != Tiny::END)
++    {
++      Tree field_decl = parse_field_declaration (field_names);
++
++      if (!field_decl.is_error ())
++	{
++	  DECL_CONTEXT (field_decl.get_tree ()) = record_type.get_tree();
++	  if (field_list.is_null ())
++	    field_list = field_decl;
++	  if (!field_last.is_null ())
++	    TREE_CHAIN (field_last.get_tree ()) = field_decl.get_tree ();
++	  field_last = field_decl;
++	}
++      next = lexer.peek_token ();
++    }
++
++  skip_token (Tiny::END);
++
++  TYPE_FIELDS (record_type.get_tree ()) = field_list.get_tree();
++  layout_type (record_type.get_tree ());
++
++  return record_type;
++}</span></code></pre></figure>
+
+
+<h3>Parse a field access</h3>
+
+<p>
+Parsing a field access is done by handling the dot as a binary operator with very high priority. So we assign it a high left binding power.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -1324,6 +1417,8 @@</span> enum binding_powers
+   // Highest priority
+   LBP_HIGHEST = 100,
+ 
+<span class="gi">+  LBP_DOT = 90,
++
+</span>   LBP_ARRAY_REF = 80,
+ 
+   LBP_UNARY_PLUS = 50,  // Used only when the null denotation is +
+<span class="p">@@ -1358,6 +1453,9 @@</span> Parser::left_binding_power (const_TokenPtr token)
+ {
+   switch (token-&gt;get_id ())
+     {
+<span class="gi">+    case Tiny::DOT:
++      return LBP_DOT;
++    //
+</span>     case Tiny::LEFT_SQUARE:
+       return LBP_ARRAY_REF;
+     //</code></pre></figure>
+
+
+<p>
+We will use a convenience function <code>is_record_type</code> with the obvious meaning.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gi">+bool
++is_record_type (Tree type)
++{
++  gcc_assert (TYPE_P (type.get_tree ()));
++  return type.get_tree_code () == RECORD_TYPE;
++}</span></code></pre></figure>
+
+
+<p>
+In GENERIC a field access is represented with a tree of kind <code>COMPONENT_REF</code>, where the first tree is an tree expression of record type and the second tree is a <code>FIELD_DECL</code>. Parsing a field access involves just checking that the left expression has a record type and the dot is followed by an identifier that is the name of a field of that record type. Recall that the list of fields of a <code>RECORD_TYPE</code> is available in the <code>TYPE_FIELDS</code> attribute. We traverse each <code>FIELD_DECL</code> chaining through <code>TREE_CHAIN</code>. Like all other declarations in GENERIC, a <code>FIELD_DECL</code> has a <code>DECL_NAME</code> which contains an attribute <code>IDENTIFIER_POINTER</code> where we will find the name of the field. If we do not find a field with the given name, then this is an error, otherwise we create a tree COMPONENT_REF using the left tree (that we checked it is of record type) and the appropiate <code>FIELD_DECL</code>.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gi">+Tree
++Parser::binary_field_ref (const const_TokenPtr tok, Tree left)
++{
++  const_TokenPtr identifier = expect_token (Tiny::IDENTIFIER);
++  if (identifier == NULL)
++    {
++      return Tree::error ();
++    }
++
++  if (!is_record_type (left.get_type ()))
++    {
++      error_at (left.get_locus (), "does not have record type");
++      return Tree::error ();
++    }
++
++  Tree field_decl = TYPE_FIELDS (left.get_type ().get_tree ());
++  while (!field_decl.is_null ())
++    {
++      Tree decl_name = DECL_NAME (field_decl.get_tree ());
++      const char *field_name = IDENTIFIER_POINTER (decl_name.get_tree ());
++
++      if (field_name == identifier-&gt;get_str ())
++	break;
++
++      field_decl = TREE_CHAIN (field_decl.get_tree ());
++    }
++
++  if (field_decl.is_null ())
++    {
++      error_at (left.get_locus (),
++		"record type does not have a field named '%s'",
++		identifier-&gt;get_str ().c_str ());
++      return Tree::error ();
++    }
++
++  return build_tree (COMPONENT_REF, tok-&gt;get_locus (),
++		     TREE_TYPE (field_decl.get_tree ()), left, field_decl,
++		     Tree ());
++}</span></code></pre></figure>
+
+
+<p>
+Finally we must update <code>parse_expression_naming_variable</code> because a COMPONENT_REF tree also names a variable. This way we can put it in the left hand side of an assignment or as the operand of a <code><strong>read</strong></code> statement.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -1884,10 +2022,11 @@</span> Parser::parse_expression_naming_variable ()
+   if (expr.is_error ())
+     return expr;
+ 
+<span class="gd">-  if (expr.get_tree_code () != VAR_DECL &amp;&amp; expr.get_tree_code () != ARRAY_REF)
+</span><span class="gi">+  if (expr.get_tree_code () != VAR_DECL &amp;&amp; expr.get_tree_code () != ARRAY_REF
++      &amp;&amp; expr.get_tree_code () != COMPONENT_REF)
+</span>     {
+       error_at (expr.get_locus (),
+<span class="gd">-		"does not designate a variable or array element");
+</span><span class="gi">+		"does not designate a variable, array element or field");
+</span>       return Tree::error ();
+     }
+   return expr;</code></pre></figure>
+
+
+<h2>Smoke test</h2>
+
+<p>
+And we are done. Let's try a simple program.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="p">#</span> <span class="n">struct</span><span class="p">.</span><span class="n">tiny</span>
+<span class="k">type</span> <span class="n">my_tuple</span> <span class="p">:</span> <span class="k">record</span>
+  <span class="n">a</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+  <span class="n">b</span> <span class="p">:</span> <span class="n">float</span><span class="p">;</span>
+<span class="k">end</span><span class="p">;</span>
+
+<span class="k">var</span> <span class="n">x</span> <span class="p">:</span> <span class="n">my_tuple</span><span class="p">;</span>
+
+<span class="k">write</span> <span class="err">"</span><span class="n">Enter</span> <span class="n">an</span> <span class="kt">integer</span><span class="p">:</span><span class="err">"</span><span class="p">;</span>
+<span class="k">read</span> <span class="n">x</span><span class="p">.</span><span class="n">a</span><span class="p">;</span>
+<span class="k">write</span> <span class="err">"</span><span class="n">Enter</span> <span class="n">a</span> <span class="n">float</span><span class="p">:</span><span class="err">"</span><span class="p">;</span>
+<span class="k">read</span> <span class="n">x</span><span class="p">.</span><span class="n">b</span><span class="p">;</span>
+
+<span class="n">x</span><span class="p">.</span><span class="n">a</span> <span class="p">:=</span> <span class="n">x</span><span class="p">.</span><span class="n">a</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+<span class="n">x</span><span class="p">.</span><span class="n">b</span> <span class="p">:=</span> <span class="n">x</span><span class="p">.</span><span class="n">b</span> <span class="p">+</span> <span class="m">3.4</span><span class="p">;</span>
+
+<span class="k">write</span> <span class="err">"</span><span class="n">Tuple</span><span class="p">:</span><span class="err">"</span><span class="p">;</span>
+<span class="k">write</span> <span class="err">"</span>  <span class="n">x</span><span class="p">.</span><span class="n">a</span><span class="p">=</span><span class="err">"</span><span class="p">;</span>
+<span class="k">write</span> <span class="n">x</span><span class="p">.</span><span class="n">a</span><span class="p">;</span>
+<span class="k">write</span> <span class="err">"</span>  <span class="n">x</span><span class="p">.</span><span class="n">b</span><span class="p">=</span><span class="err">"</span><span class="p">;</span>
+<span class="k">write</span> <span class="n">x</span><span class="p">.</span><span class="n">b</span><span class="p">;</span></code></pre></figure>
+
+
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>./gcctiny <span class="nt">-o</span> <span class="nb">test </span>struct.tiny
+<span class="nv">$ </span>./test 
+Enter an integer:
+1
+Enter a float:
+1.23
+Tuple:
+  x.a<span class="o">=</span>
+2
+  x.b<span class="o">=</span>
+4.630000</code></pre></figure>
+
+
+<p>
+Yay!
+</p>
+
+<p>That's all for today</p>
+</p></p></p></p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/09/04/tiny-gcc-front-part-10/">&laquo; A tiny GCC front end – Part 10</a>
+
+
+  <a class="next" href="/2016/10/08/exploring-aarch64-assembler-chapter1/">Exploring AArch64 assembler – Chapter 1 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 8</title>
+  <meta name="description" content="Now that we have the basic language set implemented we can consider adding new features to it. Today we will add arrays.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/01/30/tiny-gcc-front-part-8/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 8">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/01/30/tiny-gcc-front-part-8/">
+  <meta property="og:description" content="Now that we have the basic language set implemented we can consider adding new features to it. Today we will add arrays.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 8">
+  <meta name="twitter:description" content="Now that we have the basic language set implemented we can consider adding new features to it. Today we will add arrays.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 8</h1>
+    
+    <p class="post-meta"><time datetime="2016-01-30T10:31:45+00:00" itemprop="datePublished">Jan 30, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Now that we have the basic language set implemented we can consider adding new features to it. Today we will add arrays.
+</p>
+<!--more-->
+<h2>Array type and array values</h2>
+
+<p>
+An important element of programming languages is their <a href="https://en.wikipedia.org/wiki/Type_system">type system</a>. Type systems are crucial in the semantics of programming languages and are an actively researched topic nowadays. tiny, so far, has a very simple type system: there are only four types (int, float, boolean and string). We can express lots of things already with those types but it may fall short in some contexts.
+</p>
+
+<p>
+A <em>type system</em> is a set of <em>types</em> along with the rules that govern them. An element of the type system, i.e. a type, will be denoted by τ. As we said, tiny has four types. 
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+τ&ensp;→&ensp;<code><strong>int</strong></code>
+&emsp;&emsp; | <code><strong>float</strong></code>
+&emsp;&emsp; | <strong>bool</strong>
+&emsp;&emsp; | <strong>string</strong>
+</p>
+
+<p>
+A type is a set of <em>values</em>: <code><strong>int</strong></code> values are the 32 bit signed integers, <code><strong>float</strong></code> values are the reals encoded by IEEE 754 Binary32, <strong>bool</strong> has only two values true or false and values of <strong>string</strong> type are (possibly empty) finite sequences of characters.
+</p>
+
+<p>
+Now we want to add an <em>array type</em>. An array type has a <em>size</em> and an <em>element type</em>. The size is an integer expression of the language, that we will denote as ε that evaluates to a positive (nonzero) integer.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+τ&ensp;→&ensp;<strong>array</strong> ε τ
+</p>
+
+<p>
+This means that our typesystem has a type array constructed using an integer expression ε (the size) and a type τ (the element type).
+</p>
+
+<p>
+After this addition, our typesystem looks like this.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+τ&ensp;→&ensp;<code><strong>int</strong></code>
+&emsp;&emsp; | <code><strong>float</strong></code>
+&emsp;&emsp; | <strong>bool</strong>
+&emsp;&emsp; | <strong>string</strong>
+&emsp;&emsp; | <strong>array</strong> ε τ
+</p>
+
+<p>
+What are, thus, the values of a type <strong>array</strong> ε τ? A value of array type is a set of values of type τ called the <em>elements</em> of the array. There is an integer associated to each element, called the <em>index</em>. The set of indexes of the elements is such that they form an ascending sequence, where each index is the previous one plus one. The first index is called the lower bound (say it L) and the last one is the upper bound (say it U). This way it holds that U - L + 1 = ε.
+</p>
+
+<p>
+I know that at this point this seems unnecessarily theoretic but let's make a simple example. Consider <em>array 3 float</em>. A possible array value could be the following one, where L&nbsp;=&nbsp;0 and U&nbsp;=&nbsp;2.
+</p>
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈0 → 1.2, 1 → 2.3, 2 → 2.3〉
+</p>
+<p>
+for another example where L = 4 and U = 6
+</p>
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈4 → 1.2, 5 → 2.3, 6 → 2.3〉
+</p>
+<p>
+The indexes form a growing sequence wherer each index equals the previous one plus one. The following would not be the value of an array.
+</p>
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈12 → 1.2, 25 → 2.3, 42 → 2.3〉
+</p>
+
+<h2>Syntax</h2>
+
+<p>
+We will extend the rule of types of tiny to let us define a variable of array type.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code> | 〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code> | 〈type〉<code><strong>(</strong></code>〈expression〉<code><strong>:</strong></code>〈expression〉<code><strong>)</strong></code>
+</p>
+
+<p>
+We will also need to extend expressions so we can designate one of the elements of the array.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code>
+&emsp;&emsp; | 〈identifier〉
+&emsp;&emsp; | 〈integer-literal〉
+&emsp;&emsp; | 〈float-literal〉
+&emsp;&emsp; | 〈string-literal〉
+&emsp;&emsp; | 〈array-element〉
+〈array-element〉&ensp;→&ensp;〈primary〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+</p>
+
+<h2>Semantics</h2>
+
+<p>
+A 〈type〉 of the form
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+</p>
+
+<p>
+designates an array type. If 〈type〉 is not an array then the designated type is just <code><strong>array</strong></code> 〈type〉 〈expression〉. The set of indexes range from 0 to 〈expression〉 minus one.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">a</span> <span class="p">:</span> <span class="n">int</span><span class="p">[</span><span class="m">10</span><span class="p">];</span>       <span class="p">#</span> <span class="k">array</span> <span class="m">10</span> <span class="n">int</span></code></pre></figure>
+
+<p>
+Things are a bit more complicated if 〈type〉 is an array because now there are two possible interpretations.
+<small>In the comments below, parentheses are used only to express grouping</small>
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">b</span> <span class="p">:</span> <span class="n">int</span><span class="p">[</span><span class="m">10</span><span class="p">][</span><span class="m">20</span><span class="p">];</span>  <span class="p">#</span> <span class="k">array</span> <span class="m">10</span> <span class="p">(</span><span class="k">array</span> <span class="m">20</span> <span class="n">int</span><span class="p">)</span>
+                      <span class="p">#</span>    <span class="k">or</span>
+                      <span class="p">#</span> <span class="k">array</span> <span class="m">20</span> <span class="p">(</span><span class="k">array</span> <span class="m">10</span> <span class="n">int</span><span class="p">)</span> <span class="p">?</span></code></pre></figure>
+
+<p>
+We will chose the first interpretation. Some programming languages, like Fortran, choose the second one.
+</p>
+<p>
+For the case when 〈type〉 is an array, let's assume it is of the form <strong>array</strong> ε<sub>0</sub> τ<sub>0</sub>. Then the designated type will be <strong>array</strong> ε<sub>0</sub> (<strong>array</strong> τ<sub>0</sub> 〈expression〉)
+</p>
+
+<p>
+The other syntax is similar.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉&ensp;→&ensp;〈type〉<code><strong>(</strong></code>〈expression<sub>0</sub>〉<code><strong>:</strong></code>〈expression<sub>1</sub>〉<code><strong>)</strong></code>
+</p>
+
+<p>
+Now ε is 〈expression<sub>1</sub>〉 - 〈expression<sub>0</sub>〉 + 1 and the indexes of the array range from 〈expression<sub>0</sub>〉 to 〈expression<sub>1</sub>〉 (both ends included). 〈expression<sub>1</sub>〉 must be larger or equal than 〈expression<sub>0</sub>〉, otherwise this is an error.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">a1</span> <span class="p">:</span> <span class="n">int</span><span class="p">(</span><span class="m">0</span><span class="p">:</span><span class="m">9</span><span class="p">);</span>       <span class="p">#</span> <span class="k">array</span> <span class="m">10</span> <span class="n">int</span>
+<span class="k">var</span> <span class="n">b1</span> <span class="p">:</span> <span class="n">int</span><span class="p">(</span><span class="m">0</span><span class="p">:</span><span class="m">9</span><span class="p">)(</span><span class="m">1</span><span class="p">:</span><span class="m">20</span><span class="p">);</span> <span class="p">#</span> <span class="k">array</span> <span class="m">10</span> <span class="p">(</span><span class="k">array</span> <span class="m">20</span> <span class="n">int</span><span class="p">)</span>
+<span class="k">var</span> <span class="n">c1</span> <span class="p">:</span> <span class="n">int</span><span class="p">(</span><span class="m">5</span><span class="p">:</span><span class="m">5</span><span class="p">);</span>       <span class="p">#</span> <span class="k">array</span> <span class="m">1</span> <span class="n">int</span>
+<span class="k">var</span> <span class="n">d1</span> <span class="p">:</span> <span class="n">int</span><span class="p">(-</span><span class="m">5</span><span class="p">:-</span><span class="m">3</span><span class="p">)</span>      <span class="p">#</span> <span class="k">array</span> <span class="m">3</span> <span class="n">int</span></code></pre></figure>
+
+<p>
+A 〈primary〉 of the form
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈array-element〉&ensp;→&ensp;〈primary〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+</p>
+
+<p>
+designates a single element of 〈primary〉. The type of 〈primary〉 must be array, otherwise this is an error. The 〈expression〉 must be an expression of integer type the value of which must be contained in the range of indexes of the array type, otherwise this is an error. The type of an array element is the same as the element type of the array.
+</p>
+
+<p>
+Given the declarations of <code>a1</code>, <code>b1</code>, <code>c1</code>, <code>d1</code> above, valid array elements are.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="n">a1</span><span class="p">[</span><span class="m">0</span><span class="p">]</span>
+<span class="n">a1</span><span class="p">[</span><span class="m">9</span><span class="p">]</span>
+<span class="n">b1</span><span class="p">[</span><span class="m">0</span><span class="p">][</span><span class="m">1</span><span class="p">]</span>
+<span class="n">b1</span><span class="p">[</span><span class="m">3</span><span class="p">][</span><span class="m">4</span><span class="p">]</span>
+<span class="n">b1</span><span class="p">[</span><span class="m">9</span><span class="p">][</span><span class="m">20</span><span class="p">]</span>
+<span class="n">c1</span><span class="p">[</span><span class="m">5</span><span class="p">]</span>
+<span class="n">d1</span><span class="p">[-</span><span class="m">5</span><span class="p">]</span>
+<span class="n">d1</span><span class="p">[-</span><span class="m">4</span><span class="p">]</span>
+<span class="n">d1</span><span class="p">[-</span><span class="m">3</span><span class="p">]</span></code></pre></figure>
+
+<p>
+Primaries of the form 〈identifier〉 and 〈array-element〉 can be used in the left hand side of an assignment and in the read statement. We will call this subset of expressions as <em>variables</em>. Some programming languages, like C and C++, name these expressions <em>lvalues</em> (or L-values) for historical reasons: an lvalue can appear in the <em>left</em> hand side of an assignment.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈assignment〉&ensp;→&ensp;〈variable〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code>
+〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈variable〉 <code><strong>;</strong></code>
+</p>
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈variable〉&ensp;→&ensp;〈identifier〉
+&emsp;&emsp; | 〈array-element〉
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="n">a1</span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="p">:=</span> <span class="m">3</span><span class="p">;</span>
+<span class="k">read</span> <span class="n">a1</span><span class="p">[</span><span class="m">2</span><span class="p">];</span></code></pre></figure>
+
+<p>
+This opens up many possibilities. For instance now we can write a tiny program (<code>bubble.tiny</code>) that sorts a given set of numbers.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="p">#</span> <span class="n">bubble</span><span class="p">.</span><span class="n">tiny</span>
+<span class="k">var</span> <span class="n">n</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="k">write</span> <span class="err">"</span><span class="n">Enter</span> <span class="n">the</span> <span class="n">number</span> <span class="k">of</span> <span class="n">integers</span><span class="p">:</span><span class="err">"</span><span class="p">;</span>
+<span class="k">read</span> <span class="n">n</span><span class="p">;</span>
+
+<span class="k">write</span> <span class="err">"</span><span class="n">Enter</span> <span class="n">the</span> <span class="n">integers</span><span class="p">:</span><span class="err">"</span><span class="p">;</span>
+
+<span class="k">var</span> <span class="n">i</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">a</span> <span class="p">:</span> <span class="n">int</span><span class="p">[</span><span class="n">n</span><span class="p">];</span>
+<span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">0</span> <span class="k">to</span> <span class="n">n</span> <span class="p">-</span> <span class="m">1</span>
+<span class="k">do</span>
+   <span class="k">read</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="k">end</span>
+
+<span class="p">#</span> <span class="n">Very</span> <span class="n">inefficient</span> <span class="n">bubble</span> <span class="n">sort</span> <span class="n">used</span>
+<span class="p">#</span> <span class="k">only</span> <span class="k">as</span> <span class="n">an</span> <span class="n">example</span>
+
+<span class="k">var</span> <span class="n">swaps</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="n">swaps</span> <span class="p">:=</span> <span class="m">1</span><span class="p">;</span>
+<span class="k">while</span> <span class="n">swaps</span> <span class="p">&gt;</span> <span class="m">0</span>
+<span class="k">do</span>
+  <span class="n">swaps</span> <span class="p">:=</span> <span class="m">0</span><span class="p">;</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">1</span> <span class="k">to</span> <span class="n">n</span> <span class="p">-</span> <span class="m">1</span>
+  <span class="k">do</span>
+     <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="p">-</span> <span class="m">1</span><span class="p">]</span> <span class="p">&gt;</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+     <span class="k">then</span>
+       <span class="k">var</span> <span class="n">t</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+       <span class="n">t</span> <span class="p">:=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">-</span><span class="m">1</span><span class="p">];</span>
+       <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">-</span><span class="m">1</span><span class="p">]</span> <span class="p">:=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+       <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">:=</span> <span class="n">t</span><span class="p">;</span>
+       <span class="n">swaps</span> <span class="p">:=</span> <span class="n">swaps</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+     <span class="k">end</span>
+  <span class="k">end</span> 
+<span class="k">end</span>
+
+<span class="k">write</span> <span class="err">"</span><span class="n">Sorted</span> <span class="n">numbers</span><span class="p">:</span><span class="err">"</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">0</span> <span class="k">to</span> <span class="n">n</span> <span class="p">-</span> <span class="m">1</span>
+<span class="k">do</span>
+   <span class="k">write</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="k">end</span></code></pre></figure>
+
+<h2>Implementation</h2>
+
+<p>
+Adding support for arrays to our front end is not too hard.
+</p>
+
+<h3>Minor issue first</h3>
+
+<p>
+Before we proceed we need to fix an issue that may cause us problems when we play with arrays: We want all the declarations have a <code>DECL_CONTEXT</code>. Current code only sets it for <code>LABEL_DECL</code> but all declarations (except those that are global) should have some <code>DECL_CONTEXT</code>. In our case <code>VAR_DECL</code>s and the <code>RESULT_DECL</code> of main are missing the <code>DECL_CONTEXT</code>. We have to set it to the <code>FUNCTION_DECL</code> of the main function (this effectively makes them local variables of the main function).
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+index 709b517..0ce295d 100644
+</span><span class="p">@@ -242,6 +242,7 @@</span> Parser::parse_program ()
+   // Append "return 0;"
+   tree resdecl
+     = build_decl (UNKNOWN_LOCATION, RESULT_DECL, NULL_TREE, integer_type_node);
+<span class="gi">+  DECL_CONTEXT (resdecl) = main_fndecl;
+</span>   DECL_RESULT (main_fndecl) = resdecl;
+   tree set_result
+     = build2 (INIT_EXPR, void_type_node, DECL_RESULT (main_fndecl),
+<span class="p">@@ -455,6 +456,7 @@</span> Parser::parse_variable_declaration ()
+   Tree decl = build_decl (identifier-&gt;get_locus (), VAR_DECL,
+ 			  get_identifier (sym-&gt;get_name ().c_str ()),
+ 			  type_tree.get_tree ());
+<span class="gi">+  DECL_CONTEXT (decl.get_tree()) = main_fndecl;
+</span> 
+   gcc_assert (!stack_var_decl_chain.empty ());
+   stack_var_decl_chain.back ().append (decl);</code></pre></figure>
+
+<h2>Lexer</h2>
+
+<p>
+For the lexer we only have to add three tokens <code><strong>[</strong></code> and <code><strong>]</strong></code>. The remaining punctuation required for arrays <code><strong>(</strong></code>, <code><strong>)</strong></code> and <code><strong>:</strong></code> were already in tiny.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-token.h b/gcc/tiny/tiny-token.h
+index d469980..2d81386 100644
+</span><span class="p">@@ -40,6 +40,8 @@</span> namespace Tiny
+   TINY_TOKEN (INTEGER_LITERAL, "integer literal")                              \
+   TINY_TOKEN (REAL_LITERAL, "real literal")                                    \
+   TINY_TOKEN (STRING_LITERAL, "string literal")                                \
+<span class="gi">+  TINY_TOKEN (LEFT_SQUARE, "[")                                                \
++  TINY_TOKEN (RIGHT_SQUARE, "]")                                               \
+</span>                                                                                \
+   TINY_TOKEN_KEYWORD (AND, "and")                                              \
+   TINY_TOKEN_KEYWORD (DO, "do")                                                \</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-lexer.cc b/gcc/tiny/tiny-lexer.cc
+index 1b9c8be..b67470d 100644
+</span><span class="p">@@ -223,6 +223,12 @@</span> Lexer::build_token ()
+ 	    }
+ 	  continue;
+ 	  break;
+<span class="gi">+	case '[':
++	  current_column++;
++	  return Token::make (LEFT_SQUARE, loc);
++	case ']':
++	  current_column++;
++	  return Token::make (RIGHT_SQUARE, loc);
+</span> 	}
+ 
+       // ***************************</code></pre></figure>
+
+<h2>Parser</h2>
+
+<h3>Array type</h3>
+
+<p>
+First let's see how to parse a type that designates an array. In member function Parser::parse_type we cannot just return the parsed type. Instead we will keep it.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -517,24 +534,91 @@</span> Parser::parse_type ()
+ {
+ 
+   const_TokenPtr t = lexer.peek_token ();
+ 
+<span class="gi">+  Tree type;
++
+</span>   switch (t-&gt;get_id ())
+     {
+     case Tiny::INT:
+       lexer.skip_token ();
+<span class="gd">-      return integer_type_node;
+</span><span class="gi">+      type = integer_type_node;
+</span>       break;
+     case Tiny::FLOAT:
+       lexer.skip_token ();
+<span class="gd">-      return float_type_node;
+</span><span class="gi">+      type = float_type_node;
+</span>       break;
+     default:
+       unexpected_token (t);
+       return Tree::error ();
+       break;
+     }</code></pre></figure>
+
+<p>
+Now we will start parsing the indexes ranges. We will have a list of pairs of expressions, each pair denoting the lower and the upper indexes of the array type. For arrays of the form <code>[e]</code> we will set the lower bound to zero and the upper bound to the <code>e - 1</code>. For arrays of the form <code>(e0:e1)</code>, the lower and the upper will be <code>e0</code> and <code>e1</code> respectively.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gi">+
++  typedef std::vector&lt;std::pair&lt;Tree, Tree&gt; &gt; Dimensions;
++  Dimensions dimensions;
++
++  t = lexer.peek_token ();
++  while (t-&gt;get_id () == Tiny::LEFT_PAREN || t-&gt;get_id () == Tiny::LEFT_SQUARE)
++    {
++      lexer.skip_token ();
++
++      Tree lower_bound, upper_bound;
++      if (t-&gt;get_id () == Tiny::LEFT_SQUARE)
++	{
++	  Tree size = parse_integer_expression ();
++	  skip_token (Tiny::RIGHT_SQUARE);
++
++	  lower_bound = Tree (build_int_cst_type (integer_type_node, 0),
++			      size.get_locus ());
++	  upper_bound
++	    = build_tree (MINUS_EXPR, size.get_locus (), integer_type_node,
++			  size, build_int_cst (integer_type_node, 1));
++
++	}
++      else if (t-&gt;get_id () == Tiny::LEFT_PAREN)
++	{
++	  lower_bound = parse_integer_expression ();
++	  skip_token (Tiny::COLON);
++
++	  upper_bound = parse_integer_expression ();
++	  skip_token (Tiny::RIGHT_PAREN);
++	}
++      else
++	{
++	  gcc_unreachable ();
++	}
++
++      dimensions.push_back (std::make_pair (lower_bound, upper_bound));
++      t = lexer.peek_token ();
++    }</span></code></pre></figure>
+
+<p>
+Now we can start building the array type.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre><span class="gi">+  for (Dimensions::reverse_iterator it = dimensions.rbegin ();
++       it != dimensions.rend (); it++)
++    {
++      it-&gt;first = Tree (fold (it-&gt;first.get_tree ()), it-&gt;first.get_locus ());
++      it-&gt;second
++	= Tree (fold (it-&gt;second.get_tree ()), it-&gt;second.get_locus ());
++
++      Tree range_type
++	= build_range_type (integer_type_node, it-&gt;first.get_tree (),
++			    it-&gt;second.get_tree ());
++      type = build_array_type (type.get_tree (), range_type.get_tree ());
++    }
++
++  return type;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Due to the semantics of the array types described above, we have to traverse the list in reverse order. We get the lower and upper expressions and we <em>fold</em> it (lines 4 to 5). This GCC function will attempt to simplify the expression if possible. For instance 1+2*3 will become 7. Now we build a GCC range type. A range type is a type the values of which are integers in the specified range. In this case we use the lower and the upper to create the range type (lines 8 to 10). A range type is represented as a GENERIC tree with tree code <code>RANGE_TYPE</code>. Once we have this range type, we take the current type (which may be at this point an integer type, a float type or another array type) and the range type to build an array type (line 11). An array type is represented as a GENERIC tree with three code <code>ARRAY_TYPE</code>.
+</p>
+
+<p style="padding: 0.7em; background-color: bisque;">
+Note that we currently do not check that the ε of the array type is actually a positive, nonzero, integer value. If the bounds of the array are constant, such error can be detected at compile time (the earlier an error is detected the better). If the bounds are non-constant then the semantics of the language should specify what to do during the execution of the program. Tiny semantics simply say that it is an error. Since we have not clarified what <q>to be an error</q> is, we will not do anything special yet.
+</p>
+
+<h3>Array element</h3>
+
+<p>
+Now we have to add support for array elements in expressions. Recall that we use a Pratt parser to recognize them. We can recognize an array element by just acting as if <code><strong>[</strong></code> were a binary operation with very high priority.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+index 0ce295d..37c6397 100644
+</span><span class="p">@@ -1157,6 +1220,8 @@</span> enum binding_powers
+   // Highest priority
+   LBP_HIGHEST = 100,
+ 
+<span class="gi">+  LBP_ARRAY_REF = 80,
++
+</span>   LBP_UNARY_PLUS = 50,  // Used only when the null denotation is +
+   LBP_UNARY_MINUS = LBP_UNARY_PLUS, // Used only when the null denotation is -
+
+@@ -1189,6 +1254,8 @@ Parser::left_binding_power (const_TokenPtr token)
+ {
+   switch (token-&gt;get_id ())
+     {
+<span class="gi">+    case Tiny::LEFT_SQUARE:
++      return LBP_ARRAY_REF;</span></code></pre></figure>
+
+<p>
+This will require a binary handler, like other infix operators.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -116,7 +117,9 @@</span> private:
+   BINARY_HANDLER (greater_equal, GREATER_OR_EQUAL)                             \
+                                                                                \
+   BINARY_HANDLER (logical_and, AND)                                            \
+<span class="gd">-  BINARY_HANDLER (logical_or, OR)
+</span><span class="gi">+  BINARY_HANDLER (logical_or, OR)                                              \
++                                                                               \
++  BINARY_HANDLER (array_ref, LEFT_SQUARE)
+</span> 
+ #define BINARY_HANDLER(name, _)                                                \
+   Tree binary_##name (const_TokenPtr tok, Tree left);</code></pre></figure>
+
+<p>
+The binary handler is actually rather straightforward.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre></td><td class="code"><pre><span class="n">Tree</span> <span class="n">Parser</span><span class="o">::</span><span class="n">binary_array_ref</span><span class="p">(</span><span class="k">const</span> <span class="n">const_TokenPtr</span> <span class="n">tok</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">right</span> <span class="o">=</span> <span class="n">parse_integer_expression</span><span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">right</span><span class="p">.</span><span class="n">is_error</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skip_token</span><span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">RIGHT_SQUARE</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">is_array_type</span><span class="p">(</span><span class="n">left</span><span class="p">.</span><span class="n">get_type</span><span class="p">()))</span> <span class="p">{</span>
+    <span class="n">error_at</span><span class="p">(</span><span class="n">left</span><span class="p">.</span><span class="n">get_locus</span><span class="p">(),</span> <span class="s">"does not have array type"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="n">Tree</span> <span class="n">element_type</span> <span class="o">=</span> <span class="n">TREE_TYPE</span><span class="p">(</span><span class="n">left</span><span class="p">.</span><span class="n">get_type</span><span class="p">().</span><span class="n">get_tree</span><span class="p">());</span>
+
+  <span class="k">return</span> <span class="n">build_tree</span><span class="p">(</span><span class="n">ARRAY_REF</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_locus</span><span class="p">(),</span> <span class="n">element_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span>
+                    <span class="n">Tree</span><span class="p">(),</span> <span class="n">Tree</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Recall that a binary handler has the lexer positioned right after the infix operator. This means that we have already consumed <code><strong>[</strong></code>. So we have to parse the integer expression enclosed by the square brackets (line 4). Recall that any token unknown to the Pratt parser has the lowest possible <em>binding power</em>, this means that parsing the integer expression will stop when it encounters the <code><strong>]</strong></code>. This behaviour is actually the one we want. We still have to consume the <code><strong>]</strong></code> (line 8). Now we verify if the left operand has array type (line 9). If it does not, this is an error. If it does, we compute the type of the array element. To do this we have to use the accessor <code>TREE_TYPE</code> from GCC which given an <code>ARRAY_TYPE</code> will return its element type (line 14). Finally we build the GENERIC tree <code>ARRAY_REF</code> that repreents an access the array element (line 16).
+</p>
+
+<p>
+Checking if a tree in GENERIC represents an array type is done using this auxiliar function.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span>
+<span class="nf">is_array_type</span> <span class="p">(</span><span class="n">Tree</span> <span class="n">type</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">gcc_assert</span> <span class="p">(</span><span class="n">TYPE_P</span> <span class="p">(</span><span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">()));</span>
+  <span class="k">return</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree_code</span> <span class="p">()</span> <span class="o">==</span> <span class="n">ARRAY_TYPE</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p style="padding: 0.7em; background-color: bisque;">
+Likewise with ε, we are not verifying that the expression of the array element evaluates to an integer contained in the range of indexes of the declared array. Recall that the semantics of tiny are not complete enough regarding errors.
+</p>
+
+<h3>Final touches</h3>
+
+<p>
+As we said above we allow variables and array elements in the expression of a read statement and in the left hand side of an assignment. Let's first create a couple of functions that expression r
+that check this for us.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_expression_naming_variable</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">();</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
+    <span class="k">return</span> <span class="n">expr</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_tree_code</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">VAR_DECL</span> <span class="o">&amp;&amp;</span> <span class="n">expr</span><span class="p">.</span><span class="n">get_tree_code</span> <span class="p">()</span> <span class="o">!=</span> <span class="n">ARRAY_REF</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">error_at</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">get_locus</span> <span class="p">(),</span>
+		<span class="s">"does not designate a variable or array element"</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
+    <span class="p">}</span>
+  <span class="k">return</span> <span class="n">expr</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">Tree</span>
+<span class="n">Parser</span><span class="o">::</span><span class="n">parse_lhs_assignment_expression</span> <span class="p">()</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">parse_expression_naming_variable</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>
+Since we allow the same thing in both cases, <code>parse_lhs_assignment_expression</code> just forwards to <code>parse_expression_naming_variable</code>. Now we can update parse_assignment.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -572,24 +656,11 @@</span>
+ Tree
+ Parser::parse_assignment_statement ()
+ {
+<span class="gd">-  const_TokenPtr identifier = expect_token (Tiny::IDENTIFIER);
+-  if (identifier == NULL)
+-    {
+-      skip_after_semicolon ();
+-      return Tree::error ();
+-    }
+-
+-  SymbolPtr sym
+-    = query_variable (identifier-&gt;get_str (), identifier-&gt;get_locus ());
+-  if (sym == NULL)
+-    {
+-      skip_after_semicolon ();
+-      return Tree::error ();
+-    }
+</span><span class="gi">+  Tree variable = parse_lhs_assignment_expression ();
+</span> 
+<span class="gd">-  gcc_assert (!sym-&gt;get_tree_decl ().is_null ());
+-  Tree var_decl = sym-&gt;get_tree_decl ();
+</span><span class="gi">+  if (variable.is_error ())
++    return Tree::error ();
+</span> 
+   const_TokenPtr assig_tok = expect_token (Tiny::ASSIG);
+   if (assig_tok == NULL)
+<span class="p">@@ -606,18 +677,17 @@</span> Parser::parse_assignment_statement ()
+ 
+   skip_token (Tiny::SEMICOLON);
+ 
+<span class="gd">-  if (var_decl.get_type () != expr.get_type ())
+</span><span class="gi">+  if (variable.get_type () != expr.get_type ())
+</span>     {
+       error_at (first_of_expr-&gt;get_locus (),
+<span class="gd">-		"cannot assign value of type %s to variable '%s' of type %s",
+-		print_type (expr.get_type ()), sym-&gt;get_name ().c_str (),
+-		print_type (var_decl.get_type ()));
+</span><span class="gi">+		"cannot assign value of type %s to a variable of type %s",
++		print_type (expr.get_type ()),
++		print_type (variable.get_type ()));
+</span>       return Tree::error ();
+     }
+ 
+   Tree assig_expr = build_tree (MODIFY_EXPR, assig_tok-&gt;get_locus (),
+<span class="gd">-				void_type_node, var_decl, expr);
+</span><span class="gi">+				void_type_node, variable, expr);
+</span> 
+   return assig_expr;
+ }</code></pre></figure>
+
+<h3>Language hook</h3>
+
+<p>
+If we want to use arrays with non-constant size, GCC will invoke a language hook when internally computing the size of the array. This is for those cases where the language supports variable-sized types in a global scope. In this case the hook must return true, false otherwise.
+</p>
+
+<p>
+Since in tiny where everything is conceptually inside an implicit main function, the binding must return false. 
+</p>
+
+<p>
+Our hook, currently crashes the compiler, so we need to adjust it first. Recall that this hook is in <code>tiny1.cc</code>.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny1.cc b/gcc/tiny/tiny1.cc
+index dcd6f45..3a92eaa 100644
+</span><span class="p">@@ -159,8 +159,7 @@</span> tiny_langhook_builtin_function (tree decl)
+ static bool
+ tiny_langhook_global_bindings_p (void)
+ {
+<span class="gd">-  gcc_unreachable ();
+-  return true;
+</span><span class="gi">+  return false;
+</span> }</code></pre></figure>
+
+<h2>Trying it</h2>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="p">#</span> <span class="k">array</span><span class="p">.</span><span class="n">tiny</span>
+<span class="k">var</span> <span class="n">a</span> <span class="p">:</span> <span class="n">int</span><span class="p">[</span><span class="m">10</span><span class="p">];</span>
+
+<span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="p">:=</span> <span class="m">11</span><span class="p">;</span>
+<span class="n">a</span><span class="p">[</span><span class="m">2</span><span class="p">]</span> <span class="p">:=</span> <span class="m">22</span><span class="p">;</span>
+
+<span class="k">write</span> <span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">];</span>
+<span class="k">write</span> <span class="n">a</span><span class="p">[</span><span class="m">2</span><span class="p">];</span>
+
+<span class="k">var</span> <span class="n">b</span> <span class="p">:</span> <span class="n">int</span><span class="p">(</span><span class="m">2</span><span class="p">:</span><span class="m">4</span><span class="p">);</span>
+
+<span class="n">b</span><span class="p">[</span><span class="m">2</span><span class="p">]</span> <span class="p">:=</span> <span class="m">55</span><span class="p">;</span>
+<span class="n">b</span><span class="p">[</span><span class="m">3</span><span class="p">]</span> <span class="p">:=</span> <span class="m">66</span><span class="p">;</span>
+<span class="n">b</span><span class="p">[</span><span class="m">4</span><span class="p">]</span> <span class="p">:=</span> <span class="m">77</span><span class="p">;</span>
+
+<span class="k">write</span> <span class="n">b</span><span class="p">[</span><span class="m">2</span><span class="p">];</span>
+<span class="k">write</span> <span class="n">b</span><span class="p">[</span><span class="m">3</span><span class="p">];</span>
+<span class="k">write</span> <span class="n">b</span><span class="p">[</span><span class="m">4</span><span class="p">];</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcctiny <span class="nt">-o</span> array array.tiny
+<span class="nv">$ </span>./array 
+11
+22
+55
+66
+77</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="p">#</span> <span class="n">matrix</span><span class="p">.</span><span class="n">tiny</span>
+<span class="k">var</span> <span class="n">a</span> <span class="p">:</span> <span class="n">int</span><span class="p">[</span><span class="m">10</span><span class="p">][</span><span class="m">20</span><span class="p">];</span>
+
+<span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">][</span><span class="m">2</span><span class="p">]</span> <span class="p">:=</span> <span class="m">11</span><span class="p">;</span>
+<span class="n">a</span><span class="p">[</span><span class="m">2</span><span class="p">][</span><span class="m">3</span><span class="p">]</span> <span class="p">:=</span> <span class="m">22</span><span class="p">;</span>
+
+<span class="k">write</span> <span class="n">a</span><span class="p">[</span><span class="m">1</span><span class="p">][</span><span class="m">2</span><span class="p">];</span>
+<span class="k">write</span> <span class="n">a</span><span class="p">[</span><span class="m">2</span><span class="p">][</span><span class="m">3</span><span class="p">];</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcctiny <span class="nt">-o</span> matrix matrix.tiny
+<span class="nv">$ </span>./matrix 
+11
+22</code></pre></figure>
+
+<p>
+Let's try the <code>bubble.tiny</code> program shown earlier.
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcctiny <span class="nt">-o</span> bubble bubble.tiny
+<span class="nv">$ </span>./bubble 
+Enter the number of integers:
+4
+Enter the integers:
+1 3 2 4
+Sorted numbers:
+1
+2
+3
+4</code></pre></figure>
+
+<p>
+Yay!
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/19/tiny-gcc-front-part-7/">&laquo; A tiny GCC front end – Part 7</a>
+
+
+  <a class="next" href="/2016/01/31/tiny-gcc-front-part-9/">A tiny GCC front end – Part 9 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

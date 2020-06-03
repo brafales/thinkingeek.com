@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Exploring AArch64 assembler – Chapter 4</title>
+  <meta name="description" content="In this chapter we will see some instructions that will allow us to compute things.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/10/23/exploring-aarch64-assembler-chapter-4/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Exploring AArch64 assembler – Chapter 4">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/10/23/exploring-aarch64-assembler-chapter-4/">
+  <meta property="og:description" content="In this chapter we will see some instructions that will allow us to compute things.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Exploring AArch64 assembler – Chapter 4">
+  <meta name="twitter:description" content="In this chapter we will see some instructions that will allow us to compute things.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Exploring AArch64 assembler – Chapter 4</h1>
+    
+    <p class="post-meta"><time datetime="2016-10-23T14:08:31+00:00" itemprop="datePublished">Oct 23, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/aarch64/">AArch64</a>
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+In this chapter we will see some instructions that will allow us to compute things.
+</p>
+
+<!--more-->
+
+<h2>Arithmetic instructions</h2>
+
+<p>
+Since a computer is nothing but a glorified calculator (or a calculator it is nothing but a tiny computer), it has to be possible to perform basic arithmetic. For now we will restrict to integer operations. In later chapters we will see how we can manipulate other kinds of numbers.
+</p>
+
+<h3>Addition and subtraction</h3>
+
+<p>
+We can perform addition and subtraction using <code>add</code> and <code>sub</code> instructions. These instructions are pretty flexible in that they allow using many forms.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">add Rdest, Rsource1, #immediate          // Rdest ← Rsource1 + immediate
+add Rdest, Rsource1, Rsource2            // Rdest ← Rsource1 + Rsource2
+add Xdest, Xsource1, Xsource2, shiftop   // Xdest ← Xsource1 + shiftop(Xsource2)
+add Xdest, Xsource1, Xsource2, extop     // Xdest ← Xsource1 + extop(Xsource2)
+add Wdest, Wsource1, Wsource2, shiftop   // Wdest ← Wsource1 + shiftop(Wsource2)
+add Wdest, Wsource1, Wsource2, extop     // Wdest ← Wsource1 + extop(Wsource2)
+add Xdest, Xsource1, Wsource2, extop     // Xdest ← Xsource1 + extop(Wsource2)</code></pre></figure>
+
+<p>
+In the forms above <code>Rx</code> means either <code>Xx</code> or <code>Wx</code> (but without mixing them in the same instruction), <code>shiftop</code> and <code>extop</code> are the shift and extension operands described in chapter 3. In this case, <code>shiftop</code> does not include <code>ROR</code>. All the forms shown for <code>add</code> can be used for <code>sub</code> as well.
+</p>
+
+<h3>Multiplication and division</h3>
+
+<p>
+Compared to addition and subtraction, multiplication and division are harder operations. And there are a few different instructions for this purpose.
+</p>
+
+<p>
+Due to the nature of multiplication, multiplying two values of 32/64 bits may end requiring 64/128 bits to be able to fully encode the mathematical result. If we know this will not happen (i.e. the result of the value can be encoded in 32/64 bits) or we do not care we can use the <code>mul</code> instruction. If there are excess bits, they will be dropped.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mul Rdest, Rsource1, Rsource2 // Rdest ← Rsource1 * Rsource2
+                              // but be careful with overflow</code></pre></figure>
+
+<p> 
+If we do care about the excess bits, then we have a bunch of instructions we can use. For 32-bit multiplications, <code>umull</code> and <code>smull</code> can be used. The latter is required when multiplying numbers in two's complement so the sign bit is correctly handled.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">umull Xdest, Wsource1, Wsource2  // Xdest ← Wsource1 * Wsource2
+smull Xdest, Wsource1, Wsource2  // Xdest ← Wsource1 * Wsource2 
+                                 // for two's complement numbers
+                                 // in Wsource1 and Wsource2</code></pre></figure>
+
+<p>
+For the less common case where we multiply two 64-bit registers and still we care about the upper 64-bits of the 128-bit result, then we can use <code>umulh</code> and <code>smulh</code>. For this case we will need two 64-bit registers (named <code>Xlower</code> and <code>Xupper</code> in the example below).
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mul Xlower, Xsource1, Xsource2   // Xlower ← Lower64Bits(Xsource1 * Xsource2)
+smulh Xupper, Xsource1, Xsource2 // Xupper ← Upper64Bits(Xsource1 * Xsource2)</code></pre></figure>
+
+<p>
+Division is a bit simpler as only two instructions are necessary: <code>udiv</code> and <code>sdiv</code>. Again, the latter is for integer numbers encoded in two's complement.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">udiv Rdest, Rsource1, Rsource2  // Rdest ← Rsource1 / Rsource2
+sdiv Rdest, Rsource1, Rsource2  // Rdest ← Rsource1 / Rsource2
+                                // when Rsource1, Rsource2 are
+                                // in two's complement</code></pre></figure>
+
+<p>
+These two instructions will compute the quotient of the division rounded towards zero.
+</p>
+
+<h2>Bitwise instructions</h2>
+
+<p>
+Bitwise instructions directly operate in the bits of the registers, without assuming any encoding in them. 
+</p>
+
+<p>
+Instruction <code>mvn</code> performs a <a href="https://en.wikipedia.org/wiki/Bitwise_operation#NOT">bitwise not</a> on its operand.
+</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mvn Rdest, Rsource    // Rdest ← ~Rsource</code></pre></figure>
+
+<p>
+Most of the bitwise instructions use two source registers. The basic ones are <code>and</code>, <code>orr</code> and <code>eor</code> (exclusive orr). They perform a <a href="https://en.wikipedia.org/wiki/Bitwise_operation#AND">bitwise and</a>, a <a href="https://en.wikipedia.org/wiki/Bitwise_operation#OR">bitwise or</a> and a <a href="https://en.wikipedia.org/wiki/Bitwise_operation#XOR">bitwise xor</a> respectively.
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">and Rdest, Rsource1, #immediate          // Rdest ← Rsource1 &amp; immediate
+and Rdest, Rsource1, Rsource2            // Rdest ← Rsource1 &amp; Rsource2
+and Xdest, Xsource1, Xsource2, shiftop   // Xdest ← Xsource1 &amp; shiftop(Xsource2)
+and Wdest, Wsource1, Wsource2, shiftop   // Wdest ← Wsource1 &amp; shiftop(Wsource2)</code></pre></figure>
+
+
+<p>
+Similar forms as the shown above exist for <code>orr</code> and <code>eor</code>. For bitwise instructions <code>shiftop</code> <strong>does</strong> include <code>ROR</code>.
+</p>
+
+<p>
+There are combined versions of <code>mvn</code> plus <code>and</code>, <code>orr</code> and <code>eor</code> called <code>bic</code> (bit clear), <code>orn</code> (or not) and <code>eon</code> (exclusive or not) respectively. In this case, the second operand is first applied a NOT operation. They have slightly more limited forms.
+</p>
+
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">orn Rdest, Rsource1, Rsource2            // Rdest ← Rsource1 | ~Rsource2
+orn Xdest, Xsource1, Xsource2, shiftop   // Xdest ← Xsource1 | ~shiftop(Xsource2)
+orn Wdest, Wsource1, Wsource2, shiftop   // Wdest ← Wsource1 | ~shiftop(Wsource2)</code></pre></figure>
+
+
+<p>
+Likewise for <code>bic</code> and <code>eon</code>.
+</p>
+
+<p>
+There are more instructions with narrower use cases, so we will omit them for now.
+</p>
+
+<p>
+This is all for today.
+</p>
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/10/23/exploring-aarch64-assembler-chapter-3/">&laquo; Exploring AArch64 assembler – Chapter 3</a>
+
+
+  <a class="next" href="/2016/10/30/arm-assembler-raspberry-pi-chapter-26/">ARM assembler in Raspberry Pi – Chapter 26 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

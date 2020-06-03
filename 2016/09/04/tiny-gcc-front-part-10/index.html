@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A tiny GCC front end – Part 10</title>
+  <meta name="description" content="Today we will add a relatively simple feature that will be very useful for a future extension: type declarations.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2016/09/04/tiny-gcc-front-part-10/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A tiny GCC front end – Part 10">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2016/09/04/tiny-gcc-front-part-10/">
+  <meta property="og:description" content="Today we will add a relatively simple feature that will be very useful for a future extension: type declarations.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A tiny GCC front end – Part 10">
+  <meta name="twitter:description" content="Today we will add a relatively simple feature that will be very useful for a future extension: type declarations.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 10</h1>
+    
+    <p class="post-meta"><time datetime="2016-09-04T22:14:28+00:00" itemprop="datePublished">Sep 4, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">Compilers</a>,
+      
+    
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/gcc/">GCC</a>
+      
+    
+      
+    
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>
+Today we will add a relatively simple feature that will be very useful for a future extension: type declarations.
+</p>
+<!--more-->
+
+<h2>Variable declarations</h2>
+<p>
+Our current version of tiny has the concept of variable declaration, where a name is introduced in the program to represent a variable value type.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+</p>
+
+<p>
+For example, in the code below:
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">var</span> <span class="n">x</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+<span class="n">x</span> <span class="p">:=</span> <span class="m">3</span><span class="p">;</span></code></pre></figure>
+
+<p>
+After this variable declaration, the name <code>x</code> can be used as a variable: inside an expression or in the left hand side of an assignment.
+</p>
+
+<p>
+But what if we were able to declare things that are not only variables, like types? Associate to a name a type so we can use the type where a type is expected? This is what we are doing today: we are introducing type declarations.
+</p>
+
+<h2>Syntax</h2>
+
+<p>
+First we will generalize a bit the 〈declaration〉 rules to encompass 〈variable-declaration〉 and 〈type-declaration〉.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈declaration〉&ensp;→&ensp;〈variable-declaration〉 | 〈type-declaration〉
+</p>
+
+<p>
+Now we can define the syntax of <code>type-declarations</code>.
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈variable-declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+〈type-declaration〉&ensp;→&ensp;<code><strong>type</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+</p>
+
+<p>
+Since we want to be able to use the type declaration where types are specified, we need to extend our syntax for 〈type〉 (note the addition of 〈identifier〉 after <code>bool</code>).
+</p>
+
+<p style="padding: 0.7em; background-color: #e0e0e0;">
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code>
+&emsp;&emsp;| <code><strong>float</strong></code>
+&emsp;&emsp;| <code><strong>bool</strong></code>
+&emsp;&emsp;| 〈identifier〉 
+&emsp;&emsp;| 〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+&emsp;&emsp;| 〈type〉<code><strong>(</strong></code>〈expression〉<code><strong>:</strong></code>〈expression〉<code><strong>)</strong></code>
+</p>
+
+<h2>Semantics</h2>
+
+<p>
+If a variable declaration introduce a <em>variable name</em>, a type declaration introduces a <em>type name</em>. The same rules we use for variable names apply for type declaration names. We need a few restrictions though. The 〈identifier〉 of a type declaration cannot appear in the 〈type〉 of its own 〈type-declaration〉 (e.g. <code>type T : T[10];</code> is not valid). A type name can only be used where a type is expected, this means that it cannot be used inside an expression or the left hand side of an assignment. Finally, a name can either be a variable name or a type name but not both.
+</p>
+
+<p>
+The interpretation of using a type name inside a 〈type〉 is simple: it denotes the 〈type〉 of the corresponding 〈type-declaration〉 of that type name.
+</p>
+
+<h2>Implementation</h2>
+
+<p>With all that knowledge, we can start implementing type names.</p>
+
+<h3>Lexer</h3>
+
+<p>
+We are introducing a new token <code>type</code>. This is easy, we just add it to our list of token keywords.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-token.h b/gcc/tiny/tiny-token.h
+</span><span class="p">@@ -56,9 +56,11 @@</span> namespace Tiny
+   TINY_TOKEN_KEYWORD (NOT, "not")                                              \
+   TINY_TOKEN_KEYWORD (OR, "or")                                                \
+   TINY_TOKEN_KEYWORD (READ, "read")                                            \
+   TINY_TOKEN_KEYWORD (THEN, "then")                                            \
+   TINY_TOKEN_KEYWORD (TO, "to")                                                \
+   TINY_TOKEN_KEYWORD (TRUE_LITERAL, "true")                                    \
+<span class="gi">+  TINY_TOKEN_KEYWORD (TYPE, "type")                                            \
+</span>   TINY_TOKEN_KEYWORD (VAR, "var")                                              \
+   TINY_TOKEN_KEYWORD (WHILE, "while")                                          \
+   TINY_TOKEN_KEYWORD (WRITE, "write")                                          \</code></pre></figure>
+
+<p>
+Our existing lexer machinery will do the rest.
+</p>
+
+<h3>Parser</h3>
+
+<p>
+This part is as usual a bit more involved. First we need to recognize a new declaration.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+</span><span class="p">@@ -136,6 +137,7 @@</span> public:
+   Tree parse_statement ();
+ 
+   Tree parse_variable_declaration ();
+<span class="gi">+  Tree parse_type_declaration ();</span></code></pre></figure>
+
+<p>
+When parsing a statement, if we see a token <code>type</code> it means that a type-declaration starts.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+</span><span class="p">@@ -388,6 +390,9 @@</span> Parser::parse_statement ()
+     case Tiny::VAR:
+       return parse_variable_declaration ();
+       break;
+<span class="gi">+    case Tiny::TYPE:
++      return parse_type_declaration ();
++      break;</span></code></pre></figure>
+
+<p>
+The implementation is pretty straightforward...
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+</span><span class="p">@@ -474,6 +479,64 @@</span> Parser::parse_variable_declaration ()
+   return stmt;
+ }
+ 
+<span class="gi">+Tree
++Parser::parse_type_declaration ()
++{
++  // type_declaration -&gt; "type" identifier ":" type ";"
++  if (!skip_token (Tiny::TYPE))
++    {
++      skip_after_semicolon ();
++      return Tree::error ();
++    }
++
++  const_TokenPtr identifier = expect_token (Tiny::IDENTIFIER);
++  if (identifier == NULL)
++    {
++      skip_after_semicolon ();
++      return Tree::error ();
++    }
++
++  if (!skip_token (Tiny::COLON))
++    {
++      skip_after_semicolon ();
++      return Tree::error ();
++    }
++
++  Tree type_tree = parse_type ();
++
++  if (type_tree.is_error ())
++    {
++      skip_after_semicolon();
++      return Tree::error ();
++    }
++
++  skip_token (Tiny::SEMICOLON);</span></code></pre></figure>
+
+<p>
+... except for a detail: we need to create a type name. This means that the scope of names will contain two different kinds of names: variable names and type names. So before we can continue we will need to be able to distinguish the different kinds of names.
+</p>
+
+<p>
+This is not very complicated, though, it is just a matter of extending or <code>Symbol</code> class with a <code>SymbolKind</code> field.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-symbol.h b/gcc/tiny/tiny-symbol.h
+</span><span class="p">@@ -13,14 +13,27 @@</span>
+ namespace Tiny
+ {
+ 
+<span class="gi">+enum /* class */ SymbolKind
++{
++  INVALID,
++  VARIABLE,
++  TYPENAME
++};
++
+</span> struct Symbol
+ {
+ public:
+<span class="gd">-  Symbol (const std::string &amp;name_) : name (name_), decl (error_mark_node)
+</span><span class="gi">+  Symbol (SymbolKind kind, const std::string &amp;name_) : kind(kind), name (name_), decl (error_mark_node)
+</span>   {
+     gcc_assert (name.size () &gt; 0);
+   }
+ 
+<span class="gi">+  SymbolKind
++  get_kind () const
++  {
++    return kind;
++  }
++
+</span><span class="p">@@ -41,6 +55,7 @@</span> public:
+   }
+ 
+ private:
+<span class="gi">+  SymbolKind kind;
+</span>   std::string name;
+   Tree decl;
+ };</code></pre></figure>
+
+<p>
+Now it is mandatory to specify the kind of <code>Symbol</code> when we create it, so <code>parse_variable_declaration</code> and <code>query_variable</code> in <code>tiny-parser.cc</code> will have to be updated.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+</span><span class="p">@@ -452,10 +457,10 @@</span> Parser::parse_variable_declaration ()
+   if (scope.get_current_mapping ().get (identifier-&gt;get_str ()))
+     {
+       error_at (identifier-&gt;get_locus (),
+<span class="gd">-		"variable '%s' already declared in this scope",
+</span><span class="gi">+		"name '%s' already declared in this scope",
+</span> 		identifier-&gt;get_str ().c_str ());
+     }
+<span class="gd">-  SymbolPtr sym (new Symbol (identifier-&gt;get_str ()));
+</span><span class="gi">+  SymbolPtr sym (new Symbol (Tiny::VARIABLE, identifier-&gt;get_str ()));
+</span>   scope.get_current_mapping ().insert (sym);
+<span class="p">@@ -635,6 +728,11 @@</span> Parser::query_variable (const std::string &amp;name, location_t loc)
+       error_at (loc, "variable '%s' not declared in the current scope",
+ 		name.c_str ());
+     }
+<span class="gi">+  else if (sym-&gt;get_kind () != Tiny::VARIABLE)
++    {
++      error_at (loc, "name '%s' is not a variable", name.c_str ());
++      sym = SymbolPtr();
++    }
+</span>   return sym;
+ }</code></pre></figure>
+
+<p>
+Now we can complete the implementation of <code>parse_type_declaration</code> that we left halfways above.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+</span><span class="gi">+  if (scope.get_current_mapping ().get (identifier-&gt;get_str ()))
++    {
++      error_at (identifier-&gt;get_locus (),
++		"name '%s' already declared in this scope",
++		identifier-&gt;get_str ().c_str ());
++    }
++  SymbolPtr sym (new Symbol (Tiny::TYPENAME, identifier-&gt;get_str ()));
++  scope.get_current_mapping ().insert (sym);
++
++  Tree decl = build_decl (identifier-&gt;get_locus (), TYPE_DECL,
++			  get_identifier (sym-&gt;get_name ().c_str ()),
++			  type_tree.get_tree ());
++  DECL_CONTEXT (decl.get_tree()) = main_fndecl;
++
++  gcc_assert (!stack_var_decl_chain.empty ());
++  stack_var_decl_chain.back ().append (decl);
++
++  sym-&gt;set_tree_decl (decl);
++
++  Tree stmt
++    = build_tree (DECL_EXPR, identifier-&gt;get_locus (), void_type_node, decl);
++
++  return stmt;
++}</span></code></pre></figure>
+
+<p>
+The implementation is pretty identical to parse_variable_declaration (we could of course refactor the code to avoid some duplication here) but instead of a variable name we create a type name. In GCC a declaration of a type is represented using a node with tree code <code>TYPE_DECL</code>. That node can then be used in the <code>TREE_TYPE</code> of any expression or declaration (including another <code>TYPE_DECL</code>).
+</p>
+
+<p>
+Once a type has been declared we want to use its type name. The only place where we can currently use a type name in tiny is in 〈type〉 so we will need to update <code>parse_type</code>. This will require a <code>query_type</code> function that we will see later.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/gcc/tiny/tiny-parser.cc b/gcc/tiny/tiny-parser.cc
+</span><span class="p">@@ -556,6 +620,16 @@</span> Parser::parse_type ()
+       lexer.skip_token ();
+       type = boolean_type_node;
+       break;
+<span class="gi">+    case Tiny::IDENTIFIER:
++      {
++	SymbolPtr s = query_type (t-&gt;get_str (), t-&gt;get_locus ());
++        lexer.skip_token ();
++	if (s == NULL)
++	  type = Tree::error ();
++        else
++          type = TREE_TYPE (s-&gt;get_tree_decl ().get_tree ());
++      }
++      break;</span></code></pre></figure>
+
+<p>
+We will also allow the remaining part of <code>parse_type</code> work to work with an erroneous type in case <code>query_type</code> fails.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -617,16 +690,36 @@</span> Parser::parse_type ()
+ // 	  break;
+ // 	}
+<span class="gd">-      Tree range_type
+-	= build_range_type (integer_type_node, it-&gt;first.get_tree (),
+-			    it-&gt;second.get_tree ());
+-      type = build_array_type (type.get_tree (), range_type.get_tree ());
+</span><span class="gi">+      if (!type.is_error ())
++	{
++	  Tree range_type
++	    = build_range_type (integer_type_node, it-&gt;first.get_tree (),
++				it-&gt;second.get_tree ());
++	  type = build_array_type (type.get_tree (), range_type.get_tree ());
++	}
+</span>     }
+ 
+   return type;
+ }</code></pre></figure>
+
+<p>
+This uses a new function called <code>query_type</code> similar to <code>query_variable</code> that does the same query in the lookup but checks the name is a type name.
+</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"> SymbolPtr
+<span class="gi">+Parser::query_type (const std::string &amp;name, location_t loc)
++{
++  SymbolPtr sym = scope.lookup (name);
++  if (sym == NULL)
++    {
++      error_at (loc, "type '%s' not declared in the current scope",
++		name.c_str ());
++    }
++  else if (sym-&gt;get_kind () != Tiny::TYPENAME)
++    {
++      error_at (loc, "name '%s' is not a type", name.c_str ());
++      sym = SymbolPtr();
++    }
++  return sym;
++}
++
++SymbolPtr
+</span> Parser::query_variable (const std::string &amp;name, location_t loc)
+ {
+   SymbolPtr sym = scope.lookup (name);</code></pre></figure>
+
+<h2>Smoke test</h2>
+
+<p>
+We can try our new extension.
+</p>
+
+<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="k">type</span> <span class="n">my_int</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
+
+<span class="k">var</span> <span class="n">x</span> <span class="p">:</span> <span class="n">my_int</span><span class="p">;</span>
+<span class="k">var</span> <span class="n">y</span> <span class="p">:</span> <span class="n">my_int</span><span class="p">[</span><span class="m">2</span><span class="p">];</span>
+
+<span class="n">x</span> <span class="p">:=</span> <span class="m">42</span><span class="p">;</span>
+<span class="k">write</span> <span class="n">x</span><span class="p">;</span>
+<span class="n">y</span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="p">:=</span> <span class="n">x</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+<span class="k">write</span> <span class="n">y</span><span class="p">[</span><span class="m">1</span><span class="p">];</span>
+
+
+<span class="k">type</span> <span class="n">my_int_array</span> <span class="p">:</span> <span class="n">my_int</span><span class="p">[</span><span class="m">2</span><span class="p">];</span>
+
+<span class="k">var</span> <span class="n">z</span> <span class="p">:</span> <span class="n">my_int_array</span><span class="p">;</span>
+
+<span class="n">z</span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="p">:=</span> <span class="n">y</span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+<span class="k">write</span> <span class="n">z</span><span class="p">[</span><span class="m">1</span><span class="p">];</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcctiny <span class="nt">-o</span> <span class="nb">test </span>test.tiny
+<span class="nv">$ </span>./test
+42
+43
+44</code></pre></figure>
+
+<p>
+Yay!
+</p>
+
+<p>
+Admittedly this new extension does not look very interesting now but it will be when we add record types to the language.
+</p>
+
+<p>
+That's all for today.
+</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2016/01/31/tiny-gcc-front-part-9/">&laquo; A tiny GCC front end – Part 9</a>
+
+
+  <a class="next" href="/2016/09/05/tiny-gcc-front-part-11/">A tiny GCC front end – Part 11 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
