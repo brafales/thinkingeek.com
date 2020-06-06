@@ -1,4 +1,436 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://blog.thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://blog.thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-06-05T21:32:24+00:00</updated><id>https://blog.thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fortran and modules</title><link href="https://blog.thinkingeek.com/2019/03/10/fortran-and-modules/" rel="alternate" type="text/html" title="Fortran and modules" /><published>2019-03-10T11:24:08+00:00</published><updated>2019-03-10T11:24:08+00:00</updated><id>https://blog.thinkingeek.com/2019/03/10/fortran-and-modules</id><content type="html" xml:base="https://blog.thinkingeek.com/2019/03/10/fortran-and-modules/">&lt;!-- wp:paragraph --&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://blog.thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://blog.thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-06-06T14:42:26+00:00</updated><id>https://blog.thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Create your own local domain and DHCP with dnsmasq</title><link href="https://blog.thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/" rel="alternate" type="text/html" title="Create your own local domain and DHCP with dnsmasq" /><published>2020-06-06T13:39:00+00:00</published><updated>2020-06-06T13:39:00+00:00</updated><id>https://blog.thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq</id><content type="html" xml:base="https://blog.thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">&lt;p&gt;&lt;a href=&quot;/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/&quot;&gt;Back in 2007&lt;/a&gt;, Bernat
+explained how to set up our own domain name using ISC BIND and ISC DHCP. You
+can’t go wrong with those servers but maybe you prefer something more
+straightforward. I present here a simpler alternative built on top of
+&lt;a href=&quot;http://www.thekelleys.org.uk/dnsmasq/doc.html&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt;&lt;/a&gt; which is an
+integrated DNS and DHCP.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;What we are going to do is to configure our a forwarding DNS (so it will
+forward queries to other DNS servers), it will provide us a DNS &lt;em&gt;zone&lt;/em&gt;
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.mydomain&lt;/code&gt; and also DHCP.&lt;/p&gt;
+
+&lt;p&gt;The following example assumes that your LAN gateway is in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt; and we
+will call it &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;router.mydomain&lt;/code&gt;.  Your DNS server is in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.2&lt;/code&gt; and we
+will call it &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt;. Install &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt; (check your
+Linux distribution on how to do this).  &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt; settings are commonly found
+in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/dnsmasq.conf&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div style=&quot;padding: 1em; background-color: #fee;&quot;&gt;
+Make sure you disable the DHCP of your LAN router if it is providing this
+service. Otherwise you will run into unpleasant conflicts with DHCP (only one
+DHCP server can be running in a LAN at a time). Also you may want to disable
+its DNS forwarding service as you're not going to need it.
+&lt;/div&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;/etc/dnsmasq.conf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c&quot;&gt;# Never forward plain names (without a dot or domain part)&lt;/span&gt;
+domain-needed
+&lt;span class=&quot;c&quot;&gt;# Never forward addresses in the non-routed address spaces&lt;/span&gt;
+bogus-priv
+&lt;span class=&quot;c&quot;&gt;# Don't read /etc/resolv.conf or any other&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# file to get the forwarding files.&lt;/span&gt;
+no-resolv
+&lt;span class=&quot;c&quot;&gt;# Add other name servers here, with domain specs if they are for&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# non-public domains.&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;server&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;8.8.8.8
+&lt;span class=&quot;nv&quot;&gt;server&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;8.8.4.4
+&lt;span class=&quot;c&quot;&gt;# Add local-only domains here, queries in these domains are answered&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# from /etc/hosts or DHCP only.&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;local&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/mydomain/
+&lt;span class=&quot;c&quot;&gt;# It does the following things.&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 1) Allows DHCP hosts to have fully qualified domain names, as long&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#     as the domain part matches this setting.&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 2) Sets the &quot;domain&quot; DHCP option thereby potentially setting the&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#    domain of all systems configured by DHCP&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# 3) Provides the domain part for &quot;expand-hosts&quot;&lt;/span&gt;
+&lt;span class=&quot;nv&quot;&gt;domain&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mydomain
+&lt;span class=&quot;c&quot;&gt;# Uncomment this to enable the integrated DHCP server, you need&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# to supply the range of addresses available for lease and optionally&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# a lease time. If you have more than one network, you will need to&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# repeat this for each network on which you want to supply DHCP&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# service.&lt;/span&gt;
+dhcp-range&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;192.168.1.32,192.168.1.250,24h
+&lt;span class=&quot;c&quot;&gt;# Always give the host with Ethernet address 11:22:33:44:55:66&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# the name fred and IP address 192.168.1.60 and lease time 45 minutes&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# dhcp-host=11:22:33:44:55:66,fred,192.168.1.60,45m&lt;/span&gt;
+dhcp-host&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;11:22:33:44:55:66,uber,192.168.1.3
+dhcp-host&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;21:22:33:44:55:67,dad,192.168.1.4
+dhcp-host&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;31:22:33:44:55:68,xbox360,192.168.1.5
+&lt;span class=&quot;c&quot;&gt;# Override the default route supplied by dnsmasq, which assumes the&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# router is the same machine as the one running dnsmasq.&lt;/span&gt;
+dhcp-option&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;option:router,192.168.1.1
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Option &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;domain-needed&lt;/code&gt; in line 2 is to make sure we don’t forward to DNS
+servers plain names without a domain sepaator. So we will forward things like
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xbox360.com&lt;/code&gt; or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xbox360.foo&lt;/code&gt; but not &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xbox360&lt;/code&gt;. Also option &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bogus-priv&lt;/code&gt; avoids us forwarding
+names like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;3.1.168.192.in-addr.arpa&lt;/code&gt;. This is a reverse DNS for an IP &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.3&lt;/code&gt; which belongs
+to the non-routable space of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.0.0/24&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Line 7 tells &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq.conf&lt;/code&gt; that does not try to use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/resolv.conf&lt;/code&gt; to get
+the forwarder servers. We will specify them, for maximum control, in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq.conf&lt;/code&gt; itself. We do this in lines 10 and 11. Here we use the Google
+DNS servers, but feel free to use other servers such as OpenDNS or the one of
+your ISP.&lt;/p&gt;
+
+&lt;p&gt;Line 14, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;local&lt;/code&gt;, is a way to restrict the domains we’re going to asnswer
+locally. Which we will enable in line 21, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;domain&lt;/code&gt;. Now the names registered in
+the DHCP will have a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.mydomain&lt;/code&gt; suffix as part of their fully qualified domain
+name.&lt;/p&gt;
+
+&lt;p&gt;In line 27, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dhcp-range&lt;/code&gt; we configure the range of IPs for which we will assign
+automatically DHCP addresses. In this example from 32 to 250, leaving us some
+room from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.32&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.250&lt;/code&gt; to
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.254&lt;/code&gt;. The DHCP lease will last 24 hours.&lt;/p&gt;
+
+&lt;p&gt;Next in lines 31 to 33 we statically assign IPs (should be from the range not
+used by DHCP) to specific machines when they do a DHCP request. We match them
+using their MAC address (such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;11:22:33:44:55:66&lt;/code&gt;), use the right MAC
+addresses of your network devices here.&lt;/p&gt;
+
+&lt;p&gt;Finally in line 36 we make sure that when a node in our network requests IP,
+the gateway is correctly set to the IP of our LAN gateway (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;A final note for devices with fully static IPs (i.e. those that will never get
+their IP via DHCP) such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;router.mydomain&lt;/code&gt; an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt;. You can
+use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/hosts&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt; to set them up. In our example setup we
+would add the following lines. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt; will use this file to register those
+names in its DNS database.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;/etc/hosts&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;192.168.1.1	router.mydomain router
+192.168.1.2	dns.mydomain dns&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;</content><author><name></name></author><summary type="html">Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present here a simpler alternative built on top of dnsmasq which is an integrated DNS and DHCP.</summary></entry><entry><title type="html">Using SSH Certificates</title><link href="https://blog.thinkingeek.com/2020/06/06/using-ssh-certificates/" rel="alternate" type="text/html" title="Using SSH Certificates" /><published>2020-06-06T13:31:00+00:00</published><updated>2020-06-06T13:31:00+00:00</updated><id>https://blog.thinkingeek.com/2020/06/06/using-ssh-certificates</id><content type="html" xml:base="https://blog.thinkingeek.com/2020/06/06/using-ssh-certificates/">&lt;p&gt;Password-based authentication has a number of drawbacks, so many services (such
+as github) use SSH keys to authenticate. However distributing the keys over
+several nodes (be virtual machines or single-board computers such as
+Raspberry Pi) doesn’t scale over the number of nodes and users.&lt;/p&gt;
+
+&lt;p&gt;Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism.
+This mechanism may help reducing the complexity of users trusting SSH hosts and
+hosts trusting SSH users.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;Before we continue, a caveat&lt;/p&gt;
+
+&lt;div style=&quot;padding: 1em; background-color: #fee;&quot;&gt;
+Using SSH certificates is not a security panacea. Like every other technological
+solution it has pros and cons that have to be gauged against the existing
+requirements.
+&lt;/div&gt;
+
+&lt;h1&gt;Concepts&lt;/h1&gt;
+
+&lt;p&gt;Public key cryptography (I’d dare to say cryptography in general) is
+notoriously confusing because it uses several terms at the same time that often
+are at the same “semantic” level and so they are easy to mix up.&lt;/p&gt;
+
+&lt;p&gt;In this post we will use the following terminology:&lt;/p&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;SSH key&lt;/dt&gt;
+  &lt;dd&gt;A SSH key is a cryptographic widget made up of two keys (each one stored in a different file): the public SSH key and the private SSH key. These two keys are related mathematically but deriving one from the other is not possible.&lt;/dd&gt;
+  &lt;dt&gt;public SSH key&lt;/dt&gt;
+  &lt;dd&gt;The public key of a SSH key is the part that can be disclosed and distributed.&lt;/dd&gt;
+  &lt;dt&gt;private SSH key&lt;/dt&gt;
+  &lt;dd&gt;The private key of a SSH key is the part that should never be disclosed or distributed.&lt;/dd&gt;
+  &lt;dt&gt;Certificate Authority&lt;/dt&gt;
+  &lt;dd&gt;Entity which has its own SSH key (i.e. a public SSH key and a private SSH key) which will be used to emit certificates that we can trust.&lt;/dd&gt;
+  &lt;dt&gt;certificate&lt;/dt&gt;
+  &lt;dd&gt;Digital signature issued by a Certificate Authority that asserts the authenticity of something, such a SSH key. If the Certificate Authority is trusted we can trust the certificate.&lt;/dd&gt;
+  &lt;dt&gt;Host&lt;/dt&gt;
+  &lt;dd&gt;The host is the machine we want to connect to using SSH.&lt;/dd&gt;
+  &lt;dt&gt;Host Key&lt;/dt&gt;
+  &lt;dd&gt;Each host has its own SSH key (again, a public and private one) which is used to identify the host. The public key is presented to a user connecting to the host.&lt;/dd&gt;
+  &lt;dt&gt;User Key&lt;/dt&gt;
+  &lt;dd&gt;Each user can have one (or more than one) SSH key(s). These keys are used to authenticate the user against each host.&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;p&gt;In most scenarios users need to copy (using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-copy-id&lt;/code&gt; or similar) their
+public SSH key to each host. Auhtentication proceeds by a challenge mechanism.
+We need to prove that the user has the private SSH key related to the public
+SSH key found in the host. So the host encrypts a challenge using the public
+SSH key to be decrypted by the user. The user decrypts the challenge the
+private SSH key and sends that to the host. If the user had the right private
+key, the challenge suceeds and no password is required.&lt;/p&gt;
+
+&lt;p&gt;However, the first time a user connects to a host, SSH asks if we really want
+to trust the host. The rationale here is that we might be fooled to login
+somehwere other than the real host (which could be abused, among others, to
+disclose our password while trying to login).&lt;/p&gt;
+
+&lt;p&gt;We want to make the hosts trusted by the user (imagine a new host is set up)
+but also we want the hosts trust the user.&lt;/p&gt;
+
+&lt;p&gt;When trust is involved a Certificate Authority is required so we will need to
+create one so the users can trust the hosts and one so the hosts can trust the
+users.&lt;/p&gt;
+
+&lt;dl&gt;
+  &lt;dt&gt;Host Certificate Authority (Host CA)&lt;/dt&gt;
+  &lt;dd&gt;A SSH key. Its private SSH key will be used to issue host certificates. Its public SSH key will be used by users to verify that host certificates were issued by the Host Certificate Authority they trust.&lt;/dd&gt;
+  &lt;dt&gt;User Certificate Authority (User CA)&lt;/dt&gt;
+  &lt;dd&gt;A SSH key. Its private SSH key will be used to issue user certificates. Its public SSH key will be used by hosts to verify that user certificates were issued by the User Certificate Authority they trust.&lt;/dd&gt;
+&lt;/dl&gt;
+
+&lt;h1&gt;Host Certificate Authority&lt;/h1&gt;
+
+&lt;p&gt;A certificate authority is a big sounding name, but in SSH it is going
+to be just another SSH key (again with public SSH key and its private SSH key).&lt;/p&gt;
+
+&lt;p&gt;We will be using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt; all the time so be careful with the flags. First
+we need to create the SSH key that will act as the Host Certificate Authority.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; ed25519 &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; host_ca&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This will generate two files: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca&lt;/code&gt; is the private SSH key and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca.pub&lt;/code&gt; is the public SSH key. The private key is trusted and so it is
+essential to keep it super safe. If you use another name in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-f&lt;/code&gt; option,
+say &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-f my_host_ca&lt;/code&gt;, the created files will be &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;my_host_ca&lt;/code&gt; and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;my_host_ca.pub&lt;/code&gt;, respectively.&lt;/p&gt;
+
+&lt;p&gt;If you look at the contents of the public key&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;$ cat host_ca.pub
+ssh-ed25519 AAAA... comment&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The first part &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-ed25519&lt;/code&gt; is the kind of SSH key. A key of kind &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ed25591&lt;/code&gt;
+seems to be recommended over the default &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rsa&lt;/code&gt;, hence the flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-t ed25519&lt;/code&gt;
+earlier. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;AAAA...&lt;/code&gt; part is specific to your SSH key and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;comment&lt;/code&gt; is
+usually &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user@host&lt;/code&gt; but can be changed to be more informative with an option
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-C comment&lt;/code&gt; in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt; call above.&lt;/p&gt;
+
+&lt;h2&gt;Set a user to trust the Host CA&lt;/h2&gt;
+
+&lt;p&gt;In order to make a user trust our new Host CA, we need to distribute the
+&lt;strong&gt;public&lt;/strong&gt; SSH key of the Host CA and tell &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; to trust it.&lt;/p&gt;
+
+&lt;p&gt;This can be used system-wide (i.e. the computer of the user) or per user
+in that system.&lt;/p&gt;
+
+&lt;p&gt;Let’s assume we want the node &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; trust the Host CA.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;If we want the trust relationship be system-wide, the file to edit is
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/ssh_known_hosts&lt;/code&gt; of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;. In general only administrators
+can edit this file.&lt;/li&gt;
+  &lt;li&gt;If a user in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; wants to individually trust that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Host CA&lt;/code&gt; the file
+to edit is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/ssh_known_hosts&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In either case we have to add the following line.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;@cert-authority *.example.com ssh-ed25519 AAAA...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Here &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;*.example.com&lt;/code&gt; will be your domain name (it is very handy to have your
+own domain name even in your LAN at home either
+&lt;a href=&quot;/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/&quot;&gt;using ISC BIND and ISC DHCP&lt;/a&gt;
+or &lt;a href=&quot;/2020/06/06/local-domain-and-dhcp-with-dnsmasq/&quot;&gt;using dnsmasq&lt;/a&gt;) for which the certificate will be
+trusted. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-ed25519 AAAA...&lt;/code&gt; part is the contents of the public SSH key
+of the Host CA.&lt;/p&gt;
+
+&lt;p&gt;And that’s it. From now on when trying to connect to a host that matches
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;*.example.com&lt;/code&gt;, if that host presents a certificate that has been signed by
+the Host CA we trust, we will also trust the host.&lt;/p&gt;
+
+&lt;p&gt;So the next logical step is how to create a host certificate.&lt;/p&gt;
+
+&lt;h2&gt;Issue a Host Certificate&lt;/h2&gt;
+
+&lt;p&gt;To issue a host certificate we need the host public key of the host. This 
+key is found in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/ssh_host_ed25519_key.pub&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Imagine we have a host &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. What we have to do is to
+obtain its host public SSH key. We have to copy it (over the network or via a USB
+if we’ve got physical access) to the place where we have our &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca&lt;/code&gt; (the
+private SSH key of the Host CA).&lt;/p&gt;
+
+&lt;p&gt;Now we need to emit a host certificate. We do that again using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; host_ca &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;-I&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;ServerMachine1&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt; ServerMachine1.example.com &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;-V&lt;/span&gt; +52w &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    ssh_host_ed25519_key.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;There are many flags here so let’s see each one:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-s host_ca&lt;/code&gt; means issuing a certificate using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca&lt;/code&gt; private SSH key.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-I &quot;ServerMachine1&quot;&lt;/code&gt; is an arbitrary identifier we can use to help us identify the key in the server logs.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-h&lt;/code&gt; means create a host certificate&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-n ServerMachine1.example.com&lt;/code&gt; is the set of host names (comma-separated) for which this certificate is issued.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-V +52w&lt;/code&gt; means that this certificate will be valid for 52 week, after that time the certificate won’t be trusted. If this option is not specified, the issued certificate will be valid forever.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh_host_ed25519_key.pub&lt;/code&gt; this is the host public SSH key for which we are issuing a certificate (copied from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This will generate a file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh_host_ed25519_key-cert.pub&lt;/code&gt; (note the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-cert&lt;/code&gt; before &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.pub&lt;/code&gt;). This file now has to be copied back to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. For instance
+ we can copy it into &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/ssh_host_ed25519_key-cert.pub&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now we need to tell the SSH server in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt; to offer that certificate to all incoming SSH connections. We can do that editing the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/sshd_config&lt;/code&gt;
+and adding the following line (in general only administrators can change this file).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now we have to restart the SSH server. In mosts systems with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;systemd&lt;/code&gt; an
+administrator can do that by running the following comment.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart ssh&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2&gt;Testing the Host Certificate&lt;/h2&gt;
+
+&lt;p&gt;Now a user that trusts the Host Certificate Authority should be able to trust
+without having to do anything. We already established that trust relationship
+in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; so let’s use that machine to test it.&lt;/p&gt;
+
+&lt;p&gt;First make sure no trust relationship is remembered in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-R&lt;/span&gt; ServerMachine1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Still from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; try to to login to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh ServerMachine1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If you see something like this&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;The authenticity of host 'ServerMachine.example.com (1.2.3.4)' can't be established.
+RSA key fingerprint is SHA256:aeghei4Cao0quuteij3aechu.
+Are you sure you want to continue connecting (yes/no)?&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;something is wrong and you need to recheck the steps above.&lt;/p&gt;
+
+&lt;p&gt;If you’re directly requested the password (or some previous SSH key allows you to login) then
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; is trusting &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Note that some organizations add domain suffixes when solving names. So
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt; can be used to access &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. However
+SSH is strict about names and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh ServerMachine1&lt;/code&gt; will not trust the machine.&lt;/p&gt;
+
+&lt;p&gt;If you want to use the short name (or any other name)  my recommendation is to
+teach ssh in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt; is actually
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. You can do that adding the following lines in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/config&lt;/code&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;Host ServerName1
+  HostName ServerName1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h1&gt;User Certificate Authority&lt;/h1&gt;
+
+&lt;p&gt;Now that we trust the servers in our organization, the next step is that the
+servers trust our users.&lt;/p&gt;
+
+&lt;p&gt;To do that we need to create a user certificate authority.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; ed25519 &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; user_ca&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Again this will generate a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca&lt;/code&gt; file with the private SSH key that must be kept
+safe and secret, and a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca.pub&lt;/code&gt; that contains the public SSH key.&lt;/p&gt;
+
+&lt;h2&gt;Set a server to trust the User CA&lt;/h2&gt;
+
+&lt;p&gt;A server like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt; needs to trust the User CA before it can
+trust any certificate issued by that User CA.&lt;/p&gt;
+
+&lt;p&gt;We do this copying the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca.pub&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;. For instance in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/user_ca.pub&lt;/code&gt;. Now we edit the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/sshd_config&lt;/code&gt; and we add
+the following lines.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;TrustedUserCAKeys /etc/ssh/user_ca.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now we need to restart the SSH server.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart ssh&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now the SSH server in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt; trusts the user certificates
+issued by the User CA we created in the earlier section.&lt;/p&gt;
+
+&lt;h2&gt;Issue a User Certificate&lt;/h2&gt;
+
+&lt;p&gt;To issue a user certificate, we need the public SSH key of a user. I’m assuming
+that the user already has one in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/id_ed25519.pub&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Copy the public SSH key of the user where the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca&lt;/code&gt; private SSH of the User
+CA is found.&lt;/p&gt;
+
+&lt;p&gt;Now use the following command&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; user_ca &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;-I&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;user_name&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt; userid1 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;-V&lt;/span&gt; +52w &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      id_ed25519.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Let’s review each flag&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-s user_ca&lt;/code&gt; means issuing a certificate using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca&lt;/code&gt; private SSH key.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-I &quot;user_name&quot;&lt;/code&gt; is an arbitrary identifier we can use to help us identify the key in the server logs.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-n userid1&lt;/code&gt; is the set of user identifiers (comma-separated) for which this certificate is issued. This is the userid used to login.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-V +52w&lt;/code&gt; means that this certificate will be valid for 52 week, after that time the certificate won’t be trusted. If this option is not specified, the issued certificate will be valid forever.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;id_ed25519_key.pub&lt;/code&gt; this is the user public SSH key for which we are issuing a certificate (the user must provide it).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;This will create a file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;id_ed25519_key-cert.pub&lt;/code&gt; (mind the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-cert&lt;/code&gt; before
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.pub&lt;/code&gt;) that we have to copy back to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;. It has to be copied in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/id_ed25519-cert.pub&lt;/code&gt; (be careful not to overwrite the public SSH
+key).&lt;/p&gt;
+
+&lt;h2&gt;Testing the User Certificate&lt;/h2&gt;
+
+&lt;p&gt;Note the user should be able to login to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh ServerMachine1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;It is necessary that no password is requested otherwise something is wrong.&lt;/p&gt;
+
+&lt;p&gt;It is not sufficient however. A key in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;, found in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; could still be being used to allow us to login.&lt;/p&gt;
+
+&lt;p&gt;Make sure &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt; does not contain any
+public key of the user of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;. If there is one it might be allowing
+password-less login instead of our certificate. So, make sure no key from
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; is listed in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine&lt;/code&gt; (a
+more radical alternative is to remove &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; of
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;). After that, you should be able to login without being
+requested a password, otherwise recheck the steps above.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Password-based authentication has a number of drawbacks, so many services (such as github) use SSH keys to authenticate. However distributing the keys over several nodes (be virtual machines or single-board computers such as Raspberry Pi) doesn’t scale over the number of nodes and users. Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism. This mechanism may help reducing the complexity of users trusting SSH hosts and hosts trusting SSH users.</summary></entry><entry><title type="html">Fortran and modules</title><link href="https://blog.thinkingeek.com/2019/03/10/fortran-and-modules/" rel="alternate" type="text/html" title="Fortran and modules" /><published>2019-03-10T11:24:08+00:00</published><updated>2019-03-10T11:24:08+00:00</updated><id>https://blog.thinkingeek.com/2019/03/10/fortran-and-modules</id><content type="html" xml:base="https://blog.thinkingeek.com/2019/03/10/fortran-and-modules/">&lt;!-- wp:paragraph --&gt;
 &lt;p&gt;Recently the committee that is preparing the next standard of C++, known as C++20, approved the inclusion of modules. Modules are good™ but they pose some interesting challenges to implementors and users. In this post I will ruminate a bit about what challenges have impacted Fortran.&lt;/p&gt;
 &lt;!-- /wp:paragraph --&gt;
 
@@ -4644,1210 +5076,4 @@ That's all for today :)
 &lt;li&gt;What about &lt;code&gt;alloc&lt;/code&gt; and &lt;code&gt;free&lt;/code&gt; using a &lt;code&gt;minipool&amp;lt;T&amp;gt;::ptr&lt;/code&gt; (or similar) instead of a raw &lt;code&gt;T*&lt;/code&gt;. This would allow us to safely call &lt;code&gt;delete&lt;/code&gt; with these pointers but comes at cost that each pointer now needs to know its pool.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;Happy hacking.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I’ve been implementing an algorithm that works on a graph. That algorithm needs to create and destroy lots of nodes and edges to keep track of the algorithm state correctly. The algorithm also needs to be fast in order to be competitive against a similar algorithm that uses sets of stacks instead of graphs. Profiles show that memory allocations are impacting negatively the performance, so maybe a memory pool can help.</summary></entry><entry><title type="html">Exploring AArch64 assembler – Chapter 9</title><link href="https://blog.thinkingeek.com/2017/11/05/exploring-aarch64-assembler-chapter-9/" rel="alternate" type="text/html" title="Exploring AArch64 assembler – Chapter 9" /><published>2017-11-05T18:30:54+00:00</published><updated>2017-11-05T18:30:54+00:00</updated><id>https://blog.thinkingeek.com/2017/11/05/exploring-aarch64-assembler-chapter-9</id><content type="html" xml:base="https://blog.thinkingeek.com/2017/11/05/exploring-aarch64-assembler-chapter-9/">&lt;p&gt;In chapter 6 we saw conditional branches and we ended commenting that they can be used to implement higher control constructs. In this chapter we will see a few of them.
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;h2&gt;If-statement&lt;/h2&gt;
-
-&lt;p&gt;
-It may be at this point rather obvious how to implement an if-statement construct. Given a structure of the form
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;k&quot;&gt;IF&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;THEN&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;ELSE&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;END&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;IF&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-our code may look like
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;/* Evaluate condition E and update flags */
-b&amp;lt;inverse-condition&amp;gt; else_label
-  S1
-  b end_if
-else_label: 
-  S2
-end_if:&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-It can be done the other way around.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;/* Evaluate condition E and update flags */
-b&amp;lt;condition&amp;gt; then_label
-  S2
-  b end_if
-then_label: 
-  S1
-end_if:&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h3&gt;How to evaluate conditions?&lt;/h3&gt;
-
-&lt;p&gt;
-Conditions in most programming languages are explicitly given a boolean type (e.g. &lt;code&gt;bool&lt;/code&gt; in C++, &lt;code&gt;LOGICAL&lt;/code&gt; in Fortran) or an integer type with a restricted set of values (e.g. 0 or 1 in C). Several programming languages implicitly define a conversion from regular integers to condition expressions. For instance in C, an expression &lt;code&gt;e&lt;/code&gt; of type integer or pointer when used in a condition is the same as evaluating the condition &lt;code&gt;e != 0&lt;/code&gt; (which will give a &lt;code&gt;0&lt;/code&gt; or &lt;code&gt;1&lt;/code&gt; value). C++ defines the same conversion but the resulting type is &lt;code&gt;bool&lt;/code&gt; so it can be &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;. Fortran does not have any of these conversions so the operand will always be required.
-&lt;/p&gt;
-
-&lt;p&gt;
-For expressions of the form &lt;code&gt;e1 ⊕ e2&lt;/code&gt; where ⊕ is a relational operator like &amp;lt;, &amp;gt;, &amp;le;, &amp;ge;, etc. We can use the instruction &lt;code&gt;cmp&lt;/code&gt; followed by a &lt;code&gt;b.cond&lt;/code&gt; with the relevant condition.
-&lt;p&gt;
-
-&lt;p&gt;
-Evaluation of conditional expressions may be impacted by the language specification. Some programming languages implement conditionally evaluated logical operators (also called short-circuit evaluation). This makes these operators non-strict and closer to if-statements than the mathematical definition of the logical operators. Some other programming languages are strict in the definition of the logical operators, which means they evaluate all the operands and then apply the logical operation. C and C++ use short-circuit evaluation which means an expression like &lt;code&gt;e1 &amp;amp;&amp;amp; e2&lt;/code&gt; will only evaluate &lt;code&gt;e2&lt;/code&gt; if &lt;code&gt;e1&lt;/code&gt; is true. Similarly in an expression like &lt;code&gt;e1 || e2&lt;/code&gt;, &lt;code&gt;e2&lt;/code&gt; is evaluated only if &lt;code&gt;e1&lt;/code&gt; is false (having to use &quot;if&quot; in the definition of these operators is what makes them &quot;conditionally evaluated&quot;). This means that in practice a C/C++ code like the following
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S2&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-is implemented like
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;S1&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;S2&lt;/span&gt;  
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S2&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-of course doing exactly the above would be ridiculous, so in practice looks more like this (in C/C++ again, though not very nice).
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-     &lt;span class=&quot;n&quot;&gt;S1&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-     &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;else_block&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-   &lt;span class=&quot;nl&quot;&gt;else_block:&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;S2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-We can simplify this further to make it closer to assembly (I'm adding a few redundant C/C++ labels below for clarity)
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;nl&quot;&gt;if_start:&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;check_e1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;check_e2&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;else_block&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;check_e2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;then_block&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;else_block&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;then_block&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;if_end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;else_block&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;if_end&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Do we always have to implement C/C++ logical operations like this? Not really, only if we're unsure that unconditionally evaluating the second operand may be different than conditionally evaluating it. For instance a case like
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;25&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-it won't harm to evaluate both operands so we can avoid a few branches and actually evaluate it as if the code had been (note a single &lt;code&gt;&amp;amp;&lt;/code&gt; which means bitwise operation that always evaluates the two operands).
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;25&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-but in a case like
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-We don't really want to evaluate &lt;code&gt;((10 / p) &amp;gt; 5)&lt;/code&gt; when &lt;code&gt;p == 0&lt;/code&gt;. The same strategy is used for &lt;code&gt;||&lt;/code&gt; in which sometimes we can evaluate it as &lt;code&gt;|&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;p&gt;
-The following table shows some examples. Take these as suggestions, cleverer sequences can be used in some circumstances.
-&lt;/p&gt;
-
-&lt;table&gt;
-
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Condition to evaluate (C/C++)&lt;/th&gt;
-&lt;th&gt;Instruction sequence&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;e1&amp;nbsp;&amp;lt;&amp;nbsp;e2&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;&lt;p&gt;Direct translation&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e1, e2
-b.lt true_case
-   &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-   &lt;p&gt;If we want to evaluate &lt;code&gt;!(e1 &amp;lt; e2)&lt;/code&gt;.
-   &lt;small&gt;This is the same as &lt;code&gt;e1 &amp;gt;= e2&lt;/code&gt; when &lt;code&gt;false_case&lt;/code&gt; is the &lt;code&gt;true_case&lt;/code&gt;.&lt;/small&gt;
-   &lt;/p&gt;   
-   
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e1, e2
-b.ge false_case
-   &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-   &lt;p&gt;If we can reverse the operands &lt;code&gt;e2 &amp;gt; e1&lt;/code&gt;&lt;/p&gt;   
-   
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e2, e1
-b.gt true_case&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If we can reverse the operands &lt;code&gt;!(e2 &amp;gt; e1)&lt;/code&gt;.
-&lt;small&gt;This is the same as &lt;code&gt;e1 &amp;lt;= e2&lt;/code&gt; when &lt;code&gt;false_case&lt;/code&gt; is the &lt;code&gt;true_case&lt;/code&gt;.&lt;/small&gt;
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e2, e1
-b.le false_case&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-&amp;lt;/td&amp;gt;
-&amp;lt;/tr&amp;gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;e1&amp;nbsp;&amp;amp;&amp;amp;&amp;nbsp;e2&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;
-&lt;p&gt;Direct translation&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e1, #0
-b.ne check_e2
-check_e2:
-  cmp e2, #0
-  b.ne false_case
-true_case:
-  ...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Without short-cut evaluation (i.e. &lt;code&gt;e1 &amp;amp; e2&lt;/code&gt;)&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;tst e1, e2       // update flags with the
-                 // result of bitwise-and(e1, e2)
-b.eq false_case
-true_case:
-   ...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The &lt;code&gt;tst&lt;/code&gt; instruction computes the bitwise and of the two register operands, updates the condition flags based on the result of that operation. The result itself, though, is discarded.
-&lt;/p&gt;
-&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;e1&amp;nbsp;||&amp;nbsp;e2&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e1, #0
-b.eq check_e2
-check_e2:
-  cmp e2, #0
-  b.eq false_case
-true_case:
-  ...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-&lt;p&gt;Without short-cut evaluation (i.e. &lt;code&gt;e1 | e2&lt;/code&gt;)&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;orr x1, e1, e2 // x1 = bitwise-or(e1, e2)
-cmp x1, #0
-b.eq false_case:
-true_case:
-  ...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&amp;lt;/td&amp;gt;
-&amp;lt;/tr&amp;gt;
-
-
-&lt;tr&gt;
-&lt;td&gt;
-&lt;code&gt;!e&lt;/code&gt;
-&lt;/td&gt;
-&lt;td&gt;
-&lt;p&gt;For the less common case when &lt;code&gt;e&lt;/code&gt; is already a boolean, just compare it with 0.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp e1, #0
-b.ne false_case
-true_case:
-  ...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-But usually &lt;code&gt;!&lt;/code&gt; can be implemented by just evaluating the opposite condition. For instance &lt;code&gt;!(e1 &amp;lt; e2)&lt;/code&gt; can be evaluated as &lt;code&gt;e1 &amp;gt;= e2&lt;/code&gt;.
-&lt;/p&gt;
-&lt;p&gt;
-In some other cases like !(e1 &amp;amp;&amp;amp; e2) we can use De Morgan rules to evaluate it like &lt;code&gt;!e1 || !e2&lt;/code&gt;. This is mostly useful for cases like &lt;code&gt;!((e11 &amp;lt; e12) &amp;amp;&amp;amp; (e21 &amp;lt; e22))&lt;/code&gt; where propagating the ! inside the expression is beneficial as this just becomes &lt;code&gt;(e11 &amp;gt;= e12) || (e21 &amp;gt;= e22)&lt;/code&gt;
-&lt;tr&gt;
-
-&amp;lt;/tbody&amp;gt;
-&amp;lt;/table&amp;gt;
-
-
-&lt;h2&gt;Conditional assignment&lt;/h2&gt;
-
-&lt;p&gt;
-A common idiom, in C/C++ is the following
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-In Fortran there is a shorthand syntax for this case
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;k&quot;&gt;IF&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Or more generally, in C/C++
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Which in C/C++ can be written more compactly as
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-In many circumstances &lt;code&gt;e1&lt;/code&gt; and &lt;code&gt;e2&lt;/code&gt; are such that it is correct to rewrite the general case as
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-or the opposite form
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-If we can write the code in one of the two forms above, and given that this case is relatively common, AArch64 has specific support for it.
-&lt;/p&gt;
-
-&lt;p&gt;
-The instruction &lt;code&gt;csel rdest, rsource1, rsource2, cond&lt;/code&gt; sets the value of the destination register &lt;code&gt;rdest&lt;/code&gt; to &lt;code&gt;rsource1&lt;/code&gt; if the condition &lt;code&gt;cond&lt;/code&gt; is true, otherwise it is set to &lt;code&gt;rsource2&lt;/code&gt;. &lt;code&gt;csel&lt;/code&gt; stands for conditional selection/
-&lt;p&gt;
-
-&lt;p&gt;
-For instance, a typical &lt;code&gt;max&lt;/code&gt; operation looks like this in C.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;m&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;m&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;?&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-with csel we can implement the code above as
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;cmp x0, x1           // compare x0 and x1
-csel x2, x0, x1, gt  // x2 ← if x0 &amp;gt; x1 
-                     //      then       x0 
-                     //      otherwise  x1&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-which is handy because it avoids a branch.
-&lt;/p&gt;
-
-&lt;h2&gt;Loop constructs&lt;/h2&gt;
-
-&lt;p&gt;
-To implement a loop construct of the form
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-we can do
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;nl&quot;&gt;loop_check:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;loop_end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;loop_check&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;loop_end&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Usually inverting the flow is a bit better
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;nl&quot;&gt;loop_start:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;loop_check&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;loop_body&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;loop_check&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;goto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;loop_body&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-This has the added benefit that if we remove the initial branch to &lt;code&gt;loop_check&lt;/code&gt;, this is the equivalent to the C &lt;code&gt;do-while&lt;/code&gt; loop or the Pascal &lt;code&gt;repeat-until&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;p&gt;
-While we can use regular branches and comparison instructions to implement loops, AArch64 provides a couple of specialized instructions for some common circumstances: &lt;code&gt;cbnz&lt;/code&gt; and &lt;code&gt;cbz&lt;/code&gt;. They conditionally branch to some label if a given register is non-zero or zero respectively. This is useful for loops like this.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
- &lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
- &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;--&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-because we can now implement them as
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;                     // Assume &quot;i&quot; is in x0
-b loop_check
-loop_body:
-  S
-  sub x0, x0, #1     // x0 ← x0 - 1
-loop_check:
-  cbnz x0, loop_body // branch to loop_body if x0 != 0&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Similarly for &lt;code&gt;cbz&lt;/code&gt;. That said, for this particular example it is possible to use subs instruction that acts like &lt;code&gt;sub&lt;/code&gt; but also updates the condition flags. So we can write
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;// Assume &quot;i&quot; is in x0
-add x0, x0, #1     // We need to compensate the subs below
-b loop_check
-loop_body:
-  S
-loop_check:
-  subs x0, x0, #1  // x0 ← x0 - 1 and update condition flags
-  b.ne loop_body   // branch to loop_body if x0 != 0&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-So &lt;code&gt;cbnz&lt;/code&gt; and &lt;code&gt;cbz&lt;/code&gt; can be more useful when a register being zero is a condition and its computation cannot update the flags (or doing that would require adding an extra &lt;code&gt;cmp&lt;/code&gt;). We have not seen pointers yet, but a common scenario is traversing a linked list ended by a null pointer.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;singly_linked_list&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;singly_linked_list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;next&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;some_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;list&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;some_data&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;next&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Because a null pointer is represented usually with all zeros after &lt;code&gt;it = it-&amp;gt;next&lt;/code&gt; we can use &lt;code&gt;cbnzr&lt;/code&gt; without having to do &lt;code&gt;cmp&lt;/code&gt; + &lt;code&gt;b.ne&lt;/code&gt;.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;// Assume x0 is &quot;list&quot; and x1 is &quot;it&quot;
-mov x1, x0
-b loop_check:
-loop_body:
-  ldr w2, [x1, #8]    // w2 ← *(x1 + 8) [32-bit load]
-                      // this loads it-&amp;gt;some_data into w2
-  add w2, w2, #1      // w2 ← w2 + 1
-  str w2, [x1, #8]    // *(x1 + 8) ← w2 [32-bit store]
-                      // this updates it-&amp;gt;some_data
-  ldr x1, [x1]        // x1 ← *x1
-                      // this loads it-&amp;gt;next into x1
-loop_check:
-  cbnz x1, loop_body  // branch to loop_body if x1 != NULL
-loop_end:&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;h2&gt;Fibonacci (using a loop)&lt;/h2&gt;
-
-&lt;p&gt;
-In chapter 8 we made a function that recursively computed the Fibonacci numbers. Today we are going to see how to compute them using a loop. We will reuse the same main function and only change the &lt;code&gt;fibonacci&lt;/code&gt; function itself.
-&lt;/p&gt;
-
-&lt;p&gt;
-As a reminder of the fibonacci function is actually a sequence of numbers F&lt;sub&gt;i&lt;/sub&gt; defined by the following recurrence:
-&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;F&lt;sub&gt;0&lt;/sub&gt; = 0&lt;/li&gt;
-&lt;li&gt;F&lt;sub&gt;1&lt;/sub&gt; = 1&lt;/li&gt;
-&lt;li&gt;F&lt;sub&gt;n&lt;/sub&gt; = F&lt;sub&gt;n-1&lt;/sub&gt; + F&lt;sub&gt;n-2&lt;/sub&gt;, where n &amp;gt; 1&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;
-To compute the current element we only need the previous two elements, we don't really need to strictly follow the mathematical definition doing a recursive function call, like we did in chapter 8. Results for &lt;code&gt;fibonacci(0)&lt;/code&gt; and &lt;code&gt;fibonacci(1)&lt;/code&gt; will be immediately solved, no need to loop. Any other fibonacci(n) can be computed by repeatedly computing &lt;code&gt;n - 1&lt;/code&gt; previous Fibonacci numbers.
-&lt;/p&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;61
-62
-63
-64
-65
-66
-67
-68
-69
-70
-71
-72
-73
-74
-75
-76
-77
-78
-79
-80
-81
-82
-83
-84
-85
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;fibonacci:
-    // fibonacci(n) -&amp;gt; result
-    //   n is 32-bit and will be passed in w0
-    //   result is 64-bit and will be returned in x0
-    mov w3, w0          // w3 ← w0
-    cmp w3, #1          // compare w3 and 1 and update the flags
-    b.le simple_case    // jump to simple_case if w3 &amp;lt;= 1
-    sub w3, w3, #1      // w3 ← w3 - 1
-    mov x1, #0          // x1 ← 0
-    mov x2, #1          // x1 ← 1
-    b loop_check        // branch to loop_check
-loop_body:
-    add x0, x1, x2      // x0 ← x1 + x2
-    mov x1, x2          // x1 ← x2
-    mov x2, x0          // x2 ← x0
-    sub w3, w3, #1      // w3 ← w3 - 1
-loop_check:
-    cbnz w3, loop_body  // branch to loop_body if w3 != 0
-
-    b fibonacci_end     // branch to fibonacci_end
-simple_case:
-    sxtw x0, w0         // x0 ← ExtendSigned32To64(w0)
-
-fibonacci_end:
-    ret
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-As in the recursive version of this function, cases 0 and 1 are handled specially. We first keep w0 into w3, line 65, and then we compare w3 with 1, line 66. If the flags are such that &lt;code&gt;w3 &amp;le; 1&lt;/code&gt; then we branch to the &lt;code&gt;simple_case&lt;/code&gt; which the only thing it does is extending &lt;code&gt;w0&lt;/code&gt; into &lt;code&gt;x0&lt;/code&gt;, line 82. If the fibonacci number to compute is not 0 or 1, then we have to compute the &lt;code&gt;n - 1&lt;/code&gt; earlier ones. So we have to decrease &lt;code&gt;w3&lt;/code&gt; by 1, line 68. In register &lt;code&gt;x1&lt;/code&gt; we will have &lt;code&gt;fibonacci(n-2)&lt;/code&gt; and in x2 we will have fibonacci(n-1). The two initially known ones are 0 and 1 respectively (this is, for &lt;code&gt;fibonacci(2)&lt;/code&gt;), lines 69-70.
-&lt;/p&gt;
-&lt;p&gt;
-Now everything is set for the loop, so we jump to the check, line 71. The loop check uses &lt;code&gt;cbnz&lt;/code&gt; with &lt;code&gt;w3&lt;/code&gt;, line 78. Once &lt;code&gt;w3&lt;/code&gt; becomes zero means that we do not have to compute any other fibonacci number, so cbnz will branch back to &lt;code&gt;loop_body&lt;/code&gt; only when &lt;code&gt;w3&lt;/code&gt; is not 0.
-&lt;/p&gt;
-
-&lt;p&gt;
-The loop body simply computes the current fibonacci by adding &lt;code&gt;x1&lt;/code&gt; and &lt;code&gt;x2&lt;/code&gt; (recall, x1 is &lt;code&gt;fibonacci(n-2)&lt;/code&gt; and x2 is &lt;code&gt;fibonacci(n-1)&lt;/code&gt;) and leaving the result in &lt;code&gt;x0&lt;/code&gt;, line 73. Now we need to prepare the next iteration of the loop: &lt;code&gt;x2&lt;/code&gt; (which is &lt;code&gt;fibonacci(n-1)&lt;/code&gt;) will be &lt;code&gt;fibonacci(n-2)&lt;/code&gt; in the next iteration, so we put it in &lt;code&gt;x1&lt;/code&gt;, line 74. Similarly, &lt;code&gt;x0&lt;/code&gt; (which is &lt;code&gt;fibonacci(n)&lt;/code&gt;) will be &lt;code&gt;fibonacci(n-1)&lt;/code&gt; in the next iteration, so we put it &lt;code&gt;x2&lt;/code&gt;, line 75.
-&lt;/p&gt;
-
-&lt;p&gt;
-At this point one fibonacci number has been computed, so one less to compute. So we decrease &lt;code&gt;w3&lt;/code&gt; by one, line 76. Now the loop_check is executed which will iterate if needed. Once we leave the loop, we still need to skip the &lt;code&gt;simple_case&lt;/code&gt;, line 80.
-&lt;/p&gt;
-
-
-&lt;p&gt;
-To test this, just take the code in chapter 8 and replace the recursive function with the iterative function.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;$ ./fibo 
-Please type a number: 12↴
-Fibonacci number 12 is 144
-$ ./fibo 
-Please type a number: 25↴
-Fibonacci number 25 is 75025
-$ ./fibo 
-Please type a number: 40↴
-Fibonacci number 40 is 102334155&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Yay! :)
-&lt;/p&gt;
-
-&lt;p&gt;
-This is all for today.
-&lt;/p&gt;
-&lt;/p&gt;&lt;/p&gt;&lt;/tr&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/p&gt;&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In chapter 6 we saw conditional branches and we ended commenting that they can be used to implement higher control constructs. In this chapter we will see a few of them.</summary></entry><entry><title type="html">Walk-through flang – Part 5</title><link href="https://blog.thinkingeek.com/2017/10/07/walk-through-flang-part-5/" rel="alternate" type="text/html" title="Walk-through flang – Part 5" /><published>2017-10-07T17:46:54+00:00</published><updated>2017-10-07T17:46:54+00:00</updated><id>https://blog.thinkingeek.com/2017/10/07/walk-through-flang-part-5</id><content type="html" xml:base="https://blog.thinkingeek.com/2017/10/07/walk-through-flang-part-5/">&lt;p&gt;In the previous installment of this series we saw how flang parses the statements using an LR(1) algorithm. As the parser recognized the parts of the statements it invokes semantic actions. Today we’re going to talk more about them.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;h2&gt;What is not being &quot;parsed&quot; yet&lt;/h2&gt;
-
-&lt;p&gt;
-In part 4 we saw that the parser uses an LR(1) algorithm to parse the Fortran statements. But Fortran has constructs that require a specific sequence of statements: for instance a (block) do-construct is formed by a do-statement, followed by one or more statements and constructs and ended with an end-do-statement. Also not all statements are not useable in all contexts, for instance we cannot use an assignment-statement in the non-executable part of a MODULE program unit, use more than once the &lt;code&gt;CONTAINS&lt;/code&gt; statement in any program unit or declare a variable once we have assigned a variable (unless we have started a new BLOCK construct).
-&lt;/p&gt;
-
-&lt;p&gt;
-The examples above are just a few of the things that the parser, because of the kind of grammars used today, can't really check by itself. We have to do these syntactical checks elsewhere. But there are other aspects of the language that the parser cannot check, for instance whether we're declaring a variable twice or using it in a way that would render an ill-formed program. For instance one cannot pass a &lt;code&gt;REAL&lt;/code&gt; variable as argument of a function expecting an &lt;code&gt;INTEGER&lt;/code&gt; parameter.
-&lt;/p&gt;
-
-&lt;p&gt;
-Luckily as we recognize the statements of the program we can react to them and assess their validity and meaning. What has to be done when a part of the language is recognized can be named as a semantic action. Although not all actions are strictly related to semantics because some of them will simply validate syntactical properties (they will be concerned only about the form instead of the meaning).
-&lt;/p&gt;
-
-&lt;h3&gt;Displeasure&lt;/h3&gt;
-
-&lt;p&gt;
-It is precisely this semantic analysis of front-ends and parsers the one that most people find annoying. The reason is that the solutions are usually very ad-hoc, extremely tailored to the language, rarely general or systematic enough. Don't get surprised if this part of flang is precisely an example of this. Of course it does not have to be like this but it is hard (and difficult to motivate) to do otherwise.
-&lt;/p&gt;
-
-&lt;h2&gt;Semantic actions and values&lt;/h2&gt;
-
-&lt;p&gt;
-Semantic actions are a way of implementing a theoretical formalism called &lt;em&gt;attribute grammars&lt;/em&gt;. Attribute grammars associate properties to terminals and non-terminals called &lt;em&gt;attributes&lt;/em&gt;. These attributes can be synthesized or inherited. Purely synthesized attributes are those that are defined strictly by the part of the language. For instance an expression 1.0 + 1 we know it will have type &lt;code&gt;REAL&lt;/code&gt; and an expression &lt;code&gt;1 + 1&lt;/code&gt; will have a type &lt;code&gt;INTEGER&lt;/code&gt;. We can easily identify the type of an expression as a synthesized attribute of expressions. An inherited attribute, though, is one that depends on the specific situation of the part of the language. These are attributes that somehow denote context. For instance in the following example, the expression &lt;code&gt;A + 1&lt;/code&gt; has type &lt;code&gt;REAL&lt;/code&gt;. And we know this because A has type &lt;code&gt;REAL&lt;/code&gt;. If we redeclare &lt;code&gt;A&lt;/code&gt; as an &lt;code&gt;INTEGER&lt;/code&gt; the expression &lt;code&gt;A + 1&lt;/code&gt; has type &lt;code&gt;INTEGER&lt;/code&gt;. This is because the occurrence of &lt;code&gt;A&lt;/code&gt; in an expression may have a type or another depending on the &quot;declared type&quot; of &lt;code&gt;A&lt;/code&gt;, that declared type is an inherited attribute at this point.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;kt&quot;&gt;REAL&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;42&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;PRINT&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-You will see that implementing attribute grammars in an LR(1) parser will end in mixed feelings.
-&lt;/p&gt;
-
-&lt;p&gt;
-For the synthesized attributes, we use &lt;em&gt;semantic values&lt;/em&gt;. Each part of the language (token or rule) is informally (i.e. enforced by checks/assumptions in the code) assigned a semantic value. There are many types of semantic values defined in &lt;code&gt;semant.h&lt;/code&gt; but the 4 most used ones are the following:
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#define S_CONST 1    &lt;/span&gt;&lt;span class=&quot;cm&quot;&gt;/* scalar constant */&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
-#define S_EXPR 2     &lt;/span&gt;&lt;span class=&quot;cm&quot;&gt;/* expression */&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
-#define S_LVALUE 3   &lt;/span&gt;&lt;span class=&quot;cm&quot;&gt;/* non-whole variable */&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;
-#define S_IDENT 7    &lt;/span&gt;&lt;span class=&quot;cm&quot;&gt;/* identifier, possibly a whole variable */&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-&lt;code&gt;S_EXPR&lt;/code&gt; is used for general expressions. &lt;code&gt;S_CONST&lt;/code&gt; is used for expressions that denote constants or for contexts where a constant is required. &lt;code&gt;S_LVALUE&lt;/code&gt; and &lt;code&gt;S_IDENT&lt;/code&gt; represent variables in Fortran parlance, this is, expressions that denote some storage in memory. Usually these expressions appear at the left of an assigment hence the name &lt;em&gt;lvalue&lt;/em&gt;. &lt;code&gt;S_IDENT&lt;/code&gt; may also be used for places where the name of an identifier is required.
-&lt;/p&gt;
-
-&lt;p&gt;
-All semantic values, regardless of their particular type share a few attributes that are always available. The semantic value is defined in &lt;code&gt;semstk.h&lt;/code&gt; and their type in C is &lt;code&gt;SST&lt;/code&gt; but in general only pointers to it will be used.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semstk.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;k&quot;&gt;typedef&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sst&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;short&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;           &lt;span class=&quot;cm&quot;&gt;/* type of this stack entry */&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;flag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;cm&quot;&gt;/* general flag */&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;    &lt;span class=&quot;cm&quot;&gt;/* plain expr flag - 0 =&amp;gt; no parens */&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;f2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;    &lt;span class=&quot;cm&quot;&gt;/* id is an alias */&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mnoff&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;cm&quot;&gt;/* derived type flag &amp;amp; information */&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;    &lt;span class=&quot;cm&quot;&gt;/* save &amp;amp; restore word */&lt;/span&gt;
-  &lt;span class=&quot;cm&quot;&gt;/* value of this stack entry */&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-The field &lt;code&gt;id&lt;/code&gt; stores the type (e.g. &lt;code&gt;S_CONST&lt;/code&gt; or &lt;code&gt;S_EXPR&lt;/code&gt;). Another important field is &lt;code&gt;ast&lt;/code&gt; where an identifier to an AST tree will be stored, ASTs will represent computation itself. The other fields are used less often as they have narrower meanings.
-&lt;/p&gt;
-
-&lt;p&gt;
-A &lt;code&gt;SST&lt;/code&gt; also has a type-specific fields but they are not commonly accessed directly but using a bunch of macros which encapsulate the attributes. These macros use the following naming convention: if they end with &lt;code&gt;G&lt;/code&gt; the macro just returns the attribute (i.e. it &lt;strong&gt;g&lt;/strong&gt;ets it). If the macro ends with &lt;code&gt;P&lt;/code&gt;, then the macro receives two arguments, the first one being the semantic value and the second one being the value to which we want assign the attribute (i.e. it &lt;strong&gt;p&lt;/strong&gt;uts it). Most of the time, the attributes that we can get and set are integers.
-&lt;/p&gt;
-
-&lt;p&gt;
-Recall that a semantic action is executed when a reduction happens. Each reduction is a rule alternative with a left-hand side being the rule name and the right-hand side a sequence of tokens and rules. Each of these tokens and rules will have their semantic value. We can read the semantic values of the elements of the right hand side using the macro &lt;code&gt;RHS(n)&lt;/code&gt; where &lt;code&gt;n&lt;/code&gt; is the number of the element that we want to access (starting from 1). We can use the macro LHS to access the semantic value of the left hand side, typically to assign its attributes. Be careful to read &lt;code&gt;RHS(1)&lt;/code&gt; first before setting &lt;code&gt;LHS&lt;/code&gt; as they actually refer to the same memory. This might be handy if &lt;code&gt;LHS&lt;/code&gt; is just propagating &lt;code&gt;RHS(1)&lt;/code&gt;, in a &lt;em&gt;unary reduction&lt;/em&gt; of the form &lt;code&gt;X ::= Y&lt;/code&gt; in cases where nothing else must have to be checked.
-&lt;/p&gt;
-
-&lt;p&gt;
-What about inherited attributes? Well, it is not possible to implement them nicely, so a way to do this is using global variables or data structures that represent the environment. In the case of flang there is a giant structure in &lt;code&gt;tools/flang1/flang1exe/semant.h&lt;/code&gt; called sem with lots of fields that will be used to represent inherited information. This global variable called &lt;code&gt;sem&lt;/code&gt; has so many fields that is not worth detailing them here.
-&lt;/p&gt;
-
-&lt;h2&gt;Example&lt;/h2&gt;
-
-&lt;p&gt;
-Let's go through a very simple example to see what the parser does. Recall that the parser does two passes through the input and in each pass different semantic actions can be run for the same reduction. We start with the first pass but later on we will have to switch to the second one.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;PROGRAM&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MAIN&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;END&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;PROGRAM&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MAIN&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-When the parser sees the token PROGRAM it already knows it can perform the following reduction.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(   2) &amp;lt;stbeg&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-This is a nullary reduction so no &lt;code&gt;RHS&lt;/code&gt; will be used. Setting &lt;code&gt;LHS&lt;/code&gt; is possible in these cases though. If you recall the part 4, reductions are classified in blocks. This one belongs to the first block and is implemented in &lt;code&gt;semant.c&lt;/code&gt;. The code it does is surprisingly long so I'm not pasting all of it here.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cm&quot;&gt;/* ------------------------------------------------------------------ */&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/*
- *    &amp;lt;stbeg&amp;gt; ::=
- */&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;STBEG1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;in_enum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;switch&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_ENUMERATOR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_ENDENUM&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-      &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-    &lt;span class=&quot;nl&quot;&gt;default:&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;155&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lineno&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ENUMERATOR statement expected&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CNULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ignore_stmt&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-      &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-First it checks if we are inside an enum definition (a new feature of Fortran 2003) which is kept in &lt;code&gt;sem.in_enum&lt;/code&gt;. &lt;code&gt;sem&lt;/code&gt; is a global variable that keeps a vast amount of state regarding the parsing. It is defined in &lt;code&gt;tools/flang1/flang1exe/semant.h&lt;/code&gt;. Inside an enum definition only an ENUMERATOR constructor or END ENUM can appear so these are the two valid tokens at this point, otherwise this statement is wrong and has to be ignored (&lt;code&gt;sem.ignore_stmt = TRUE&lt;/code&gt;). &lt;code&gt;break&lt;/code&gt; will finish the semantic processing.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_USE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;switch&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_USE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_INCLUDE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;nl&quot;&gt;default:&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;apply_use_stmts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;deferred_func_kind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;get_retval_KIND_value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;deferred_func_len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;get_retval_LEN_value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;deferred_dertype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;get_retval_derived_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-If you recall part 2 you may remember that Fortran has a strict ordering of statements. If we are still in a position to accept USE statements and the next token suggests a USE-statement we just proceed. Otherwise, no more USE statements can appear in which case their effect can be executed at this point: basically adding the imported names. Also functions may have some attributes that use names in these USE-statements, so the frontend has had to defer them up to this point.
-&lt;/p&gt;
-
-&lt;p&gt;
-There are a few more checks but most of them concerned to parallel constructs that we will omit here. Now the following reduction is executed.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  33) &amp;lt;id&amp;gt; ::= &amp;lt;id name&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cm&quot;&gt;/* ------------------------------------------------------------------ */&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/*                                                                      
- *    &amp;lt;id&amp;gt; ::= &amp;lt;id name&amp;gt;                                                
- */&lt;/span&gt;                                                                     
-&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ID1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;                                                               
-  &lt;span class=&quot;n&quot;&gt;np&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SST_CVALG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;                                 
-  &lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;getsymbol&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;np&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                                                 
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;in_dim&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type_mode&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;KINDG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt;                    
-      &lt;span class=&quot;n&quot;&gt;STYPEG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST_MEMBER&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;                                      
-    &lt;span class=&quot;cm&quot;&gt;/* possible use of a type parameter in the dimension field          
-     * of an array type component declaration                           
-     */&lt;/span&gt;                                                                 
-    &lt;span class=&quot;n&quot;&gt;KINDP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                                                    
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;                                                                     
-  &lt;span class=&quot;n&quot;&gt;SST_SYMP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                                                  
-  &lt;span class=&quot;n&quot;&gt;SST_ACLP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                                                     &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-As we explained in part 3, &lt;code&gt;scn.id.name&lt;/code&gt; is a buffer of null-ended strings for the current statement. Each identifier tokenized by the parser is given as a value the offset (in bytes) of that buffer where the identifier is stored (i.e the buffer is a sequence of null ended strings). When doing a shift, the parser has put the value passed by the tokenizer (although it used &lt;code&gt;SST_SYMP&lt;/code&gt; that macro uses the same storage as &lt;code&gt;SST_CVALx&lt;/code&gt;). So in &lt;code&gt;np&lt;/code&gt; we will have the current identifier. The next step is getting a symbol pointer (it is actually a 32-bit integer) of it in the symbol table. We will talk about the symbol table in the next chapter. Once we get the symbol very little has to happen at this level: just store it in LHS using &lt;code&gt;SST_SYMP&lt;/code&gt; (put the symbol &lt;code&gt;lptr&lt;/code&gt; in LHS). &lt;code&gt;SST_ACLP&lt;/code&gt; just clears a field that is used for array-constructors (it is unclear to me why it has to be done for every identifier at this point).
-&lt;/p&gt;
-
-&lt;p&gt;
-Some other checks happen but are not very relevant at this point. The next reduction is
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  45) &amp;lt;routine id&amp;gt; ::= PROGRAM &amp;lt;id&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cm&quot;&gt;/*                                                      
- *      &amp;lt;routine id&amp;gt; ::= PROGRAM &amp;lt;id&amp;gt;                   
- */&lt;/span&gt;                                                     
-&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ROUTINE_ID4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;                                       
-  &lt;span class=&quot;n&quot;&gt;gbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rutype&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RU_PROG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                 
-  &lt;span class=&quot;n&quot;&gt;rhstop&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                           
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IN_MODULE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;                                        
-    &lt;span class=&quot;n&quot;&gt;ERR310&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;PROGRAM may not appear in a MODULE&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CNULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-The semantic action starts by marking in a field of &lt;code&gt;gbl.rutype&lt;/code&gt; that this is a program. Other valid values of this field are &lt;code&gt;RU_FUNC&lt;/code&gt; (for FUNCTION), &lt;code&gt;RU_SUBR&lt;/code&gt; (for PROGRAM) and &lt;code&gt;RU_BDATA&lt;/code&gt; for (BLOCK DATA). To be honest I have no idea what the prefix &lt;code&gt;RU_&lt;/code&gt; means here but apparently is related to subprogram. Maybe it started as a way to distinguish the &lt;strong&gt;r&lt;/strong&gt;o&lt;strong&gt;u&lt;/strong&gt;tines and &lt;code&gt;RO&lt;/code&gt; might be confused with read-only.
-&lt;/p&gt;
-
-&lt;p&gt;
-Next is checking that we're not inside a module. This macro expands to &lt;code&gt;(sem.mod_cnt &amp;amp;&amp;amp; gbl.internal == 0)&lt;/code&gt; which means we have seen zero modules so far and we are not a sub-program. Certainly a &lt;code&gt;PROGRAM&lt;/code&gt; statement cannot appear inside a &lt;code&gt;MODULE&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;nl&quot;&gt;routine_id:&lt;/span&gt;                                                
-  &lt;span class=&quot;n&quot;&gt;is_entry&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FALSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                        
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;currsub&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;                      
-    &lt;span class=&quot;n&quot;&gt;error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;303&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lineno&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SYMNAME&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;currsub&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CNULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;pop_subprogram&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;                                      
-    &lt;span class=&quot;n&quot;&gt;pop_scope_level&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SCOPE_NORMAL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                         
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-This code is shared among several semantic functions so not all the checks will make much sense for the &lt;code&gt;PROGRAM&lt;/code&gt; statement itself. Here we acknowledge that this is not an &lt;code&gt;ENTRY&lt;/code&gt; statement. Confusingly &lt;code&gt;is_entry&lt;/code&gt; is a static variable of &lt;code&gt;semant.c&lt;/code&gt; so we may just be resetting it here to false. Also a PROGRAM statement cannot appear inside an INTERFACE. A few lines below we see some interesting stuff:
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;  &lt;span class=&quot;n&quot;&gt;sptr1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SST_SYMG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rhstop&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt; &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Where the code retrieves the symbol from &lt;code&gt;RHS(2)&lt;/code&gt;, so the &lt;code&gt;&amp;lt;id&amp;gt;&lt;/code&gt;. This is the attribute we synthesized in the previous reduction.
-&lt;/p&gt;
-
-&lt;p&gt;
-The next reduction is
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  23) &amp;lt;prog title&amp;gt; ::= &amp;lt;routine id&amp;gt; |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Here we would check generic things related to PROGRAM, FUNCTION, SUBROUTINE, MODULE and BLOCKDATA statements. For FUNCTION and SUBROUTINE at this point we would keep the dummy arguments (formal parameters) that would have been synthesized in another semantic function.
-&lt;/p&gt;
-
-&lt;p&gt;
-Next reduction is
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(   4) &amp;lt;statement&amp;gt; ::= &amp;lt;prog title&amp;gt;  |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-This semantic function does final processing, most of it only of concern of parallel constructs.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(   3) &amp;lt;stend&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-More finish processing, mostly cleanups so the state of the next statement is ready.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(   1) &amp;lt;stmt&amp;gt; ::= &amp;lt;stbeg&amp;gt; &amp;lt;statement&amp;gt; &amp;lt;stend&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-The semantic function associated to this reduction does nothing.
-&lt;/p&gt;
-
-&lt;p&gt;
-So far we have just parsed &lt;code&gt;PROGRAM MAIN&lt;/code&gt;. Now we move onto &lt;code&gt;INTEGER :: X&lt;/code&gt;. I'll skip the boring reductions this time.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 154) &amp;lt;base type&amp;gt; ::= INTEGER |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-The semantic just synthesizes an inherited attribute for this one that will be used later.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;      &lt;span class=&quot;cm&quot;&gt;/* ------------------------------------------------------------------ */&lt;/span&gt;
-      &lt;span class=&quot;cm&quot;&gt;/*                                                                      
-       *      &amp;lt;base type&amp;gt; ::= INTEGER  |                                      
-       */&lt;/span&gt;                                                                     
-      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BASE_TYPE1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;                                                        
-        &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdtype&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ogdtype&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;user&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt_int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                           
-        &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gty&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TY_INT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                                     
-        &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 163) &amp;lt;opt len spec&amp;gt; ::=    |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Basically we remember that there is not any kind of length specifier like &lt;code&gt;INTEGER * N&lt;/code&gt; or &lt;code&gt;CHARACTER * N&lt;/code&gt;. Technically the Fortran standard only allows this for CHARACTER under the LEN attribute (i.e. &lt;code&gt;CHARACTER * N&lt;/code&gt; means &lt;code&gt;CHARACTER(LEN=N)&lt;/code&gt;) but historically this has been accepted for non-CHARACTER types to mean KIND (i.e &lt;code&gt;INTEGER * 8 means&lt;/code&gt; &lt;code&gt;INTEGER(KIND=8)&lt;/code&gt;). Apparently Flang also accepts a colon (:) instead of *, so &lt;code&gt;INTEGER : 8&lt;/code&gt; would also be accepted.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cm&quot;&gt;/* ------------------------------------------------------------------ */&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/*
- *      &amp;lt;opt len spec&amp;gt; ::= |
- */&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;OPT_LEN_SPEC1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;SST_IDP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;SST_SYMP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;SST_ASTP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;SST_DTYPEP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdtype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 145) &amp;lt;data type&amp;gt; ::=  &amp;lt;base type&amp;gt; &amp;lt;opt len spec&amp;gt; |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Here the semantic function synthesizes the final type using &lt;code&gt;&amp;lt;base type&amp;gt;&lt;/code&gt; and &lt;code&gt;&amp;lt;opt len spec&amp;gt;&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 298) &amp;lt;opt attr list&amp;gt; ::=  |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Here we would handle the attributes like &lt;code&gt;DIMENSION&lt;/code&gt;, &lt;code&gt;POINTER&lt;/code&gt;, &lt;code&gt;ALLOCATABLE&lt;/code&gt;, etc. But in this declaration there is none, so nothing of interest happens (only minor bookkeeping).
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  21) &amp;lt;pgm&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Here we check that we are inside some program unit. In this case this will do nothing, but for historical reasons it is possible to start an implicit PROGRAM program unit by using any statement that may follow a &lt;code&gt;PROGRAM&lt;/code&gt; statement. This means, among other consequences, that the minimal valid Fortran program is just &lt;code&gt;END&lt;/code&gt; and a &quot;hello world&quot; can be as short as &lt;code&gt;PRINT *, &quot;HELLO WORLD&quot;&lt;/code&gt; statement followed by an &lt;code&gt;END&lt;/code&gt; statement: no need for an initial &lt;code&gt;PROGRAM&lt;/code&gt; (though omitting it is currently deprecated).
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  33) &amp;lt;id&amp;gt; ::= &amp;lt;id name&amp;gt;
-prod(  32) &amp;lt;ident&amp;gt; ::= &amp;lt;id&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-The first production we already saw it for the name of PROGRAM. The second one just marks the semantic value of LHS as an identifier.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 163) &amp;lt;opt len spec&amp;gt; ::=    |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Ok, again a length specifier here. In this case it would be like &lt;code&gt;INTEGER :: variable * N&lt;/code&gt; which again is an extension, in standard Fortran this is only allowed for CHARACTER. Our declaration has none so again nothing happens here.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 360) &amp;lt;entity id&amp;gt; ::= &amp;lt;ident&amp;gt; &amp;lt;opt len spec&amp;gt;  |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-Here we gather the length information and array information (none for our declaration). We take the symbol we stored in &lt;code&gt;&amp;lt;ident&amp;gt;&lt;/code&gt; and create a variable for it.
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;      &lt;span class=&quot;nl&quot;&gt;entity_id_shared:&lt;/span&gt;         
-        &lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SST_SYMG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-        &lt;span class=&quot;cm&quot;&gt;/* .. several lines omitted .. */&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;create_var&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-        &lt;span class=&quot;cm&quot;&gt;/* .. several lines omitted .. */&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;SST_SYMP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;stype1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;STYPEG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-&lt;code&gt;create_var&lt;/code&gt; (defined in &lt;code&gt;semant.c&lt;/code&gt;) makes a few checks and calls &lt;code&gt;refsym_inscope&lt;/code&gt; (defined in &lt;code&gt;semsym.c&lt;/code&gt;) to insert the symbol in the current scope. After this, the semantic function checks the type of the symbol and does several extra checks on the type of the declaration. If all goes well then the symbol is given the type. The code is a bit involved at this point because Fortran has several non-executable statements that can set the same attributes. The following code shows two ways of declaring two arrays &lt;code&gt;A&lt;/code&gt; and &lt;code&gt;B&lt;/code&gt; of 10 INTEGER elements.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the type attribute of A to be INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;DIMENSION&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the dimension attribute so A is an array 1 to 9&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-                   &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Ultimately A is an array 1 to 9 of INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;   &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the type and dimension attributes at once.&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-                   &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! B is an array 1 to 9 of INTEGER&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Several statements allow setting the dimension attribute for historical reasons as well:
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the type attribute of A to INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;SAVE&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;      &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the save and dimension attributes&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the type attribute of B to INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;TARGET&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Sets the target and dimension attributes&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 357) &amp;lt;entity decl&amp;gt; ::= &amp;lt;entity id&amp;gt; |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-At this point some checks regarding the initialization of the entity happen.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 356) &amp;lt;entity decl list&amp;gt; ::= &amp;lt;entity decl&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-This does nothing in the context of a type declaration but it just synthesizes a list of entities in other cases (the reduction used is the same in both).
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 104) &amp;lt;declaration&amp;gt; ::= &amp;lt;data type&amp;gt; &amp;lt;opt attr list&amp;gt; :: &amp;lt;pgm&amp;gt; &amp;lt;entity decl list&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-This is the whole declaration. The semantic function just cleans up a few variables and sets a null AST to the LHS semantic value.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cm&quot;&gt;/*                                                                       
- *    &amp;lt;declaration&amp;gt; ::= &amp;lt;data type&amp;gt; &amp;lt;opt attr list&amp;gt; :: &amp;lt;pgm&amp;gt; &amp;lt;entity decl
- *list&amp;gt; |                                                                
- */&lt;/span&gt;                                                                      
-&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DECLARATION26&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;                                                      
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;entity_attr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exist&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ET_B&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ET_PARAMETER&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;                          
-    &lt;span class=&quot;n&quot;&gt;seen_parameter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                               
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;interface&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;                                              
-      &lt;span class=&quot;n&quot;&gt;end_param&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;                                                       
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;                                                                      
-  &lt;span class=&quot;n&quot;&gt;SST_ASTP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                                                      
-  &lt;span class=&quot;n&quot;&gt;in_entity_typdcl&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;FALSE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                              
-  &lt;span class=&quot;n&quot;&gt;entity_attr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exist&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                                 
-  &lt;span class=&quot;n&quot;&gt;entity_attr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;access&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;sc&quot;&gt;' '&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                              
-  &lt;span class=&quot;n&quot;&gt;bind_attr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exist&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                                  
-  &lt;span class=&quot;n&quot;&gt;bind_attr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;altname&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                                 
-  &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;                                                                 &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(   6) &amp;lt;statement&amp;gt; ::= &amp;lt;declaration&amp;gt; |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-At this point the code updates the program phase, this is, the position that determines which statements inside the program unit are allowed and which are not.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;STATEMENT3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;prevphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_IMPLICIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPLICIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;errsev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;70&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPLICIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_DATA&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_NAMELIST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_EXEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;errsev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;70&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_SPEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_SPEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_INTERFACE&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_ABSTRACT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_INIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;prevphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_INIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_PARAMETER&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_SPEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;errsev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;70&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPLICIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPLICIT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_USE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_USE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;errsev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;70&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_USE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_USE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_IMPORT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPORT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;errsev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;70&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPORT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_IMPORT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_SPEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;errsev&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;70&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;cm&quot;&gt;/* allow for attributes before a use statement */&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_ATTRIBUTES&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;scn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmtyp&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TK_MP_DECLARESIMD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_SPEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Then, if the declaration entails any computation, it keeps the AST that represents it. This might happen for instance with a POINTER that must be initialized in a way that is not ASSOCIATED to anything, likewise for ALLOCATABLES and other entities.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SST_ASTG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add_stmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;      
-  &lt;span class=&quot;n&quot;&gt;SST_ASTG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;        
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;                           &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-At this point we have finished with &lt;code&gt;INTEGER :: X&lt;/code&gt; and we can proceed to parse &lt;code&gt;X = 1&lt;/code&gt;. Again I will omit repeated reductions.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  19) &amp;lt;nii&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Here we check that we are not inside an INTERFACE. Certainly an assignment is not valid happen there.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  20) &amp;lt;nim&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Here we check that we are not inside a MODULE. Again, an assignment is no valid there. Several of the reductions in this pass of the parsing do not have any interesting semantic value, so let's assume we're already in the second pass.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 765) &amp;lt;psfunc&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-According to the code, this rule just toggles a flag that says whether we are at the left of a &lt;code&gt;=&lt;/code&gt;. &lt;code&gt;psfunc&lt;/code&gt; apparently means &lt;code&gt;possible statement function&lt;/code&gt;. A statement function is like a small declaration that totally looks like an assignment except that it takes scalar parameters and returns a scalar value. For obvious reasons this statement is deprecated as of Fortran 90.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;k&quot;&gt;PROGRAM&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FOO&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
- &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;IMPLICIT&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;NONE&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
- &lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
- &lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;F&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
- &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;F&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Looks like an assignment&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-                  &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! but is a function statement&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-                  &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! They can only appear before&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-                  &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! the first executable statement.&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
- &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;PRINT&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;F&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;   &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Will print 11&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;END&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;PROGRAM&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FOO&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  33) &amp;lt;id&amp;gt; ::= &amp;lt;id name&amp;gt;
-prod(  32) &amp;lt;ident&amp;gt; ::= &amp;lt;id&amp;gt;
-prod( 627) &amp;lt;var ref&amp;gt; ::=    &amp;lt;ident&amp;gt;  |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-We're at the left of the assignment, among other things, this function will mark &lt;code&gt;&amp;lt;var ref&amp;gt;&lt;/code&gt; as a &lt;code&gt;ST_IDENT&lt;/code&gt;.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 765) &amp;lt;psfunc&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Now we mark that we are not anymore at the left of an assignment, we can't see it yet through the reductions but we have already consumed the &lt;code&gt;=&lt;/code&gt; token.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 665) &amp;lt;constant&amp;gt; ::=   &amp;lt;integer&amp;gt;  |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-So this is the token for the 1. The semantic function will basically set the LHS to no symbol, its type to be integer and will store the constant, this is done in &lt;code&gt;ast_conval&lt;/code&gt;.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant2.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;n&quot;&gt;SST_LSYMP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;      
-&lt;span class=&quot;n&quot;&gt;SST_DTYPEP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DT_INT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;cm&quot;&gt;/* value set by scan */&lt;/span&gt; 
-&lt;span class=&quot;n&quot;&gt;ast_conval&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;top&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;        &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant2.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;                                                     
-&lt;span class=&quot;nf&quot;&gt;ast_conval&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SST&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;top&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;                                            
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;                                                               
-  &lt;span class=&quot;n&quot;&gt;SST_ACLP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;cm&quot;&gt;/* prevent UMR */&lt;/span&gt;                           
-  &lt;span class=&quot;n&quot;&gt;SST_ASTP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mk_cval1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SST_CVALG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SST_DTYPEG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)));&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;SST_SHAPEP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;                                           
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;                                                               &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-(UMR means uninitialized memory read, and it is a warning printed by &lt;a href=&quot;https://teamblue.unicomsi.com/products/purifyplus/&quot;&gt;Purify&lt;/a&gt;, a tool similar to Valgrind to detect memory errors.)
-The usage of &lt;code&gt;top&lt;/code&gt; vs &lt;code&gt;LHS&lt;/code&gt; is a bit confusing at this point. My understanding is that they are the same.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 597) &amp;lt;primary&amp;gt; ::= &amp;lt;constant&amp;gt; |
-prod( 584) &amp;lt;expression&amp;gt; ::= &amp;lt;primary&amp;gt;   |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-These two reductions do nothing or simply propagate values upwards the expression hierarchy.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 764) &amp;lt;assignment&amp;gt; ::= &amp;lt;psfunc&amp;gt; &amp;lt;var ref&amp;gt; &amp;lt;psfunc&amp;gt; = &amp;lt;expression&amp;gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Here we will build the assignment itself. This is a long function, but at some point we will get the AST of RHS(5) and the location in RHS(2). Here &lt;code&gt;RHS(2)&lt;/code&gt; is exactly &lt;code&gt;&amp;lt;var ref&amp;gt;&lt;/code&gt; and RHS(5) is &lt;code&gt;&amp;lt;expression&amp;gt;&lt;/code&gt;. An AST representing the assignment is then created which is stored in LHS. The code also makes sure we know we are in the executable part of the program unit (only executable statements or FORMAT statements are allowed in that part).
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/flang1/flang1exe/semant3.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;   &lt;span class=&quot;cm&quot;&gt;/* ... */&lt;/span&gt;
-   &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;assign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
-   &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-   &lt;span class=&quot;cm&quot;&gt;/* ... */&lt;/span&gt;
-   &lt;span class=&quot;n&quot;&gt;sem&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pgphase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PHASE_EXEC&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-   &lt;span class=&quot;cm&quot;&gt;/* ... */&lt;/span&gt;
-   &lt;span class=&quot;n&quot;&gt;SST_ASTP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LHS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod( 742) &amp;lt;simple stmt&amp;gt; ::= &amp;lt;assignment&amp;gt; |
-prod(   7) &amp;lt;statement&amp;gt; ::= &amp;lt;nii&amp;gt; &amp;lt;nim&amp;gt; &amp;lt;simple stmt&amp;gt; |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-The semantic function of &lt;code&gt;&amp;lt;simple stmt&amp;gt;&lt;/code&gt; does nothing. The semantic function of &lt;code&gt;&amp;lt;statement&amp;gt;&lt;/code&gt; takes the AST from &lt;code&gt;&amp;lt;simple stmt&amp;gt;&lt;/code&gt; and adds it to the global AST.
-&lt;/p&gt;
-
-&lt;p&gt;
-Finally we are at the END PROGRAM statement.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  22) &amp;lt;end&amp;gt; ::=&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-This does nothing in our case, in other contexts may have to finish the INTERFACE blocks seen so far.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;prod(  33) &amp;lt;id&amp;gt; ::= &amp;lt;id name&amp;gt;
-prod(  32) &amp;lt;ident&amp;gt; ::= &amp;lt;id&amp;gt;
-prod(  78) &amp;lt;opt ident&amp;gt; ::= &amp;lt;ident&amp;gt;
-prod(  73) &amp;lt;end stmt&amp;gt; ::= ENDPROGRAM    &amp;lt;opt ident&amp;gt; |&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Several final clean ups happen here. Too complicated at this point to describe them.
-&lt;/p&gt;
-
-&lt;h2&gt;Wrap-up&lt;/h2&gt;
-
-&lt;p&gt;
-Ok, this was very long and sadly we could not get much detail of this. In the next chapter we will see how the symbol table works.
-&lt;/p&gt;
-&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the previous installment of this series we saw how flang parses the statements using an LR(1) algorithm. As the parser recognized the parts of the statements it invokes semantic actions. Today we’re going to talk more about them.</summary></entry></feed>
+&lt;p&gt;Happy hacking.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I’ve been implementing an algorithm that works on a graph. That algorithm needs to create and destroy lots of nodes and edges to keep track of the algorithm state correctly. The algorithm also needs to be fast in order to be competitive against a similar algorithm that uses sets of stacks instead of graphs. Profiles show that memory allocations are impacting negatively the performance, so maybe a memory pool can help.</summary></entry></feed>

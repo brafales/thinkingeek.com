@@ -545,6 +545,14 @@
 <lastmod>2019-03-10T11:24:08+00:00</lastmod>
 </url>
 <url>
+<loc>https://blog.thinkingeek.com/2020/06/06/using-ssh-certificates/</loc>
+<lastmod>2020-06-06T13:31:00+00:00</lastmod>
+</url>
+<url>
+<loc>https://blog.thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/</loc>
+<lastmod>2020-06-06T13:39:00+00:00</lastmod>
+</url>
+<url>
 <loc>https://blog.thinkingeek.com/archives/</loc>
 </url>
 <url>
@@ -1023,6 +1031,9 @@
 </url>
 <url>
 <loc>https://blog.thinkingeek.com/categories/fortran/</loc>
+</url>
+<url>
+<loc>https://blog.thinkingeek.com/categories/ssh/</loc>
 </url>
 <url>
 <loc>https://blog.thinkingeek.com/posts/2/</loc>

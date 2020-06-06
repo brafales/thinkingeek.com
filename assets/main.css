@@ -80,6 +80,12 @@ hr { height: 4px; margin: 15px 0; border: 0; background-color: #e8e8e8; }
 /** Clearfix */
 .pagination:after, .wrapper:after { content: ""; display: table; clear: both; }
 
+dl { display: flex; flex-flow: row wrap; }
+
+dt { font-weight: 700; flex-basis: 20%; padding-right: 1em; text-align: right; border-right: 1px solid; margin-bottom: 0.5em; }
+
+dd { flex-basis: 70%; flex-grow: 1; padding-left: 1em; margin-bottom: 0.5em; }
+
 /** Site header */
 .site-header { min-height: 56px; position: relative; }
 

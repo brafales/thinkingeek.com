@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Create your own local domain and DHCP with dnsmasq</title>
+  <meta name="description" content="Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present here a simpler alternative built on top of dnsmasq which is an integrated DNS and DHCP.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Create your own local domain and DHCP with dnsmasq">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">
+  <meta property="og:description" content="Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present here a simpler alternative built on top of dnsmasq which is an integrated DNS and DHCP.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Create your own local domain and DHCP with dnsmasq">
+  <meta name="twitter:description" content="Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present he...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Create your own local domain and DHCP with dnsmasq</h1>
+    
+    <p class="post-meta"><time datetime="2020-06-06T13:39:00+00:00" itemprop="datePublished">Jun 6, 2020</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/">Back in 2007</a>, Bernat
+explained how to set up our own domain name using ISC BIND and ISC DHCP. You
+can’t go wrong with those servers but maybe you prefer something more
+straightforward. I present here a simpler alternative built on top of
+<a href="http://www.thekelleys.org.uk/dnsmasq/doc.html"><code class="language-plaintext highlighter-rouge">dnsmasq</code></a> which is an
+integrated DNS and DHCP.</p>
+
+<!--more-->
+
+<p>What we are going to do is to configure our a forwarding DNS (so it will
+forward queries to other DNS servers), it will provide us a DNS <em>zone</em>
+<code class="language-plaintext highlighter-rouge">.mydomain</code> and also DHCP.</p>
+
+<p>The following example assumes that your LAN gateway is in <code class="language-plaintext highlighter-rouge">192.168.1.1</code> and we
+will call it <code class="language-plaintext highlighter-rouge">router.mydomain</code>.  Your DNS server is in <code class="language-plaintext highlighter-rouge">192.168.1.2</code> and we
+will call it <code class="language-plaintext highlighter-rouge">dns.mydomain</code>. Install <code class="language-plaintext highlighter-rouge">dnsmasq</code> in <code class="language-plaintext highlighter-rouge">dns.mydomain</code> (check your
+Linux distribution on how to do this).  <code class="language-plaintext highlighter-rouge">dnsmasq</code> settings are commonly found
+in <code class="language-plaintext highlighter-rouge">/etc/dnsmasq.conf</code>.</p>
+
+<div style="padding: 1em; background-color: #fee;">
+Make sure you disable the DHCP of your LAN router if it is providing this
+service. Otherwise you will run into unpleasant conflicts with DHCP (only one
+DHCP server can be running in a LAN at a time). Also you may want to disable
+its DNS forwarding service as you're not going to need it.
+</div>
+
+<p></p>
+
+<figure class="highlight"><figcaption>/etc/dnsmasq.conf</figcaption><pre><code class="language-shell" data-lang="shell"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+</pre></td><td class="code"><pre><span class="c"># Never forward plain names (without a dot or domain part)</span>
+domain-needed
+<span class="c"># Never forward addresses in the non-routed address spaces</span>
+bogus-priv
+<span class="c"># Don't read /etc/resolv.conf or any other</span>
+<span class="c"># file to get the forwarding files.</span>
+no-resolv
+<span class="c"># Add other name servers here, with domain specs if they are for</span>
+<span class="c"># non-public domains.</span>
+<span class="nv">server</span><span class="o">=</span>8.8.8.8
+<span class="nv">server</span><span class="o">=</span>8.8.4.4
+<span class="c"># Add local-only domains here, queries in these domains are answered</span>
+<span class="c"># from /etc/hosts or DHCP only.</span>
+<span class="nb">local</span><span class="o">=</span>/mydomain/
+<span class="c"># It does the following things.</span>
+<span class="c"># 1) Allows DHCP hosts to have fully qualified domain names, as long</span>
+<span class="c">#     as the domain part matches this setting.</span>
+<span class="c"># 2) Sets the "domain" DHCP option thereby potentially setting the</span>
+<span class="c">#    domain of all systems configured by DHCP</span>
+<span class="c"># 3) Provides the domain part for "expand-hosts"</span>
+<span class="nv">domain</span><span class="o">=</span>mydomain
+<span class="c"># Uncomment this to enable the integrated DHCP server, you need</span>
+<span class="c"># to supply the range of addresses available for lease and optionally</span>
+<span class="c"># a lease time. If you have more than one network, you will need to</span>
+<span class="c"># repeat this for each network on which you want to supply DHCP</span>
+<span class="c"># service.</span>
+dhcp-range<span class="o">=</span>192.168.1.32,192.168.1.250,24h
+<span class="c"># Always give the host with Ethernet address 11:22:33:44:55:66</span>
+<span class="c"># the name fred and IP address 192.168.1.60 and lease time 45 minutes</span>
+<span class="c"># dhcp-host=11:22:33:44:55:66,fred,192.168.1.60,45m</span>
+dhcp-host<span class="o">=</span>11:22:33:44:55:66,uber,192.168.1.3
+dhcp-host<span class="o">=</span>21:22:33:44:55:67,dad,192.168.1.4
+dhcp-host<span class="o">=</span>31:22:33:44:55:68,xbox360,192.168.1.5
+<span class="c"># Override the default route supplied by dnsmasq, which assumes the</span>
+<span class="c"># router is the same machine as the one running dnsmasq.</span>
+dhcp-option<span class="o">=</span>option:router,192.168.1.1
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Option <code class="language-plaintext highlighter-rouge">domain-needed</code> in line 2 is to make sure we don’t forward to DNS
+servers plain names without a domain sepaator. So we will forward things like
+<code class="language-plaintext highlighter-rouge">xbox360.com</code> or <code class="language-plaintext highlighter-rouge">xbox360.foo</code> but not <code class="language-plaintext highlighter-rouge">xbox360</code>. Also option <code class="language-plaintext highlighter-rouge">bogus-priv</code> avoids us forwarding
+names like <code class="language-plaintext highlighter-rouge">3.1.168.192.in-addr.arpa</code>. This is a reverse DNS for an IP <code class="language-plaintext highlighter-rouge">192.168.1.3</code> which belongs
+to the non-routable space of <code class="language-plaintext highlighter-rouge">192.168.0.0/24</code></p>
+
+<p>Line 7 tells <code class="language-plaintext highlighter-rouge">dnsmasq.conf</code> that does not try to use <code class="language-plaintext highlighter-rouge">/etc/resolv.conf</code> to get
+the forwarder servers. We will specify them, for maximum control, in
+<code class="language-plaintext highlighter-rouge">dnsmasq.conf</code> itself. We do this in lines 10 and 11. Here we use the Google
+DNS servers, but feel free to use other servers such as OpenDNS or the one of
+your ISP.</p>
+
+<p>Line 14, <code class="language-plaintext highlighter-rouge">local</code>, is a way to restrict the domains we’re going to asnswer
+locally. Which we will enable in line 21, <code class="language-plaintext highlighter-rouge">domain</code>. Now the names registered in
+the DHCP will have a <code class="language-plaintext highlighter-rouge">.mydomain</code> suffix as part of their fully qualified domain
+name.</p>
+
+<p>In line 27, <code class="language-plaintext highlighter-rouge">dhcp-range</code> we configure the range of IPs for which we will assign
+automatically DHCP addresses. In this example from 32 to 250, leaving us some
+room from <code class="language-plaintext highlighter-rouge">192.168.1.1</code> to <code class="language-plaintext highlighter-rouge">192.168.1.32</code> and <code class="language-plaintext highlighter-rouge">192.168.1.250</code> to
+<code class="language-plaintext highlighter-rouge">192.168.1.254</code>. The DHCP lease will last 24 hours.</p>
+
+<p>Next in lines 31 to 33 we statically assign IPs (should be from the range not
+used by DHCP) to specific machines when they do a DHCP request. We match them
+using their MAC address (such as <code class="language-plaintext highlighter-rouge">11:22:33:44:55:66</code>), use the right MAC
+addresses of your network devices here.</p>
+
+<p>Finally in line 36 we make sure that when a node in our network requests IP,
+the gateway is correctly set to the IP of our LAN gateway (<code class="language-plaintext highlighter-rouge">192.168.1.1</code>).</p>
+
+<p>A final note for devices with fully static IPs (i.e. those that will never get
+their IP via DHCP) such as <code class="language-plaintext highlighter-rouge">router.mydomain</code> an <code class="language-plaintext highlighter-rouge">dns.mydomain</code>. You can
+use <code class="language-plaintext highlighter-rouge">/etc/hosts</code> in <code class="language-plaintext highlighter-rouge">dns.mydomain</code> to set them up. In our example setup we
+would add the following lines. <code class="language-plaintext highlighter-rouge">dnsmasq</code> will use this file to register those
+names in its DNS database.</p>
+
+<figure class="highlight"><figcaption>/etc/hosts</figcaption><pre><code class="language-plaintext" data-lang="plaintext">192.168.1.1	router.mydomain router
+192.168.1.2	dns.mydomain dns</code></pre></figure>
+
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2020/06/06/using-ssh-certificates/">&laquo; Using SSH Certificates</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

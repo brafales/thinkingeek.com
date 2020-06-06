@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Using SSH Certificates</title>
+  <meta name="description" content="Password-based authentication has a number of drawbacks, so many services (such as github) use SSH keys to authenticate. However distributing the keys over several nodes (be virtual machines or single-board computers such as Raspberry Pi) doesn’t scale over the number of nodes and users. Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism. This mechanism may help reducing the complexity of users trusting SSH hosts and hosts trusting SSH users.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2020/06/06/using-ssh-certificates/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Using SSH Certificates">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2020/06/06/using-ssh-certificates/">
+  <meta property="og:description" content="Password-based authentication has a number of drawbacks, so many services (such as github) use SSH keys to authenticate. However distributing the keys over several nodes (be virtual machines or single-board computers such as Raspberry Pi) doesn’t scale over the number of nodes and users. Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism. This mechanism may help reducing the complexity of users trusting SSH hosts and hosts trusting SSH users.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Using SSH Certificates">
+  <meta name="twitter:description" content="Password-based authentication has a number of drawbacks, so many services (such as github) use SSH keys to authenticate. However distributing the keys over several nodes (be virtual machines or sin...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Using SSH Certificates</h1>
+    
+    <p class="post-meta"><time datetime="2020-06-06T13:31:00+00:00" itemprop="datePublished">Jun 6, 2020</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/ssh/">ssh</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Password-based authentication has a number of drawbacks, so many services (such
+as github) use SSH keys to authenticate. However distributing the keys over
+several nodes (be virtual machines or single-board computers such as
+Raspberry Pi) doesn’t scale over the number of nodes and users.</p>
+
+<p>Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism.
+This mechanism may help reducing the complexity of users trusting SSH hosts and
+hosts trusting SSH users.</p>
+
+<!--more-->
+
+<p>Before we continue, a caveat</p>
+
+<div style="padding: 1em; background-color: #fee;">
+Using SSH certificates is not a security panacea. Like every other technological
+solution it has pros and cons that have to be gauged against the existing
+requirements.
+</div>
+
+<h1>Concepts</h1>
+
+<p>Public key cryptography (I’d dare to say cryptography in general) is
+notoriously confusing because it uses several terms at the same time that often
+are at the same “semantic” level and so they are easy to mix up.</p>
+
+<p>In this post we will use the following terminology:</p>
+
+<dl>
+  <dt>SSH key</dt>
+  <dd>A SSH key is a cryptographic widget made up of two keys (each one stored in a different file): the public SSH key and the private SSH key. These two keys are related mathematically but deriving one from the other is not possible.</dd>
+  <dt>public SSH key</dt>
+  <dd>The public key of a SSH key is the part that can be disclosed and distributed.</dd>
+  <dt>private SSH key</dt>
+  <dd>The private key of a SSH key is the part that should never be disclosed or distributed.</dd>
+  <dt>Certificate Authority</dt>
+  <dd>Entity which has its own SSH key (i.e. a public SSH key and a private SSH key) which will be used to emit certificates that we can trust.</dd>
+  <dt>certificate</dt>
+  <dd>Digital signature issued by a Certificate Authority that asserts the authenticity of something, such a SSH key. If the Certificate Authority is trusted we can trust the certificate.</dd>
+  <dt>Host</dt>
+  <dd>The host is the machine we want to connect to using SSH.</dd>
+  <dt>Host Key</dt>
+  <dd>Each host has its own SSH key (again, a public and private one) which is used to identify the host. The public key is presented to a user connecting to the host.</dd>
+  <dt>User Key</dt>
+  <dd>Each user can have one (or more than one) SSH key(s). These keys are used to authenticate the user against each host.</dd>
+</dl>
+
+<p>In most scenarios users need to copy (using <code class="language-plaintext highlighter-rouge">ssh-copy-id</code> or similar) their
+public SSH key to each host. Auhtentication proceeds by a challenge mechanism.
+We need to prove that the user has the private SSH key related to the public
+SSH key found in the host. So the host encrypts a challenge using the public
+SSH key to be decrypted by the user. The user decrypts the challenge the
+private SSH key and sends that to the host. If the user had the right private
+key, the challenge suceeds and no password is required.</p>
+
+<p>However, the first time a user connects to a host, SSH asks if we really want
+to trust the host. The rationale here is that we might be fooled to login
+somehwere other than the real host (which could be abused, among others, to
+disclose our password while trying to login).</p>
+
+<p>We want to make the hosts trusted by the user (imagine a new host is set up)
+but also we want the hosts trust the user.</p>
+
+<p>When trust is involved a Certificate Authority is required so we will need to
+create one so the users can trust the hosts and one so the hosts can trust the
+users.</p>
+
+<dl>
+  <dt>Host Certificate Authority (Host CA)</dt>
+  <dd>A SSH key. Its private SSH key will be used to issue host certificates. Its public SSH key will be used by users to verify that host certificates were issued by the Host Certificate Authority they trust.</dd>
+  <dt>User Certificate Authority (User CA)</dt>
+  <dd>A SSH key. Its private SSH key will be used to issue user certificates. Its public SSH key will be used by hosts to verify that user certificates were issued by the User Certificate Authority they trust.</dd>
+</dl>
+
+<h1>Host Certificate Authority</h1>
+
+<p>A certificate authority is a big sounding name, but in SSH it is going
+to be just another SSH key (again with public SSH key and its private SSH key).</p>
+
+<p>We will be using <code class="language-plaintext highlighter-rouge">ssh-keygen</code> all the time so be careful with the flags. First
+we need to create the SSH key that will act as the Host Certificate Authority.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh-keygen <span class="nt">-t</span> ed25519 <span class="nt">-f</span> host_ca</code></pre></figure>
+
+<p>This will generate two files: <code class="language-plaintext highlighter-rouge">host_ca</code> is the private SSH key and
+<code class="language-plaintext highlighter-rouge">host_ca.pub</code> is the public SSH key. The private key is trusted and so it is
+essential to keep it super safe. If you use another name in the <code class="language-plaintext highlighter-rouge">-f</code> option,
+say <code class="language-plaintext highlighter-rouge">-f my_host_ca</code>, the created files will be <code class="language-plaintext highlighter-rouge">my_host_ca</code> and
+<code class="language-plaintext highlighter-rouge">my_host_ca.pub</code>, respectively.</p>
+
+<p>If you look at the contents of the public key</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ cat host_ca.pub
+ssh-ed25519 AAAA... comment</code></pre></figure>
+
+<p>The first part <code class="language-plaintext highlighter-rouge">ssh-ed25519</code> is the kind of SSH key. A key of kind <code class="language-plaintext highlighter-rouge">ed25591</code>
+seems to be recommended over the default <code class="language-plaintext highlighter-rouge">rsa</code>, hence the flag <code class="language-plaintext highlighter-rouge">-t ed25519</code>
+earlier. The <code class="language-plaintext highlighter-rouge">AAAA...</code> part is specific to your SSH key and <code class="language-plaintext highlighter-rouge">comment</code> is
+usually <code class="language-plaintext highlighter-rouge">user@host</code> but can be changed to be more informative with an option
+<code class="language-plaintext highlighter-rouge">-C comment</code> in the <code class="language-plaintext highlighter-rouge">ssh-keygen</code> call above.</p>
+
+<h2>Set a user to trust the Host CA</h2>
+
+<p>In order to make a user trust our new Host CA, we need to distribute the
+<strong>public</strong> SSH key of the Host CA and tell <code class="language-plaintext highlighter-rouge">ssh</code> to trust it.</p>
+
+<p>This can be used system-wide (i.e. the computer of the user) or per user
+in that system.</p>
+
+<p>Let’s assume we want the node <code class="language-plaintext highlighter-rouge">UserMachine1</code> trust the Host CA.</p>
+
+<ul>
+  <li>If we want the trust relationship be system-wide, the file to edit is
+<code class="language-plaintext highlighter-rouge">/etc/ssh/ssh_known_hosts</code> of <code class="language-plaintext highlighter-rouge">UserMachine1</code>. In general only administrators
+can edit this file.</li>
+  <li>If a user in <code class="language-plaintext highlighter-rouge">UserMachine1</code> wants to individually trust that <code class="language-plaintext highlighter-rouge">Host CA</code> the file
+to edit is <code class="language-plaintext highlighter-rouge">$HOME/.ssh/ssh_known_hosts</code>.</li>
+</ul>
+
+<p>In either case we have to add the following line.</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">@cert-authority *.example.com ssh-ed25519 AAAA...</code></pre></figure>
+
+<p>Here <code class="language-plaintext highlighter-rouge">*.example.com</code> will be your domain name (it is very handy to have your
+own domain name even in your LAN at home either
+<a href="/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/">using ISC BIND and ISC DHCP</a>
+or <a href="/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">using dnsmasq</a>) for which the certificate will be
+trusted. The <code class="language-plaintext highlighter-rouge">ssh-ed25519 AAAA...</code> part is the contents of the public SSH key
+of the Host CA.</p>
+
+<p>And that’s it. From now on when trying to connect to a host that matches
+<code class="language-plaintext highlighter-rouge">*.example.com</code>, if that host presents a certificate that has been signed by
+the Host CA we trust, we will also trust the host.</p>
+
+<p>So the next logical step is how to create a host certificate.</p>
+
+<h2>Issue a Host Certificate</h2>
+
+<p>To issue a host certificate we need the host public key of the host. This 
+key is found in <code class="language-plaintext highlighter-rouge">/etc/ssh/ssh_host_ed25519_key.pub</code>.</p>
+
+<p>Imagine we have a host <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code>. What we have to do is to
+obtain its host public SSH key. We have to copy it (over the network or via a USB
+if we’ve got physical access) to the place where we have our <code class="language-plaintext highlighter-rouge">host_ca</code> (the
+private SSH key of the Host CA).</p>
+
+<p>Now we need to emit a host certificate. We do that again using <code class="language-plaintext highlighter-rouge">ssh-keygen</code>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh-keygen <span class="nt">-s</span> host_ca <span class="se">\</span>
+    <span class="nt">-I</span> <span class="s2">"ServerMachine1"</span> <span class="se">\</span>
+    <span class="nt">-h</span> <span class="se">\</span>
+    <span class="nt">-n</span> ServerMachine1.example.com <span class="se">\</span>
+    <span class="nt">-V</span> +52w <span class="se">\</span>
+    ssh_host_ed25519_key.pub</code></pre></figure>
+
+<p>There are many flags here so let’s see each one:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">-s host_ca</code> means issuing a certificate using the <code class="language-plaintext highlighter-rouge">host_ca</code> private SSH key.</li>
+  <li><code class="language-plaintext highlighter-rouge">-I "ServerMachine1"</code> is an arbitrary identifier we can use to help us identify the key in the server logs.</li>
+  <li><code class="language-plaintext highlighter-rouge">-h</code> means create a host certificate</li>
+  <li><code class="language-plaintext highlighter-rouge">-n ServerMachine1.example.com</code> is the set of host names (comma-separated) for which this certificate is issued.</li>
+  <li><code class="language-plaintext highlighter-rouge">-V +52w</code> means that this certificate will be valid for 52 week, after that time the certificate won’t be trusted. If this option is not specified, the issued certificate will be valid forever.</li>
+  <li><code class="language-plaintext highlighter-rouge">ssh_host_ed25519_key.pub</code> this is the host public SSH key for which we are issuing a certificate (copied from <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code>).</li>
+</ul>
+
+<p>This will generate a file <code class="language-plaintext highlighter-rouge">ssh_host_ed25519_key-cert.pub</code> (note the <code class="language-plaintext highlighter-rouge">-cert</code> before <code class="language-plaintext highlighter-rouge">.pub</code>). This file now has to be copied back to <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code>. For instance
+ we can copy it into <code class="language-plaintext highlighter-rouge">/etc/ssh/ssh_host_ed25519_key-cert.pub</code>.</p>
+
+<p>Now we need to tell the SSH server in <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code> to offer that certificate to all incoming SSH connections. We can do that editing the file <code class="language-plaintext highlighter-rouge">/etc/ssh/sshd_config</code>
+and adding the following line (in general only administrators can change this file).</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub</code></pre></figure>
+
+<p>Now we have to restart the SSH server. In mosts systems with <code class="language-plaintext highlighter-rouge">systemd</code> an
+administrator can do that by running the following comment.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sudo </span>systemctl restart ssh</code></pre></figure>
+
+<h2>Testing the Host Certificate</h2>
+
+<p>Now a user that trusts the Host Certificate Authority should be able to trust
+without having to do anything. We already established that trust relationship
+in <code class="language-plaintext highlighter-rouge">UserMachine1</code> so let’s use that machine to test it.</p>
+
+<p>First make sure no trust relationship is remembered in <code class="language-plaintext highlighter-rouge">UserMachine1</code>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh-keygen <span class="nt">-R</span> ServerMachine1.example.com</code></pre></figure>
+
+<p>Still from <code class="language-plaintext highlighter-rouge">UserMachine1</code> try to to login to <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code></p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh ServerMachine1.example.com</code></pre></figure>
+
+<p>If you see something like this</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">The authenticity of host 'ServerMachine.example.com (1.2.3.4)' can't be established.
+RSA key fingerprint is SHA256:aeghei4Cao0quuteij3aechu.
+Are you sure you want to continue connecting (yes/no)?</code></pre></figure>
+
+<p>something is wrong and you need to recheck the steps above.</p>
+
+<p>If you’re directly requested the password (or some previous SSH key allows you to login) then
+<code class="language-plaintext highlighter-rouge">UserMachine1</code> is trusting <code class="language-plaintext highlighter-rouge">ServerMachine1</code>.</p>
+
+<p>Note that some organizations add domain suffixes when solving names. So
+<code class="language-plaintext highlighter-rouge">ServerMachine1</code> can be used to access <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code>. However
+SSH is strict about names and <code class="language-plaintext highlighter-rouge">ssh ServerMachine1</code> will not trust the machine.</p>
+
+<p>If you want to use the short name (or any other name)  my recommendation is to
+teach ssh in <code class="language-plaintext highlighter-rouge">UserMachine1</code> that <code class="language-plaintext highlighter-rouge">ServerMachine1</code> is actually
+<code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code>. You can do that adding the following lines in
+<code class="language-plaintext highlighter-rouge">$HOME/.ssh/config</code></p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">Host ServerName1
+  HostName ServerName1.example.com</code></pre></figure>
+
+<h1>User Certificate Authority</h1>
+
+<p>Now that we trust the servers in our organization, the next step is that the
+servers trust our users.</p>
+
+<p>To do that we need to create a user certificate authority.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh-keygen <span class="nt">-t</span> ed25519 <span class="nt">-f</span> user_ca</code></pre></figure>
+
+<p>Again this will generate a <code class="language-plaintext highlighter-rouge">user_ca</code> file with the private SSH key that must be kept
+safe and secret, and a <code class="language-plaintext highlighter-rouge">user_ca.pub</code> that contains the public SSH key.</p>
+
+<h2>Set a server to trust the User CA</h2>
+
+<p>A server like <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code> needs to trust the User CA before it can
+trust any certificate issued by that User CA.</p>
+
+<p>We do this copying the file <code class="language-plaintext highlighter-rouge">user_ca.pub</code> to <code class="language-plaintext highlighter-rouge">ServerMachine1</code>. For instance in
+<code class="language-plaintext highlighter-rouge">/etc/ssh/user_ca.pub</code>. Now we edit the file <code class="language-plaintext highlighter-rouge">/etc/ssh/sshd_config</code> and we add
+the following lines.</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">TrustedUserCAKeys /etc/ssh/user_ca.pub</code></pre></figure>
+
+<p>Now we need to restart the SSH server.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sudo </span>systemctl restart ssh</code></pre></figure>
+
+<p>Now the SSH server in <code class="language-plaintext highlighter-rouge">ServerMachine1.example.com</code> trusts the user certificates
+issued by the User CA we created in the earlier section.</p>
+
+<h2>Issue a User Certificate</h2>
+
+<p>To issue a user certificate, we need the public SSH key of a user. I’m assuming
+that the user already has one in <code class="language-plaintext highlighter-rouge">$HOME/.ssh/id_ed25519.pub</code> in <code class="language-plaintext highlighter-rouge">UserMachine1</code>.</p>
+
+<p>Copy the public SSH key of the user where the <code class="language-plaintext highlighter-rouge">user_ca</code> private SSH of the User
+CA is found.</p>
+
+<p>Now use the following command</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh-keygen <span class="nt">-s</span> user_ca <span class="se">\</span>
+      <span class="nt">-I</span> <span class="s2">"user_name"</span> <span class="se">\</span>
+      <span class="nt">-n</span> userid1 <span class="se">\</span>
+      <span class="nt">-V</span> +52w <span class="se">\</span>
+      id_ed25519.pub</code></pre></figure>
+
+<p>Let’s review each flag</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">-s user_ca</code> means issuing a certificate using the <code class="language-plaintext highlighter-rouge">user_ca</code> private SSH key.</li>
+  <li><code class="language-plaintext highlighter-rouge">-I "user_name"</code> is an arbitrary identifier we can use to help us identify the key in the server logs.</li>
+  <li><code class="language-plaintext highlighter-rouge">-n userid1</code> is the set of user identifiers (comma-separated) for which this certificate is issued. This is the userid used to login.</li>
+  <li><code class="language-plaintext highlighter-rouge">-V +52w</code> means that this certificate will be valid for 52 week, after that time the certificate won’t be trusted. If this option is not specified, the issued certificate will be valid forever.</li>
+  <li><code class="language-plaintext highlighter-rouge">id_ed25519_key.pub</code> this is the user public SSH key for which we are issuing a certificate (the user must provide it).</li>
+</ul>
+
+<p>This will create a file <code class="language-plaintext highlighter-rouge">id_ed25519_key-cert.pub</code> (mind the <code class="language-plaintext highlighter-rouge">-cert</code> before
+<code class="language-plaintext highlighter-rouge">.pub</code>) that we have to copy back to <code class="language-plaintext highlighter-rouge">UserMachine1</code>. It has to be copied in
+<code class="language-plaintext highlighter-rouge">$HOME/.ssh/id_ed25519-cert.pub</code> (be careful not to overwrite the public SSH
+key).</p>
+
+<h2>Testing the User Certificate</h2>
+
+<p>Note the user should be able to login to <code class="language-plaintext highlighter-rouge">ServerMachine1</code>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>ssh ServerMachine1.example.com</code></pre></figure>
+
+<p>It is necessary that no password is requested otherwise something is wrong.</p>
+
+<p>It is not sufficient however. A key in <code class="language-plaintext highlighter-rouge">ServerMachine1</code>, found in
+<code class="language-plaintext highlighter-rouge">$HOME/.ssh/authorized_keys</code> could still be being used to allow us to login.</p>
+
+<p>Make sure <code class="language-plaintext highlighter-rouge">$HOME/.ssh/authorized_keys</code> in <code class="language-plaintext highlighter-rouge">ServerMachine1</code> does not contain any
+public key of the user of <code class="language-plaintext highlighter-rouge">UserMachine1</code>. If there is one it might be allowing
+password-less login instead of our certificate. So, make sure no key from
+<code class="language-plaintext highlighter-rouge">UserMachine1</code> is listed in <code class="language-plaintext highlighter-rouge">$HOME/.ssh/authorized_keys</code> of <code class="language-plaintext highlighter-rouge">ServerMachine</code> (a
+more radical alternative is to remove <code class="language-plaintext highlighter-rouge">$HOME/.ssh/authorized_keys</code> of
+<code class="language-plaintext highlighter-rouge">ServerMachine1</code>). After that, you should be able to login without being
+requested a password, otherwise recheck the steps above.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2019/03/10/fortran-and-modules/">&laquo; Fortran and modules</a>
+
+
+  <a class="next" href="/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">Create your own local domain and DHCP with dnsmasq &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
