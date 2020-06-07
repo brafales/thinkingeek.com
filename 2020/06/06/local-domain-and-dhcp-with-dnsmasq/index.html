@@ -837,7 +837,7 @@ dhcp-option<span class="o">=</span>option:router,192.168.1.1
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <p>Option <code class="language-plaintext highlighter-rouge">domain-needed</code> in line 2 is to make sure we don’t forward to DNS
-servers plain names without a domain sepaator. So we will forward things like
+servers plain names without a domain separator. So we will forward things like
 <code class="language-plaintext highlighter-rouge">xbox360.com</code> or <code class="language-plaintext highlighter-rouge">xbox360.foo</code> but not <code class="language-plaintext highlighter-rouge">xbox360</code>. Also option <code class="language-plaintext highlighter-rouge">bogus-priv</code> avoids us forwarding
 names like <code class="language-plaintext highlighter-rouge">3.1.168.192.in-addr.arpa</code>. This is a reverse DNS for an IP <code class="language-plaintext highlighter-rouge">192.168.1.3</code> which belongs
 to the non-routable space of <code class="language-plaintext highlighter-rouge">192.168.0.0/24</code></p>
