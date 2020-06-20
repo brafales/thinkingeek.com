@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Forgotten memories (2)</title>
+  <meta name="description" content="So in the first part of this experiment we saw a simple strategy to spill general-purpose registers into floating-point registers implemented in the RISC-V backend of LLVM. In this chapter, let’s see the results and some other interesting facts learnt during the process.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://blog.thinkingeek.com/2020/06/20/forgotten-memories-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Forgotten memories (2)">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://blog.thinkingeek.com/2020/06/20/forgotten-memories-2/">
+  <meta property="og:description" content="So in the first part of this experiment we saw a simple strategy to spill general-purpose registers into floating-point registers implemented in the RISC-V backend of LLVM. In this chapter, let’s see the results and some other interesting facts learnt during the process.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Forgotten memories (2)">
+  <meta name="twitter:description" content="So in the first part of this experiment we saw a simple strategy to spill general-purpose registers into floating-point registers implemented in the RISC-V backend of LLVM. In this chapter, let’s s...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/posts-by-bernat-rafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Forgotten memories (2)</h1>
+    
+    <p class="post-meta"><time datetime="2020-06-20T18:10:00+00:00" itemprop="datePublished">Jun 20, 2020</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/compilers/">compilers</a>,
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/llvm/">llvm</a>,
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/risc-v/">risc-v</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>So in the <a href="/2020/06/20/forgotten-memories-1/">first part of this experiment</a>
+we saw a simple strategy to spill general-purpose registers into floating-point
+registers implemented in the RISC-V backend of LLVM.</p>
+
+<p>In this chapter, let’s see the results and some other interesting facts learnt
+during the process.</p>
+
+<!--more-->
+
+<h1>Recap</h1>
+
+<p>As a recap, we were using this code as an example.</p>
+
+<figure class="highlight"><figcaption>example.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td><td class="code"><pre><span class="k">enum</span> <span class="p">{</span> <span class="n">N</span> <span class="o">=</span> <span class="mi">64</span> <span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)[</span><span class="n">N</span><span class="p">],</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">b</span><span class="p">)[</span><span class="n">N</span><span class="p">],</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">)[</span><span class="n">N</span><span class="p">])</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="cp">#pragma clang loop unroll_count(16)
+</span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">k</span><span class="o">++</span><span class="p">)</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">j</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>It exposes enough register pressure (forced by unrolling one of the loops) that
+it will need to spill registers. Recall that LLVM uses the same infrastructure
+to preserve and restore callee-saved registers and actual spills caused by
+the register allocation.</p>
+
+<p>At the beginning of the function, in the prologue, we see a bunch of callee-saved
+registers being saved.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+</pre></td><td class="code"><pre>f:                                      # @f
+        addi    sp, sp, -256    # Grow the stack
+        sd      ra, 248(sp)
+        sd      s0, 240(sp)
+        sd      s1, 232(sp)
+        sd      s2, 224(sp)
+        sd      s3, 216(sp)
+        sd      s4, 208(sp)
+        sd      s5, 200(sp)
+        sd      s6, 192(sp)
+        sd      s7, 184(sp)
+        sd      s8, 176(sp)
+        sd      s9, 168(sp)
+        sd      s10, 160(sp)
+        sd      s11, 152(sp)
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>A bunch of addresses computed by the program were spilled by the register
+allocation.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+</pre></td><td class="code"><pre>        sd      a2, 128(sp)
+        sd      zero, 136(sp)
+        addi    a2, a1, 4
+        sd      a2, 112(sp)
+        addi    a2, a1, 8
+        sd      a2, 104(sp)
+        addi    a2, a1, 12
+        sd      a2, 96(sp)
+        addi    a2, a1, 16
+        sd      a2, 88(sp)
+        addi    a2, a1, 20
+        sd      a2, 80(sp)
+        addi    a2, a1, 24
+        sd      a2, 72(sp)
+        addi    a2, a1, 28
+        sd      a2, 64(sp)
+        addi    a2, a1, 32
+        sd      a2, 56(sp)
+        addi    a2, a1, 36
+        sd      a2, 48(sp)
+        addi    a2, a1, 40
+        sd      a2, 40(sp)
+        addi    a2, a1, 44
+        sd      a2, 32(sp)
+        addi    a2, a1, 48
+        sd      a2, 24(sp)
+        addi    a2, a1, 52
+        sd      a2, 16(sp)
+        addi    a2, a1, 56
+        sd      a2, 8(sp)
+        sd      a1, 120(sp)
+        addi    a1, a1, 60
+        sd      a1, 0(sp)
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>The outermost loop, loads those values.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+</pre></td><td class="code"><pre>        mv      s10, zero
+        ld      a4, 0(sp)
+        ld      s11, 8(sp)
+        ld      ra, 16(sp)
+        ld      s6, 24(sp)
+        ld      s7, 32(sp)
+        ld      s2, 40(sp)
+        ld      t6, 48(sp)
+        ld      t5, 56(sp)
+        ld      t4, 64(sp)
+        ld      t3, 72(sp)
+        ld      t2, 80(sp)
+        ld      t1, 88(sp)
+        ld      t0, 96(sp)
+        ld      a7, 104(sp)
+        ld      a6, 112(sp)
+        ld      s8, 120(sp)
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>There are also a couple more of spills stored and loaded in the loop (not
+shown).</p>
+
+<p>At the epilog of the function we restore the callee-saved registers.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+</pre></td><td class="code"><pre>        ld      s11, 152(sp)
+        ld      s10, 160(sp)
+        ld      s9, 168(sp)
+        ld      s8, 176(sp)
+        ld      s7, 184(sp)
+        ld      s6, 192(sp)
+        ld      s5, 200(sp)
+        ld      s4, 208(sp)
+        ld      s3, 216(sp)
+        ld      s2, 224(sp)
+        ld      s1, 232(sp)
+        ld      s0, 240(sp)
+        ld      ra, 248(sp)
+        addi    sp, sp, 256
+        ret
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h1>Results</h1>
+
+<p>Ok, let’s compile with <code class="language-plaintext highlighter-rouge">-mllvm -riscv-soften-spills</code>.</p>
+
+<p>The callee-saved registers are all stored in floating point registers now.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+</pre></td><td class="code"><pre>f:                                      # @f
+# %bb.0:                                # %entry
+        addi    sp, sp, -96
+        fmv.d.x ft0, ra
+        fmv.d.x ft1, s0
+        fmv.d.x ft2, s1
+        fmv.d.x ft3, s2
+        fmv.d.x ft4, s3
+        fmv.d.x ft5, s4
+        fmv.d.x ft6, s5
+        fmv.d.x ft7, s6
+        fmv.d.x fa0, s7
+        fmv.d.x fa1, s8
+        fmv.d.x fa2, s9
+        fmv.d.x fa3, s10
+        fmv.d.x fa4, s11
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>And some of the spilled values, as well. But not all of them, we run out
+of FPRs before we can keep all of them.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+</pre></td><td class="code"><pre>        fmv.d.x fa5, a2
+        fmv.d.x fa6, zero
+        addi    a2, a1, 4
+        fmv.d.x fa7, a2
+        addi    a2, a1, 8
+        fmv.d.x ft8, a2
+        addi    a2, a1, 12
+        fmv.d.x ft9, a2
+        addi    a2, a1, 16
+        fmv.d.x ft10, a2
+        addi    a2, a1, 20
+        fmv.d.x ft11, a2
+        addi    a2, a1, 24
+        sd      a2, 72(sp)
+        addi    a2, a1, 28
+        sd      a2, 64(sp)
+        addi    a2, a1, 32
+        sd      a2, 56(sp)
+        addi    a2, a1, 36
+        sd      a2, 48(sp)
+        addi    a2, a1, 40
+        sd      a2, 40(sp)
+        addi    a2, a1, 44
+        sd      a2, 32(sp)
+        addi    a2, a1, 48
+        sd      a2, 24(sp)
+        addi    a2, a1, 52
+        sd      a2, 16(sp)
+        addi    a2, a1, 56
+        sd      a2, 8(sp)
+        sd      a1, 80(sp)
+        addi    a1, a1, 60
+        sd      a1, 0(sp)
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Now the loop reloads some of the values from the stack and others from
+FPR registers.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+</pre></td><td class="code"><pre>        mv      s10, zero
+        ld      a4, 0(sp)
+        ld      s11, 8(sp)
+        ld      ra, 16(sp)
+        ld      s6, 24(sp)
+        ld      s7, 32(sp)
+        ld      s2, 40(sp)
+        ld      t6, 48(sp)
+        ld      t5, 56(sp)
+        ld      t4, 64(sp)
+        ld      t3, 72(sp)
+        fmv.x.d t2, ft11
+        fmv.x.d t1, ft10
+        fmv.x.d t0, ft9
+        fmv.x.d a7, ft8
+        fmv.x.d a6, fa7
+        ld      s8, 80(sp)
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Finally we restore the registers in the epilog. All from FPRs.</p>
+
+<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+</pre></td><td class="code"><pre>        fmv.x.d s11, fa4
+        fmv.x.d s10, fa3
+        fmv.x.d s9, fa2
+        fmv.x.d s8, fa1
+        fmv.x.d s7, fa0
+        fmv.x.d s6, ft7
+        fmv.x.d s5, ft6
+        fmv.x.d s4, ft5
+        fmv.x.d s3, ft4
+        fmv.x.d s2, ft3
+        fmv.x.d s1, ft2
+        fmv.x.d s0, ft1
+        fmv.x.d ra, ft0
+        addi    sp, sp, 96
+        ret
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2>Possible improvement</h2>
+
+<p>Callee-saved registers are only stored and loaded in the epilog and the prolog
+just once (however that this might not be true when using
+<a href="https://medium.com/@lewis.revill/implementing-machine-code-optimizations-for-risc-v-in-llvm-a-detailed-look-c283a8c7cfd">shrink-wrapping</a>). So
+it may be worth first assigining <em>true</em> spills/reloads first to FPR and then
+the frame indexes related to callee-saved registers.</p>
+
+<p>Our algorithm is super simple and works in a <em>first-found first-mapped</em> basis.
+If we want to do something smarter we may have to do a first pass to gather all
+the eligible spills/reloads and then prioritize those that we know are true
+spills.</p>
+
+<h1>Issues found</h1>
+
+<p>Marking frame indexes dead that late in the pipeline of LLVM was the source
+of a few surprises. I am still pondering if some of these might be a bug, so
+take my evaluation with a pinch of salt.</p>
+
+<p><code class="language-plaintext highlighter-rouge">PrologEpilogInserter.cpp</code> needed a couple of fixes.</p>
+
+<p>A first one here:</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Codegen/PrologEpilogInserter.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">815
+816
+817
+818
+819
+820
+821
+822
+823
+824
+825
+</pre></td><td class="code"><pre>   // If there are fixed sized objects that are preallocated in the local area,
+   // non-fixed objects can't be allocated right at the start of local area.
+   // Adjust 'Offset' to point to the end of last fixed sized preallocated
+   // object.
+   for (int i = MFI.getObjectIndexBegin(); i != 0; ++i) {
+     if (MFI.getStackID(i) !=
+         TargetStackID::Default) // Only allocate objects on the default stack.
+       continue;
+ 
+<span class="gi">+    if (MFI.isDeadObjectIndex(i))
++        continue;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Another one later on</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Codegen/PrologEpilogInserter.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">842
+843
+844
+845
+846
+847
+848
+849
+850
+851
+</pre></td><td class="code"><pre>   // First assign frame offsets to stack objects that are used to spill
+   // callee saved registers.
+   if (StackGrowsDown) {
+     for (unsigned i = MinCSFrameIndex; i &lt;= MaxCSFrameIndex; ++i) {
+       if (MFI.getStackID(i) !=
+           TargetStackID::Default) // Only allocate objects on the default stack.
+         continue;
+ 
+<span class="gi">+      if (MFI.isDeadObjectIndex(i))
++        continue;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>I think those two are latent bugs in LLVM that are never hit because no
+existing code is marking frame indexes associated to callee-saved registers as
+dead.</p>
+
+<p>In <code class="language-plaintext highlighter-rouge">RISCVFrameLowering.cpp</code> we have broken the assumption that all the
+callee-saved are in the stack, so the <a href="https://www.imperialviolet.org/2017/01/18/cfi.html">CFI
+directives</a> (used for
+debugging and stack unwinding) are wrong. For now let’s skip them.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVFrameLowering.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">303
+304
+305
+306
+307
+308
+309
+310
+</pre></td><td class="code"><pre>   // Iterate over list of callee-saved registers and emit .cfi_offset
+   // directives.
+   for (const auto &amp;Entry : CSI) {
+     int FrameIdx = Entry.getFrameIdx();
+<span class="gi">+    // FIXME: We should emit CFI directives in case the callee is now in another
++    // register.
++    if (FrameIdx &gt;= 0 &amp;&amp; MFI.isDeadObjectIndex(FrameIdx))
++      continue;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>This is a bug in this experiment.</p>
+
+<p>Finally in <code class="language-plaintext highlighter-rouge">RISCVInstrInfo.cpp</code> the function that tells us if a store is a
+store to the stack seems wrong.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVInstrInfo.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+</pre></td><td class="code"><pre> unsigned RISCVInstrInfo::isStoreToStackSlot(const MachineInstr &amp;MI,
+                                             int &amp;FrameIndex) const {
+   switch (MI.getOpcode()) {
+   default:
+     return 0;
+   case RISCV::SB:
+   case RISCV::SH:
+   case RISCV::SW:
+   case RISCV::FSW:
+   case RISCV::SD:
+   case RISCV::FSD:
+     break;
+   }
+ 
+<span class="gd">-  if (MI.getOperand(0).isFI() &amp;&amp; MI.getOperand(1).isImm() &amp;&amp;
+-      MI.getOperand(1).getImm() == 0) {
+-    FrameIndex = MI.getOperand(0).getIndex();
+-    return MI.getOperand(2).getReg();
+</span><span class="gi">+  if (MI.getOperand(1).isFI() &amp;&amp; MI.getOperand(2).isImm() &amp;&amp;
++      MI.getOperand(2).getImm() == 0) {
++    FrameIndex = MI.getOperand(1).getIndex();
++    return MI.getOperand(0).getReg();
+</span>   }
+ 
+   return 0;
+ }
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>I think this is a legitimate bug in the RISC-V backend of LLVM. I am working on
+a patch for this but I first need to find a case that shows a difference so I
+can write a test and so far none of the regression tests show any change.
+Looks like I will have to dig deeper, for instance in the <a href="https://llvm.org/docs/TestSuiteGuide.html">LLVM
+test-suite</a>.</p>
+
+<h1>Discussion</h1>
+
+<p>I think it may be worth exploring being able to use those kind of
+<em>mini-memories</em> materialized in the form of registers that have popped-up in
+modern architectures. For example vector registers of SIMD ISAs might be also
+useable to stash data: a function may be able to stash several values in the
+different lanes.</p>
+
+<p>Minimizing the stack traffic may have the effect that less pressure is put to
+the first-level cache (the stack has very high locality) and so it might be
+possible to devote more cache lines to other parts of the working set.</p>
+
+<p>This of course is only realistic if cross-register bank copies can be performed
+with a latency better than a load or store.</p>
+
+<p>Finally when there are function calls, we need a more sophisticated approach
+than the one sketched in this basic exercise.</p>
+
+<p>An alternative approach might be teaching the register allocator that he can
+consider places to spill/reload data other than the stack. However this seems
+non-obvious as we are now spilling GPRs to FPRS but we might want the opposite
+scenario. Register Allocation seems a concern complex enough, so softening the
+spills at the same time might be harder than just doing that process later. In
+fact in hindsight, after Register Allocation, it may be easier to observe if a
+function leans to spills of one kind of register over another (e.g.  majority
+of GPRs vs majority of FPRs) so to choose what is the best direction when
+spilling into other bank registers.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2020/06/20/forgotten-memories-1/">&laquo; Forgotten memories (1)</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
