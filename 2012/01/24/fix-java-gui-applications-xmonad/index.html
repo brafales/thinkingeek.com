@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2012/01/24/fix-java-gui-applications-xmonad/">
+  <link rel="canonical" href="https://thinkingeek.com/2012/01/24/fix-java-gui-applications-xmonad/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Fix Java GUI applications in xmonad">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2012/01/24/fix-java-gui-applications-xmonad/">
+  <meta property="og:url" content="https://thinkingeek.com/2012/01/24/fix-java-gui-applications-xmonad/">
   <meta property="og:description" content="If you ever try to run a GUI Java application when using xmonad as the Window Manager, you&#39;ll probably end up with a nice flat grey window where your buttons, toolbars and other desktop GUI goodies should be. I ran into that problem the other day when trying to evaluate the RubyMine Ruby on Rails IDE from which I heard such good things. After a rather painful installation of the official Java 6 JDK from Oracle in Ubuntu Lucid Lynx (which I&#39;ll write about in some other time), I managed to start up RubyMine just to find out I was seeing absolutely nothing on the screen. I Googled a bit and essentially I found out that the problem was with the Java GUI Toolkit rather than RubyMine, because the framework relies on a list of window managers to handle some things, and xmonad is not in that list. So since I was not using OpenJDK, I opted for the setWMName option and added this final line into my xmonad.hs file: xmonad $ defaultConfig { terminal = myTerminal , workspaces = myWorkspaces , keys = keys&#39; , modMask = modMask&#39; , layoutHook = layoutHook&#39; , manageHook = manageHook&#39; , logHook = myLogHook dzenLeftBar &amp;gt;&amp;gt; fadeInactiveLogHook 0xdddddddd , normalBorderColor = colorNormalBorder , focusedBorderColor = colorFocusedBorder , borderWidth = 2 , startupHook = setWMName &quot;LG3D&quot; } Setting the window manager name to LG3D will trick the Java GUI Toolkit and the application will be painted correctly. Enjoy your Java applications with the power of xmonad!">
   
   
@@ -2441,7 +2441,7 @@ Enjoy your Java applications with the power of xmonad!
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

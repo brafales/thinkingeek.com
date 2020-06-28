@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2009/03/11/using-ironpython-to-extend-your-net-applications/">
+  <link rel="canonical" href="https://thinkingeek.com/2009/03/11/using-ironpython-to-extend-your-net-applications/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Using IronPython to extend your .NET applications">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2009/03/11/using-ironpython-to-extend-your-net-applications/">
+  <meta property="og:url" content="https://thinkingeek.com/2009/03/11/using-ironpython-to-extend-your-net-applications/">
   <meta property="og:description" content="One of the interesting new things on the .NET platform is the recent addition of Python and Ruby to the CLR. Both versions for .NET are called IronPython and IronRuby respectively, and they provide some new and good things to the platform. Python and Ruby lovers will see now that they can use all the library and features of the .NET platform programming in their favorite scripting language. Since both of them are object oriented, you can now write fully fledged apps using either of them. However, there&#39;s another interesting application for IronPython and IronRuby: adding scripting support for your existing .NET applications. This can be a very useful and powerful way to extend your applications and give the user freedom to program their own mini programs, scripts or whatever in your applications. It could be good for defining rules, assigning and calculating values, etc. I&#39;ll provide a simple class you can use to add scripting to your application. I&#39;ll use IronPython in this example. First of all, you have to download IronPython and install it, and add the references to the assemblies on your project references. The usual way to proceed in those cases is to provide the user of some local variables you give them access to, execute the script, and then recover the values of those or new variables. To do so, You can use a class similar to this one: using System; using System.Collections.Generic; using System.Text; using IronPython.Hosting; using Microsoft.Scripting.Hosting; using Microsoft.Scripting; namespace Scripting { internal class PythonEngine { ScriptEngine m_engine; ExceptionOperations m_exceptionOperations; SortedDictionary&amp;lt;string, object&amp;gt; m_inputVariables; string m_script; internal PythonEngine() { m_engine = Python.CreateEngine(); m_exceptionOperations = m_engine.GetService&amp;lt;ExceptionOperations&amp;gt;(); } internal SortedDictionary&amp;lt;string, object&amp;gt; ScriptVariables { set { m_inputVariables = value; } } internal string Script { set { m_script = value; } } internal ExceptionOperations ExceptionOperations { get { return m_exceptionOperations; } } internal SortedDictionary&amp;lt;string, object&amp;gt; Execute() { //Create structures SourceCodeKind sc = SourceCodeKind.Statements; ScriptSource source = m_engine.CreateScriptSourceFromString(m_script, sc); ScriptScope scope = m_engine.CreateScope(); //Fill input variables foreach (KeyValuePair&amp;lt;string, object&amp;gt; variable in m_inputVariables) { scope.SetVariable(variable.Key, variable.Value); } SortedDictionary&amp;lt;string, object&amp;gt; outputVariables = new SortedDictionary&amp;lt;string, object&amp;gt;(); //Execute the script try { source.Execute(scope); //Recover variables foreach (string variable in scope.GetVariableNames()) { outputVariables.Add(variable, scope.GetVariable(variable)); } } catch (Exception e) { string error = m_exceptionOperations.FormatException(e); //Do something with the pretty printed error throw; } return outputVariables; } } } Usage of this class is pretty simple. You have to provide the object the script you want to execute and the input variables the script will have available as local variables. Once this is done, you have to call the Execute method, and this method will either return the output variables of the execution of the resulting script, or throw an exception.">
   
   
@@ -2505,7 +2505,7 @@ Usage of this class is pretty simple. You have to provide the object the script 
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2011/04/15/handling-resizing-in-adobe-air-with-html/">
+  <link rel="canonical" href="https://thinkingeek.com/2011/04/15/handling-resizing-in-adobe-air-with-html/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Handling resizing in Adobe Air with HTML">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2011/04/15/handling-resizing-in-adobe-air-with-html/">
+  <meta property="og:url" content="https://thinkingeek.com/2011/04/15/handling-resizing-in-adobe-air-with-html/">
   <meta property="og:description" content="If you develop a widget with Adobe AIR using HTML and Javascript, you may want to resize some elements of the HTML page depending on the size of the widget, thus having to resize them when the user decides to resize the widget. However, there&#39;s a little trick on using the RESIZE event of the air.Event object. The trick is that when the event is raised, and you execute some method on the corresponding event handler, the widget won&#39;t have the correct size yet, so if you use the window.nativeWindow.width or window.nativeWindow.height values there you&#39;ll be getting erroneus results. The solution is quite easy, though. You just have to let the HTML engine to adjust everything he needs to sort out the new sizes and get those attributes after that. How do you do that? By putting your code in a setTimeout call with 0 milliseconds timer. Here you can find an example (assuming use of jQuery): $(document).ready(function() { window.nativeWindow.addEventListener(air.Event.RESIZE, onResize); }); function onResize() { var nativeWin = window.nativeWindow; setTimeout(function(){ var width = nativeWin.width; var height = nativeWin.height; }, 0); } //Here the values are correct">
   
   
@@ -1781,7 +1781,7 @@ The solution is quite easy, though. You just have to let the HTML engine to adju
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

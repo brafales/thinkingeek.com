@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2012/12/26/fast-easy-block-bots-website-apache/">
+  <link rel="canonical" href="https://thinkingeek.com/2012/12/26/fast-easy-block-bots-website-apache/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Fast and easy way to block bots from your website using Apache">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2012/12/26/fast-easy-block-bots-website-apache/">
+  <meta property="og:url" content="https://thinkingeek.com/2012/12/26/fast-easy-block-bots-website-apache/">
   <meta property="og:description" content="Some weeks ago the site I work on started having severe outages. It looked like the system was not able to fulfill the incoming requests fast enough, making the passenger queue to grow faster than new requests could be served. Looking at the rails logs it looked like some Chinese bot was crawling the entire site, including a long list of dynamic pages that took a long time to generate and that are not usually visited. Those pages were not yet cached, so every request went through the rails pipeline. Once you start having the dreadful problem of your passenger queue to grow faster and faster you are usually doomed. Since you can’t expect some of the malicious bots out there to respect the robots.txt file, I had to filter those requests at the Apache level so they did not even reach the application level. This past few months I’ve been learning a lot of systems administration, basically because it’s us, the developers, who also handle this part of the business. Since all those requests came from the same user agent, I looked for a simple way to filter the requests based on this criteria. It can be easily done if you use the mod_access Apache module. All you need to do is make use of the Allow and Deny directives. Here’s a simple example to filter the ezooms bot: &amp;lt;Directory &quot;/home/rails/sites/prod/your_site/current/public&quot;&amp;gt; SetEnvIf User-Agent &quot;ezooms&quot; BlockUA Order allow,deny Deny from env=BlockUA Allow from all &amp;lt;/Directory&amp;gt; What this piece of code does is very self explanatory. The first line tells Apache to set up an environment variable called BlockUA if the user agent of the request matches the “ezooms” string. Then you tell Apache the order it has to evaluate the access control to the directory: it first has to evaluate the Allow directive, and then the Deny one. After that you set up both directives. Allow from all basically allows everything in. Deny from env=BlockUA denies all requests in which the environment variable BlockUA has been set. Since that variable is set up when the user agent matches our desired string, the config will basically deny access to the application to all requests with the “ezooms” user agent. This way you can easily protect yourself from basic bot attacks.">
   
   
@@ -1121,7 +1121,7 @@
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2012/12/12/node-js-packages-mountain-lion/">
+  <link rel="canonical" href="https://thinkingeek.com/2012/12/12/node-js-packages-mountain-lion/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Node.js packages in Mountain Lion">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2012/12/12/node-js-packages-mountain-lion/">
+  <meta property="og:url" content="https://thinkingeek.com/2012/12/12/node-js-packages-mountain-lion/">
   <meta property="og:description" content="tl;dr: make sure you add /usr/local/share/npm/bin to your PATH when installing node.js to be able to access the package binaries. Developing in Ruby on Rails on a Mountain Lion environment can be a pain. Although it’s a UNIX-like environment, most of the tools created for web development have been made with Linux in mind, and making the switch from a Linux box to Mac OS X is far from harmless. Anyway, the other day I needed to tweak Bootstrap to make the default grid wider, and instead of using the Bootstrap web site customiser, I decided to download the source code from GitHub and build it myself. In order to do this, you need node.js and some of the packages that come with it. I’ve never developed or even played with node.js before, so I needed to install it on the computer. And that was fairly easy thanks to homebrew by simply issuing the command brew install node. After node has been installed you have access to npm, the node package manager. Following the Bootstrap instructions, I installed the necessary packages: npm install recess connect uglify-js jshint -g After that I thought I was ready to build Bootstrap, but the make command complained about not being able to find some of the node.js binaries I’ve just installed a minute ago. The solution to the problem, though, was rather simple. It turns out the default formula for nodejs on homebrew doesn’t tell you the folder in which the node.js binaries will be installed in. Without adding this folder to the path, obviously the system can’t find the files it’s supposed to execute. Simply add the folder /usr/local/share/npm/bin to your PATH environment variable and you’ll be good to go.">
   
   
@@ -1447,7 +1447,7 @@
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2012/11/17/mac-os-x-iterm-meta-key/">
+  <link rel="canonical" href="https://thinkingeek.com/2012/11/17/mac-os-x-iterm-meta-key/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Mac OS X, iTerm and the meta key">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2012/11/17/mac-os-x-iterm-meta-key/">
+  <meta property="og:url" content="https://thinkingeek.com/2012/11/17/mac-os-x-iterm-meta-key/">
   <meta property="og:description" content="If you use your Mac OS X as a development machine and are a regular user of the shell, chances are you are going to be using the movement commands a lot. Chances are, too, that you are using iTerm instead of the system provided Terminal app. Using the arrow keys is usually enough, but more often than not you need to move between words. This movements, unless you redefine it in your global or local bashrc profile (or any similar shell you maybe using), are done with the keys b and f. Pressing C-b or C-f moves the cursor one character back or forward. Doing if with M-b or M-f does the same but with a word (if you are an Emacs user you will be familiar with those key shortcuts). The C stands for control key, while the M stands for meta key. In most keyboards (or keymaps to be precise), the control key is mapped to the ctrl key and the meta key is mapped to the alt key. In Mac OS X, the meta key is mapped to the alt key, but as you may very well know, this alt key is known as the option key, and has its peculiarities. Now, if you open a shell in iTerm and press C-b or C-f, the output will be as expected, but not if you press M-b or M-f. Instead of moving forward or backward a word, you will see that some weird character is written on the command line. Fortunately this is really easy to fix in iTerm. You just need to go to the Profiles menu, edit your profile (which is most likely to be the default one), and then go to the keys tab. Now, on the bottom of the keymap lists, you will see that you can configure the behaviour of the option key. Set it up to the last option (+Esc) as shown in the screenshot, and then the alt key in iTerm will be sending the shell the adequate escape sequence so all meta mappings work as expected. iTerm profile editor EDIT (30/11/2012): looks like this breaks some of the characters that are used by typing the meta key, i.e. the # character (meta + 3). Another way to achieve what we want is to manually map all the meta key shortcuts. This can be done in the same window as before. Select Normal instead of +Esc and, for each key shortcut you want to map, click on the + button. On the opening dialog, type the combination you want to map, for example alt + d, and select Send escape sequence from the drop down  Then on the last textbox insert the escape sequence character you want to send (typically the same pressed along the meta key). Select Send Escape Sequence Type the character to send">
   
   
@@ -1465,7 +1465,7 @@ Fortunately this is really easy to fix in iTerm. You just need to go to the Prof
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

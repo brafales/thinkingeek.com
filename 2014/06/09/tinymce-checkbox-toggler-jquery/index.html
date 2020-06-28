@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2014/06/09/tinymce-checkbox-toggler-jquery/">
+  <link rel="canonical" href="https://thinkingeek.com/2014/06/09/tinymce-checkbox-toggler-jquery/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="TinyMCE checkbox toggler for jQuery">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2014/06/09/tinymce-checkbox-toggler-jquery/">
+  <meta property="og:url" content="https://thinkingeek.com/2014/06/09/tinymce-checkbox-toggler-jquery/">
   <meta property="og:description" content="Here’s a small jQuery code snippet that you can use to have an easy to use checkbox toggler to enable or disable a TinyMCE editor with ease (tested on TinyMCE version 4 and jQuery version 2.1.1). It’s really easy to use. You just need to create a checkbox element with the class tiny_mce_toggler and a data attribute with the key editor and the text area id used as a TinyMCE editor as a value. The snippet can be easily extracted if you want to use it differently. Here is the javascript snippet: $(function() { var TinyMceToggler = function(_checkbox){ var checkbox = $(_checkbox); var editor = checkbox.data(&#39;editor&#39;); checkbox.click(function(){ if (this.checked) { console.log(&quot;Add&quot;); tinyMCE.execCommand( &#39;mceAddEditor&#39;, false, editor ); } else { console.log(&quot;Remove&quot;); tinyMCE.execCommand( &#39;mceRemoveEditor&#39;, false, editor ); } }); }; $(&quot;input.tiny_mce_toggler&quot;).each(function(){ new TinyMceToggler(this); }); }); And here you can see how to integrate it on a page with a TinyMCE editor: &amp;lt;!DOCTYPE html&amp;gt; &amp;lt;html&amp;gt; &amp;lt;head&amp;gt; &amp;lt;meta charset=&quot;utf-8&quot; /&amp;gt; &amp;lt;title&amp;gt;TinyMCE - Toggler&amp;lt;/title&amp;gt; &amp;lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; href=&quot;http://moxiecode.cachefly.net/tinymce/v8/css/all.min.css?v=8&quot; /&amp;gt; &amp;lt;script src=&quot;//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js&quot;&amp;gt;&amp;lt;/script&amp;gt; &amp;lt;script type=&quot;text/javascript&quot; src=&quot;javascript/tinymce/tinymce.min.js&quot;&amp;gt;&amp;lt;/script&amp;gt; &amp;lt;script type=&quot;text/javascript&quot;&amp;gt; $(function() { tinymce.init({ selector: &quot;textarea&quot; }); var TinyMceToggler = function(_checkbox){ var checkbox = $(_checkbox); var editor = checkbox.data(&#39;editor&#39;); checkbox.click(function(){ if (this.checked) { console.log(&quot;Add&quot;); tinyMCE.execCommand( &#39;mceAddEditor&#39;, false, editor ); } else { console.log(&quot;Remove&quot;); tinyMCE.execCommand( &#39;mceRemoveEditor&#39;, false, editor ); } }); }; $(&quot;input.tiny_mce_toggler&quot;).each(function(){ new TinyMceToggler(this); }); }); &amp;lt;/script&amp;gt; &amp;lt;/head&amp;gt; &amp;lt;body&amp;gt; &amp;lt;form method=&quot;post&quot; action=&quot;#&quot;&amp;gt; &amp;lt;input type=&quot;checkbox&quot; data-editor=&quot;tiny&quot; checked=&quot;checked&quot; class=&quot;tiny_mce_toggler&quot; style=&quot;display: block;&quot; /&amp;gt; &amp;lt;textarea id=&quot;tiny&quot;&amp;gt;&amp;lt;/textarea&amp;gt; &amp;lt;/form&amp;gt; &amp;lt;/body&amp;gt; &amp;lt;/html&amp;gt; You can run the example on this fiddle: http://fiddle.tinymce.com/7jeaab">
   
   
@@ -1505,7 +1505,7 @@
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2011/06/16/fixtures-and-serialized-attributes-in-ruby-on-rails/">
+  <link rel="canonical" href="https://thinkingeek.com/2011/06/16/fixtures-and-serialized-attributes-in-ruby-on-rails/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Fixtures and serialized attributes in Ruby on Rails">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2011/06/16/fixtures-and-serialized-attributes-in-ruby-on-rails/">
+  <meta property="og:url" content="https://thinkingeek.com/2011/06/16/fixtures-and-serialized-attributes-in-ruby-on-rails/">
   <meta property="og:description" content="If you&#39;ve ever used the serialize method in an ActiveRecord model, you may have faced the problem of writing a fixture for that particular serialized field. The serialize method is quite handy if you need to store a complex object (like a Hash or an Array) in a database field, without having to create additional models and relationships between them. A good example could be store the preferences of a user in a hash: class User &amp;lt; ActiveRecord::Base serialize :preferences, Hash end This way you can set and get the preferences attribute of the user without having to worry much about it: User.first.preferences # =&amp;gt; {:show_email =&amp;gt; true, :allow_pm =&amp;gt; :false, ...} user = User.first user.preferences = {:show_email =&amp;gt; true, :allow_pm =&amp;gt; :false} user.save In order to do that, at the database table for the User class, among the other fields you&#39;ll need to add a text column for the preferences. After that, you can easily work with your model without too much of a hassle. If you care to look at the rows of the model&#39;s table, you&#39;ll see that the serialized attribute is stored in YAML format: sqlite&amp;gt; select preferences from users where id = 1; --- :show_email: false :allow_pm: false Now, that if you need to add a fixture for your model that needs the preferences attribute to be set to a particular value? If you have to manually parse the value you want to put in there to be tested, it&#39;ll be a pain in the ass. Even if you have a script that converts certain values to YAML so you can copy and paste the script output to the fixture, it&#39;s not very comfortable. Hopefully, you have to remember that you can use some ERB magic in your fixtures :) So, here&#39;s the deal if you need to add something to the serializable attribute: one: preferences: &amp;lt;%= {:show_email =&amp;gt; true, :allow_pm =&amp;gt; :false}.to_yaml.inspect %&amp;gt; The to_yaml method converts the Hash into a YAML representation, and with inspect we convert that to a string. Using this technique, we can add whatever we want to a serialized field in our fixtures.">
   
   
@@ -2131,7 +2131,7 @@ The <em>to_yaml</em> method converts the Hash into a YAML representation, and wi
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

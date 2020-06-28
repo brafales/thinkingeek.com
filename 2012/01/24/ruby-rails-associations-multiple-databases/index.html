@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2012/01/24/ruby-rails-associations-multiple-databases/">
+  <link rel="canonical" href="https://thinkingeek.com/2012/01/24/ruby-rails-associations-multiple-databases/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Ruby on Rails Many To Many associations with multiple databases">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2012/01/24/ruby-rails-associations-multiple-databases/">
+  <meta property="og:url" content="https://thinkingeek.com/2012/01/24/ruby-rails-associations-multiple-databases/">
   <meta property="og:description" content="Sometimes you need to use multiple databases in your Rails projects. Usually when some data must be shared between different applications. When this happens you usually have some models in a shared database, and some other models in the specific application database. This can be easily done using the establish_connection method in the shared models to tell them they have to connect to a different database. However, when you need some interaction between those shared models and the models of your specific application, like a has_many, :through association, some problems arise. The typical Many To Many association uses an intermediate database table that links the relation between two models, and allows you to add some extra information on that relation. When navigating through the association, Rails tries to make an SQL query that joins the model with this intermediate table. For example, imagine you have a Team model, which has many Players, but a player can also be on more than one team. We use an intermediate model TeamPlayers (and we can also use it to save the role of that player into that team, for example). You would have those three tables: teams players teams_players When asking for the players of a given Team, Rails would do something similar to this: SELECT &quot;players&quot;.* FROM &quot;players&quot; INNER JOIN teams_players&quot; ON &quot;players&quot;.id = &quot;teams_players&quot;.player_id WHERE &quot;players&quot;.team_id = 1 Where 1 is the id of the team you asked for. This [obviously] works perfectly fine when everything is in the same database, and it&#39;s as efficient as the SQL database manager you&#39;re using. What happens, however, when we have the Player model in another database? It will miserably fail because Rails will try to join with a table that doesn&#39;t exist. Unfortunately, there&#39;s no efficient way to solve this problem, that is, using SQL, as you can&#39;t work with tables from different databases. However, there&#39;s a rather elegant solution that Brian Doll cared to implement as a gem a while ago. As indicated in the GitHub readme, you just have to use a has_many_elsewhere relation instead of the usual one, and make sure that the model referenced has the connection established to the shared database. And that&#39;s all. The magic donde behind the scenes is pretty simple: this gem just replicates the same methods that the ActiveRecord::Base class does in the has_many method call, changing the failing unique SQL calls to double SQL calls, one for each database, fetching the intermediate models first, and then fetching the remote models using those ids. This method is not perfect, as probably not all the goodness of the original association can be done with it, but for simple scenarios is more than enough.">
   
   
@@ -2436,7 +2436,7 @@ This method is not perfect, as probably not all the goodness of the original ass
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

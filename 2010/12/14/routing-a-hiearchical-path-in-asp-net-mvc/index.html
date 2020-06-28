@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2010/12/14/routing-a-hiearchical-path-in-asp-net-mvc/">
+  <link rel="canonical" href="https://thinkingeek.com/2010/12/14/routing-a-hiearchical-path-in-asp-net-mvc/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Routing a hiearchical path in ASP.NET MVC">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2010/12/14/routing-a-hiearchical-path-in-asp-net-mvc/">
+  <meta property="og:url" content="https://thinkingeek.com/2010/12/14/routing-a-hiearchical-path-in-asp-net-mvc/">
   <meta property="og:description" content="If you wonder how to make a GitHub (and other websites) like routes to access to hierarchical paths or files, here&#39;s the way to do it in ASP.NET MVC. GitHub is a GIT hosting service, and allows you to browse the repositories. When doing so, it uses a path as a routing parameter, as seen in this URL: https://github.com/erikzaadi/GithubSharp/blob/master/Core/Models/Commit.cs. This includes slashes and so to represent the directories, and is a parameter that depends on the file location inside the repository. A route like this can be done in ASP.NET using the called catch-all parameter. The catch-all parameter allows you to use a wildcard on a route, so it takes everything after a given route as a single parameter. You can find the explanation of this feature in the ASP.NET Routing MASDN help page. All you need to do to make a route like the one in the example to work is add this code to your Global.asax file, in the RegisterRoutes method: routes.MapRoute( &quot;Blob&quot;, &quot;{*path}&quot;, new { controller = &quot;Blob&quot;, action = &quot;GetContents&quot; } ); This will pass the controller Blob a parameter called path that will contain the parameter you want (in the example that would be master/Core/Models/Commit.cs. All you have to do now is use this parameter as you wish so you can access the desired file and show it&#39;s contents on a web page.">
   
   
@@ -1123,7 +1123,7 @@ This will pass the controller <em>Blob</em> a parameter called <em>path</em> tha
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

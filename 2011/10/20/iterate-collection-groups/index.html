@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2011/10/20/iterate-collection-groups/">
+  <link rel="canonical" href="https://thinkingeek.com/2011/10/20/iterate-collection-groups/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Iterate over a collection in groups, and other things">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2011/10/20/iterate-collection-groups/">
+  <meta property="og:url" content="https://thinkingeek.com/2011/10/20/iterate-collection-groups/">
   <meta property="og:description" content="One thing I find fascinating about Ruby is the fact that most common tasks are already programmed for you in its library. The Enumerable module is a clear example of that, providing you with lots of functionality to manipulate collections of objects. One of those useful methods I discovered the other day was each_slice. This method allows you to iterate over the collection, just as each does, but lets you do it changing how many elements of the collection you get on each iteration. This is the example you can get from the documentation page: (1..10).each_slice(3) {|a| p a} # outputs below [1, 2, 3] [4, 5, 6] [7, 8, 9] [10] You can see that from the original array from 1 to 10, on every iteration Ruby prints the numbers in groups of three, and the last one alone since the collection is not a multiple of 3. Now think about having to do this manually: it&#39;s not that hard, but its error prone and you have to do all that typical arithmetic logic that should be easy but never is. How handy that Ruby has already done that job for you. This method is also pretty useful when working in Ruby on Rails. One simple example is when you have to manually implement some kind of pagination, or show a list of elements in columns or rows of fixed size: you have to simply iterate with each_slice and put the page/row/column logic on the block, and voilà. I strongly suggest you take a look at the Enumerable module reference to take a look at all the other flavours of each methods it has and I&#39;m sure you&#39;ll find all of them pretty useful in lots of situations!">
   
   
@@ -1455,7 +1455,7 @@ I strongly suggest you take a look at the <a href="http://www.ruby-doc.org/core-
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

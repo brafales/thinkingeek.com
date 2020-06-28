@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2013/11/15/create-temporary-zip-file-send-response-rails/">
+  <link rel="canonical" href="https://thinkingeek.com/2013/11/15/create-temporary-zip-file-send-response-rails/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Create a temporary zip file to send as response in Rails">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2013/11/15/create-temporary-zip-file-send-response-rails/">
+  <meta property="og:url" content="https://thinkingeek.com/2013/11/15/create-temporary-zip-file-send-response-rails/">
   <meta property="og:description" content="We have been doing a painful migration from Rails 2 to Rails 3 for several months at work, and refactoring some code the other day I had to do something in a non straightforward way, so I thought I’d share that. Basically we had an action that would group several files into a zip file and return those zipped files to the user as a response. In the old code, a randomly named file was created on the /tmp folder of the hosting machine, being used as the zip file for the rubyzip gem, and then returned in the controller response as an attachment. During the migration, we’ve replaced all those bespoken temp file generation for proper Tempfile objects. This was just another one of those replacements to do. But it turned out not to be that simple. My initial thought was that something like this would do the trick: filename = &#39;attachment.zip&#39; temp_file = Tempfile.new(filename) Zip::File.open(temp_file.path, Zip::File::CREATE) do |zip_file| #put files in here end zip_data = File.read(temp_file.path) send_data(zip_data, :type =&amp;gt; &#39;application/zip&#39;, :filename =&amp;gt; filename) But it did not. The reason for that is that the open method, when used with the Zip::File::CREATE flag, expects the file either not to exist or to be already a zip file (that is, have the correct zip structure data on it). None of those 2 cases is ours, so the method didn’t work. So as a solution, you have to open the temporary file using the Zip::OutputStream class and initialize it so it’s converted to an empty zip file, and after that you can open it the usual way. Here’s a full simple example on how to achieve this: #Attachment name filename = &#39;basket_images-&#39;+params[:delivery_date].gsub(/[^0-9]/,&#39;&#39;)+&#39;.zip&#39; temp_file = Tempfile.new(filename) begin #This is the tricky part #Initialize the temp file as a zip file Zip::OutputStream.open(temp_file) { |zos| } #Add files to the zip file as usual Zip::File.open(temp_file.path, Zip::File::CREATE) do |zip| #Put files in here end #Read the binary data from the file zip_data = File.read(temp_file.path) #Send the data to the browser as an attachment #We do not send the file directly because it will #get deleted before rails actually starts sending it send_data(zip_data, :type =&amp;gt; &#39;application/zip&#39;, :filename =&amp;gt; filename) ensure #Close and delete the temp file temp_file.close temp_file.unlink end">
   
   
@@ -1478,7 +1478,7 @@
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

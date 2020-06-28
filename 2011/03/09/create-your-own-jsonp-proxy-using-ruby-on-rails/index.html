@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2011/03/09/create-your-own-jsonp-proxy-using-ruby-on-rails/">
+  <link rel="canonical" href="https://thinkingeek.com/2011/03/09/create-your-own-jsonp-proxy-using-ruby-on-rails/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Create your own JSONP Proxy using Ruby on Rails">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2011/03/09/create-your-own-jsonp-proxy-using-ruby-on-rails/">
+  <meta property="og:url" content="https://thinkingeek.com/2011/03/09/create-your-own-jsonp-proxy-using-ruby-on-rails/">
   <meta property="og:description" content="Today I was working on a web site that needs to retrieve some RSS feed over the internet. Since the web page has no server (HTML + javascript only) I couldn&#39;t access the feed from the server side. Also, because of the Cross Domain limitation of Ajax requests, I couldn&#39;t access the RSS in the client either. I searched Google for an API and found the Google Feed API, which does exactly what I want. However, because (I think) Google caches the RSS feed you request, there was a significant delay (about half an hour) between the update of the RSS contents and the RSS provided by Google (the feed was updated in a per minute basis, as it was a CoverItLive event). Seeing I couldn&#39;t access really recent posts from the feed using Google, I decided to implement my own RSS API using JSONP in a ruby on rails environment, since having an external server act as a proxy was allowed for the overall solution. The tools I needed I got from those two websites: http://rubyrss.com/ for a RSS parser, and http://blogs.sitepoint.com/2006/10/05/json-p-output-with-rails/ on how to build a simple JSONP response on the server side. Basically you have to start creating a new controller that will handle the JSONP requests. In my case I just added a &#39;Feed&#39; controller: $ script/generate controller Feed Then you edit the app/controllers/feed_controller.rb file and start coding. We will assume that the request will come in this form: http://server/feed/get?callback=some_callback&amp;amp;url=the_url_of_the_feed. Having this information, the controller code is pretty straightforward. class FeedController &amp;lt; ApplicationController require &#39;rss/1.0&#39; require &#39;rss/2.0&#39; def get begin url_contents = Net::HTTP.get(URI.parse(params[:url])) rss = RSS::Parser.parse(url_contents, false) json = { &quot;error&quot; =&amp;gt; false, &quot;feed&quot; =&amp;gt; rss }.to_json rescue json = { &quot;error&quot; =&amp;gt; true }.to_json end respond_to do |format| format.js { render_json json } end end def render_json(json) callback = params[:callback] response = begin if callback &quot;#{callback}(#{json});&quot; else json end end render({:content_type =&amp;gt; :js, :text =&amp;gt; response}) end end The first two lines are the requirements for the RSS module, which will allow us to parse a RSS feed. After that, we start with the get request. In there, we use the Net::HTTP.get() method, which will retrieve a URL content using a GET request and return its contents. To do so, we need to pass it an uri parameter, which we can get from the entire URL using the method URI.parse(). After this call, we have the XML of the RSS feed in url_contents. What we have to do now is build an RSS object with this XML. We&#39;ll do that by calling RSS::Parser.parse(). If you wish to do some modifications to the RSS contents, now is your change. In this simple example we&#39;ll simply bulk it all to the response. To build the response, we need a JSON object. If everything went as expected, we can create a JSON object by simply creating a ruby associative array and calling the to_json method on it: json = { &quot;error&quot; =&amp;gt; false, &quot;feed&quot; =&amp;gt; rss }.to_json If, on the contrary, we got an error (bad URL, bad RSS, whatever), we simply return the same JSON object with the error property set to true (that&#39;s done in the rescue clause). After we have this JSON object built, we simply have to output the results. To do so, we use the help of a method called render_json which we have added to the controller code. In this method we simply output the JSON if we provide no callback (this means no JSONP), or either a padded JSON (hence the name JSONP) with the callback name followed by the JSON data. In either case we render the results as a js type. For more detailed information on how JSONP works, check http://en.wikipedia.org/wiki/JSON#JSONP, but what you basically need to know is that when you do a JSONP request what you&#39;re really doing is retrieve a chunk of javascript code that will be run on your client, so be aware of the security issues you can have here.">
   
   
@@ -1827,7 +1827,7 @@ For more detailed information on how JSONP works, check <a href="http://en.wikip
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

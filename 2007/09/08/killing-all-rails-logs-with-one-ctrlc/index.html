@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2007/09/08/killing-all-rails-logs-with-one-ctrlc/">
+  <link rel="canonical" href="https://thinkingeek.com/2007/09/08/killing-all-rails-logs-with-one-ctrlc/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Killing all rails logs with one Ctrl+C?">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2007/09/08/killing-all-rails-logs-with-one-ctrlc/">
+  <meta property="og:url" content="https://thinkingeek.com/2007/09/08/killing-all-rails-logs-with-one-ctrlc/">
   <meta property="og:description" content="Well, this is my first post after holidays and it won&#39;t be very long. Imagine you are developing a rails application. Usually you have: a terminal with the server to see what petitions are received. a terminal with a tail of development.log to see what happens with the database. a terminal with a tail of test.log if you are testing something. This are a lot of windows... And the other day one friends was very happy and after asking for a while I discovered that the reason was the simple line showed above... With only one Ctrl+C you can kill all this processes :-) script/server &amp;amp; tail -f log/development.log &amp;amp; tail -f log/test.log &amp;amp; tail -f ; jobs -p | awk &#39;{print &quot;kill -2 &quot; $0}&#39; | sh">
   
   
@@ -1774,7 +1774,7 @@ This are a <strong>lot</strong> of windows... And the other day one friends was 
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

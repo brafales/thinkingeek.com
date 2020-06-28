@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2008/11/18/full-view-of-combobox-drop-down-list-components-in-c-30/">
+  <link rel="canonical" href="https://thinkingeek.com/2008/11/18/full-view-of-combobox-drop-down-list-components-in-c-30/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Full view of ComboBox drop-down list components in C# 3.0">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2008/11/18/full-view-of-combobox-drop-down-list-components-in-c-30/">
+  <meta property="og:url" content="https://thinkingeek.com/2008/11/18/full-view-of-combobox-drop-down-list-components-in-c-30/">
   <meta property="og:description" content="By default in C# 3.0 ComboBox controls don’t provide support for showing drop-down list items if they exceed the width of their parent ComboBox, like this one: This is annoying because users cannot read properly the information. To solve that problem, all we have to do is derive the ComboBox class and override the DropDown event as follows: public class ComboBoxEx : ComboBox { public ComboBoxEx() : base() { DropDown += new EventHandler(event_DropDown); } void event_DropDown(object sender, EventArgs e) { try { ComboBox comboBox = (ComboBox)sender; // Catch the combo firing this event int width = comboBox.Width; // Current width for ComboBox Graphics g = comboBox.CreateGraphics(); // Get graphics for ComboBox Font font = comboBox.Font; // Doesn&#39;t change original font //checks if a scrollbar will be displayed. int vertScrollBarWidth; if (comboBox.Items.Count &amp;gt; comboBox.MaxDropDownItems) } //If yes, then get its width to adjust the size of the drop down list. vertScrollBarWidth = SystemInformation.VerticalScrollBarWidth; } else { //Otherwise set to 0 vertScrollBarWidth = 0; } //Loop through list items and check size of each items. //set the width of the drop down list to the width of the largest item. int newWidth; foreach (string s in comboBox.Items) { if (s != null) { newWidth = (int)g.MeasureString(s.Trim(), font).Width + vertScrollBarWidth; if (width &amp;lt; newWidth) width = newWidth; } } // Finally, adjust the new width comboBox.DropDownWidth = width; } catch { } } } The following picture shows the results of using the above control instead of the default one:">
   
   
@@ -1489,7 +1489,7 @@ The following picture shows the results of using the above control instead of th
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

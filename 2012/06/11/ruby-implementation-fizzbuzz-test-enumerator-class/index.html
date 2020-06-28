@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2012/06/11/ruby-implementation-fizzbuzz-test-enumerator-class/">
+  <link rel="canonical" href="https://thinkingeek.com/2012/06/11/ruby-implementation-fizzbuzz-test-enumerator-class/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="A Ruby implementation of the FizzBuzz test using the Enumerator class">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2012/06/11/ruby-implementation-fizzbuzz-test-enumerator-class/">
+  <meta property="og:url" content="https://thinkingeek.com/2012/06/11/ruby-implementation-fizzbuzz-test-enumerator-class/">
   <meta property="og:description" content="Some days ago I learnt about The FizzBuzz Test and did a simple implementation in Ruby. The FizzBuzz test is a simple algorithm that is supposed to do the following: For each number from 1 to 100: If the number is divisible by 3, print &quot;Fizz&quot; If the number is divisible by 5, print &quot;Buzz&quot; If the number is divisible by both 3 and 5, print &quot;FizzBuzz&quot; Otherwise print the number I was just reading about how you can use the Enumerator class to have generators in the Programming Ruby 1.9 book, and thought that a good implementation could be done using just an Enumerator, so here it is, along with a simple RSpect test: FizzBuzz = Enumerator.new do |yielder| count = 1 loop do if count % 3 == 0 if count % 5 == 0 yielder.yield &quot;FizzBuzz&quot; else yielder.yield &quot;Fizz&quot; end elsif count % 5 == 0 yielder.yield &quot;Buzz&quot; else yielder.yield count end count += 1 end end require_relative &#39;fizzbuzz&#39; describe FizzBuzz do before(:all) do @fizzbuzzes = FizzBuzz.first(100) end it &quot;returns &#39;Fizz&#39; for all multiples of 3&quot; do @fizzbuzzes[3-1].should == &#39;Fizz&#39; end it &quot;returns &#39;Buzz&#39; for all multiples of 5&quot; do @fizzbuzzes[5-1].should == &#39;Buzz&#39; end it &quot;returns &#39;FizzBuzz&#39; for all multiples of 3 and 5&quot; do @fizzbuzzes[60 - 1].should == &#39;FizzBuzz&#39; end it &quot;returns the passed number if not a multiple of 3 or 5&quot; do @fizzbuzzes[1 - 1].should == 1 end end You can also find the code in its GitHub repository: https://github.com/brafales/ruby-fizzbuzz.">
   
   
@@ -1825,7 +1825,7 @@ You can also find the code in its GitHub repository: <a href="https://github.com
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

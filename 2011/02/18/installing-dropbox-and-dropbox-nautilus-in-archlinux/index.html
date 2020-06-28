@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2011/02/18/installing-dropbox-and-dropbox-nautilus-in-archlinux/">
+  <link rel="canonical" href="https://thinkingeek.com/2011/02/18/installing-dropbox-and-dropbox-nautilus-in-archlinux/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Installing dropbox and dropbox-nautilus in ArchLinux">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2011/02/18/installing-dropbox-and-dropbox-nautilus-in-archlinux/">
+  <meta property="og:url" content="https://thinkingeek.com/2011/02/18/installing-dropbox-and-dropbox-nautilus-in-archlinux/">
   <meta property="og:description" content="If you&#39;ve tried to install dropbox-nautilus from the source found in the &amp;lt;a href=http://www.dropbox.com&amp;gt;Dropbox&amp;lt;/a&amp;gt; website, you&#39;ll find that you can&#39;t successfully complete the ./configure step of the package due to an error of the script not finding pygtk. This is an issue with Archlinux because of the way python binaries are handled in this distribution. However, you can use the AUR packages to install dropbox and its integration with Nautilus thank to the people that tweaked the scripts to work with Arch. The first step you have to take is download the AUR packages. You&#39;ll need to download both dropbox and nautilus-dropbox. Save both .tar.gz files at you preferred location and uncompress them using this command: tar xvfz &amp;lt;filename.tar.gz&amp;gt; Obviously, change &amp;lt;filename.tar.gz&amp;gt; with the filenames you have downloaded. Each tar command will create a folder. Go to the dropbox folder and run this package: makepkg -s This will build a package and install the required dependencies while doing it if needed (it will ask for your root password if you&#39;re doing this without being root). If everything went ok, you&#39;ll find a file with the extension .xy in the folder you&#39;re in. This is what you need to install, using our beloved pacman (use sudo if you&#39;re not root): pacman -U &amp;lt;filename.xy&amp;gt; This will install dropbox. After this, do the same for the other package: nautilus-dropbox. makepkg -s, pacman -U &amp;lt;filaneme.xy&amp;gt; and you&#39;re done, you have Dropbox integrated with Nautilus. Just start Dropbox from your Applications menu and enjoy the service!">
   
   
@@ -2108,7 +2108,7 @@ This will install dropbox. After this, do the same for the other package: nautil
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

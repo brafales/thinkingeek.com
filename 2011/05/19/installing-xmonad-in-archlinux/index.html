@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2011/05/19/installing-xmonad-in-archlinux/">
+  <link rel="canonical" href="https://thinkingeek.com/2011/05/19/installing-xmonad-in-archlinux/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Installing xmonad in ArchLinux">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2011/05/19/installing-xmonad-in-archlinux/">
+  <meta property="og:url" content="https://thinkingeek.com/2011/05/19/installing-xmonad-in-archlinux/">
   <meta property="og:description" content="For some reason, the ArchLinux wiki is kind of outdated explaining how to install xmonad in Arch. Also, the new packages seem to have a bug and the xmonad installation won&#39;t work out of the box. Here you have detailed steps on how to install and run xmonad on ArchLinux. First of all, you need to install the Xorg server. Refer to Xorg for detailed instructions. After that, you&#39;ll need to install the xmonad packages, named xmonad and xmonad-contrib. pacman -Syu xmonad xmonad-contrib This will install xmonad and all the required dependencies. After that, if you want a fairly simple X setup, add the line xmonad to your ~/.xinitrc file (hopefully you&#39;ll be using a display manager that uses that file like SLiM). If you try this on a freshly installed ArchLinux system, though, it won&#39;t work. There are some missing steps to do. First of all, you need to create the folder ~/.xmonad. mkdir ~/.xmonad After that, you need to create a new xmonad config file, called xmonad.hs&amp;lt;/em into that folder, so fire up your favourite editor and fill the file with this basic (empty) configuration: &amp;lt;/p&amp;gt; import XMonad main = do xmonad $ defaultConfig Once you have you configuration file in place, it&#39;s time to rebuild xmonad: xmonad --recompile And that&#39;s all, you should be able to start your fresh new xmonad setup in ArchLinux. By the way, if you wonder why pressing Mod1 + Shift + Enter does nothing, make sure you have the package xterm installed. Cheers!">
   
   
@@ -1146,7 +1146,7 @@ Cheers!
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 

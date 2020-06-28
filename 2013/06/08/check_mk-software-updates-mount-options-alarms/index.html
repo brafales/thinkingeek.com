@@ -14,17 +14,17 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://blog.thinkingeek.com/2013/06/08/check_mk-software-updates-mount-options-alarms/">
+  <link rel="canonical" href="https://thinkingeek.com/2013/06/08/check_mk-software-updates-mount-options-alarms/">
   
   
-  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://blog.thinkingeek.com/feed.xml">
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
 
   
 
   
   <meta property="og:title" content="Check_MK, software updates and mount options alarms">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://blog.thinkingeek.com/2013/06/08/check_mk-software-updates-mount-options-alarms/">
+  <meta property="og:url" content="https://thinkingeek.com/2013/06/08/check_mk-software-updates-mount-options-alarms/">
   <meta property="og:description" content="We have been using nagios (more specifically Check_MK) recently at work to get some monitoring information on our CentOS instances. Recently we decided to reprovision all of our EC2 instances to apply several security upgrades. Among the packages upgraded, there was the kernel (which I guess was the cause of our subsequent problems). After updating all our instances, nagios began to complain about the mount options no being the right ones for the root file system, and started sending critical alarms. The file system was ok, it was mounted without problems and everything was woking fine, but for some reason the mount options had changed after the reprovisioning. Turns out that Check_MK checks the options in place when it does the initial inventory, and if the options change over time, it issues an alarm. If you face this problem, just do a reinventory of your machines and reload the configuration and restart the service, and it should be fine: cmk -II &amp;amp;&amp;amp; cmk -R">
   
   
@@ -2419,7 +2419,7 @@
 
 Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
 <br>
-Subscribe via <a href="https://blog.thinkingeek.com/feed.xml">RSS</a>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
 
     </p>
 
