@@ -1,4 +1,131 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-06-28T21:10:39+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Forgotten memories (2)</title><link href="https://thinkingeek.com/2020/06/20/forgotten-memories-2/" rel="alternate" type="text/html" title="Forgotten memories (2)" /><published>2020-06-20T18:10:00+00:00</published><updated>2020-06-20T18:10:00+00:00</updated><id>https://thinkingeek.com/2020/06/20/forgotten-memories-2</id><content type="html" xml:base="https://thinkingeek.com/2020/06/20/forgotten-memories-2/">&lt;p&gt;So in the &lt;a href=&quot;/2020/06/20/forgotten-memories-1/&quot;&gt;first part of this experiment&lt;/a&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-07-15T13:24:58+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Logging Sidekiq job arguments in Sidekiq 6</title><link href="https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments/" rel="alternate" type="text/html" title="Logging Sidekiq job arguments in Sidekiq 6" /><published>2020-07-15T00:00:00+00:00</published><updated>2020-07-15T00:00:00+00:00</updated><id>https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments</id><content type="html" xml:base="https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments/">&lt;p&gt;Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library.&lt;/p&gt;
+
+&lt;p&gt;Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;First of all, a word of advise: logging job arguments is most likely a really bad idea. This is a feature that’s been requested a lot and has always been turned down as it’s a really dangerous thing to do. So if you are thinking of doing this, please make sure you understand the consequences of doing so: depending on the nature of your aguments and where these logs end up in, you may get in trouble very quickly. The last thing you need is to be logging sensitive or private information and sending those logs to the wrong place.&lt;/p&gt;
+
+&lt;p&gt;That being said, let’s see how we’d do this in Sidekiq 6.&lt;/p&gt;
+
+&lt;h2&gt;First of all, enable JSON logging&lt;/h2&gt;
+
+&lt;p&gt;This is strictly not required, but I am a big fan of JSON structured logging. When used with the right tools it makes logs so much useful, since you can start doing things like indexing and searching for specific fields in logs, rather than having to manually parse log lines.&lt;/p&gt;
+
+&lt;p&gt;This is now incredibly easy to do in Sidekiq 6. In your Sidekiq server initialiser, just add this line:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;configure_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;log_formatter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Logger&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Formatters&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And job done. No need to monkey patch and no need to use any third party gems anymore.&lt;/p&gt;
+
+&lt;p&gt;With this, whenever a job gets run, you’ll get the following log line in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;STDOUT&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2020-07-15T12:02:02.328Z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23197&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;tid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2ert&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;lvl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;INFO&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;msg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;start&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ctx&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ExampleWorker&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;jid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dd3e1c0a1d56a4d31969538b&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2&gt;How to log job arguments&lt;/h2&gt;
+
+&lt;p&gt;Let’s now get into how to also get the job arguments in that log line. Let’s imagine our worker looks like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ExampleWorker&lt;/span&gt;
+
+  &lt;span class=&quot;kp&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Worker&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;perform&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;one_argument&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;another_argument&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;# write some code that disrupts something&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;One could argue that logging the values of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;one_argument&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;another_argument&lt;/code&gt; is desirable to debug issues.&lt;/p&gt;
+
+&lt;p&gt;Sidekiq has a bunch of new classes in version 6. One of them is the &lt;a href=&quot;https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/logger.rb&quot;&gt;Logger&lt;/a&gt;. You would think this is where to look for to add content to your logs, but that’s not the case. By the time Sidekiq has called the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Logger&lt;/code&gt; class it’s already too late, and in there we have no access at all to the running job or any of its information.&lt;/p&gt;
+
+&lt;p&gt;Sidekiq 6 also introduced another class: &lt;a href=&quot;https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/job_logger.rb&quot;&gt;JobLogger&lt;/a&gt;. This class is responsible for extracting any required information from a running job, and sending the relevant log messages to the logger at different stages of its life cycle (namely when the job starts and when it finishes, either successfully or unsuccessfully). And fortunately for us, Sidekiq 6 has been design with modularity in mind when it comes to logging, so we can actually override the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class in our Sidekiq workers and pass in our own class, which is exactly what we need to do.&lt;/p&gt;
+
+&lt;p&gt;Find below a class that inherits from the default &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class and overrides the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;job_hash_context&lt;/code&gt; method:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SidekiqJobLoggerWithArguments&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JobLogger&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;job_hash_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;original_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;super&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;begin&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;original_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;merge&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arguments&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;job_arguments&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;rescue&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;original_hash&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+  &lt;span class=&quot;kp&quot;&gt;private&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;job_arguments&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;key?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;wrapped&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;args&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;first&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arguments&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;args&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What we do here is call &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;super&lt;/code&gt; to get the original job context hash, and then we merge that with another hash containing the job arguments, which we can easily get from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;job_hash&lt;/code&gt; attribute. Note that, similarly to what the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class does, we need to check where the actual job arguments are, since jobs run via Rails &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ActiveJob&lt;/code&gt; abstraction layer will have this information in a different place than jobs that include the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Sidekiq::Worker&lt;/code&gt; mixin. I suggest you look at the code for the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class to fully understand why we have used inheritance and overridden this method.&lt;/p&gt;
+
+&lt;p&gt;Once you have this class in your Ruby application, you need to tell Sidekiq to use it instead of the default one:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;configure_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:job_logger&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;SidekiqJobLoggerWithArguments&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And that’s all, no monkeypatching required! With this in place, when running the following code:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;no&quot;&gt;ExampleWorker&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;perform_later&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;foo&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;bar&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Instead of getting this log:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2020-07-15T12:02:02.328Z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23197&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;tid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2ert&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;lvl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;INFO&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;msg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;start&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ctx&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ExampleWorker&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;jid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dd3e1c0a1d56a4d31969538b&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We will get this instead:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2020-07-15T12:02:02.328Z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23197&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;tid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2ert&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;lvl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;INFO&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;msg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;start&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ctx&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ExampleWorker&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;jid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dd3e1c0a1d56a4d31969538b&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;arguments&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;foo&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;bar&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Use at your own risk :-)&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><summary type="html">Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library. Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.</summary></entry><entry><title type="html">Forgotten memories (2)</title><link href="https://thinkingeek.com/2020/06/20/forgotten-memories-2/" rel="alternate" type="text/html" title="Forgotten memories (2)" /><published>2020-06-20T18:10:00+00:00</published><updated>2020-06-20T18:10:00+00:00</updated><id>https://thinkingeek.com/2020/06/20/forgotten-memories-2</id><content type="html" xml:base="https://thinkingeek.com/2020/06/20/forgotten-memories-2/">&lt;p&gt;So in the &lt;a href=&quot;/2020/06/20/forgotten-memories-1/&quot;&gt;first part of this experiment&lt;/a&gt;
 we saw a simple strategy to spill general-purpose registers into floating-point
 registers implemented in the RISC-V backend of LLVM.&lt;/p&gt;
 
@@ -5491,239 +5618,4 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 &lt;p&gt;If you are interested in a complete example of this code, deployable to Heroku, you can find it in this Github repository: &lt;a href=&quot;https://github.com/brafales/go-session&quot; rel=&quot;noopener&quot; target=&quot;_blank&quot;&gt;https://github.com/brafales/go-session&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;PS: you will have noticed that the login and logout handlers look almost exactly the same. It may be a good exercise for the reader to refactor them into a single handler that we can configure to behave as login or logout. Good luck!&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><category term="go" /><category term="testing" /><summary type="html">In this post we'll learn how to set and delete cookies as part of your Go HTTP Handlers. We'll also learn one way to test our handlers using HTTP recorders.</summary></entry><entry><title type="html">Redirect parts of your website to different applications with Apache</title><link href="https://thinkingeek.com/2018/05/19/redirect-parts-website-applications-apache/" rel="alternate" type="text/html" title="Redirect parts of your website to different applications with Apache" /><published>2018-05-19T22:37:32+00:00</published><updated>2018-05-19T22:37:32+00:00</updated><id>https://thinkingeek.com/2018/05/19/redirect-parts-website-applications-apache</id><content type="html" xml:base="https://thinkingeek.com/2018/05/19/redirect-parts-website-applications-apache/">&lt;p&gt;
-Microservices everywhere. Those are the times we live in now. Everyone seems to be splitting monolithic web applications into smaller chunks. And that's fine. However, setting up the local development environment for this can be sometimes a bit cumbersome.
-&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;It’s not an uncommon scenario when splitting parts of your site into standalone services to want to redirect certain paths of your URL to different back-end systems. There are multiple ways to do this, and I’ll show you how to set up a relatively painless Apache 2.4 setup where you can serve your monolith application as you used to, but at the same time point the new bits to the new services.&lt;/p&gt;
-
-&lt;p&gt;Let’s imagine the following scenario:&lt;/p&gt;
-&lt;ul&gt;
- 	&lt;li&gt;You're developing a site &lt;code&gt;http://www.acme.com&lt;/code&gt;&lt;/li&gt;
- 	&lt;li&gt;In your local development environment, you have a Rails app, serving the monolith, in port &lt;code&gt;3000&lt;/code&gt;&lt;/li&gt;
- 	&lt;li&gt;In order to make it all as close to production as possible, you develop in a special development domain &lt;code&gt;dev.acme.com&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2&gt;Step 1: serving the monolith&lt;/h2&gt;
-
-&lt;p&gt;The first thing you need to do is ensure your domain &lt;code&gt;dev.acme.com&lt;/code&gt; points to your &lt;code&gt;localhost&lt;/code&gt;:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;/etc/hosts&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-conf&quot; data-lang=&quot;conf&quot;&gt;&lt;span class=&quot;c&quot;&gt;##
-# Host Database
-#
-# localhost is used to configure the loopback interface
-# when the system is booting.  Do not change this entry.
-##
-&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;127&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;.&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;	&lt;span class=&quot;n&quot;&gt;localhost&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dev&lt;/span&gt;.&lt;span class=&quot;n&quot;&gt;acme&lt;/span&gt;.&lt;span class=&quot;n&quot;&gt;com&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;At this point, with your Rails app up and running, if you point your browser to &lt;code&gt;http://dev.acme.com:3000&lt;/code&gt;, you should see your monolith app. However, we want to get rid of the port in that URL. We can achieve this by using the &lt;a href=&quot;https://httpd.apache.org/docs/2.4/mod/mod_proxy.html&quot;&gt;Apache &lt;code&gt;mod_proxy&lt;/code&gt; plugin&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Let’s start by creating our own Apache configuration file that we can mess with, so we don’t have to worry about modifying the ones that come with our OS.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;dev.acme.com.conf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-apache&quot; data-lang=&quot;apache&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;VirtualHost&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; *.dev.acme.com:80&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&lt;/span&gt;  &lt;span class=&quot;nc&quot;&gt;ServerName&lt;/span&gt; www.dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ServerAlias&lt;/span&gt; *.dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ServerAlias&lt;/span&gt; dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ProxyRequests&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;Off&lt;/span&gt;
-
-  &lt;span class=&quot;c&quot;&gt;# Monolith&lt;/span&gt;
-  &lt;span class=&quot;nc&quot;&gt;ProxyPass&lt;/span&gt; / http://0.0.0.0:3000/ retry=0
-  &lt;span class=&quot;nc&quot;&gt;ProxyPassReverse&lt;/span&gt; / http://0.0.0.0:3000/
-
-  &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Location&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; &quot;/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&lt;/span&gt;    &lt;span class=&quot;c&quot;&gt;# Allow access to this proxied URL location for everyone.&lt;/span&gt;
-    &lt;span class=&quot;nc&quot;&gt;Order&lt;/span&gt; allow,deny
-    &lt;span class=&quot;nc&quot;&gt;Allow&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;all&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Location&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;VirtualHost&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; *.dev.acme.com:80&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The first thing we do is create a &lt;a href=&quot;https://httpd.apache.org/docs/2.4/vhosts/&quot;&gt;&lt;code&gt;VirtualHost&lt;/code&gt;&lt;/a&gt; that will apply to any request coming to &lt;code&gt;dev.acme.com&lt;/code&gt; on port &lt;code&gt;80&lt;/code&gt; (the default HTTP port) We do that on lines 2, 3 and 4, where we set up the &lt;a href=&quot;https://httpd.apache.org/docs/2.4/mod/core.html#servername&quot;&gt;&lt;code&gt;ServerName&lt;/code&gt;&lt;/a&gt; and a few &lt;a href=&quot;https://httpd.apache.org/docs/2.4/mod/core.html#serveralias&quot;&gt;&lt;code&gt;ServerAlias&lt;/code&gt;&lt;/a&gt;. The &lt;code&gt;ServerName&lt;/code&gt; directive will match requests coming to that domain into the &lt;code&gt;VirtualHost&lt;/code&gt;. Since we usually want some other subdomains to be served by the same application, we can add aliases to the name via the &lt;code&gt;ServerAlias&lt;/code&gt; directive. These lines will cover any request made to the &lt;code&gt;dev.acme.com&lt;/code&gt; domain or any of its subdomains.&lt;/p&gt;
-
-&lt;p&gt;On line 5 we disable the forward proxy feature. No need to worry too much about this though, as it’s out of the scope of this post and this is just a local setup.&lt;/p&gt;
-
-&lt;p&gt;Then we make the magic happen in lines 8 and 9, using &lt;a href=&quot;https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#proxypass&quot;&gt;&lt;code&gt;ProxyPass&lt;/code&gt;&lt;/a&gt; and &lt;a href=&quot;https://httpd.apache.org/docs/2.4/mod/mod_proxy.html#proxypassreverse&quot;&gt;&lt;code&gt;ProxyPassReverse&lt;/code&gt;&lt;/a&gt;. &lt;code&gt;ProxyPass / http://0.0.0.0:3000/ retry=0&lt;/code&gt; will tell Apache to get any requests coming to the server and send them to our Rails application, which lives in port &lt;code&gt;3000&lt;/code&gt; of our local machine. The &lt;code&gt;retry=0&lt;/code&gt; bit will ensure that requests will not be waiting for a timeout if for whatever reason our backend server was not available (e.g. our Rails app is starting, or has crashed).&lt;/p&gt;
-
-&lt;p&gt;Unfortunately this directive is not enough. When the request reaches your local Rails application, it is served back to Apache, but because it’s still being served at &lt;code&gt;localhost:3000&lt;/code&gt;, some of its headers may contain references to this domain. One good example is a redirect response, which would be served back as a &lt;code&gt;302&lt;/code&gt; or &lt;code&gt;301&lt;/code&gt; with a &lt;code&gt;Location&lt;/code&gt; header of &lt;code&gt;http://localhost:3000/new_url&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Here’s where the &lt;code&gt;ProxyPassReverse / http://0.0.0.0:3000/&lt;/code&gt; comes into play. This line tells Apache to transform any response from the backend to modify the &lt;code&gt;Location&lt;/code&gt;, &lt;code&gt;Content-Location&lt;/code&gt; and &lt;code&gt;URI&lt;/code&gt; headers and replace them by the host used in the original request (e.g. &lt;code&gt;dev.acme.com&lt;/code&gt;). This way the redirect response from above would become a &lt;code&gt;302&lt;/code&gt; or &lt;code&gt;301&lt;/code&gt; with a &lt;code&gt;Location&lt;/code&gt; header of &lt;code&gt;http://dev.acme.com/new_url&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2&gt;Step 2: splitting part of the site into its own service&lt;/h2&gt;
-
-&lt;p&gt;Let’s say we want to change the way we serve part of our site. We’ve traditionally served our product category pages from the monolith, via controller requests making some MySQL queries and eventually rendering some ERB views. But now the information on these pages is actually coming from a API, and we want to render them via a new React Single Page Application. We therefore want all pages under the &lt;code&gt;/categories&lt;/code&gt; path on our website to be served by this new nodejs server when doing local development, so everything looks as transparently and close to production as possible.&lt;/p&gt;
-
-&lt;p&gt;We will assume that our front-end development server lives on &lt;code&gt;localhost:4000&lt;/code&gt;, so the setup we are after is the following:&lt;/p&gt;
-
-&lt;ul&gt;
-	&lt;li&gt;Requests made to &lt;code&gt;http://dev.acme.com/categories&lt;/code&gt; or any sub path of it need to be served by the nodejs front-end application on port &lt;code&gt;4000&lt;/code&gt;&lt;/li&gt;
-	&lt;li&gt;Requests made elsewhere in the domain &lt;code&gt;http://dev.acme.com/categories&lt;/code&gt; need to be served by our Rails application on port &lt;code&gt;3000&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;In order for us to achieve this we need to add another set of proxy rules to our Apache configuration file:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;dev.acme.com.conf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-apache&quot; data-lang=&quot;apache&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;VirtualHost&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; *.dev.acme.com:80&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&lt;/span&gt;  &lt;span class=&quot;nc&quot;&gt;ServerName&lt;/span&gt; www.dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ServerAlias&lt;/span&gt; *.dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ServerAlias&lt;/span&gt; dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ProxyRequests&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;Off&lt;/span&gt;
-
-  &lt;span class=&quot;c&quot;&gt;# Front-end app&lt;/span&gt;
-  &lt;span class=&quot;nc&quot;&gt;ProxyPass&lt;/span&gt; &quot;^/categories.*$&quot; http://0.0.0.0:4000/ retry=0
-  &lt;span class=&quot;nc&quot;&gt;ProxyPassReverse&lt;/span&gt; /categories http://0.0.0.0:4000/
-
-  &lt;span class=&quot;c&quot;&gt;# Monolith&lt;/span&gt;
-  &lt;span class=&quot;nc&quot;&gt;ProxyPass&lt;/span&gt; / http://0.0.0.0:3000/ retry=0
-  &lt;span class=&quot;nc&quot;&gt;ProxyPassReverse&lt;/span&gt; / http://0.0.0.0:3000/
-
-  &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Location&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; &quot;/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&lt;/span&gt;    &lt;span class=&quot;c&quot;&gt;# Allow access to this proxied URL location for everyone.&lt;/span&gt;
-    &lt;span class=&quot;nc&quot;&gt;Order&lt;/span&gt; allow,deny
-    &lt;span class=&quot;nc&quot;&gt;Allow&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;all&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Location&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;VirtualHost&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; *.dev.acme.com:80&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;On lines 8 and 9, we tell Apache to look for any path matching the regular expression &lt;code&gt;^/categories.*$&lt;/code&gt; and route it to the server listening on port &lt;code&gt;4000&lt;/code&gt;. You’ll have noticed that we added the rules for the category pages before the rules for the root path. This is important, as Apache will look at rules in order. If we were to swap lines 8 and 9 for lines 12 and 13, when visiting &lt;code&gt;/categories&lt;/code&gt;, Apache would match that route to &lt;code&gt;/&lt;/code&gt;, and it’d be served by our Rails app.&lt;/p&gt;
-
-&lt;p&gt;If you restart Apache now, fire up both your Rails and nodejs applications, and visit &lt;code&gt;http://dev.acme.com/categories&lt;/code&gt;, you’ll see on your nodejs logs how the request has indeed been routed to the application on port &lt;code&gt;4000&lt;/code&gt;. However, you’ll probably notice that the application is not actually loading properly on your browser. If you go and then have a look at your Rails logs, you may notice a request being made to the path &lt;code&gt;/bundle.js&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;What’s happening here? Why is that React javascript file being routed to the Rails app? Let’s look at the whole process, step by step:&lt;/p&gt;
-
-&lt;ol&gt;	&lt;li&gt;A request is made to &lt;code&gt;http://dev.acme.com/categories&lt;/code&gt;&lt;/li&gt;
-	&lt;li&gt;Apache routes it to your nodejs server&lt;/li&gt;
-	&lt;li&gt;Your nodejs server replies with an html response&lt;/li&gt;
-	&lt;li&gt;Apache receives this response and replaces its headers, ensuring any reference to &lt;code&gt;localhost:4000&lt;/code&gt; gets transformed into &lt;code&gt;http://dev.acme.com&lt;/code&gt;&lt;/li&gt;
-	&lt;li&gt;Apache sends this modified response to the browser&lt;/li&gt;
-	&lt;li&gt;The browser renders the contents of the response&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;If you are using a typical React project, the HTML response that your browser renders will look like this:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;response.html&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;!DOCTYPE html&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;html&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;head&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;meta&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;viewport&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;content=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;width=device-width, initial-scale=1&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;link&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;rel=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;stylesheet&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;/style/style.css&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/head&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;body&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;div&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;class=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;container&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/div&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/body&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;script &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;/bundle.js&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/script&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/html&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Lines 5 and 10 are the issue here. Your browser will try to load the bundled assets referenced in your React app from the root of your path. This means the browser will make and HTTP request to load these files using the following URLs:&lt;/p&gt;
-&lt;ul&gt;
-	&lt;li&gt;&lt;code&gt;http://dev.acme.com/style/style.css&lt;/code&gt;&lt;/li&gt;
-	&lt;li&gt;&lt;code&gt;http://dev.acme.com/bundle.js&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;When Apache gets the requests, it will try to match them against the regular expression &lt;code&gt;^/categories.*$&lt;/code&gt;, there will be no match, and therefore it will route the request to your Rails app. And your Rails app knows nothing about these files, as they don’t belong to it.&lt;/p&gt;
-
-&lt;p&gt;We could now add more proxy rules to our configuration, but this doesn’t scale very well the moment we need to either add more applications, or our React app needs to serve more assets. Luckily for us, there’s another tool we can use to help us: &lt;a href=&quot;https://httpd.apache.org/docs/current/mod/mod_rewrite.html&quot; rel=&quot;noopener&quot; target=&quot;_blank&quot;&gt;Apache’s &lt;code&gt;mod_rewrite&lt;/code&gt; plugin&lt;/a&gt;. &lt;em&gt;mod_rewrite&lt;/em&gt; provides us with directives that can change the paths of the requested URLs based on rules. We can do this with &lt;a href=&quot;https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond&quot; rel=&quot;noopener&quot; target=&quot;_blank&quot;&gt;&lt;code&gt;RewriteCond&lt;/code&gt;&lt;/a&gt; and &lt;a href=&quot;https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewriterule&quot; rel=&quot;noopener&quot; target=&quot;_blank&quot;&gt;&lt;code&gt;RewriteRule&lt;/code&gt;&lt;/a&gt;. This is what our final Apache configuration file will look like:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;dev.acme.com.conf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-apache&quot; data-lang=&quot;apache&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;VirtualHost&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; *.dev.acme.com:80&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&lt;/span&gt;  &lt;span class=&quot;nc&quot;&gt;ServerName&lt;/span&gt; www.dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ServerAlias&lt;/span&gt; *.dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ServerAlias&lt;/span&gt; dev.acme.com
-  &lt;span class=&quot;nc&quot;&gt;ProxyRequests&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;Off&lt;/span&gt;
-  &lt;span class=&quot;nc&quot;&gt;RewriteEngine&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;On&lt;/span&gt;
-
-  &lt;span class=&quot;c&quot;&gt;# Front-end app&lt;/span&gt;
-  &lt;span class=&quot;nc&quot;&gt;ProxyPass&lt;/span&gt; &quot;^/categories.*$&quot; http://0.0.0.0:4000/ retry=0
-  &lt;span class=&quot;nc&quot;&gt;ProxyPassReverse&lt;/span&gt; /categories http://0.0.0.0:4000/
-  &lt;span class=&quot;nc&quot;&gt;RewriteCond&lt;/span&gt; &quot;%{HTTP_REFERER}&quot; http://dev.acme.com/categories.*
-  &lt;span class=&quot;nc&quot;&gt;RewriteRule&lt;/span&gt; .(js|css)$ http://localhost:4000/%{REQUEST_URI} [R=301,L]
-
-  &lt;span class=&quot;c&quot;&gt;# Monolith&lt;/span&gt;
-  &lt;span class=&quot;nc&quot;&gt;ProxyPass&lt;/span&gt; / http://0.0.0.0:3000/ retry=0
-  &lt;span class=&quot;nc&quot;&gt;ProxyPassReverse&lt;/span&gt; / http://0.0.0.0:3000/
-
-  &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Location&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; &quot;/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&lt;/span&gt;    &lt;span class=&quot;c&quot;&gt;# Allow access to this proxied URL location for everyone.&lt;/span&gt;
-    &lt;span class=&quot;nc&quot;&gt;Order&lt;/span&gt; allow,deny
-    &lt;span class=&quot;nc&quot;&gt;Allow&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;all&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;&amp;lt;/&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;Location&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;
-&amp;lt;&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;VirtualHost&lt;/span&gt;&lt;span class=&quot;sr&quot;&gt; *.dev.acme.com:80&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;On line 6 we enable the rewrite engine, so we can use the &lt;em&gt;mod_rewrite&lt;/em&gt; directives. And then on lines 11 and 12 we make it all work. Whenever a request to load any file coming from the nodejs server is sent to Apache, it has an HTTP header called &lt;code&gt;HTTP_REFERRER&lt;/code&gt;. This header contains the URL that made the request. In our case, any requests coming from the nodejs app will be coming from the &lt;code&gt;/categories&lt;/code&gt; path, as it’s the only path our front-end application is serving. Let’s have a closer look at lines 11 and 12.&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;RewriteCond &quot;%{HTTP_REFERER}&quot; http://dev.acme.com/categories.*&lt;/code&gt; will add a Rewrite Condition. Rewrite Conditions are evaluated by Apache, and if they match, then a Rewrite Rule gets applied. We only have one condition in our case, and the condition is to check if the &lt;code&gt;HTTP_REFERER&lt;/code&gt; header of the request matches the regular expression &lt;code&gt;http://dev.acme.com/categories.*&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;code&gt;RewriteRule (.js|css)$ http://localhost:4000/%{REQUEST_URI} [R=301,L]&lt;/code&gt; is the actual rule that will get applied if the conditions before are met. The rule gets any file ending in &lt;code&gt;js&lt;/code&gt; or &lt;code&gt;css&lt;/code&gt;, and then issues a redirect response to a modified URL so that file is requested from the root of &lt;code&gt;http://localhost:4000&lt;/code&gt;. This way, a request to &lt;code&gt;http://dev.acme.com/bundle.js&lt;/code&gt; gets a &lt;code&gt;301&lt;/code&gt; redirect response to &lt;code&gt;http://localhost:4000/bundle.js&lt;/code&gt;, which our nodejs server will happily serve back.&lt;/p&gt;
-
-&lt;h2&gt;Summary&lt;/h2&gt;
-&lt;p&gt;We can use Apache to help us develop complex multi service applications locally. In order to do that, we need to spin up our different services to listen to different ports, and tell Apache to route requests to the correct application via &lt;code&gt;ProxyPass&lt;/code&gt; and &lt;code&gt;ProxyPassReverse&lt;/code&gt; directives, ensuring each path of our URL gets served by the right service. For more complex applications, where individual services need to load assets over HTTP, we can use the &lt;code&gt;RewriteCond&lt;/code&gt; and &lt;code&gt;RewriteRule&lt;/code&gt; directives so these assets get served by the correct services as well. Finally, we can wrap it all up inside a &lt;code&gt;VirtualDomain&lt;/code&gt; and an extra DNS line in our &lt;code&gt;/etc/hosts&lt;/code&gt; file, to be able to develop in an environment that is very close to what our production setup will look like.&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><category term="apache" /><category term="devops" /><summary type="html">Microservices everywhere. Those are the times we live in now. Everyone seems to be splitting monolithic web applications into smaller chunks. And that's fine. However, setting up the local development environment for this can be sometimes a bit cumbersome.</summary></entry></feed>
+&lt;p&gt;PS: you will have noticed that the login and logout handlers look almost exactly the same. It may be a good exercise for the reader to refactor them into a single handler that we can configure to behave as login or logout. Good luck!&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><category term="go" /><category term="testing" /><summary type="html">In this post we'll learn how to set and delete cookies as part of your Go HTTP Handlers. We'll also learn one way to test our handlers using HTTP recorders.</summary></entry></feed>

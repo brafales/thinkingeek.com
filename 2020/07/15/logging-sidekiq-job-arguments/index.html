@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Logging Sidekiq job arguments in Sidekiq 6</title>
+  <meta name="description" content="Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library. Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Logging Sidekiq job arguments in Sidekiq 6">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments/">
+  <meta property="og:description" content="Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library. Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Logging Sidekiq job arguments in Sidekiq 6">
+  <meta name="twitter:description" content="Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, whi...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Logging Sidekiq job arguments in Sidekiq 6</h1>
+    
+    <p class="post-meta"><time datetime="2020-07-15T00:00:00+00:00" itemprop="datePublished">Jul 15, 2020</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/ruby/">ruby</a>,
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/sidekiq/">sidekiq</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library.</p>
+
+<p>Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.</p>
+
+<!--more-->
+
+<p>First of all, a word of advise: logging job arguments is most likely a really bad idea. This is a feature that’s been requested a lot and has always been turned down as it’s a really dangerous thing to do. So if you are thinking of doing this, please make sure you understand the consequences of doing so: depending on the nature of your aguments and where these logs end up in, you may get in trouble very quickly. The last thing you need is to be logging sensitive or private information and sending those logs to the wrong place.</p>
+
+<p>That being said, let’s see how we’d do this in Sidekiq 6.</p>
+
+<h2>First of all, enable JSON logging</h2>
+
+<p>This is strictly not required, but I am a big fan of JSON structured logging. When used with the right tools it makes logs so much useful, since you can start doing things like indexing and searching for specific fields in logs, rather than having to manually parse log lines.</p>
+
+<p>This is now incredibly easy to do in Sidekiq 6. In your Sidekiq server initialiser, just add this line:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="no">Sidekiq</span><span class="p">.</span><span class="nf">configure_server</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">log_formatter</span> <span class="o">=</span> <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Logger</span><span class="o">::</span><span class="no">Formatters</span><span class="o">::</span><span class="no">JSON</span><span class="p">.</span><span class="nf">new</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>And job done. No need to monkey patch and no need to use any third party gems anymore.</p>
+
+<p>With this, whenever a job gets run, you’ll get the following log line in <code class="language-plaintext highlighter-rouge">STDOUT</code>:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-07-15T12:02:02.328Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"pid"</span><span class="p">:</span><span class="w"> </span><span class="mi">23197</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2ert"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"lvl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"msg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"start"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ctx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ExampleWorker"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"jid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dd3e1c0a1d56a4d31969538b"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<h2>How to log job arguments</h2>
+
+<p>Let’s now get into how to also get the job arguments in that log line. Let’s imagine our worker looks like this:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">ExampleWorker</span>
+
+  <span class="kp">include</span> <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Worker</span>
+
+  <span class="k">def</span> <span class="nf">perform</span><span class="p">(</span><span class="n">one_argument</span><span class="p">,</span> <span class="n">another_argument</span><span class="p">)</span>
+    <span class="c1"># write some code that disrupts something</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>One could argue that logging the values of <code class="language-plaintext highlighter-rouge">one_argument</code> and <code class="language-plaintext highlighter-rouge">another_argument</code> is desirable to debug issues.</p>
+
+<p>Sidekiq has a bunch of new classes in version 6. One of them is the <a href="https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/logger.rb">Logger</a>. You would think this is where to look for to add content to your logs, but that’s not the case. By the time Sidekiq has called the <code class="language-plaintext highlighter-rouge">Logger</code> class it’s already too late, and in there we have no access at all to the running job or any of its information.</p>
+
+<p>Sidekiq 6 also introduced another class: <a href="https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/job_logger.rb">JobLogger</a>. This class is responsible for extracting any required information from a running job, and sending the relevant log messages to the logger at different stages of its life cycle (namely when the job starts and when it finishes, either successfully or unsuccessfully). And fortunately for us, Sidekiq 6 has been design with modularity in mind when it comes to logging, so we can actually override the <code class="language-plaintext highlighter-rouge">JobLogger</code> class in our Sidekiq workers and pass in our own class, which is exactly what we need to do.</p>
+
+<p>Find below a class that inherits from the default <code class="language-plaintext highlighter-rouge">JobLogger</code> class and overrides the <code class="language-plaintext highlighter-rouge">job_hash_context</code> method:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">SidekiqJobLoggerWithArguments</span> <span class="o">&lt;</span> <span class="no">Sidekiq</span><span class="o">::</span><span class="no">JobLogger</span>
+  <span class="k">def</span> <span class="nf">job_hash_context</span><span class="p">(</span><span class="n">job_hash</span><span class="p">)</span>
+    <span class="n">original_hash</span> <span class="o">=</span> <span class="k">super</span>
+    <span class="k">begin</span>
+      <span class="n">original_hash</span><span class="p">.</span><span class="nf">merge</span><span class="p">(</span><span class="s2">"arguments"</span> <span class="o">=&gt;</span> <span class="n">job_arguments</span><span class="p">(</span><span class="n">job_hash</span><span class="p">))</span>
+    <span class="k">rescue</span>
+      <span class="n">original_hash</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">job_arguments</span><span class="p">(</span><span class="n">job_hash</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">job_hash</span><span class="p">.</span><span class="nf">key?</span><span class="p">(</span><span class="s2">"wrapped"</span><span class="p">)</span>
+      <span class="n">job_hash</span><span class="p">[</span><span class="s2">"args"</span><span class="p">].</span><span class="nf">first</span><span class="p">[</span><span class="s2">"arguments"</span><span class="p">]</span>
+    <span class="k">else</span>
+      <span class="n">job_hash</span><span class="p">[</span><span class="s2">"args"</span><span class="p">]</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>What we do here is call <code class="language-plaintext highlighter-rouge">super</code> to get the original job context hash, and then we merge that with another hash containing the job arguments, which we can easily get from the <code class="language-plaintext highlighter-rouge">job_hash</code> attribute. Note that, similarly to what the <code class="language-plaintext highlighter-rouge">JobLogger</code> class does, we need to check where the actual job arguments are, since jobs run via Rails <code class="language-plaintext highlighter-rouge">ActiveJob</code> abstraction layer will have this information in a different place than jobs that include the <code class="language-plaintext highlighter-rouge">Sidekiq::Worker</code> mixin. I suggest you look at the code for the <code class="language-plaintext highlighter-rouge">JobLogger</code> class to fully understand why we have used inheritance and overridden this method.</p>
+
+<p>Once you have this class in your Ruby application, you need to tell Sidekiq to use it instead of the default one:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="no">Sidekiq</span><span class="p">.</span><span class="nf">configure_server</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">options</span><span class="p">[</span><span class="ss">:job_logger</span><span class="p">]</span> <span class="o">=</span> <span class="no">SidekiqJobLoggerWithArguments</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>And that’s all, no monkeypatching required! With this in place, when running the following code:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="no">ExampleWorker</span><span class="p">.</span><span class="nf">perform_later</span><span class="p">(</span><span class="s2">"foo"</span><span class="p">,</span> <span class="s2">"bar"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Instead of getting this log:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-07-15T12:02:02.328Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"pid"</span><span class="p">:</span><span class="w"> </span><span class="mi">23197</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2ert"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"lvl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"msg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"start"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ctx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ExampleWorker"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"jid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dd3e1c0a1d56a4d31969538b"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>We will get this instead:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-07-15T12:02:02.328Z"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"pid"</span><span class="p">:</span><span class="w"> </span><span class="mi">23197</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"tid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2ert"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"lvl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"msg"</span><span class="p">:</span><span class="w"> </span><span class="s2">"start"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"ctx"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ExampleWorker"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"jid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dd3e1c0a1d56a4d31969538b"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"foo"</span><span class="p">,</span><span class="w"> </span><span class="s2">"bar"</span><span class="p">]</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>Use at your own risk :-)</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2020/06/20/forgotten-memories-2/">&laquo; Forgotten memories (2)</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
