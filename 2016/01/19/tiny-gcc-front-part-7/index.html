@@ -1431,7 +1431,7 @@ A read statement is a bit like the dual of a write statement. We will implement 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈identifier〉 <code><strong>;</strong></code>
+〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈identifier〉 <code><strong>;</strong></code><br />
 </p>
 
 <figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
@@ -1567,8 +1567,8 @@ We then prepare the call to <code>scanf</code>, first we set the appropiate form
 <h2>If statement</h2>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code>
-&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
+&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>
@@ -1866,7 +1866,7 @@ We will use the same strategy for the while statement: first parse its syntactic
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈while〉&ensp;→&ensp;<code><strong>while</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈while〉&ensp;→&ensp;<code><strong>while</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Tree</span>
@@ -2003,7 +2003,7 @@ We start by creating a label for the condition check (line 10) and defining its 
 <h2>For-statement</h2>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈for〉&ensp;→&ensp;<code><strong>for</strong></code> 〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>to</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈for〉&ensp;→&ensp;<code><strong>for</strong></code> 〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>to</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>

@@ -1514,7 +1514,7 @@ Let's recall the syntax of 〈program〉
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈program〉&ensp;→&ensp;〈statement〉*
+〈program〉&ensp;→&ensp;〈statement〉*<br />
 </p>
 
 <p>
@@ -1522,7 +1522,7 @@ As said above 〈statement〉* is equivalent to 〈rule〉&ensp;→&ensp;ϵ|〈s
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈statement-seq〉&ensp;→&ensp;ϵ | 〈statement〉〈statement-seq〉
+〈statement-seq〉&ensp;→&ensp;ϵ | 〈statement〉〈statement-seq〉<br />
 </p>
 
 <p>
@@ -1585,7 +1585,7 @@ Now we can proceed to parse a statement. Let's recall the syntax of a statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈statement〉&ensp;→&ensp;〈declaration〉 | 〈assignment〉 | 〈if〉 | 〈while〉 | 〈for〉 | 〈read〉 | 〈write〉
+〈statement〉&ensp;→&ensp;〈declaration〉 | 〈assignment〉 | 〈if〉 | 〈while〉 | 〈for〉 | 〈read〉 | 〈write〉<br />
 </p>
 
 <p>
@@ -1689,7 +1689,7 @@ A variable declaration statement has the following form.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -1764,7 +1764,7 @@ When parsing a variable declaration we invoke a <code>parse_type</code> function
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code>
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code><br />
 </p>
 
 <p>
@@ -1799,8 +1799,8 @@ Another interesting statement is the if-statement. Let's recall its syntax defin
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code>
-&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
+&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>
@@ -1808,9 +1808,9 @@ As shown, deriving a parse function for the rule 〈if〉 is not obvious because
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈if〉&ensp;→&ensp;〈if-then〉 <code><strong>end</strong></code>
-&emsp;&emsp; | 〈if-then〉 <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code>
-〈if-then〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉*
+〈if〉&ensp;→&ensp;〈if-then〉 <code><strong>end</strong></code><br />
+&emsp;&emsp; | 〈if-then〉 <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
+〈if-then〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉*<br />
 </p>
 
 <p>
@@ -1896,7 +1896,7 @@ Let's recall first the definition of expressions in tiny.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉
+〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉<br />
 </p>
 
 <p>
@@ -1933,29 +1933,29 @@ By following the table of priorities above, it is possible to derive the followi
 <p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈expression〉&ensp;→&ensp;〈sixth-level〉
-〈sixth-level〉&ensp;→&ensp; <code><strong>not</strong></code> 〈sixth-level〉
-&emsp;&emsp; | 〈sixth-level〉 <code><strong>and</strong></code> 〈fifth-level〉
-&emsp;&emsp; | 〈sixth-level〉 <code><strong>or</strong></code> 〈fifth-level〉
-&emsp;&emsp; | 〈fifth-level〉
-〈fifth-level〉&ensp;→&ensp;〈fifth-level〉 <code><strong>&lt;</strong></code> 〈third-level〉
-&emsp;&emsp; | 〈fifth-level〉 <code><strong>&lt;=</strong></code> 〈fourth-level〉
-&emsp;&emsp; | 〈fifth-level〉 <code><strong>&gt;</strong></code> 〈fourth-level〉
-&emsp;&emsp; | 〈fifth-level〉 <code><strong>&gt;=</strong></code> 〈fourth-level〉
-&emsp;&emsp; | 〈fifth-level〉 <code><strong>==</strong></code> 〈fourth-level〉
-&emsp;&emsp; | 〈fifth-level〉 <code><strong>!=</strong></code> 〈fourth-level〉
-&emsp;&emsp; | 〈fourth-level〉
-〈fourth-level〉&ensp;→&ensp;〈fourth-level〉 <code><strong>+</strong></code> 〈third-level〉
-&emsp;&emsp; | 〈fourth-level〉 <code><strong>-</strong></code> 〈third-level〉
-&emsp;&emsp; | 〈third-level〉
-〈third-level〉&ensp;→&ensp;〈third-level〉 <code><strong>*</strong></code> 〈second-level〉
-&emsp;&emsp; | 〈third-level〉 <code><strong>/</strong></code> 〈second-level〉
-&emsp;&emsp; | 〈third-level〉 <code><strong>%</strong></code> 〈second-level〉
-&emsp;&emsp; | 〈second-level〉
-〈second-level〉&ensp;→&ensp;<code><strong>+</strong></code>〈second-level〉
-&emsp;&emsp; | <code><strong>-</strong></code>〈second-level〉
-&emsp;&emsp; | 〈first-level〉
-〈first-level〉&ensp;→&ensp;〈primary〉
+〈expression〉&ensp;→&ensp;〈sixth-level〉<br />
+〈sixth-level〉&ensp;→&ensp; <code><strong>not</strong></code> 〈sixth-level〉<br />
+&emsp;&emsp; | 〈sixth-level〉 <code><strong>and</strong></code> 〈fifth-level〉<br />
+&emsp;&emsp; | 〈sixth-level〉 <code><strong>or</strong></code> 〈fifth-level〉<br />
+&emsp;&emsp; | 〈fifth-level〉<br />
+〈fifth-level〉&ensp;→&ensp;〈fifth-level〉 <code><strong>&lt;</strong></code> 〈third-level〉<br />
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>&lt;=</strong></code> 〈fourth-level〉<br />
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>&gt;</strong></code> 〈fourth-level〉<br />
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>&gt;=</strong></code> 〈fourth-level〉<br />
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>==</strong></code> 〈fourth-level〉<br />
+&emsp;&emsp; | 〈fifth-level〉 <code><strong>!=</strong></code> 〈fourth-level〉<br />
+&emsp;&emsp; | 〈fourth-level〉<br />
+〈fourth-level〉&ensp;→&ensp;〈fourth-level〉 <code><strong>+</strong></code> 〈third-level〉<br />
+&emsp;&emsp; | 〈fourth-level〉 <code><strong>-</strong></code> 〈third-level〉<br />
+&emsp;&emsp; | 〈third-level〉<br />
+〈third-level〉&ensp;→&ensp;〈third-level〉 <code><strong>*</strong></code> 〈second-level〉<br />
+&emsp;&emsp; | 〈third-level〉 <code><strong>/</strong></code> 〈second-level〉<br />
+&emsp;&emsp; | 〈third-level〉 <code><strong>%</strong></code> 〈second-level〉<br />
+&emsp;&emsp; | 〈second-level〉<br />
+〈second-level〉&ensp;→&ensp;<code><strong>+</strong></code>〈second-level〉<br />
+&emsp;&emsp; | <code><strong>-</strong></code>〈second-level〉<br />
+&emsp;&emsp; | 〈first-level〉<br />
+〈first-level〉&ensp;→&ensp;〈primary〉<br />
 </p>
 
 <p>
@@ -1967,10 +1967,10 @@ Unfortunately we cannot apply our algorithm because some of the rules are <em>le
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈third-level〉&ensp;→&ensp;〈second-level〉 <code><strong>*</strong></code> 〈third-level〉
-&emsp;&emsp; | 〈second-level〉 <code><strong>/</strong></code> 〈third-level〉
-&emsp;&emsp; | 〈second-level〉 <code><strong>%</strong></code> 〈third-level〉
-&emsp;&emsp; | 〈second-level〉
+〈third-level〉&ensp;→&ensp;〈second-level〉 <code><strong>*</strong></code> 〈third-level〉<br />
+&emsp;&emsp; | 〈second-level〉 <code><strong>/</strong></code> 〈third-level〉<br />
+&emsp;&emsp; | 〈second-level〉 <code><strong>%</strong></code> 〈third-level〉<br />
+&emsp;&emsp; | 〈second-level〉<br />
 </p>
 
 <p>
@@ -1993,7 +1993,7 @@ Clearly we need another strategy: priority parsing.
 The notion of priority appears more or less naturally in the syntax of expressions. Can we use it to get a more or less sensible algorithm? The answer is yes, it is called a <a href="https://en.wikipedia.org/wiki/Pratt_parser">Pratt parser</a> and it is suprisingly simple yet powerful.
 </p>
 
-<h2>Pratt parser for expressions&lt;/h3&gt;
+<h2>Pratt parser for expressions</h2>
 
 <p>
 A Pratt parser defines the concept of <em>binding power</em> as some sort of priority number: the higher the binding power the more priority the operand has. This parser associates three extra values to the tokens of expressions: a <em>left binding power</em>, a <em>null denotation</em> function and a <em>left denotation</em> function.
@@ -2324,7 +2324,7 @@ Phew. This has been long. But now we are in a position to recognize the syntax o
 <p>
 That's all for today.
 </p>
-</h2></p></p>
+</p></p>
 
   </div>
 

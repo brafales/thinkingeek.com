@@ -765,7 +765,7 @@ Our current version of tiny has the concept of variable declaration, where a nam
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -790,7 +790,7 @@ First we will generalize a bit the 〈declaration〉 rules to encompass 〈varia
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈declaration〉&ensp;→&ensp;〈variable-declaration〉 | 〈type-declaration〉
+〈declaration〉&ensp;→&ensp;〈variable-declaration〉 | 〈type-declaration〉<br />
 </p>
 
 <p>
@@ -798,8 +798,8 @@ Now we can define the syntax of <code>type-declarations</code>.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈variable-declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
-〈type-declaration〉&ensp;→&ensp;<code><strong>type</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+〈variable-declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code><br />
+〈type-declaration〉&ensp;→&ensp;<code><strong>type</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -807,12 +807,12 @@ Since we want to be able to use the type declaration where types are specified, 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉&ensp;→&ensp;<code><strong>int</strong></code>
-&emsp;&emsp;| <code><strong>float</strong></code>
-&emsp;&emsp;| <code><strong>bool</strong></code>
-&emsp;&emsp;| 〈identifier〉 
-&emsp;&emsp;| 〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
-&emsp;&emsp;| 〈type〉<code><strong>(</strong></code>〈expression〉<code><strong>:</strong></code>〈expression〉<code><strong>)</strong></code>
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code><br />
+&emsp;&emsp;| <code><strong>float</strong></code><br />
+&emsp;&emsp;| <code><strong>bool</strong></code><br />
+&emsp;&emsp;| 〈identifier〉 <br />
+&emsp;&emsp;| 〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code><br />
+&emsp;&emsp;| 〈type〉<code><strong>(</strong></code>〈expression〉<code><strong>:</strong></code>〈expression〉<code><strong>)</strong></code><br />
 </p>
 
 <h2>Semantics</h2>

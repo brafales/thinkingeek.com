@@ -773,7 +773,7 @@ Similar to arrays, we will need special syntax to define a record type. A record
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈field-declaration〉&ensp;→&ensp;〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+〈field-declaration〉&ensp;→&ensp;〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -782,7 +782,7 @@ A field declaration has the same syntax as a variable/type declaration but witho
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉&ensp;→&ensp;<code><strong>record</strong></code> 〈field-declaration〉* <code><strong>end</strong></code>
+〈type〉&ensp;→&ensp;<code><strong>record</strong></code> 〈field-declaration〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>
@@ -809,14 +809,14 @@ We need a way to access the field of a record type inside an expression or in th
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code>
-&emsp;&emsp; | 〈identifier〉
-&emsp;&emsp; | 〈integer-literal〉
-&emsp;&emsp; | 〈float-literal〉
-&emsp;&emsp; | 〈string-literal〉
-&emsp;&emsp; | 〈array-element〉
-&emsp;&emsp; | 〈field-access〉
-〈field-access〉&ensp;→&ensp;〈primary〉 <code><strong>.</strong></code> 〈identifier〉
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code><br />
+&emsp;&emsp; | 〈identifier〉<br />
+&emsp;&emsp; | 〈integer-literal〉<br />
+&emsp;&emsp; | 〈float-literal〉<br />
+&emsp;&emsp; | 〈string-literal〉<br />
+&emsp;&emsp; | 〈array-element〉<br />
+&emsp;&emsp; | 〈field-access〉<br />
+〈field-access〉&ensp;→&ensp;〈primary〉 <code><strong>.</strong></code> 〈identifier〉<br />
 </p>
 
 <p>

@@ -1440,7 +1440,7 @@ Let's recall the syntax of a variable declaration.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code>
+〈declaration〉&ensp;→&ensp;<code><strong>var</strong></code> 〈identifier〉 <code><strong>:</strong></code> 〈type〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -1586,7 +1586,7 @@ A variable declaration has a type.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code>
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code><br />
 </p>
 
 <p>
@@ -1630,7 +1630,7 @@ Ok, now we can declare variables. Let's assign them some value.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈assignment〉&ensp;→&ensp;〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code>
+〈assignment〉&ensp;→&ensp;〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code><br />
 </p>
 
 <figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
@@ -1754,7 +1754,7 @@ In part 4 we used a Pratt parser to parse expressions. Now it is time to extend 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉
+〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉<br />
 </p>
 
 <h3>Null denotations</h3>
@@ -1776,10 +1776,10 @@ Recall that a Pratt parser works by decomposing the expression into a null denot
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code> | 〈identifier〉 |〈integer-literal〉 | 〈float-literal〉 | 〈string-literal〉
-〈integer-literal〉&ensp;→&ensp;〈digit〉+
-〈float-literal〉&ensp;→&ensp;〈digit〉+<code><strong>.</strong></code>〈digit〉* | <code><strong>.</strong></code>〈digit〉+
-〈string-literal〉&ensp;→&ensp;<code><strong>"</strong></code>〈any-character-except-newline-or-double-quote〉*<code><strong>"</strong></code>
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code> | 〈identifier〉 |〈integer-literal〉 | 〈float-literal〉 | 〈string-literal〉<br />
+〈integer-literal〉&ensp;→&ensp;〈digit〉+<br />
+〈float-literal〉&ensp;→&ensp;〈digit〉+<code><strong>.</strong></code>〈digit〉* | <code><strong>.</strong></code>〈digit〉+<br />
+〈string-literal〉&ensp;→&ensp;<code><strong>"</strong></code>〈any-character-except-newline-or-double-quote〉*<code><strong>"</strong></code><br />
 </p>
 
 <p>
@@ -2286,7 +2286,7 @@ And we are done with the expressions!
 <h2>Write statement</h2>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈write〉&ensp;→&ensp;<code><strong>write</strong></code> 〈expression〉 <code><strong>;</strong></code>
+〈write〉&ensp;→&ensp;<code><strong>write</strong></code> 〈expression〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>

@@ -769,10 +769,10 @@ A <em>type system</em> is a set of <em>types</em> along with the rules that gove
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-τ&ensp;→&ensp;<code><strong>int</strong></code>
-&emsp;&emsp; | <code><strong>float</strong></code>
-&emsp;&emsp; | <strong>bool</strong>
-&emsp;&emsp; | <strong>string</strong>
+τ&ensp;→&ensp;<code><strong>int</strong></code><br />
+&emsp;&emsp; | <code><strong>float</strong></code><br />
+&emsp;&emsp; | <strong>bool</strong><br />
+&emsp;&emsp; | <strong>string</strong><br />
 </p>
 
 <p>
@@ -784,7 +784,7 @@ Now we want to add an <em>array type</em>. An array type has a <em>size</em> and
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-τ&ensp;→&ensp;<strong>array</strong> ε τ
+τ&ensp;→&ensp;<strong>array</strong> ε τ<br />
 </p>
 
 <p>
@@ -796,11 +796,11 @@ After this addition, our typesystem looks like this.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-τ&ensp;→&ensp;<code><strong>int</strong></code>
-&emsp;&emsp; | <code><strong>float</strong></code>
-&emsp;&emsp; | <strong>bool</strong>
-&emsp;&emsp; | <strong>string</strong>
-&emsp;&emsp; | <strong>array</strong> ε τ
+τ&ensp;→&ensp;<code><strong>int</strong></code><br />
+&emsp;&emsp; | <code><strong>float</strong></code><br />
+&emsp;&emsp; | <strong>bool</strong><br />
+&emsp;&emsp; | <strong>string</strong><br />
+&emsp;&emsp; | <strong>array</strong> ε τ<br />
 </p>
 
 <p>
@@ -811,19 +811,19 @@ What are, thus, the values of a type <strong>array</strong> ε τ? A value of ar
 I know that at this point this seems unnecessarily theoretic but let's make a simple example. Consider <em>array 3 float</em>. A possible array value could be the following one, where L&nbsp;=&nbsp;0 and U&nbsp;=&nbsp;2.
 </p>
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈0 → 1.2, 1 → 2.3, 2 → 2.3〉
+〈0 → 1.2, 1 → 2.3, 2 → 2.3〉<br />
 </p>
 <p>
 for another example where L = 4 and U = 6
 </p>
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈4 → 1.2, 5 → 2.3, 6 → 2.3〉
+〈4 → 1.2, 5 → 2.3, 6 → 2.3〉<br />
 </p>
 <p>
 The indexes form a growing sequence wherer each index equals the previous one plus one. The following would not be the value of an array.
 </p>
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈12 → 1.2, 25 → 2.3, 42 → 2.3〉
+〈12 → 1.2, 25 → 2.3, 42 → 2.3〉<br />
 </p>
 
 <h2>Syntax</h2>
@@ -833,7 +833,7 @@ We will extend the rule of types of tiny to let us define a variable of array ty
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code> | 〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code> | 〈type〉<code><strong>(</strong></code>〈expression〉<code><strong>:</strong></code>〈expression〉<code><strong>)</strong></code>
+〈type〉&ensp;→&ensp;<code><strong>int</strong></code> | <code><strong>float</strong></code> | 〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code> | 〈type〉<code><strong>(</strong></code>〈expression〉<code><strong>:</strong></code>〈expression〉<code><strong>)</strong></code><br />
 </p>
 
 <p>
@@ -841,13 +841,13 @@ We will also need to extend expressions so we can designate one of the elements 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code>
-&emsp;&emsp; | 〈identifier〉
-&emsp;&emsp; | 〈integer-literal〉
-&emsp;&emsp; | 〈float-literal〉
-&emsp;&emsp; | 〈string-literal〉
-&emsp;&emsp; | 〈array-element〉
-〈array-element〉&ensp;→&ensp;〈primary〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code><br />
+&emsp;&emsp; | 〈identifier〉<br />
+&emsp;&emsp; | 〈integer-literal〉<br />
+&emsp;&emsp; | 〈float-literal〉<br />
+&emsp;&emsp; | 〈string-literal〉<br />
+&emsp;&emsp; | 〈array-element〉<br />
+〈array-element〉&ensp;→&ensp;〈primary〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code><br />
 </p>
 
 <h2>Semantics</h2>
@@ -857,7 +857,7 @@ A 〈type〉 of the form
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+〈type〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code><br />
 </p>
 
 <p>
@@ -887,7 +887,7 @@ The other syntax is similar.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈type〉&ensp;→&ensp;〈type〉<code><strong>(</strong></code>〈expression<sub>0</sub>〉<code><strong>:</strong></code>〈expression<sub>1</sub>〉<code><strong>)</strong></code>
+〈type〉&ensp;→&ensp;〈type〉<code><strong>(</strong></code>〈expression<sub>0</sub>〉<code><strong>:</strong></code>〈expression<sub>1</sub>〉<code><strong>)</strong></code><br />
 </p>
 
 <p>
@@ -904,7 +904,7 @@ A 〈primary〉 of the form
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈array-element〉&ensp;→&ensp;〈primary〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code>
+〈array-element〉&ensp;→&ensp;〈primary〉<code><strong>[</strong></code>〈expression〉<code><strong>]</strong></code><br />
 </p>
 
 <p>
@@ -930,12 +930,12 @@ Primaries of the form 〈identifier〉 and 〈array-element〉 can be used in th
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈assignment〉&ensp;→&ensp;〈variable〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code>
-〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈variable〉 <code><strong>;</strong></code>
+〈assignment〉&ensp;→&ensp;〈variable〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code><br />
+〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈variable〉 <code><strong>;</strong></code><br />
 </p>
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈variable〉&ensp;→&ensp;〈identifier〉
-&emsp;&emsp; | 〈array-element〉
+〈variable〉&ensp;→&ensp;〈identifier〉<br />
+&emsp;&emsp; | 〈array-element〉<br />
 </p>
 
 <figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><span class="n">a1</span><span class="p">[</span><span class="m">1</span><span class="p">]</span> <span class="p">:=</span> <span class="m">3</span><span class="p">;</span>

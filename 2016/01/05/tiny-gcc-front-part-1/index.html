@@ -2146,10 +2146,10 @@ An identifier is a letter (or underscore) followed zero or more letters, digits 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈identifier〉&ensp;→&ensp;{〈letter〉 | 〈underscore〉}{〈letter〉 | 〈digit〉 | 〈underscore〉}*
-〈letter〉&ensp;→&ensp;<code><strong>a</strong></code> | <code><strong>b</strong></code> | <code><strong>c</strong></code> | ... | <code><strong>x</strong></code> | <code><strong>y</strong></code> | <code><strong>z</strong></code> | <code><strong>A</strong></code> | <code><strong>B</strong></code> | <code><strong>C</strong></code> | ... | <code><strong>X</strong></code> | <code><strong>Y</strong></code> | <code><strong>Z</strong></code>
-〈digit〉&ensp;→&ensp;<code><strong>0</strong></code> | <code><strong>1</strong></code> | <code><strong>2</strong></code> | <code><strong>3</strong></code> | <code><strong>4</strong></code> | <code><strong>5</strong></code> | <code><strong>6</strong></code> | <code><strong>7</strong></code> | <code><strong>8</strong></code> | <code><strong>9</strong></code>
-〈underscore〉&ensp;→&ensp;<code><strong>_</strong></code>
+〈identifier〉&ensp;→&ensp;{〈letter〉 | 〈underscore〉}{〈letter〉 | 〈digit〉 | 〈underscore〉}*<br />
+〈letter〉&ensp;→&ensp;<code><strong>a</strong></code> | <code><strong>b</strong></code> | <code><strong>c</strong></code> | ... | <code><strong>x</strong></code> | <code><strong>y</strong></code> | <code><strong>z</strong></code> | <code><strong>A</strong></code> | <code><strong>B</strong></code> | <code><strong>C</strong></code> | ... | <code><strong>X</strong></code> | <code><strong>Y</strong></code> | <code><strong>Z</strong></code><br />
+〈digit〉&ensp;→&ensp;<code><strong>0</strong></code> | <code><strong>1</strong></code> | <code><strong>2</strong></code> | <code><strong>3</strong></code> | <code><strong>4</strong></code> | <code><strong>5</strong></code> | <code><strong>6</strong></code> | <code><strong>7</strong></code> | <code><strong>8</strong></code> | <code><strong>9</strong></code><br />
+〈underscore〉&ensp;→&ensp;<code><strong>_</strong></code><br />
 </p>
 
 <p>
@@ -2176,7 +2176,7 @@ This is the form of an assignment statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈assignment〉&ensp;→&ensp;〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code>
+〈assignment〉&ensp;→&ensp;〈identifier〉 <code><strong>:=</strong></code><br /> 〈expression〉 <code><strong>;</strong></code>
 </p>
 
 <p>
@@ -2184,8 +2184,8 @@ This is the form of an if statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code>
-&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈if〉&ensp;→&ensp;<code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
+&emsp;&emsp; | <code><strong>if</strong></code> 〈expression〉 <code><strong>then</strong></code> 〈statement〉* <code><strong>else</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>
@@ -2193,7 +2193,7 @@ This is the form of a while statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈while〉&ensp;→&ensp;<code><strong>while</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈while〉&ensp;→&ensp;<code><strong>while</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>
@@ -2201,7 +2201,7 @@ This is the form of a for statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈for〉&ensp;→&ensp;<code><strong>for</strong></code> 〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>to</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code>
+〈for〉&ensp;→&ensp;<code><strong>for</strong></code> 〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>to</strong></code> 〈expression〉 <code><strong>do</strong></code> 〈statement〉* <code><strong>end</strong></code><br />
 </p>
 
 <p>
@@ -2209,7 +2209,7 @@ This is the form of a read statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈identifier〉 <code><strong>;</strong></code>
+〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈identifier〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -2217,7 +2217,7 @@ This is the form of a write statement.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈write〉&ensp;→&ensp;<code><strong>write</strong></code> 〈expression〉 <code><strong>;</strong></code>
+〈write〉&ensp;→&ensp;<code><strong>write</strong></code> 〈expression〉 <code><strong>;</strong></code><br />
 </p>
 
 <p>
@@ -2225,7 +2225,7 @@ An expression is either a primary, a prefix unary operator and its operand or a 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉
+〈expression〉&ensp;→&ensp;〈primary〉 | 〈unary-op〉 〈expression〉 | 〈expression〉 〈binary-op〉 〈expression〉<br />
 </p>
 
 <p>
@@ -2234,10 +2234,10 @@ A primary can be a parenthesized expression, an identifier, an integer literal, 
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code> | 〈identifier〉 | 〈integer-literal〉 | 〈float-literal〉 | 〈string-literal〉
-〈integer-literal〉&ensp;→&ensp;〈digit〉+
-〈float-literal〉&ensp;→&ensp;〈digit〉+<code><strong>.</strong></code>〈digit〉* | <code><strong>.</strong></code>〈digit〉+
-〈string-literal〉&ensp;→&ensp;<code><strong>"</strong></code>〈any-character-except-newline-or-double-quote〉*<code><strong>"</strong></code>
+〈primary〉&ensp;→&ensp;<code><strong>(</strong></code> expression <code><strong>)</strong></code> | 〈identifier〉 | 〈integer-literal〉 | 〈float-literal〉 | 〈string-literal〉<br />
+〈integer-literal〉&ensp;→&ensp;〈digit〉+<br />
+〈float-literal〉&ensp;→&ensp;〈digit〉+<code><strong>.</strong></code>〈digit〉* | <code><strong>.</strong></code>〈digit〉+<br />
+〈string-literal〉&ensp;→&ensp;<code><strong>"</strong></code>〈any-character-except-newline-or-double-quote〉*<code><strong>"</strong></code><br />
 </p>
 
 <p>
@@ -2253,7 +2253,7 @@ Binary operators have the following forms.
 </p>
 
 <p style="padding: 0.7em; background-color: #e0e0e0;">
-〈binary-op〉&ensp;→&ensp;<code><strong>+</strong></code> | <code><strong>-</strong></code> | <code><strong>*</strong></code> | <code><strong>/</strong></code> | <code><strong>%</strong></code> | <code><strong>==</strong></code> | <code><strong>!=</strong></code> | <code><strong>&lt;</strong></code> | <code><strong>&lt;=</strong></code> | <code><strong>&gt;</strong></code> | <code><strong>&gt;=</strong></code> | <code><strong>and</strong></code> | <code><strong>or</strong></code>
+〈binary-op〉&ensp;→&ensp;<code><strong>+</strong></code> | <code><strong>-</strong></code> | <code><strong>*</strong></code> | <code><strong>/</strong></code> | <code><strong>%</strong></code> | <code><strong>==</strong></code> | <code><strong>!=</strong></code> | <code><strong>&lt;</strong></code> | <code><strong>&lt;=</strong></code> | <code><strong>&gt;</strong></code> | <code><strong>&gt;=</strong></code> | <code><strong>and</strong></code> | <code><strong>or</strong></code><br />
 </p>
 
 <p>
