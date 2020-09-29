@@ -1015,34 +1015,34 @@ And now we have our array descriptor fully initialized.
 For an <code>ALLOCATE(X(l<sub>1</sub>:u<sub>1</sub>, l<sub>2</sub>:u<sub>2</sub>, ..., l<sub>n</sub>:u<sub>n</sub>)</code> the descriptor is initialized like this.
 </p>
 
-
-<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">size = (  (u&lt;sub&gt;1&lt;/sub&gt; - l&lt;sub&gt;1&lt;/sub&gt; + 1)
-        * (u&lt;sub&gt;2&lt;/sub&gt; - l&lt;sub&gt;2&lt;/sub&gt; + 1)
+<pre>
+size = (  (u<sub>1</sub> - l<sub>1</sub> + 1)
+        * (u<sub>2</sub> - l<sub>2</sub> + 1)
         * ...
-        * (u&lt;sub&gt;n&lt;/sub&gt; - l&lt;sub&gt;n&lt;/sub&gt; + 1) )
+        * (u<sub>n</sub> - l<sub>n</sub> + 1) )
 X.base_address = new T[ size ];
 
 // rank 1
-X.dim[0].lower_bound = l&lt;sub&gt;1&lt;/sub&gt;;
-X.dim[0].upper_bound = u&lt;sub&gt;1&lt;/sub&gt;;
+X.dim[0].lower_bound = l<sub>1</sub>;
+X.dim[0].upper_bound = u<sub>1</sub>;
 X.dim[0].stride = 1;
 // rank 2
-X.dim[1].lower_bound = l&lt;sub&gt;2&lt;/sub&gt;;
-X.dim[1].upper_bound = u&lt;sub&gt;2&lt;/sub&gt;;
-X.dim[1].stride = (u&lt;sub&gt;1&lt;/sub&gt; - l&lt;sub&gt;1&lt;/sub&gt; + 1) * X.dim[0].stride;
+X.dim[1].lower_bound = l<sub>2</sub>;
+X.dim[1].upper_bound = u<sub>2</sub>;
+X.dim[1].stride = (u<sub>1</sub> - l<sub>1</sub> + 1) * X.dim[0].stride;
 ...
 // rank n
-X.dim[n-1].lower_bound = l&lt;sub&gt;n&lt;/sub&gt;;
-X.dim[n-1].upper_bound = u&lt;sub&gt;n&lt;/sub&gt;;
-X.dim[n-1].stride = (u&lt;sub&gt;n-1&lt;/sub&gt; - l&lt;sub&gt;n-1&lt;/sub&gt; + 1) * X.dim[n-2].stride;
+X.dim[n-1].lower_bound = l<sub>n</sub>;
+X.dim[n-1].upper_bound = u<sub>n</sub>;
+X.dim[n-1].stride = (u<sub>n-1</sub> - l<sub>n-1</sub> + 1) * X.dim[n-2].stride;
 
 X.dtype = n | (element_type &lt;&lt; 3) | (element_size &lt;&lt; 6)
 
-X.offset = - (  l&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride
-              + l&lt;sub&gt;1&lt;/sub&gt; * X.dim[1].stride
+X.offset = - (  l<sub>1</sub> * X.dim[0].stride
+              + l<sub>1</sub> * X.dim[1].stride
               + ...
-              + l&lt;sub&gt;n&lt;/sub&gt; * X.dim[n - 1].stride );</code></pre></figure>
-
+              + l<sub>n</sub> * X.dim[n - 1].stride );
+</pre>
 
 <h2>Accessing elements using the descriptor</h2>
 
@@ -1054,39 +1054,39 @@ Now that our descriptor is fully initialized, we will want to access element <co
 In general this means that given an array <code>X</code> of rank n with descriptor, the linear index of <code>X(i<sub>1</sub>, i<sub>2</sub>, ..., i<sub>n</sub>)</code> will be
 </p>
 
-
-<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = (i&lt;sub&gt;1&lt;/sub&gt; - X.dim[0].lower_bound) * X.dim[0].stride
-   + (i&lt;sub&gt;2&lt;/sub&gt; - X.dim[1].lower_bound) * X.dim[1].stride
+<pre>
+li = (i<sub>1</sub> - X.dim[0].lower_bound) * X.dim[0].stride
+   + (i<sub>2</sub> - X.dim[1].lower_bound) * X.dim[1].stride
    + ...
-   + (i&lt;sub&gt;n&lt;/sub&gt; - X.dim[n-1].lower_bound) * X.dim[n-1].stride;</code></pre></figure>
-
+   + (i<sub>n</sub> - X.dim[n-1].lower_bound) * X.dim[n-1].stride;
+</pre>
 
 <p>
 We can distribute the multiplication of the stride to get
 </p>
 
-
-<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = i&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride - X.dim[0].lower_bound * X.dim[0].stride
-   + i&lt;sub&gt;2&lt;/sub&gt; * X.dim[1].stride - X.dim[1].lower_bound * X.dim[1].stride
+<pre>
+li = i<sub>1</sub> * X.dim[0].stride - X.dim[0].lower_bound * X.dim[0].stride
+   + i<sub>2</sub> * X.dim[1].stride - X.dim[1].lower_bound * X.dim[1].stride
    + ...
-   + i&lt;sub&gt;n&lt;/sub&gt; * X.dim[n-1].stride - X.dim[n-1].lower_bound * X.dim[n-1].stride;</code></pre></figure>
-
+   + i<sub>n</sub> * X.dim[n-1].stride - X.dim[n-1].lower_bound * X.dim[n-1].stride;
+</pre>
 
 <p>
 and then regroup additions and subtractions
 <p>
 
-
-<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = i&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride
-   + i&lt;sub&gt;2&lt;/sub&gt; * X.dim[1].stride
+<pre>
+li = i<sub>1</sub> * X.dim[0].stride
+   + i<sub>2</sub> * X.dim[1].stride
    + ...
-   + i&lt;sub&gt;n&lt;/sub&gt; * X.dim[n-1].stride
+   + i<sub>n</sub> * X.dim[n-1].stride
 
    - X.dim[0].lower_bound * X.dim[0].stride
    - X.dim[1].lower_bound * X.dim[1].stride
    - ...
-   - X.dim[n-1].lower_bound * X.dim[n-1].stride;</code></pre></figure>
-
+   - X.dim[n-1].lower_bound * X.dim[n-1].stride;
+</pre>
 
 <p>
 Recall that <codd>offset&lt;/code&gt; field above? In general it will be
@@ -1114,13 +1114,13 @@ if we distribute the minus sign
 and this is exactly what we have above. So the linear index can be rewritten as
 </p>
 
-
-<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">li = i&lt;sub&gt;1&lt;/sub&gt; * X.dim[0].stride
-   + i&lt;sub&gt;2&lt;/sub&gt; * X.dim[1].stride
+<pre>
+li = i<sub>1</sub> * X.dim[0].stride
+   + i<sub>2</sub> * X.dim[1].stride
    + ...
-   + i&lt;sub&gt;n&lt;/sub&gt; * X.dim[n-1].stride
-   + X.offset;</code></pre></figure>
-
+   + i<sub>n</sub> * X.dim[n-1].stride
+   + X.offset;
+</pre>
 
 <p>
 Ok, now we have the linear index, but we still need to compute the address of the element. The linear index is very useful because we know each element in the array takes the same amount of storage in bytes, so we only have to multiply it by the element size (<code>es</code>). The element size is found encoded in the field <code>dtype</code>.
