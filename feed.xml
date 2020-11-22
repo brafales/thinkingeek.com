@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-11-22T12:54:28+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Process wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-11-22T13:52:00+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Process-wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process-wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
 libraries whose scope is the whole process. In such a situation, we may need to
 identify if a process has already loaded another copy of the library.&lt;/p&gt;
 
@@ -113,7 +113,7 @@ an increasing number every time we invoke &lt;code class=&quot;language-plaintex
 &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;I will use &lt;a href=&quot;https://mesonbuild.com/&quot;&gt;meson&lt;/a&gt; because is rather concise
+&lt;p&gt;I will use &lt;a href=&quot;https://mesonbuild.com/&quot;&gt;meson&lt;/a&gt; because it is rather concise
 when expressing build rules. For simplicity we will generate a static library.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;meson.build&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
@@ -2084,7 +2084,11 @@ map that frame index (&lt;code class=&quot;language-plaintext highlighter-rouge&
 FPRs. First we filter all the instructions that are not spills or reloads
 of our interest.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;136
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;132
+133
+134
+135
+136
 137
 138
 139
@@ -2096,10 +2100,6 @@ of our interest.&lt;/p&gt;
 145
 146
 147
-148
-149
-150
-151
 &lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;  &lt;span class=&quot;c1&quot;&gt;// Now replace the spills and reloads.&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;begin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;E&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
@@ -2171,18 +2171,18 @@ changing the list of instructions of the basic block.&lt;/p&gt;
 &lt;p&gt;We found a spill or reload. We check first if its frame index had already been mapped.
 If it hadn’t been mapped (as stated by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;FINotFound&lt;/code&gt;) we try to find a register
 in the bitvectors we computed above. If we find one &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Idx &amp;gt; 0&lt;/code&gt; then we mark it as
-used and we make the current frame index map to it (line 178). If we actually
+used and we make the current frame index map to it (line 164). If we actually
 mapped this frame index, we need to make sure it is not emitted as a stack object, so
-we remove it from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MachineFrameInfo&lt;/code&gt; (line 180).&lt;/p&gt;
+we remove it from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MachineFrameInfo&lt;/code&gt; (line 168).&lt;/p&gt;
 
 &lt;p&gt;Now we can make the mapping effective.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;184
-185
-186
-187
-188
-189
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;172
+173
+174
+175
+176
+177
 &lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;      &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ItR&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;second&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
       &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RISCV&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NoRegister&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
         &lt;span class=&quot;n&quot;&gt;LLVM_DEBUG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;llvm&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbgs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
@@ -2259,8 +2259,8 @@ for spills and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&g
 &lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
 &lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;In line 198 (or line 209 for reloads) we create a new instruction using the
-helper &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BuildMI&lt;/code&gt;. For spills (line 198) we write into the register &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;R&lt;/code&gt;, that we
+&lt;p&gt;In line 186 (or line 196 for reloads) we create a new instruction using the
+helper &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BuildMI&lt;/code&gt;. For spills (line 187) we write into the register &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;R&lt;/code&gt;, that we
 computed above. What we write is the first operand of this store, which is
 exactly the register being stored into memory.&lt;/p&gt;
 
@@ -2276,6 +2276,10 @@ exactly the register being stored into memory.&lt;/p&gt;
 
 &lt;p&gt;In this example &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;frame-index.1&amp;gt;&lt;/code&gt; would be associated to the register
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f4&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2&gt;Show me the code!&lt;/h2&gt;
+
+&lt;p&gt;Find the pass &lt;a href=&quot;https://gist.github.com/rofirrim/a91b0b80662d1ca2a7fedc2d2cc21da7&quot;&gt;here&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h1&gt;Wrap-up&lt;/h1&gt;
 
