@@ -16,7 +16,7 @@ pre, code { font-family: "Fira Mono", monospace; font-size: 13px; /* border: 1px
 pre { overflow-x: auto; }
 
 /** Code tables */
-table.rouge-table { margin: 0px; line-height: 1.5em; border-collapse: collapse; border: 0px; }
+table.rouge-table { margin: 0px; line-height: 20px; border-collapse: collapse; border: 0px; }
 
 table.rouge-table td { border: 0px; padding: 0px; }
 
@@ -26,7 +26,7 @@ table.rouge-table td.gutter pre.lineno { background-color: #ddeeff; padding-left
 
 table.rouge-table td.code pre { padding-left: 4px; }
 
-table.rouge-table td.code pre { background-image: linear-gradient(180deg, #eeeeee 0, #eeeeee 1.5em, #fefefe 0); background-size: 3em 3em; }
+table.rouge-table td.code pre { background-image: linear-gradient(180deg, #eeeeee 0, #eeeeee 20px, #fefefe 0); background-size: 100% 40px; }
 
 /** Set `margin-bottom` to maintain vertical rhythm */
 h1, h2, h3, h4, h5, h6, p, blockquote, ul, ol, dl, figure, .highlight { margin-bottom: 15px; }

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Process wide information and Linux key management</title>
+  <meta name="description" content="I believe this is not a very common scenario, but sometimes one has to develop libraries whose scope is the whole process. In such a situation, we may need to identify if a process has already loaded another copy of the library.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Process wide information and Linux key management">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">
+  <meta property="og:description" content="I believe this is not a very common scenario, but sometimes one has to develop libraries whose scope is the whole process. In such a situation, we may need to identify if a process has already loaded another copy of the library.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Process wide information and Linux key management">
+  <meta name="twitter:description" content="I believe this is not a very common scenario, but sometimes one has to develop libraries whose scope is the whole process. In such a situation, we may need to identify if a process has already load...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Process wide information and Linux key management</h1>
+    
+    <p class="post-meta"><time datetime="2020-11-22T12:40:00+00:00" itemprop="datePublished">Nov 22, 2020</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>I believe this is not a very common scenario, but sometimes one has to develop
+libraries whose scope is the whole process. In such a situation, we may need to
+identify if a process has already loaded another copy of the library.</p>
+
+<!--more-->
+
+<h1>Libraries</h1>
+
+<p>Consider a library <code class="language-plaintext highlighter-rouge">L</code> offering some service. Often we do not care much if a
+library has been loaded more than once in the memory of a process. The reason
+is that nowadays most library implementations do not rely on global data. Or if
+they do, it is global data that is tied to some context object.</p>
+
+<p>There is a number of situations where we may, intentionally or not, load a
+library more than once. It often involves a mixture of static linking and
+dynamic linking. For instance, our executable <code class="language-plaintext highlighter-rouge">E</code> may statically or dynamically
+link <code class="language-plaintext highlighter-rouge">L</code> (copy 1) and then dynamically link (or load by means of <code class="language-plaintext highlighter-rouge">dlopen</code>)
+another library <code class="language-plaintext highlighter-rouge">L2</code> that has been statically linked with <code class="language-plaintext highlighter-rouge">L</code> (copy 2).</p>
+
+<p>As I mentioned above, most of the time, this may not be a problem, because
+most libraries model their services around some context that is used for
+resource management. In our executable above, <code class="language-plaintext highlighter-rouge">E</code> will use contexts from
+from copy 1 of <code class="language-plaintext highlighter-rouge">L</code> while <code class="language-plaintext highlighter-rouge">L2</code> will use contexts of copy 2 of <code class="language-plaintext highlighter-rouge">L</code>.</p>
+
+<p>However a number of libraries may provide services whose scope is the whole
+process and it may not be desirable (or needs special handling) to have the
+library loaded twice. Examples could include, for instance, a process
+monitoring library or some multi-threaded runtime.</p>
+
+<p>Of course the obvious answer is <em>don’t do this</em>, but sometimes it may be
+difficult to avoid doing this and we may like a mechanism to diagnose this.</p>
+
+<h2>Requirements</h2>
+
+<p>Ideally we want a mechanism that is able to tell if our library has already
+been loaded in the memory of the process.</p>
+
+<p>However, want to avoid using files or other global objects (such as IPCs)
+because they come with their own set of problems :we have to create them,
+remove them when done, and we risk leaving stuff behind if we end
+abnormally, etc.</p>
+
+<p>In the context of Linux we can use two approaches. A first one using
+environment variables and a second one (ab)using the Linux’s own key management
+infrastructure. Once the process ends, these resources go away without trace,
+no matter if the process ended abnormally or not.</p>
+
+<h1>Setting</h1>
+
+<p>Let’s prepare an example that showcases a library that should be counting
+something, process-wise. The simplest solution so far is detecting the error at
+runtime. A more sophisticated solution (for instance in which the second copy
+just forwards everything to the first copy) will not be explored in this post.
+I will also assume the two copies are the same (or identical when it comes
+to the part in which they try to detect other copies).</p>
+
+<h2><code class="language-plaintext highlighter-rouge">only_one</code></h2>
+
+<p>Our library <code class="language-plaintext highlighter-rouge">only_one</code> will offer a very iminal interface, in which we get
+an increasing number every time we invoke <code class="language-plaintext highlighter-rouge">only_get</code>.</p>
+
+<figure class="highlight"><figcaption>lib/only_one.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="cp">#ifndef ONLY_H
+#define ONLY_H
+</span>
+<span class="kt">int</span> <span class="nf">only_get</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+
+<span class="cp">#endif // ONLY_H</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
+</span><span class="k">static</span> <span class="kt">char</span> <span class="n">initialized</span><span class="p">;</span>
+<span class="c1">// Global state that we do not want to</span>
+<span class="c1">// accidentally replicate in a process.</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="n">current_id</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">initialized</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Not needed. For the sake of the example.</span>
+    <span class="n">current_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+    <span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">only_get</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">initialize</span><span class="p">();</span>
+  <span class="k">return</span> <span class="o">++</span><span class="n">current_id</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>I will use <a href="https://mesonbuild.com/">meson</a> because is rather concise
+when expressing build rules. For simplicity we will generate a static library.</p>
+
+<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="n">project</span><span class="p">(</span><span class="s">'only-library'</span><span class="p">,</span> <span class="p">[</span><span class="s">'c'</span><span class="p">],</span> <span class="n">version</span><span class="p">:</span> <span class="s">'1.0.0'</span><span class="p">)</span>
+
+<span class="n">lib_only_one</span> <span class="o">=</span> <span class="n">static_library</span><span class="p">(</span><span class="s">'only_one'</span><span class="p">,</span>
+                 <span class="p">[</span><span class="s">'lib/only_one.h'</span><span class="p">,</span>
+                  <span class="s">'lib/only_one.c'</span><span class="p">])</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2><code class="language-plaintext highlighter-rouge">only_two</code></h2>
+
+<p>Now let’s model the issue of having the library used by another one,
+this time a shared library. This shared library is called <code class="language-plaintext highlighter-rouge">only_two</code>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">only_two</code> has a very minimal interface as well.</p>
+
+<figure class="highlight"><figcaption>lib/only_two.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="cp">#ifndef ONLY_TWO_H
+#define ONLY_TWO_H
+</span>
+<span class="kt">int</span> <span class="nf">only_two_get</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+
+<span class="cp">#endif // ONLY_TWO_H</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>And its implementation only forwards to <code class="language-plaintext highlighter-rouge">only_one</code>. This models the idea that
+library <code class="language-plaintext highlighter-rouge">only_two</code> uses <code class="language-plaintext highlighter-rouge">only_one</code>. A more realistic library would bring more
+value than just forwarding the call.</p>
+
+<figure class="highlight"><figcaption>lib/only_two.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td><td class="code"><pre><span class="cp">#include "only_two.h"
+#include "only_one.h"
+</span>
+<span class="kt">int</span> <span class="nf">only_two_get</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">only_get</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>When writing dynamic libraries one has to be very careful about symbol
+visibility. In particular the defaults of ELF, used in Linux, are often too
+lax. We can restrict that using a <em>version script</em>. In this example we only
+make one symbol visible for version 1.0. Everything else will be not exported.</p>
+
+<figure class="highlight"><figcaption>lib/only_two.map</figcaption><pre><code class="language-plaintext" data-lang="plaintext"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre>LIBONLY_TWO_1.0 {
+  global:
+    only_two_get;
+
+  local:
+    *;
+};
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Below are the rules for <code class="language-plaintext highlighter-rouge">only_two</code>. Version scripts are not fully integrated
+in meson yet so we need to manually build the proper linker flag option.</p>
+
+<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="n">only_two_version_script_flag</span> <span class="o">=</span> \
+  <span class="s">'-Wl,--version-script,@0@/lib/@1@'</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">meson</span><span class="p">.</span><span class="n">current_source_dir</span><span class="p">(),</span> <span class="s">'only_two.map'</span><span class="p">)</span>
+<span class="n">lib_only_two</span> <span class="o">=</span> <span class="n">shared_library</span><span class="p">(</span><span class="s">'only_two'</span><span class="p">,</span>
+                        <span class="p">[</span><span class="s">'lib/only_two.h'</span><span class="p">,</span>
+                         <span class="s">'lib/only_two.c'</span><span class="p">],</span>
+                 <span class="n">link_with</span> <span class="p">:</span> <span class="p">[</span><span class="n">lib_only_one</span><span class="p">],</span>
+                 <span class="n">link_args</span><span class="p">:</span> <span class="p">[</span><span class="n">only_two_version_script_flag</span><span class="p">],</span>
+                 <span class="n">version</span> <span class="p">:</span> <span class="s">'1.0.0'</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>May not be obvious at this point, but we’re embedding <code class="language-plaintext highlighter-rouge">only_one</code> inside
+<code class="language-plaintext highlighter-rouge">only_two</code> (technically only the functions that <code class="language-plaintext highlighter-rouge">only_two</code> uses from <code class="language-plaintext highlighter-rouge">only_one</code>
+but if those functions use global data that will be embedded too).</p>
+
+<h2>Driver</h2>
+
+<p>Ok let’s write a small example using the two libraries.</p>
+
+<figure class="highlight"><figcaption>tools/use_only.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
+#include "only_two.h"
+#include &lt;stdio.h&gt;
+</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"get 0 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_get</span><span class="p">());</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"get 1 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_get</span><span class="p">());</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"get 2 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_get</span><span class="p">());</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"[TWO] get 3 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_two_get</span><span class="p">());</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"[TWO] get 4 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_two_get</span><span class="p">());</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"[TWO] get 5 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_two_get</span><span class="p">());</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>And its meson build rules</p>
+
+<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">15
+16
+17
+18
+</pre></td><td class="code"><pre><span class="n">executable</span><span class="p">(</span><span class="s">'use_only'</span><span class="p">,</span>
+  <span class="p">[</span><span class="s">'tools/use_only.c'</span><span class="p">],</span>
+  <span class="n">include_directories</span> <span class="p">:</span> <span class="p">[</span><span class="s">'lib'</span><span class="p">],</span>
+  <span class="n">link_with</span> <span class="p">:</span> <span class="p">[</span><span class="n">lib_only_one</span><span class="p">,</span> <span class="n">lib_only_two</span><span class="p">])</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>If we execute this program we will obtain this</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ ./use_only
+get 0 -&gt; 0
+get 1 -&gt; 1
+get 2 -&gt; 2
+[TWO] get 3 -&gt; 0
+[TWO] get 4 -&gt; 1
+[TWO] get 5 -&gt; 2</code></pre></figure>
+
+<p>This is wrong if we intend to use <code class="language-plaintext highlighter-rouge">only_get</code> to be a global counter for the
+process. As I mentioned above, the goal today is not to fix this but instead
+error at runtime.</p>
+
+<h1>Environment variables</h1>
+
+<p>Our first approach to detect that <code class="language-plaintext highlighter-rouge">only_one</code> has already been loaded will
+be based on using environment variables.</p>
+
+<p>The main idea is to set an environment variable when the library initializes.
+If the environment variable was already there we know the library was around.</p>
+
+<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
+</span>
+<span class="c1">// Very simple error reporting mechanism.</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"%s"</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+  <span class="n">raise</span><span class="p">(</span><span class="n">SIGABRT</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// A key reserved for this library.</span>
+<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="n">ONLY_INSTANCE</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"__ONLY_INSTANCE"</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">set_sigle_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">setenv</span><span class="p">(</span><span class="n">ONLY_INSTANCE</span><span class="p">,</span> <span class="s">"1"</span><span class="p">,</span> <span class="cm">/* overwrite */</span> <span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">check_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">only_instance</span> <span class="o">=</span> <span class="n">getenv</span><span class="p">(</span><span class="n">ONLY_INSTANCE</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">only_instance</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">env_set_single_instance</span><span class="p">();</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"another copy of the library loaded!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">char</span> <span class="n">initialized</span><span class="p">;</span>
+<span class="c1">// Global state that we do not want to</span>
+<span class="c1">// accidentally replicate in a process.</span>
+<span class="k">static</span> <span class="kt">int</span> <span class="n">current_id</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">initialized</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">check_single_instance</span><span class="p">();</span>
+
+    <span class="n">current_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="n">initialized</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Now we can detect this:</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ ./use_only
+get 0 -&gt; 0
+get 1 -&gt; 1
+get 2 -&gt; 2
+another copy of the library loaded!
+Aborted (core dumped)</code></pre></figure>
+
+<p>This approach works but has a minor problem: <code class="language-plaintext highlighter-rouge">setenv</code> is not thread-safe. If
+our program uses more than one thread then we risk that some other library in
+some other thread uses <code class="language-plaintext highlighter-rouge">getenv</code> and crashes due to the concurrent access (I
+assume it is not realistic to protect all the uses of <code class="language-plaintext highlighter-rouge">getenv</code> with a
+mutex/lock).</p>
+
+<h1>Linux key management</h1>
+
+<p>Linux has a key management mechanism that is pretty cool. Basically one can
+register keys. A kind of key is called <code class="language-plaintext highlighter-rouge">"user"</code> key and allows a small payload
+to be stored.  Keys are kept in keyrings. Linux provides a number of predefined
+keyrings with different scopes. One of them is a process-wide keychain called
+the <em>process keyring</em>.</p>
+
+<p>The downside is that the system calls used for key management are not wrapped
+by the GNU C library. Instead a library called <code class="language-plaintext highlighter-rouge">libkeyutils</code> must be used.</p>
+
+<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
+#include &lt;errno.h&gt;
+#include &lt;keyutils.h&gt;
+#include &lt;sys/types.h&gt;
+</span>
+<span class="c1">// Very simple error reporting mechanism.</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"%s"</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+  <span class="n">raise</span><span class="p">(</span><span class="n">SIGABRT</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// A key reserved for this library.</span>
+<span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="n">ONLY_INSTANCE</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"__ONLY_INSTANCE"</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">set_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="n">payload</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"1"</span><span class="p">;</span>
+  <span class="n">key_serial_t</span> <span class="n">k</span> <span class="o">=</span> <span class="n">add_key</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="n">ONLY_INSTANCE</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">payload</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span>
+                           <span class="n">KEY_SPEC_PROCESS_KEYRING</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"add_key failed</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">check_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">key_serial_t</span> <span class="n">k</span> <span class="o">=</span>
+      <span class="n">request_key</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="n">ONLY_INSTANCE</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">KEY_SPEC_PROCESS_KEYRING</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">k</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">errno</span> <span class="o">==</span> <span class="n">ENOKEY</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">key_set_single_instance</span><span class="p">();</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+      <span class="n">die</span><span class="p">(</span><span class="s">"request_key failed</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">die</span><span class="p">(</span><span class="s">"another copy of the library loaded!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Now the concern about multi-thread gets a bit different. Because these library
+calls are backed by the kernel, they should do the right thing already. So
+in principle, if we care about multi-threading it should suffice to protect
+the <code class="language-plaintext highlighter-rouge">check_single_instance</code> with a mutex, so only one thread can see that
+the key has not been added.</p>
+
+<p>We still need to update our meson build rules. Library <code class="language-plaintext highlighter-rouge">libkeyutils</code> provides
+a <code class="language-plaintext highlighter-rouge">pkg-config</code> file, so it is not difficult for meson to find it.</p>
+
+<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td><td class="code"><pre><span class="n">project</span><span class="p">(</span><span class="s">'only-library'</span><span class="p">,</span> <span class="p">[</span><span class="s">'c'</span><span class="p">],</span> <span class="n">version</span><span class="p">:</span> <span class="s">'1.0.0'</span><span class="p">)</span>
+
+<span class="n">libkeyutils_deps</span> <span class="o">=</span> <span class="n">dependency</span><span class="p">(</span><span class="s">'libkeyutils'</span><span class="p">)</span>
+
+<span class="n">lib_only_one</span> <span class="o">=</span> <span class="n">static_library</span><span class="p">(</span><span class="s">'only_one'</span><span class="p">,</span>
+                 <span class="p">[</span><span class="s">'lib/only_one.h'</span><span class="p">,</span>
+                  <span class="s">'lib/only_one.c'</span><span class="p">],</span>
+                 <span class="n">dependencies</span> <span class="p">:</span> <span class="p">[</span><span class="n">libkeyutils_deps</span><span class="p">])</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h1>Where to go from here</h1>
+
+<p>It is possible to implement more sophisticated mechanisms on top of these
+techniques.</p>
+
+<p>For instance, some libraries may be loaded more than once but only one of them
+may be in a running state. We can keep in the payload of the key (or
+environment variable) the address of a variable we can use to know if the
+library is running.</p>
+
+<p>Another option, is to design our library around a single “root” (or top level
+context) variable. Similarly, we can keep the address of the root in the
+payload of the key or the environment variable. The second copy can avoid
+allocating the resources for the top level context and just use the previous
+one.</p>
+
+<p><strong>A final but important note:</strong> these techniques as presented are not
+appropriate in security sensitive contexts. Any adversarial library can easily
+fake the registration process for nefarious purposes.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2020/07/15/logging-sidekiq-job-arguments/">&laquo; Logging Sidekiq job arguments in Sidekiq 6</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

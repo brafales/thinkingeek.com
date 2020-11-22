@@ -92,6 +92,39 @@
         <header class="post-header">
           <h1 class="post-title">
             
+              <a class="post-link" href="/2020/11/22/process-wide-information-and-keys/">Process wide information and Linux key management</a>
+            
+          </h1>
+
+          <p class="post-meta">
+            Nov 22, 2020
+             • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span>
+            
+            
+          </p>
+        </header>
+
+        <div class="post-content">
+          <p>I believe this is not a very common scenario, but sometimes one has to develop
+libraries whose scope is the whole process. In such a situation, we may need to
+identify if a process has already loaded another copy of the library.</p>
+
+
+        </div>
+        
+          <p class="post-continue">
+            <a href="/2020/11/22/process-wide-information-and-keys/">Read on &rarr;</a>
+          </p>
+        
+      </li>
+    
+      
+      
+
+      <li>
+        <header class="post-header">
+          <h1 class="post-title">
+            
               <a class="post-link" href="/2020/07/15/logging-sidekiq-job-arguments/">Logging Sidekiq job arguments in Sidekiq 6</a>
             
           </h1>
@@ -3573,382 +3606,6 @@ integrated DNS and DHCP.</p>
         
           <p class="post-continue">
             <a href="/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">Read on &rarr;</a>
-          </p>
-        
-      </li>
-    
-      
-      
-
-      <li>
-        <header class="post-header">
-          <h1 class="post-title">
-            
-              <a class="post-link" href="/2020/06/06/using-ssh-certificates/">Using SSH Certificates</a>
-            
-          </h1>
-
-          <p class="post-meta">
-            Jun 6, 2020
-             • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span>
-            
-               •
-  
-    
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-        <a href="/categories/ssh/">ssh</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  
-
-
-
-
-            
-            
-          </p>
-        </header>
-
-        <div class="post-content">
-          <p>Password-based authentication has a number of drawbacks, so many services (such
-as github) use SSH keys to authenticate. However distributing the keys over
-several nodes (be virtual machines or single-board computers such as
-Raspberry Pi) doesn’t scale over the number of nodes and users.</p>
-
-<p>Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism.
-This mechanism may help reducing the complexity of users trusting SSH hosts and
-hosts trusting SSH users.</p>
-
-
-        </div>
-        
-          <p class="post-continue">
-            <a href="/2020/06/06/using-ssh-certificates/">Read on &rarr;</a>
           </p>
         
       </li>
