@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-11-22T13:52:00+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Process-wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process-wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-11-22T18:12:11+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Process-wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process-wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
 libraries whose scope is the whole process. In such a situation, we may need to
 identify if a process has already loaded another copy of the library.&lt;/p&gt;
 
@@ -456,10 +456,11 @@ by the GNU C library. Instead a library called &lt;code class=&quot;language-pla
 &lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;Now the concern about multi-thread gets a bit different. Because these library
-calls are backed by the kernel, they should do the right thing already. So
-in principle, if we care about multi-threading it should suffice to protect
-the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;check_single_instance&lt;/code&gt; with a mutex, so only one thread can see that
-the key has not been added.&lt;/p&gt;
+calls are backed by the kernel, they should do the right thing already. So in
+principle, if we care about multi-threading it should suffice to protect the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;check_single_instance&lt;/code&gt; with a mutex, so only one thread can see that the key
+has not been added. However, getting that mutex process-wise is not obvious so
+we haven’t quite solved the problem here.&lt;/p&gt;
 
 &lt;p&gt;We still need to update our meson build rules. Library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkeyutils&lt;/code&gt; provides
 a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pkg-config&lt;/code&gt; file, so it is not difficult for meson to find it.&lt;/p&gt;

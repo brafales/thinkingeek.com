@@ -1561,10 +1561,11 @@ by the GNU C library. Instead a library called <code class="language-plaintext h
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <p>Now the concern about multi-thread gets a bit different. Because these library
-calls are backed by the kernel, they should do the right thing already. So
-in principle, if we care about multi-threading it should suffice to protect
-the <code class="language-plaintext highlighter-rouge">check_single_instance</code> with a mutex, so only one thread can see that
-the key has not been added.</p>
+calls are backed by the kernel, they should do the right thing already. So in
+principle, if we care about multi-threading it should suffice to protect the
+<code class="language-plaintext highlighter-rouge">check_single_instance</code> with a mutex, so only one thread can see that the key
+has not been added. However, getting that mutex process-wise is not obvious so
+we haven’t quite solved the problem here.</p>
 
 <p>We still need to update our meson build rules. Library <code class="language-plaintext highlighter-rouge">libkeyutils</code> provides
 a <code class="language-plaintext highlighter-rouge">pkg-config</code> file, so it is not difficult for meson to find it.</p>
