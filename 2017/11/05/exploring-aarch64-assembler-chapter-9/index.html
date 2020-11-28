@@ -578,7 +578,7 @@ We don't really want to evaluate <code>((10 / p) &gt; 5)</code> when <code>p == 
 </p>
 
 <p>
-The following table shows some examples. Take these as suggestions, cleverer sequences can be used in some circumstances.
+The following table shows some examples. Take these as suggestions, more clever sequences can be used in some circumstances.
 </p>
 
 <table>
@@ -619,9 +619,8 @@ b.gt true_case</code></pre></figure>
 <figure class="highlight"><pre><code class="language-asm" data-lang="asm">cmp e2, e1
 b.le false_case</code></pre></figure>
 
-<p>
-&lt;/td&gt;
-&lt;/tr&gt;
+</td>
+</tr>
 
 <tr>
 <td><code>e1&nbsp;&amp;&amp;&nbsp;e2</code></td>
@@ -662,7 +661,6 @@ true_case:
   ...</code></pre></figure>
 
 
-<p>
 <p>Without short-cut evaluation (i.e. <code>e1 | e2</code>)</p>
 
 <figure class="highlight"><pre><code class="language-asm" data-lang="asm">orr x1, e1, e2 // x1 = bitwise-or(e1, e2)
@@ -671,8 +669,8 @@ b.eq false_case:
 true_case:
   ...</code></pre></figure>
 
-&lt;/td&gt;
-&lt;/tr&gt;
+</td>
+</tr>
 
 
 <tr>
@@ -692,10 +690,12 @@ But usually <code>!</code> can be implemented by just evaluating the opposite co
 </p>
 <p>
 In some other cases like !(e1 &amp;&amp; e2) we can use De Morgan rules to evaluate it like <code>!e1 || !e2</code>. This is mostly useful for cases like <code>!((e11 &lt; e12) &amp;&amp; (e21 &lt; e22))</code> where propagating the ! inside the expression is beneficial as this just becomes <code>(e11 &gt;= e12) || (e21 &gt;= e22)</code>
-<tr>
+</p>
+</td>
+</tr>
 
-&lt;/tbody&gt;
-&lt;/table&gt;
+</tbody>
+</table>
 
 
 <h2>Conditional assignment</h2>
@@ -1020,7 +1020,7 @@ Yay! :)
 <p>
 This is all for today.
 </p>
-</p></p></tr></p></td></tr></p></td></tr></p></td></tr></tbody></table></p></p>
+</p></p></p></p>
 
   </div>
 
