@@ -569,6 +569,10 @@
 <lastmod>2020-11-22T12:40:00+00:00</lastmod>
 </url>
 <url>
+<loc>https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/</loc>
+<lastmod>2021-03-01T21:52:00+00:00</lastmod>
+</url>
+<url>
 <loc>https://thinkingeek.com/archives/</loc>
 </url>
 <url>
@@ -1083,6 +1087,15 @@
 </url>
 <url>
 <loc>https://thinkingeek.com/categories/programming/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/c/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/clang-tidy/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/locks/</loc>
 </url>
 <url>
 <loc>https://thinkingeek.com/posts/2/</loc>

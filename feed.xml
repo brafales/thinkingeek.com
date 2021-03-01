@@ -1,4 +1,421 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2020-11-28T21:52:11+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Process-wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process-wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-03-01T21:57:57+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">RAII, locks and clang-tidy</title><link href="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/" rel="alternate" type="text/html" title="RAII, locks and clang-tidy" /><published>2021-03-01T21:52:00+00:00</published><updated>2021-03-01T21:52:00+00:00</updated><id>https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy</id><content type="html" xml:base="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/">&lt;p&gt;A colleague of mine spent some time chasing a bug in a C++ library related
+to concurrency.&lt;/p&gt;
+
+&lt;p&gt;At the end it all boiled down to a silly declaration that wasn’t one.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h1&gt;RAII&lt;/h1&gt;
+
+&lt;p&gt;There is a salient feature of C++ called Resource Acquisition Is Initialization
+(RAII) in which it is possible to bind resource lifetimes to the lifetime of
+declarations in C++.&lt;/p&gt;
+
+&lt;p&gt;This is very useful because the C++ object model guarantees that objects are
+destroyed when the scope in which they were declared ends. This way it is
+possible to acquire the resource in the constructor and release it in the
+destructor. This is even more useful in the presence of exceptions, whose
+unusual control flow is often the source of resources not beeing released under
+exceptional flows. Because it ties resources to lifetimes of objects and given
+that C++ gives guarantees regarding destruction of objects when exceptions are
+thrown, makes RAII a very convenient and practical technique.&lt;/p&gt;
+
+&lt;p&gt;However there are still some confusing cases due to the C++ syntax, which is
+sometimes surprising.&lt;/p&gt;
+
+&lt;h2&gt;Temporaries&lt;/h2&gt;
+
+&lt;p&gt;There is a number of situations in which a temporary needs to be created
+in a C++ program. A common one is when we bind a reference to a prvalue.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;A&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;explicit&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;quux&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;w&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Because passing arguments is modeled in the same way as initialization, a
+similar case is as follows.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;bar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;});&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Temporaries are in general destroyed when they are not needed any longer. In
+the call to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;foo&lt;/code&gt; above this happens at the end of the expression (conceptually
+at the semicolon).&lt;/p&gt;
+
+&lt;p&gt;However, in the first case, we don’t want the references &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;x&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;w&lt;/code&gt; to point
+to objects that have been freed. So in that case (and a number of others) the
+lifetime of the temporary is extended such that the temporary is destroyed when
+the reference goes out of scope.&lt;/p&gt;
+
+&lt;h1&gt;Locks&lt;/h1&gt;
+
+&lt;p&gt;C++ has a concurrency primitive class &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::mutex&lt;/code&gt; that is used to implement
+mutual exclusion between threads. Often mutexes are of interest to link to
+scopes, hence using them as RAII. For that purpose there are the classes
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::lock_guard&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::scoped_lock&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;A common way to acquire a lock for the duration of a scope is as follows.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;mutex&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;critical&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lock_guard&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;l&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+     &lt;span class=&quot;c1&quot;&gt;// Do something with the resource that cannot&lt;/span&gt;
+     &lt;span class=&quot;c1&quot;&gt;// be accessed concurrently by threads.&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// The lock is released here.&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;My colleague was using this idiom, so what was wrong for him? Well, as usually
+he &lt;em&gt;thought&lt;/em&gt; he was using the idiom, instead the code looked like this.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;mutex&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;critical&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lock_guard&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+     &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I hope you can see the problem here, the lock is acquired and released
+immediately upon destruction of the temporary. Part of the problem is that RAII
+involves a declaration. It often happens that the name of the declaration is
+not relevant, hence one might accidentally omit it. Unfortunately, in one of
+those typical C++ syntactic flukes, we end not having a declaration anymore:
+we’re creating a temporary.&lt;/p&gt;
+
+&lt;p&gt;It looks like this case is almost always an error. I fail to see what is the
+usefulness of acquiring a lock to just release it afterwards. So, barring
+memory ordering consequences, this is just an expensive no-operation.&lt;/p&gt;
+
+&lt;p&gt;Finally note that there is a convoluted case where this syntax might be OK.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;mutex&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;critical&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;l&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lock_guard&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+     &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;But we will happily ignore that one, because frankly, a code like this serves
+no favour to the reader. And code is more often read than written.&lt;/p&gt;
+
+&lt;p&gt;There is still a case where we could argue that this idiom is iseful. Class
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::scoped_lock&lt;/code&gt; allows locking more than one lock at a time. So if we manage
+to acquire all of them (even if we release all of them immediately) we may know
+that the protected resources were at some point available. For instance we could
+log that fact, but the logging process itself may not demand exclusive access
+to the processes. However it is always possible to write something like this.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;idleness&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scoped_lock&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;l&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;m_resource1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;m_resource2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;m_resource3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;mylog&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;All resources available at timestamp: &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;get_timestamp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;More wordy, yes, but an unusual usage that we can still reduce to the syntax of
+the usual case.&lt;/p&gt;
+
+&lt;h1&gt;Attributes&lt;/h1&gt;
+
+&lt;p&gt;Given a user-defined class that we can modify, such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A&lt;/code&gt; above, its
+constructors can be marked with the standard attribute &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nodiscard&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;A&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;[[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nodiscard&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;explicit&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;quux&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// Emits a warning.&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;However we cannot do that with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::lock_guard&lt;/code&gt; as it is a class that is
+defined by the C++ library and it may not include such annotation (it may not
+be desirable to introduce false positives in some of the unusual cases).&lt;/p&gt;
+
+&lt;h1&gt;Linting with clang-tidy&lt;/h1&gt;
+
+&lt;p&gt;One thing we can do is use a linting tool such as &lt;a href=&quot;https://clang.llvm.org/extra/clang-tidy/&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clang-tidy&lt;/code&gt;&lt;/a&gt;. This
+clang-based tool provides a practical mechanism to add new diagnostics. Most
+checks are designed around &lt;a href=&quot;https://clang.llvm.org/docs/LibASTMatchers.html&quot;&gt;the clang ASTMatcher library&lt;/a&gt; that is very
+convenient to match clang ASTs.&lt;/p&gt;
+
+&lt;h2&gt;Adding a new check&lt;/h2&gt;
+
+&lt;p&gt;Let’s see how we can add a check to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clang-tidy&lt;/code&gt;. In this post we will see
+the basics, &lt;a href=&quot;https://clang.llvm.org/extra/clang-tidy/Contributing.html&quot;&gt;so check the documentation for greater details&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;First let’s define a header inside the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;concurrency&lt;/code&gt; namespace. There are a few
+namespaces but this one feels right for our purpose.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#ifndef LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_CONCURRENCY_USELESSLOCK_H
+#define LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_CONCURRENCY_USELESSLOCK_H
+&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include &quot;../ClangTidyCheck.h&quot;
+&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;clang&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tidy&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;concurrency&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;UselessLockCheck&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ClangTidyCheck&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;public:&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;UselessLockCheck&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;StringRef&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ClangTidyContext&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ClangTidyCheck&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;registerMatchers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast_matchers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchFinder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Finder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;check&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast_matchers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchFinder&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchResult&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Result&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// namespace concurrency&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// namespace tidy&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// namespace clang&lt;/span&gt;
+
+&lt;span class=&quot;cp&quot;&gt;#endif // LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_CONCURRENCY_USELESSLOCK_H&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This header defines a class that inherits from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClangTidyCheck&lt;/code&gt; and we override
+a member function called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;registerMatcher&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;check&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &quot;UselessLockCheck.h&quot;
+#include &quot;clang/AST/ASTContext.h&quot;
+#include &quot;clang/ASTMatchers/ASTMatchFinder.h&quot;
+#include &quot;clang/Lex/Preprocessor.h&quot;
+&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;clang&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast_matchers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;clang&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tidy&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;concurrency&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UselessLockCheck&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;registerMatchers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchFinder&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Finder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Finder&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addMatcher&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;cxxTemporaryObjectExpr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isExpansionInMainFile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt;
+                             &lt;span class=&quot;n&quot;&gt;hasType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;asString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;std::lock_guard&amp;lt;std::mutex&amp;gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bind&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;uselesslock&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UselessLockCheck&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;check&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MatchFinder&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchResult&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Result&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchedExpr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Result&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Nodes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNodeAs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Expr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;uselesslock&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;diag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MatchedExpr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getBeginLoc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;this lock is not protecting anything&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// namespace concurrency&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// namespace tidy&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// namespace clang&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Member function &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;registerMatcher&lt;/code&gt; will
+register the matcher (or matchers) that will then be passed onto function
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;check&lt;/code&gt;. These use the ASTMatcher library, which is very powerful, but basically
+we say: match all &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CXXTemporaryObjectExpr&lt;/code&gt; nodes (we’ll see below why) using the
+matcher constructor &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cxxTemporaryObjectExpr&lt;/code&gt;. But of those &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CXXTemporaryObjectExpr&lt;/code&gt;,
+only match those that appear in the main file (not in a header) and they are
+trying to construct a type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::lock_guard&amp;lt;std::mutex&amp;gt;&lt;/code&gt;. Finally bind a node that
+matches all these properties to the name &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;uselesslock&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Once a node matches it is passed to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;check&lt;/code&gt;. Here we can do some additional
+filtering if that can’t easily be expressed using matchers. We don’t have to do
+anything like that so we just diagnose that the lock is useless.&lt;/p&gt;
+
+&lt;p&gt;Finally, the required plumbing to compile and register the check follows (in
+diff format for clarity).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;gh&quot;&gt;diff --git a/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt b/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt
+index 65d2ace6645e..9c7907a5c3ce 100644
+&lt;/span&gt;&lt;span class=&quot;gd&quot;&gt;--- a/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+++ b/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;@@ -7,6 +7,7 @@&lt;/span&gt; add_clang_library(clangTidyConcurrencyModule
+   ConcurrencyTidyModule.cpp
+   MtUnsafeCheck.cpp
+   ThreadCanceltypeAsynchronousCheck.cpp
+&lt;span class=&quot;gi&quot;&gt;+  UselessLockCheck.cpp
+&lt;/span&gt; 
+   LINK_LIBS
+   clangTidy
+&lt;span class=&quot;gh&quot;&gt;diff --git a/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp b/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp
+index 7ae891d463f7..b21737150a2e 100644
+&lt;/span&gt;&lt;span class=&quot;gd&quot;&gt;--- a/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+++ b/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;@@ -11,6 +11,7 @@&lt;/span&gt;
+ #include &quot;../ClangTidyModuleRegistry.h&quot;
+ #include &quot;MtUnsafeCheck.h&quot;
+ #include &quot;ThreadCanceltypeAsynchronousCheck.h&quot;
+&lt;span class=&quot;gi&quot;&gt;+#include &quot;UselessLockCheck.h&quot;
+&lt;/span&gt; 
+ namespace clang {
+ namespace tidy {
+&lt;span class=&quot;p&quot;&gt;@@ -23,6 +24,8 @@&lt;/span&gt; public:
+         &quot;concurrency-mt-unsafe&quot;);
+     CheckFactories.registerCheck&amp;lt;ThreadCanceltypeAsynchronousCheck&amp;gt;(
+         &quot;concurrency-thread-canceltype-asynchronous&quot;);
+&lt;span class=&quot;gi&quot;&gt;+    CheckFactories.registerCheck&amp;lt;UselessLockCheck&amp;gt;(
++        &quot;concurrency-useless-lock&quot;);
+&lt;/span&gt;   }
+ };&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2&gt;Trying the check&lt;/h2&gt;
+
+&lt;p&gt;Let’s consider the following input&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;t.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;lt;mutex&amp;gt;
+&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;A&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;explicit&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;critical&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lock_guard&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutex&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;protect_resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now we can run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clang-tidy&lt;/code&gt;, enabling explicitly our new check (ignore the
+complaint about the compilation database, this is kind of expected given that
+we haven’t created any).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang-tidy &lt;span class=&quot;nt&quot;&gt;-checks&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;concurrency-useless-lock t.cc
+Error &lt;span class=&quot;k&quot;&gt;while &lt;/span&gt;trying to load a compilation database:
+Could not auto-detect compilation database &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;file &lt;span class=&quot;s2&quot;&gt;&quot;t.cc&quot;&lt;/span&gt;
+No compilation database found &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; /home/roger/tmp or any parent directory
+fixed-compilation-database: Error &lt;span class=&quot;k&quot;&gt;while &lt;/span&gt;opening fixed database: No such file or directory
+json-compilation-database: Error &lt;span class=&quot;k&quot;&gt;while &lt;/span&gt;opening JSON database: No such file or directory
+Running without flags.
+1 warning generated.
+/home/roger/tmp/t.cc:12:6: warning: this lock is not protecting anything &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;concurrency-useless-lock]
+     std::lock_guard&amp;lt;std::mutex&amp;gt;&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;protect_resource&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+     ^&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Voilà, here we have our new diagnostic. Now we can add this to CI if needed.
+At this point I’ll stop but we can extend it with a fix-it (so clang suggests
+how to ammend the issue).&lt;/p&gt;
+
+&lt;h2&gt;How do we know what to match?&lt;/h2&gt;
+
+&lt;p&gt;There are two mechanisms here. First we can use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clang-query&lt;/code&gt; which allows us
+to use the C++ syntax in a REPL-like tool. But before we can know what we want
+to match we may need to see the AST as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clang&lt;/code&gt; represents it. We can do that
+doing &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-Xclang -ast-dump&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In the example above&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;-Xclang&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-ast-dump&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-fsyntax-only&lt;/span&gt; t.cc&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This prints a giant tree, after all header &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mutex&lt;/code&gt; will include lots of things,
+but the interesting bits are at the end.&lt;/p&gt;
+
+&lt;pre&gt;&lt;font color=&quot;#3465A4&quot;&gt;`-&lt;/font&gt;&lt;font color=&quot;#8AE234&quot;&gt;&lt;b&gt;FunctionDecl&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12506090&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;line:10:1&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;line:18:1&lt;/font&gt;&amp;gt; &lt;font color=&quot;#C4A000&quot;&gt;line:10:6&lt;/font&gt;&lt;font color=&quot;#34E2E2&quot;&gt;&lt;b&gt; critical&lt;/b&gt;&lt;/font&gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;void ()&amp;apos;&lt;/font&gt;
+&lt;font color=&quot;#3465A4&quot;&gt;  `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CompoundStmt&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12507588&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:17&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;line:18:1&lt;/font&gt;&amp;gt;
+&lt;font color=&quot;#3465A4&quot;&gt;    |-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CompoundStmt&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12506fe0&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;line:11:3&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;line:13:3&lt;/font&gt;&amp;gt;
+&lt;font color=&quot;#3465A4&quot;&gt;    | `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;ExprWithCleanups&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12506fc8&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;line:12:6&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;col:50&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;std::lock_guard&amp;lt;std::mutex&amp;gt;&amp;apos;:&amp;apos;std::lock_guard&amp;lt;std::mutex&amp;gt;&amp;apos;&lt;/font&gt;
+&lt;font color=&quot;#3465A4&quot;&gt;    |   `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CXXBindTemporaryExpr&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12506fa8&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:6&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;col:50&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;std::lock_guard&amp;lt;std::mutex&amp;gt;&amp;apos;:&amp;apos;std::lock_guard&amp;lt;std::mutex&amp;gt;&amp;apos;&lt;/font&gt; (CXXTemporary&lt;font color=&quot;#C4A000&quot;&gt; 0x12506fa8&lt;/font&gt;)
+&lt;font color=&quot;#3465A4&quot;&gt;    |     `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CXXTemporaryObjectExpr&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12506f68&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:6&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;col:50&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;std::lock_guard&amp;lt;std::mutex&amp;gt;&amp;apos;:&amp;apos;std::lock_guard&amp;lt;std::mutex&amp;gt;&amp;apos;&lt;/font&gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;void (std::lock_guard&amp;lt;std::mutex&amp;gt;::mutex_type &amp;amp;)&amp;apos;&lt;/font&gt; list
+&lt;font color=&quot;#3465A4&quot;&gt;    |       `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;DeclRefExpr&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12506368&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:34&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;std::mutex&amp;apos;:&amp;apos;std::mutex&amp;apos;&lt;/font&gt;&lt;font color=&quot;#06989A&quot;&gt; lvalue&lt;/font&gt; &lt;font color=&quot;#8AE234&quot;&gt;&lt;b&gt;Var&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x125056e0&lt;/font&gt;&lt;font color=&quot;#34E2E2&quot;&gt;&lt;b&gt; &amp;apos;protect_resource&amp;apos;&lt;/b&gt;&lt;/font&gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;std::mutex&amp;apos;:&amp;apos;std::mutex&amp;apos;&lt;/font&gt;
+&lt;font color=&quot;#3465A4&quot;&gt;    `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CompoundStmt&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12507568&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;line:14:3&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;line:17:3&lt;/font&gt;&amp;gt;
+&lt;font color=&quot;#3465A4&quot;&gt;      |-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CXXTemporaryObjectExpr&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x125073c8&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;line:15:7&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;col:10&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;A&amp;apos;&lt;/font&gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;void (int)&amp;apos;&lt;/font&gt; list
+&lt;font color=&quot;#3465A4&quot;&gt;      | `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;IntegerLiteral&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12507008&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:9&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;int&amp;apos;&lt;/font&gt;&lt;font color=&quot;#34E2E2&quot;&gt;&lt;b&gt; 3&lt;/b&gt;&lt;/font&gt;
+&lt;font color=&quot;#3465A4&quot;&gt;      `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CXXFunctionalCastExpr&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12507540&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;line:16:7&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;col:10&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;A&amp;apos;&lt;/font&gt; functional cast to struct A &amp;lt;ConstructorConversion&amp;gt;
+&lt;font color=&quot;#3465A4&quot;&gt;        `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;CXXConstructExpr&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x12507510&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:7&lt;/font&gt;, &lt;font color=&quot;#C4A000&quot;&gt;col:10&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;A&amp;apos;&lt;/font&gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;void (int)&amp;apos;&lt;/font&gt;
+&lt;font color=&quot;#3465A4&quot;&gt;          `-&lt;/font&gt;&lt;font color=&quot;#AD7FA8&quot;&gt;&lt;b&gt;IntegerLiteral&lt;/b&gt;&lt;/font&gt;&lt;font color=&quot;#C4A000&quot;&gt; 0x125074f0&lt;/font&gt; &amp;lt;&lt;font color=&quot;#C4A000&quot;&gt;col:9&lt;/font&gt;&amp;gt; &lt;font color=&quot;#4E9A06&quot;&gt;&amp;apos;int&amp;apos;&lt;/font&gt;&lt;font color=&quot;#34E2E2&quot;&gt;&lt;b&gt; 3&lt;/b&gt;&lt;/font&gt;
+&lt;/pre&gt;
+
+&lt;p&gt;As you can see this is a representation of our function &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;critical&lt;/code&gt;. It has two
+compound statements of which we care about the one including that
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CXXTemporaryObjectExpr&lt;/code&gt;. This is exactly the node we matched above in the
+matcher. To avoid matching other things like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;A{3}&lt;/code&gt; we need to ensure the
+expression has type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::lock_guard&amp;lt;std::mutex&amp;gt;&lt;/code&gt;, again a fact we stated in
+the matcher.&lt;/p&gt;
+
+&lt;p&gt;Cool right? 😃&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">A colleague of mine spent some time chasing a bug in a C++ library related to concurrency. At the end it all boiled down to a silly declaration that wasn’t one.</summary></entry><entry><title type="html">Process-wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process-wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
 libraries whose scope is the whole process. In such a situation, we may need to
 identify if a process has already loaded another copy of the library.&lt;/p&gt;
 
@@ -4965,577 +5382,4 @@ In the next chapter we will go beyond the AST, and related intermediate represen
 &lt;/ol&gt;
 
 &lt;p&gt;As an output, and assuming everything went ok, you'll get a URL. This is the URL of your API Gateway endpoint. You can then pick that up and make a call to the Monzo API so their webhooks point at that same URL. After that, your Monzo expenses will be linked and will magically appear in Toshl.&lt;/p&gt;
-&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><category term="aws" /><category term="go" /><category term="serverless" /><summary type="html">Use case I've been willing to give the serverless framework a try for a while, and recently I came up with a small side project that was a potential good fit for it. I am a Monzo user, and I use their card to pay for things like my weekday lunches around the office or my travel expenses like Oyster Card top ups. I also happen to be a user of Toshl, which helps me with my personal finances and budgets. Typically, whenever my Oyster card gets topped up or I pay for a lunch in a restaurant, I then input that expense into Toshl. But turns out both Monzo and Toshl are developer friendly, so I thought I could easily automate that process by having a system that would get certain Monzo expenses directly into Toshl for me, saving me a few seconds per day. A serverless approach was ideal for this, especially since AWS offers a free tier for its services, meaning this would also not cost me a penny.</summary></entry><entry><title type="html">Walk-through flang – Part 7</title><link href="https://thinkingeek.com/2018/08/25/walk-through-flang-part-7/" rel="alternate" type="text/html" title="Walk-through flang – Part 7" /><published>2018-08-25T17:41:18+00:00</published><updated>2018-08-25T17:41:18+00:00</updated><id>https://thinkingeek.com/2018/08/25/walk-through-flang-part-7</id><content type="html" xml:base="https://thinkingeek.com/2018/08/25/walk-through-flang-part-7/">&lt;p&gt;
-In previous chapters we saw how the input source was lexed, parsed and semantically analysed and we looked at how the symbols and data types are represented. But we haven't looked at what happens once the semantic analysis finishes. In this installment we're going to talk about the AST.
-&lt;/p&gt;
-&lt;!--more--&gt;
-
-&lt;h2&gt;Abstract Syntax Tree&lt;/h2&gt;
-
-&lt;p&gt;
-Fortran has two kinds of statements: non-executable and executable. The former declare properties about entities of the program and we saw in the previous chapter that these entities or symbols are represented in a symbol table. There is usually not much more to do beyond registering and remembering the attributes implied by a non-executable statement.
-&lt;/p&gt;
-
-&lt;p&gt;
-Executable statements, on the other hand, describe the computation that our Fortran program has to do. So we need a mechanism to represent that computation. At some point we will use this representation to generate a program that does exactly the intended computation by the Fortran source. A common way to represent this is using an AST, or abstract syntax tree.
-&lt;/p&gt;
-
-&lt;p&gt;
-ASTs are called &lt;em&gt;abstract&lt;/em&gt; because they do not represent all the lexical and syntactical details of the source. Instead, they represent the fundamental parts of the language that are going to be relevant for the computation. The flang AST does exactly that.
-&lt;/p&gt;
-
-&lt;h2&gt;Example&lt;/h2&gt;
-
-&lt;p&gt;
-Lets consider this very simple function below
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.f90&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;FUNCTION&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;INTEGER&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;END&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h3&gt;Symbol table&lt;/h3&gt;
-
-&lt;p&gt;
-In the last chapter we talked about the symbol table but we didn't consider any specific example neither we attempted to dump any of the symbol tables. Now it is a good opportunity to do this.
-&lt;/p&gt;
-
-&lt;p&gt;
-The flang driver allows us to pass debug flags to &lt;code&gt;flang1&lt;/code&gt; using &lt;code&gt;-Hq,x,y&lt;/code&gt; (and to &lt;code&gt;flang2&lt;/code&gt; using &lt;code&gt;-Mq,x,y&lt;/code&gt;). The numbers &lt;code&gt;x&lt;/code&gt; and &lt;code&gt;y&lt;/code&gt; are documented in the flang documentation (file &lt;code&gt;coding.html&lt;/code&gt;). We can dump the symbol table doing &lt;code&gt;-Hq,5,1&lt;/code&gt;
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;flang &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; test.f90 &lt;span class=&quot;nt&quot;&gt;-Hq&lt;/span&gt;,5,1&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;
-When we request debug information, flang will create a file named &lt;code&gt;&amp;lt;name&amp;gt;.qbf&lt;/code&gt; for every given &lt;code&gt;&amp;lt;name&amp;gt;.f90&lt;/code&gt; compiled. In our case &lt;code&gt;test.qdbf&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.qdbf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;F90 PARSER begins
-{flang after parser
-
-add                                      integer entry
-sptr: 624  hashlk: 0   nmptr: 5015  dtype: 6  scope: 0  lineno: 1  enclfunc: 0
-dcld: 1  ccsym: 0   entstd: 0   entnum: 0
-endline: 5   symlk: 1   paramct: 2   dpdsc: 2
-funcline: 1   bihnum: 0   fval: 627   pure: 0  impure: 0   recur:0
-adjarr:0  aftent:0  assumshp:0  private:0
-   gsame: 0
-altname: 0
-Parameters:
-sptr =  625, a
-sptr =  626, b
-
-a                                        integer variable
-sptr: 625  hashlk: 0   nmptr: 5019  dtype: 6  scope: 624  lineno: 1  enclfunc: 0
-dcld:1   ccsym:0   save:0   ref:0   dinit:0   vol:0   ptrv:0  cvlen:0
-address: 0   sc:3(SC_DUMMY)   symlk: 1   midnum: 0   socptr: 0   autobj: 0
-addrtkn:0  eqv:0  hccsym:0  alloc:0  arg:0  seq:1  nml:0  assn:0
-private:0  sdsc: 0  ptroff: 0  descr: 0
-altname:0
-optarg:0   intent:INOUT
-
-b                                        integer variable
-sptr: 626  hashlk: 0   nmptr: 5021  dtype: 6  scope: 624  lineno: 1  enclfunc: 0
-dcld:1   ccsym:0   save:0   ref:0   dinit:0   vol:0   ptrv:0  cvlen:0
-address: 0   sc:3(SC_DUMMY)   symlk: 1   midnum: 0   socptr: 0   autobj: 0
-addrtkn:0  eqv:0  hccsym:0  alloc:0  arg:0  seq:1  nml:0  assn:0
-private:0  sdsc: 0  ptroff: 0  descr: 0
-altname:0
-optarg:0   intent:INOUT
-
-add                                      integer variable
-sptr: 627  hashlk: 0   nmptr: 5015  dtype: 6  scope: 624  lineno: 0  enclfunc: 0
-dcld:1   ccsym:0   save:0   ref:0   dinit:0   vol:0   ptrv:0  cvlen:0
-address: 0   sc:3(SC_DUMMY)   symlk: 1   midnum: 0   socptr: 0   autobj: 0
-addrtkn:0  eqv:0  hccsym:0  alloc:0  arg:0  seq:1  nml:0  assn:1
-private:0  sdsc: 0  ptroff: 0  descr: 0
-altname:0
-  result   optarg:0   intent:INOUT
-...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;&amp;lt;/code&amp;gt;
-The dump of the table is not super easy to read but basically we see four entries. Each entry starts with the name of the symbol and the kind of symbol. The next lines are several attributes of the symbol. The set of attributes dumped changes for each kind of symbol.
-&lt;p&gt;
-&lt;p&gt;
-In our example we only have two kinds of symbols: a first &lt;code&gt;add&lt;/code&gt; which is an entry (which is the way flang names a &lt;code&gt;FUNCTION&lt;/code&gt;) then &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;b&lt;/code&gt; and another &lt;code&gt;add&lt;/code&gt;. The second &lt;code&gt;add&lt;/code&gt; is there because it represents the &lt;em&gt;result-name&lt;/em&gt; of the &lt;code&gt;FUNCTION&lt;/code&gt; (had we used RESULT(myname) in the FUNCTION statement we would not have had repeated symbol names). In general repeated names are not a problem (sometimes it happens in Fortran) but it in this case, note that the scope of the variables is 624 which is the id of the symbol. The id of symbols that entail scopes like &lt;code&gt;FUNCTION&lt;/code&gt;, &lt;code&gt;SUBROUTINE&lt;/code&gt;, &lt;code&gt;MODULE&lt;/code&gt; is used to define a scoping relationship. Also note that the variables are marked to have a storage-class of SC_DUMMY. In Fortran parlance a dummy-argument is a formal parameter.
-&lt;/p&gt;
-
-&lt;h3&gt;AST&lt;/h3&gt;
-
-&lt;p&gt;
-Ok, now we have seen what flang knows (or at least shows in the dumps) about the symbols. Let's see the AST it generates. We can get the AST using &lt;code&gt;-Hq,4,256&lt;/code&gt;. It is possible to combine several &lt;code&gt;-Hq&lt;/code&gt; flags so we can see at the same time several internal dumps.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;flang &lt;span class=&quot;nt&quot;&gt;-c&lt;/span&gt; test.f90 &lt;span class=&quot;nt&quot;&gt;-Hq&lt;/span&gt;,5,1 &lt;span class=&quot;nt&quot;&gt;-Hq&lt;/span&gt;,4,256&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.qdbf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;...
-AST Table
-
-null        hshlk/std:    0 opt=(0,0)
-aptr:    1  &amp;lt;null_ast&amp;gt;
-
-constant    hshlk/std:    0  type:integer opt=(0,0)
-aptr:    2  sptr:  609 (0)
-
-constant    hshlk/std:    0  type:integer opt=(0,0)
-aptr:    3  sptr:  611 (1)
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:    4  sptr:    1 (..sqrt)
-
-unaryop     hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:    5  lop :    4  optype:28   ptr0
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:    6  sptr:    2 (.sqrt)
-
-unaryop     hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:    7  lop :    6  optype:28   ptr1
-
-ident       hshlk/std:    0  type:character*1  alias:    0  callfg:0 opt=(0,0)
-aptr:    8  sptr:    3 (.dsqrt)
-
-unaryop     hshlk/std:    0  type:character*1  alias:    0  callfg:0 opt=(0,0)
-aptr:    9  lop :    8  optype:28   ptr0c
-
-constant    hshlk/std:    0  type:integer*8 opt=(0,0)
-aptr:   10  sptr:  610 (0)
-
-constant    hshlk/std:    0  type:integer*8 opt=(0,0)
-aptr:   11  sptr:  612 (1)
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   12  sptr:  625 (a)
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   13  sptr:  626 (b)
-
-binop       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   14  lop :   12  rop:   13  optype:1
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   15  sptr:  627 (add)
-
-assign      hshlk/std:    1  type:integer opt=(0,0)
-aptr:   16  dest:   15  src:   14
-
-end         hshlk/std:    2 opt=(0,0)
-aptr:   17
-...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-For reasons I have not looked into them yet, the AST contains references to a couple of preregistered symbols &lt;code&gt;.sqrt&lt;/code&gt; and &lt;code&gt;.dsqrt&lt;/code&gt; (they look like to related to the corresponding Fortran intrinsics) and a couple of constants 0 and 1. Why no other preregistered symbols or constants appear is a bit puzzling to me. That said, the interesting bits of this dump are the following
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.qdbf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;...
-AST Table
-
-...
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   12  sptr:  625 (a)
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   13  sptr:  626 (b)
-
-binop       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   14  lop :   12  rop:   13  optype:1
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   15  sptr:  627 (add)
-
-assign      hshlk/std:    1  type:integer opt=(0,0)
-aptr:   16  dest:   15  src:   14
-
-end         hshlk/std:    2 opt=(0,0)
-aptr:   17
-...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-An AST is made of nodes. A node represents some computation. Sometimes the computation is almost no computation, like just a constant or a reference to a variable. Some other times the computation is compound of other computations. This is, other nodes. Recall that in line 4 our Fortran program is doing
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;4
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ADD&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;B&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-It is possible to relate that statement to the AST dump above. Let's see, that statement is in Fortran parlance an assignment statement. Flang represents it using a node for assignments.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;assign      hshlk/std:    1  type:integer opt=(0,0)
-aptr:   16  dest:   15  src:   14&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-&lt;code&gt;assign&lt;/code&gt; is the kind of the node, in this case this node represents an assignment. The &lt;code&gt;type&lt;/code&gt; of the operation is integer. &lt;code&gt;aptr&lt;/code&gt; means the &lt;code&gt;id&lt;/code&gt; of this node (remember that these id, even if just numbers, are unrelated to the id's used for symbols or data types and the precise id number could be the same). Now we have the operands of this node, which are other computations, i.e. other AST nodes. In this case the destination (&lt;code&gt;dest&lt;/code&gt;) is encoded in the node 15 and the source (&lt;code&gt;src&lt;/code&gt;) in the node 14. What are the destination and the source of an assignment? They are the left and right-hand side of the assignment, respectively.
-&lt;/p&gt;
-
-&lt;p&gt;
-The left-hand side is &lt;code&gt;ADD&lt;/code&gt; in our Fortran program. Should be encoded in the tree 15.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   15  sptr:  627 (add)&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Indeed, we could check the symbol table above and see that 627 is exactly the result name &lt;code&gt;add&lt;/code&gt;. So good so far.
-&lt;/p&gt;
-
-&lt;p&gt;
-The right-hand side of our assignment is &lt;code&gt;A + B&lt;/code&gt; and it is encoded in the tree 14.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;binop       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   14  lop :   12  rop:   13  optype:1&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-This node is a bit more interesting because it is a binary operation (&lt;code&gt;binop&lt;/code&gt;) (again of type &lt;code&gt;integer&lt;/code&gt;). The left and right-hand sides of a binary operations are named by flang as &lt;code&gt;lop&lt;/code&gt; and &lt;code&gt;rop&lt;/code&gt; respectively. We can check the corresponding AST nodes.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-txt&quot; data-lang=&quot;txt&quot;&gt;ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   12  sptr:  625 (a)
-
-ident       hshlk/std:    0  type:integer  alias:    0  callfg:0 opt=(0,0)
-aptr:   13  sptr:  626 (b)&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Looks sensible.
-&lt;/p&gt;
-
-&lt;h2&gt;Kinds and attributes of AST&lt;/h2&gt;
-
-&lt;p&gt;
-Flang has about 160 ASTs. They are defined in the file &lt;code&gt;tools/flang1/utils/ast/ast.n&lt;/code&gt;. This file is in a troff-like syntax which is not particularly readable. The form is relatively simple and we can extract information using grep.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;$ grep -A2 &quot;\.ST&quot; tools/flang1/utils/ast/ast.n
-.SI null
-This AST type represents the AST at location 0 in the AST table.
-Generally, the pointer (index) value of zero will not appear in
---
-.SI ident LVAL EXPR
-This node is a leaf node in the AST and represents an
-identifer which is fully resolved (declared).
---
-.SI constant EXPR
-.lp
-Leaf node representing a constant.
---
-.SI label
-.lp
-Leaf node representing a label.
---
-.SI binop EXPR
-.lp
-Binary Operator node.
---
-.SI unaryop EXPR
-.lp
-Unary Operator node.
-...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p style=&quot;padding: 1em; background-color: #efe;&quot;&gt;
-File &lt;code&gt;tools/flang1/utils/ast/ast.n&lt;/code&gt; is also used to generate a similar one in the build directory named &lt;code&gt;tools/flang1/utils/ast/ast.out.n&lt;/code&gt;. The latter
-includes extra information of the memory layout of the nodes. However the relevant attributes should already be documented in the former. Theoretically it should be possible to generate Sphinx documentation from this file (like it is already done with other similar files) but this does not seem to be implemented yet.
-&lt;/p&gt;
-
-&lt;p&gt;
-For each &lt;code&gt;.SM&lt;/code&gt; entry in &lt;code&gt;ast.n&lt;/code&gt;, look at the following entries &lt;code&gt;.SI&lt;/code&gt;, &lt;code&gt;.SE&lt;/code&gt;, &lt;code&gt;.FL&lt;/code&gt; and &lt;code&gt;.OV&lt;/code&gt;.
-&lt;p&gt;
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Entry&lt;/th&gt;
-&lt;th&gt;Meaning&lt;/th&gt;
-&lt;th&gt;Accessor&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;.SM&amp;nbsp;NAME&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Kind of AST node: &lt;code&gt;BINOP&lt;/code&gt;, &lt;code&gt;UNOP&lt;/code&gt;, &lt;code&gt;ID&lt;/code&gt;, etc..&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;A_TYPEG(ast)&lt;/code&gt; will return &lt;code&gt;NAME&lt;/code&gt;.&lt;br /&gt;
-&lt;code&gt;A_TYPEP(ast, NAME)&lt;/code&gt; is possible but less common.&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;.SI&amp;nbsp;name&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Textual description of the node: for debugging only&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;astb.atypes[A_TYPEG(i)]&lt;/code&gt;
-&amp;lt;/tr&amp;gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;.FL&amp;nbsp;NAME&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Name of a flag (boolean value) of this node.&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;A_&lt;strong&gt;NAME&lt;/strong&gt;G(ast)&lt;/code&gt;&lt;br /&gt;&lt;code&gt;A_&lt;strong&gt;NAME&lt;/strong&gt;P(ast, bool-value)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;.SE&amp;nbsp;NAME&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Name of an attribute of this AST, usually returning an id of another AST or data type.
-&lt;td&gt;&lt;code&gt;A_&lt;strong&gt;NAME&lt;/strong&gt;G(ast)&lt;/code&gt;&lt;br /&gt;&lt;code&gt;A_&lt;strong&gt;NAME&lt;/strong&gt;P(ast, id)&lt;/code&gt;&lt;/td&gt;
-&amp;lt;/tr&amp;gt;
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;.OV&amp;nbsp;NAME&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;Used for attributes of integer nature that are not an id of an entity (like a kind or a hash link).
-&lt;td&gt;&lt;code&gt;A_&lt;strong&gt;NAME&lt;/strong&gt;G(ast)&lt;/code&gt;&lt;br /&gt;&lt;code&gt;A_&lt;strong&gt;NAME&lt;/strong&gt;P(ast, value)&lt;/code&gt;&lt;/td&gt;
-&amp;lt;/tr&amp;gt;
-&amp;lt;/tbody&amp;gt;
-&amp;lt;/table&amp;gt;
-
-&lt;p&gt;
-For instance, AST nodes that represent a binary operation have this information, according to &lt;code&gt;ast.n&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Kind of node: &lt;code&gt;BINOP&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;CALLFG&lt;/code&gt; (flag). &lt;q&gt;Set if a function reference appears in the left and/or right operand.&lt;/q&gt; (for instance in &lt;code&gt;2.3 + SQRT(1.2)&lt;/code&gt;)&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;DTYPE&lt;/code&gt;. &lt;q&gt;Data type of the result of the operation&lt;/q&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;LOP&lt;/code&gt;. &lt;q&gt;AST pointer to left (first) operand&lt;/q&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;OPTYPE&lt;/code&gt;. &lt;q&gt;Type of operator (see &lt;code&gt;OP_&lt;/code&gt; macros in &lt;code&gt;ast.h&lt;/code&gt;)&lt;/q&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;ROP&lt;/code&gt;. &lt;q&gt;AST pointer to right (second) operand&lt;/q&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;ALIAS&lt;/code&gt;. &lt;q&gt;If node evaluates to a constant, this field locates the constant node representing this value&lt;/q&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3&gt;The gory details&lt;/h3&gt;
-
-&lt;p&gt;
-If you are really interested on seeing how an AST is stored, just take a look at &lt;code&gt;tools/flang1/utils/ast/ast.h&lt;/code&gt; in the build directory. You will see that there is a global variable &lt;code&gt;astb &lt;/code&gt;which represents the global block that stores all the ASTs. A single AST node is represented using a struct of the type &lt;code&gt;AST&lt;/code&gt;.
-&lt;/p&gt;
-&lt;p&gt;
-The names of the nodes are stored in &lt;code&gt;astb.atypes&lt;/code&gt;, indexed by the type of the node (i.e. &lt;code&gt;A_TYPEG(ast)&lt;/code&gt;).
-&lt;/p&gt;
-&lt;p&gt;
-The field &lt;code&gt;astb.attr&lt;/code&gt; stores some attributes intended to simplify some checks.
-&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cm&quot;&gt;/* AST attributes: for fast AST checking -- astb.attr is a table indexed         
- * by A_&amp;lt;type&amp;gt;                                                                   
- */&lt;/span&gt;                                                                              
-&lt;span class=&quot;cp&quot;&gt;#define __A_LVAL 1                                                               
-#define __A_EXPR 2                                                               
-&lt;/span&gt;                                                                                 
-&lt;span class=&quot;cp&quot;&gt;#define A_ISLVAL(a) (astb.attr[a]&amp;amp;__A_LVAL)                                      
-#define A_ISEXPR(a) (astb.attr[a]&amp;amp;__A_EXPR)     &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-The &lt;code&gt;astb&lt;/code&gt; global variable also stores other info. We will discuss some of that extra info later in this chapter.
-&lt;/p&gt;
-
-
-&lt;h2&gt;Creation of an AST&lt;/h2&gt;
-
-&lt;p&gt;
-ASTs are created in many places of the compiler but semantic analysis is going to create the initial set that will be used by further analysis and transformations in the compiler.
-&lt;/p&gt;
-
-&lt;h3&gt;Low level creation&lt;/h3&gt;
-
-&lt;p&gt;
-To create an AST node we can use the function &lt;code&gt;new_node&lt;/code&gt;. This is a low level function that will return a new node with the given kind.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;ast.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;
-&lt;span class=&quot;nf&quot;&gt;new_node&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-  &lt;span class=&quot;n&quot;&gt;nd&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;STG_NEXT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;astb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nd&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MAXAST&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;astb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stg_base&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;errfatal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;A_TYPEP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;nd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-This function basically allocates a new ast in &lt;code&gt;astb&lt;/code&gt;. The macro &lt;code&gt;STG_NEXT&lt;/code&gt; expands to the call &lt;code&gt;stg_next((STG *)&amp;amp;name.stg_base, 1)&lt;/code&gt;. The function &lt;code&gt;stg_next&lt;/code&gt; is a bit too long to explain today but basically reserves a number of data and returns the first element allocated, as an integer of course. It is a generic function but as it is applied to &lt;code&gt;astb&lt;/code&gt; it is used to allocate ASTs.
-&lt;/p&gt;
-&lt;p&gt;
-Due to implementation details elsewhere there is a maximum number of ASTs we can allocate, so we check this. The number is fairly large 0x0400_0000 (and also gives us 5 extra bits in the top of the identifier if we ever need them).
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#define MAXAST   67108864&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Next thing this function does it setting the kind of the node. The kind of the node is called &lt;code&gt;TYPE&lt;/code&gt; in flang. &lt;code&gt;A_TYPEP&lt;/code&gt; is the setter we need to use.
-&lt;/p&gt;
-
-&lt;h3&gt;Constructors&lt;/h3&gt;
-
-&lt;p&gt;
-While &lt;code&gt;new_node&lt;/code&gt; will give us a node it is pretty bare. Most of the time our nodes have essential information that we will always need to create them correctly. For instance a binary operation always will have the kind of operation performed, the left hand side, the right hand side and the type of the operation. As such flang provides many helpers that ease creating those 
-nodes. Their names are of the form mk_*.
-&lt;/p&gt;
-
-&lt;p&gt;
-Flang seems to distinguish, conventionally, the creation of statement ASTs from other ASTs. So there is a generic &lt;code&gt;mk_stmt&lt;/code&gt;. The code uses this to signal the AST is actually a statement. As a special element it receives a &lt;code&gt;DTYPE&lt;/code&gt; to state the data type of the statement. Statements where there is not an actual data computed, like control flow statements, are created with a data type of 0.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;ast.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;
-&lt;span class=&quot;nf&quot;&gt;mk_stmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stmt_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DTYPE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dtype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-  &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;new_node&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stmt_type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dtype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;A_DTYPEP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dtype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Some statements have dedicated constuctors like &lt;code&gt;mk_assn_stmt&lt;/code&gt;, that is used to create an assignment statement. You can see the data type, the destination (the left hand side of the assignment) and the source (the right hand side). &lt;code&gt;dest&lt;/code&gt; and &lt;code&gt;source&lt;/code&gt; are ASTs (although not made obvious in the prototype).
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;
-&lt;span class=&quot;nf&quot;&gt;mk_assn_stmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;source&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DTYPE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dtype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mk_stmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A_ASN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dtype&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;A_DESTP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;A_SRCP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;source&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;h2&gt;Statement descriptor&lt;/h2&gt;
-
-&lt;p&gt;
-Flang ASTs are going to represent two different things:
-&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Expressions&lt;/li&gt;
-&lt;li&gt;Statements&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;
-Expressions will have a type and denote a computation which mostly revolves about evaluating the expression to determine its value. Statements are instead executed, rather than evaluated. Or put differently, they are evaluated just for their side-effects. Because statements have side-effects the order in which we execute them may be important.
-&lt;/p&gt;
-
-&lt;p&gt;
-Sometimes it does not matter because there is no way to tell. For instance in the example below, it does not matter that &lt;code&gt;A = 3&lt;/code&gt; is executed after or before the first PRINT statement, we can't simply tell the order. But we can't run the second &lt;code&gt;PRINT&lt;/code&gt; before the first &lt;code&gt;PRINT&lt;/code&gt; or execute the assignment after the second &lt;code&gt;PRINT&lt;/code&gt; as that would be an observably different execution of the program.
-&lt;/p&gt;
-
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;PRINT&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;HI&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;PRINT&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-
-&lt;p&gt;
-Because not all ASTs are statements, flang decouples information that is strictly for statements in another structure called the Statement Descriptor (STD). It is an attribute of an AST that represents a statement and it is accessible via &lt;code&gt;A_STDP&lt;/code&gt; and &lt;code&gt;A_STDG&lt;/code&gt; as expected.
-&lt;/p&gt;
-
-&lt;p&gt;
-The STD data structure is relatively simple. The most relevant attributes are the the following.
-&lt;/p&gt;
-
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;Attribute&lt;/th&gt;&lt;th&gt;Meaning&lt;/th&gt;&lt;th&gt;Accessor&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-&lt;tbody&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;ast&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;The AST that is described by this STD. Contains an AST identifier&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;STD_AST(std)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;next&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;The STD that follows this STD. This is a STD identifier&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;STD_NEXT(std)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;prev&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;The STD that precedes this STD. This is a STD identifier&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;STD_PREV(std)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;label&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;The label symbol of this statement if it has one. This is a SPTR&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;STD_LABEL(std)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;lineno&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;The line number of this statement&lt;/td&gt;
-&lt;td&gt;&lt;code&gt;STD_LINENO(std)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;&lt;code&gt;findex&lt;/code&gt;&lt;/td&gt;
-&lt;td&gt;This is the file index. It identifies the file that contains the statement. It changes because of &lt;code&gt;INCLUDE&lt;/code&gt; lines and preprocessor &lt;code&gt;#include&lt;/code&gt; directives. The identifier is a FIH (File Information Header) that we haven't discussed yet. &lt;/td&gt;
-&lt;td&gt;&lt;code&gt;STD_FINDEX(std)&lt;/code&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3&gt;Creation of an STD&lt;/h3&gt;
-
-&lt;p&gt;
-To create an STD for a an AST the function &lt;code&gt;mk_std&lt;/code&gt; can be used. This will only link (bidirectionally) the STD and the AST but we still need to place the statement itself.
-&lt;/p&gt;
-
-&lt;p&gt;
-In the early stages of the compiler, the semantic actions of the parser are responsible for most of the creations of ASTs and STDs in the compiler. Because the creation of statements often happens in the order of the program there is a convenient function &lt;code&gt;add_stmt&lt;/code&gt; that will do a &lt;code&gt;mk_std&lt;/code&gt; to the new AST and then place the STD as the last one. Sometimes AST of statements have to be placed before or after other STDs and this can be achieved with helpers like &lt;code&gt;add_stmt_after&lt;/code&gt; and &lt;code&gt;add_stmt_before&lt;/code&gt;.
-&lt;/p&gt;
-
-&lt;p&gt;
-The file &lt;code&gt;ast.c&lt;/code&gt; contains many other functions useful to manipulate placement of statements. Note that where the code expects an statement it means an identifier of an STD, not an AST.
-&lt;/p&gt;
-
-&lt;h2&gt;Summary&lt;/h2&gt;
-
-&lt;p&gt;
-In this chapter we have seen the structure that flang uses to represent the computations performed by our Fortran program.
-&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;The computation is represented using an AST. An AST is a data structure formed by AST nodes.&lt;/li&gt;
-&lt;li&gt;There are about 160 different kinds of AST nodes. Each kind represents some different form of computation, ranging from simpler ones like just references to variables or constants to more complex ones like binary operands and statements.&lt;/li&gt;
-&lt;li&gt;Each kind of node has different attributes. Each attribute has its own accessors. Some of these attributes are ASTs, SPTRs or DTYPEs.&lt;/li&gt;
-&lt;li&gt;Some ASTs represent Fortran statements, where the order is important. The extra information of statements is decoupled from regular AST in a data structure called STD.&lt;/li&gt;
-&lt;li&gt;STDs concern about ordering of the fortran statements.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;
-In the next installment of this series we will look at ASTs a bit more, in particular we have not considered statements that change the control flow.
-&lt;/p&gt;
-&lt;/td&gt;&lt;/tr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/p&gt;&lt;/p&gt;&lt;/p&gt;&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In previous chapters we saw how the input source was lexed, parsed and semantically analysed and we looked at how the symbols and data types are represented. But we haven't looked at what happens once the semantic analysis finishes. In this installment we're going to talk about the AST.</summary></entry></feed>
+&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><category term="aws" /><category term="go" /><category term="serverless" /><summary type="html">Use case I've been willing to give the serverless framework a try for a while, and recently I came up with a small side project that was a potential good fit for it. I am a Monzo user, and I use their card to pay for things like my weekday lunches around the office or my travel expenses like Oyster Card top ups. I also happen to be a user of Toshl, which helps me with my personal finances and budgets. Typically, whenever my Oyster card gets topped up or I pay for a lunch in a restaurant, I then input that expense into Toshl. But turns out both Monzo and Toshl are developer friendly, so I thought I could easily automate that process by having a system that would get certain Monzo expenses directly into Toshl for me, saving me a few seconds per day. A serverless approach was ideal for this, especially since AWS offers a free tier for its services, meaning this would also not cost me a penny.</summary></entry></feed>

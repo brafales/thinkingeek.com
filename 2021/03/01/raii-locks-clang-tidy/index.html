@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>RAII, locks and clang-tidy</title>
+  <meta name="description" content="A colleague of mine spent some time chasing a bug in a C++ library related to concurrency. At the end it all boiled down to a silly declaration that wasn’t one.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="RAII, locks and clang-tidy">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/">
+  <meta property="og:description" content="A colleague of mine spent some time chasing a bug in a C++ library related to concurrency. At the end it all boiled down to a silly declaration that wasn’t one.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="RAII, locks and clang-tidy">
+  <meta name="twitter:description" content="A colleague of mine spent some time chasing a bug in a C++ library related to concurrency. At the end it all boiled down to a silly declaration that wasn’t one.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav">
+      
+        
+        <a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a>
+      
+        
+        <a class="page-link" href="/gcc-tiny/">GCC tiny</a>
+      
+        
+        <a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a>
+      
+        
+        <a class="page-link" href="/archives/">Archives</a>
+      
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">RAII, locks and clang-tidy</h1>
+    
+    <p class="post-meta"><time datetime="2021-03-01T21:52:00+00:00" itemprop="datePublished">Mar 1, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> •
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/c/">c++</a>,
+      
+    
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/clang-tidy/">clang-tidy</a>,
+      
+    
+      
+    
+  
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        <a href="/categories/locks/">locks</a>
+      
+    
+  
+
+
+
+</p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>A colleague of mine spent some time chasing a bug in a C++ library related
+to concurrency.</p>
+
+<p>At the end it all boiled down to a silly declaration that wasn’t one.</p>
+
+<!--more-->
+
+<h1>RAII</h1>
+
+<p>There is a salient feature of C++ called Resource Acquisition Is Initialization
+(RAII) in which it is possible to bind resource lifetimes to the lifetime of
+declarations in C++.</p>
+
+<p>This is very useful because the C++ object model guarantees that objects are
+destroyed when the scope in which they were declared ends. This way it is
+possible to acquire the resource in the constructor and release it in the
+destructor. This is even more useful in the presence of exceptions, whose
+unusual control flow is often the source of resources not beeing released under
+exceptional flows. Because it ties resources to lifetimes of objects and given
+that C++ gives guarantees regarding destruction of objects when exceptions are
+thrown, makes RAII a very convenient and practical technique.</p>
+
+<p>However there are still some confusing cases due to the C++ syntax, which is
+sometimes surprising.</p>
+
+<h2>Temporaries</h2>
+
+<p>There is a number of situations in which a temporary needs to be created
+in a C++ program. A common one is when we bind a reference to a prvalue.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">A</span> <span class="p">{</span>
+  <span class="k">explicit</span> <span class="n">A</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+  <span class="o">~</span><span class="n">A</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">quux</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">A</span> <span class="o">&amp;</span><span class="n">x</span> <span class="o">=</span> <span class="n">A</span><span class="p">{</span><span class="mi">3</span><span class="p">};</span>
+  <span class="n">A</span> <span class="o">&amp;&amp;</span><span class="n">w</span> <span class="o">=</span> <span class="n">A</span><span class="p">{</span><span class="mi">4</span><span class="p">};</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Because passing arguments is modeled in the same way as initialization, a
+similar case is as follows.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">foo</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">,</span> <span class="n">A</span> <span class="o">&amp;&amp;</span><span class="n">y</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">bar</span><span class="p">()</span> <span class="p">{</span> <span class="n">foo</span><span class="p">(</span><span class="n">A</span><span class="p">{</span><span class="mi">3</span><span class="p">},</span> <span class="n">A</span><span class="p">{</span><span class="mi">4</span><span class="p">});</span> <span class="p">}</span></code></pre></figure>
+
+<p>Temporaries are in general destroyed when they are not needed any longer. In
+the call to <code class="language-plaintext highlighter-rouge">foo</code> above this happens at the end of the expression (conceptually
+at the semicolon).</p>
+
+<p>However, in the first case, we don’t want the references <code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">w</code> to point
+to objects that have been freed. So in that case (and a number of others) the
+lifetime of the temporary is extended such that the temporary is destroyed when
+the reference goes out of scope.</p>
+
+<h1>Locks</h1>
+
+<p>C++ has a concurrency primitive class <code class="language-plaintext highlighter-rouge">std::mutex</code> that is used to implement
+mutual exclusion between threads. Often mutexes are of interest to link to
+scopes, hence using them as RAII. For that purpose there are the classes
+<code class="language-plaintext highlighter-rouge">std::lock_guard</code> and <code class="language-plaintext highlighter-rouge">std::scoped_lock</code>.</p>
+
+<p>A common way to acquire a lock for the duration of a scope is as follows.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;mutex&gt;
+</span>
+<span class="n">std</span><span class="o">::</span><span class="n">mutex</span> <span class="n">protect_resource</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">critical</span><span class="p">()</span> <span class="p">{</span>
+  <span class="p">{</span>
+     <span class="n">std</span><span class="o">::</span><span class="n">lock_guard</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">mutex</span><span class="o">&gt;</span> <span class="n">l</span><span class="p">{</span><span class="n">protect_resource</span><span class="p">};</span>
+     <span class="c1">// Do something with the resource that cannot</span>
+     <span class="c1">// be accessed concurrently by threads.</span>
+  <span class="p">}</span> <span class="c1">// The lock is released here.</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>My colleague was using this idiom, so what was wrong for him? Well, as usually
+he <em>thought</em> he was using the idiom, instead the code looked like this.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;mutex&gt;
+</span>
+<span class="n">std</span><span class="o">::</span><span class="n">mutex</span> <span class="n">protect_resource</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">critical</span><span class="p">()</span> <span class="p">{</span>
+  <span class="p">{</span>
+     <span class="n">std</span><span class="o">::</span><span class="n">lock_guard</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">mutex</span><span class="o">&gt;</span><span class="p">{</span><span class="n">protect_resource</span><span class="p">};</span>
+     <span class="c1">// ...</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>I hope you can see the problem here, the lock is acquired and released
+immediately upon destruction of the temporary. Part of the problem is that RAII
+involves a declaration. It often happens that the name of the declaration is
+not relevant, hence one might accidentally omit it. Unfortunately, in one of
+those typical C++ syntactic flukes, we end not having a declaration anymore:
+we’re creating a temporary.</p>
+
+<p>It looks like this case is almost always an error. I fail to see what is the
+usefulness of acquiring a lock to just release it afterwards. So, barring
+memory ordering consequences, this is just an expensive no-operation.</p>
+
+<p>Finally note that there is a convoluted case where this syntax might be OK.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;mutex&gt;
+</span>
+<span class="n">std</span><span class="o">::</span><span class="n">mutex</span> <span class="n">protect_resource</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">critical</span><span class="p">()</span> <span class="p">{</span>
+  <span class="p">{</span>
+     <span class="k">const</span> <span class="k">auto</span> <span class="o">&amp;</span><span class="n">l</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">lock_guard</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">mutex</span><span class="o">&gt;</span><span class="p">{</span><span class="n">protect_resource</span><span class="p">};</span>
+     <span class="c1">// ...</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>But we will happily ignore that one, because frankly, a code like this serves
+no favour to the reader. And code is more often read than written.</p>
+
+<p>There is still a case where we could argue that this idiom is iseful. Class
+<code class="language-plaintext highlighter-rouge">std::scoped_lock</code> allows locking more than one lock at a time. So if we manage
+to acquire all of them (even if we release all of them immediately) we may know
+that the protected resources were at some point available. For instance we could
+log that fact, but the logging process itself may not demand exclusive access
+to the processes. However it is always possible to write something like this.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">idleness</span><span class="p">()</span> <span class="p">{</span>
+  <span class="p">{</span> <span class="n">std</span><span class="o">::</span><span class="n">scoped_lock</span> <span class="n">l</span><span class="p">{</span><span class="n">m_resource1</span><span class="p">,</span> <span class="n">m_resource2</span><span class="p">,</span> <span class="n">m_resource3</span><span class="p">};</span> <span class="p">}</span>
+  <span class="n">mylog</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">"All resources available at timestamp: "</span> <span class="o">&lt;&lt;</span> <span class="n">get_timestamp</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>More wordy, yes, but an unusual usage that we can still reduce to the syntax of
+the usual case.</p>
+
+<h1>Attributes</h1>
+
+<p>Given a user-defined class that we can modify, such as <code class="language-plaintext highlighter-rouge">A</code> above, its
+constructors can be marked with the standard attribute <code class="language-plaintext highlighter-rouge">nodiscard</code>.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">A</span> <span class="p">{</span>
+  <span class="p">[[</span><span class="n">nodiscard</span><span class="p">]]</span> <span class="k">explicit</span> <span class="n">A</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+  <span class="o">~</span><span class="n">A</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">quux</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">A</span><span class="p">{</span><span class="mi">4</span><span class="p">};</span> <span class="c1">// Emits a warning.</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>However we cannot do that with <code class="language-plaintext highlighter-rouge">std::lock_guard</code> as it is a class that is
+defined by the C++ library and it may not include such annotation (it may not
+be desirable to introduce false positives in some of the unusual cases).</p>
+
+<h1>Linting with clang-tidy</h1>
+
+<p>One thing we can do is use a linting tool such as <a href="https://clang.llvm.org/extra/clang-tidy/"><code class="language-plaintext highlighter-rouge">clang-tidy</code></a>. This
+clang-based tool provides a practical mechanism to add new diagnostics. Most
+checks are designed around <a href="https://clang.llvm.org/docs/LibASTMatchers.html">the clang ASTMatcher library</a> that is very
+convenient to match clang ASTs.</p>
+
+<h2>Adding a new check</h2>
+
+<p>Let’s see how we can add a check to <code class="language-plaintext highlighter-rouge">clang-tidy</code>. In this post we will see
+the basics, <a href="https://clang.llvm.org/extra/clang-tidy/Contributing.html">so check the documentation for greater details</a>.</p>
+
+<p>First let’s define a header inside the <code class="language-plaintext highlighter-rouge">concurrency</code> namespace. There are a few
+namespaces but this one feels right for our purpose.</p>
+
+<figure class="highlight"><figcaption>clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+</pre></td><td class="code"><pre><span class="cp">#ifndef LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_CONCURRENCY_USELESSLOCK_H
+#define LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_CONCURRENCY_USELESSLOCK_H
+</span>
+<span class="cp">#include "../ClangTidyCheck.h"
+</span>
+<span class="k">namespace</span> <span class="n">clang</span> <span class="p">{</span>
+<span class="k">namespace</span> <span class="n">tidy</span> <span class="p">{</span>
+<span class="k">namespace</span> <span class="n">concurrency</span> <span class="p">{</span>
+
+<span class="k">class</span> <span class="nc">UselessLockCheck</span> <span class="o">:</span> <span class="k">public</span> <span class="n">ClangTidyCheck</span> <span class="p">{</span>
+<span class="nl">public:</span>
+  <span class="n">UselessLockCheck</span><span class="p">(</span><span class="n">StringRef</span> <span class="n">Name</span><span class="p">,</span> <span class="n">ClangTidyContext</span> <span class="o">*</span><span class="n">Context</span><span class="p">)</span>
+      <span class="o">:</span> <span class="n">ClangTidyCheck</span><span class="p">(</span><span class="n">Name</span><span class="p">,</span> <span class="n">Context</span><span class="p">)</span> <span class="p">{}</span>
+  <span class="kt">void</span> <span class="n">registerMatchers</span><span class="p">(</span><span class="n">ast_matchers</span><span class="o">::</span><span class="n">MatchFinder</span> <span class="o">*</span><span class="n">Finder</span><span class="p">)</span> <span class="k">override</span><span class="p">;</span>
+  <span class="kt">void</span> <span class="n">check</span><span class="p">(</span><span class="k">const</span> <span class="n">ast_matchers</span><span class="o">::</span><span class="n">MatchFinder</span><span class="o">::</span><span class="n">MatchResult</span> <span class="o">&amp;</span><span class="n">Result</span><span class="p">)</span> <span class="k">override</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="p">}</span> <span class="c1">// namespace concurrency</span>
+<span class="p">}</span> <span class="c1">// namespace tidy</span>
+<span class="p">}</span> <span class="c1">// namespace clang</span>
+
+<span class="cp">#endif // LLVM_CLANG_TOOLS_EXTRA_CLANG_TIDY_CONCURRENCY_USELESSLOCK_H</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>This header defines a class that inherits from <code class="language-plaintext highlighter-rouge">ClangTidyCheck</code> and we override
+a member function called <code class="language-plaintext highlighter-rouge">registerMatcher</code> and <code class="language-plaintext highlighter-rouge">check</code>.</p>
+
+<figure class="highlight"><figcaption>clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+</pre></td><td class="code"><pre><span class="cp">#include "UselessLockCheck.h"
+#include "clang/AST/ASTContext.h"
+#include "clang/ASTMatchers/ASTMatchFinder.h"
+#include "clang/Lex/Preprocessor.h"
+</span>
+<span class="k">using</span> <span class="k">namespace</span> <span class="n">clang</span><span class="o">::</span><span class="n">ast_matchers</span><span class="p">;</span>
+
+<span class="k">namespace</span> <span class="n">clang</span> <span class="p">{</span>
+<span class="k">namespace</span> <span class="n">tidy</span> <span class="p">{</span>
+<span class="k">namespace</span> <span class="n">concurrency</span> <span class="p">{</span>
+
+<span class="kt">void</span> <span class="n">UselessLockCheck</span><span class="o">::</span><span class="n">registerMatchers</span><span class="p">(</span><span class="n">MatchFinder</span> <span class="o">*</span><span class="n">Finder</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Finder</span><span class="o">-&gt;</span><span class="n">addMatcher</span><span class="p">(</span>
+      <span class="n">cxxTemporaryObjectExpr</span><span class="p">(</span><span class="n">isExpansionInMainFile</span><span class="p">(),</span>
+                             <span class="n">hasType</span><span class="p">(</span><span class="n">asString</span><span class="p">(</span><span class="s">"std::lock_guard&lt;std::mutex&gt;"</span><span class="p">)))</span>
+          <span class="p">.</span><span class="n">bind</span><span class="p">(</span><span class="s">"uselesslock"</span><span class="p">),</span>
+      <span class="k">this</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">UselessLockCheck</span><span class="o">::</span><span class="n">check</span><span class="p">(</span><span class="k">const</span> <span class="n">MatchFinder</span><span class="o">::</span><span class="n">MatchResult</span> <span class="o">&amp;</span><span class="n">Result</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="k">auto</span> <span class="o">*</span><span class="n">MatchedExpr</span> <span class="o">=</span> <span class="n">Result</span><span class="p">.</span><span class="n">Nodes</span><span class="p">.</span><span class="n">getNodeAs</span><span class="o">&lt;</span><span class="n">Expr</span><span class="o">&gt;</span><span class="p">(</span><span class="s">"uselesslock"</span><span class="p">);</span>
+  <span class="n">diag</span><span class="p">(</span><span class="n">MatchedExpr</span><span class="o">-&gt;</span><span class="n">getBeginLoc</span><span class="p">(),</span> <span class="s">"this lock is not protecting anything"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">}</span> <span class="c1">// namespace concurrency</span>
+<span class="p">}</span> <span class="c1">// namespace tidy</span>
+<span class="p">}</span> <span class="c1">// namespace clang</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Member function <code class="language-plaintext highlighter-rouge">registerMatcher</code> will
+register the matcher (or matchers) that will then be passed onto function
+<code class="language-plaintext highlighter-rouge">check</code>. These use the ASTMatcher library, which is very powerful, but basically
+we say: match all <code class="language-plaintext highlighter-rouge">CXXTemporaryObjectExpr</code> nodes (we’ll see below why) using the
+matcher constructor <code class="language-plaintext highlighter-rouge">cxxTemporaryObjectExpr</code>. But of those <code class="language-plaintext highlighter-rouge">CXXTemporaryObjectExpr</code>,
+only match those that appear in the main file (not in a header) and they are
+trying to construct a type <code class="language-plaintext highlighter-rouge">std::lock_guard&lt;std::mutex&gt;</code>. Finally bind a node that
+matches all these properties to the name <code class="language-plaintext highlighter-rouge">uselesslock</code>.</p>
+
+<p>Once a node matches it is passed to <code class="language-plaintext highlighter-rouge">check</code>. Here we can do some additional
+filtering if that can’t easily be expressed using matchers. We don’t have to do
+anything like that so we just diagnose that the lock is useless.</p>
+
+<p>Finally, the required plumbing to compile and register the check follows (in
+diff format for clarity).</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt b/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt
+index 65d2ace6645e..9c7907a5c3ce 100644
+</span><span class="gd">--- a/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt
+</span><span class="gi">+++ b/clang-tools-extra/clang-tidy/concurrency/CMakeLists.txt
+</span><span class="p">@@ -7,6 +7,7 @@</span> add_clang_library(clangTidyConcurrencyModule
+   ConcurrencyTidyModule.cpp
+   MtUnsafeCheck.cpp
+   ThreadCanceltypeAsynchronousCheck.cpp
+<span class="gi">+  UselessLockCheck.cpp
+</span> 
+   LINK_LIBS
+   clangTidy
+<span class="gh">diff --git a/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp b/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp
+index 7ae891d463f7..b21737150a2e 100644
+</span><span class="gd">--- a/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp
+</span><span class="gi">+++ b/clang-tools-extra/clang-tidy/concurrency/ConcurrencyTidyModule.cpp
+</span><span class="p">@@ -11,6 +11,7 @@</span>
+ #include "../ClangTidyModuleRegistry.h"
+ #include "MtUnsafeCheck.h"
+ #include "ThreadCanceltypeAsynchronousCheck.h"
+<span class="gi">+#include "UselessLockCheck.h"
+</span> 
+ namespace clang {
+ namespace tidy {
+<span class="p">@@ -23,6 +24,8 @@</span> public:
+         "concurrency-mt-unsafe");
+     CheckFactories.registerCheck&lt;ThreadCanceltypeAsynchronousCheck&gt;(
+         "concurrency-thread-canceltype-asynchronous");
+<span class="gi">+    CheckFactories.registerCheck&lt;UselessLockCheck&gt;(
++        "concurrency-useless-lock");
+</span>   }
+ };</code></pre></figure>
+
+<h2>Trying the check</h2>
+
+<p>Let’s consider the following input</p>
+
+<figure class="highlight"><figcaption>t.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre></td><td class="code"><pre><span class="cp">#include &lt;mutex&gt;
+</span>
+<span class="n">std</span><span class="o">::</span><span class="n">mutex</span> <span class="n">protect_resource</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="k">explicit</span> <span class="n">A</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">critical</span><span class="p">()</span> <span class="p">{</span>
+  <span class="p">{</span>
+     <span class="n">std</span><span class="o">::</span><span class="n">lock_guard</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">mutex</span><span class="o">&gt;</span><span class="p">{</span><span class="n">protect_resource</span><span class="p">};</span>
+  <span class="p">}</span>
+  <span class="p">{</span>
+      <span class="n">A</span><span class="p">{</span><span class="mi">3</span><span class="p">};</span>
+      <span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Now we can run <code class="language-plaintext highlighter-rouge">clang-tidy</code>, enabling explicitly our new check (ignore the
+complaint about the compilation database, this is kind of expected given that
+we haven’t created any).</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>clang-tidy <span class="nt">-checks</span><span class="o">=</span>concurrency-useless-lock t.cc
+Error <span class="k">while </span>trying to load a compilation database:
+Could not auto-detect compilation database <span class="k">for </span>file <span class="s2">"t.cc"</span>
+No compilation database found <span class="k">in</span> /home/roger/tmp or any parent directory
+fixed-compilation-database: Error <span class="k">while </span>opening fixed database: No such file or directory
+json-compilation-database: Error <span class="k">while </span>opening JSON database: No such file or directory
+Running without flags.
+1 warning generated.
+/home/roger/tmp/t.cc:12:6: warning: this lock is not protecting anything <span class="o">[</span>concurrency-useless-lock]
+     std::lock_guard&lt;std::mutex&gt;<span class="o">{</span>protect_resource<span class="o">}</span><span class="p">;</span>
+     ^</code></pre></figure>
+
+<p>Voilà, here we have our new diagnostic. Now we can add this to CI if needed.
+At this point I’ll stop but we can extend it with a fix-it (so clang suggests
+how to ammend the issue).</p>
+
+<h2>How do we know what to match?</h2>
+
+<p>There are two mechanisms here. First we can use <code class="language-plaintext highlighter-rouge">clang-query</code> which allows us
+to use the C++ syntax in a REPL-like tool. But before we can know what we want
+to match we may need to see the AST as <code class="language-plaintext highlighter-rouge">clang</code> represents it. We can do that
+doing <code class="language-plaintext highlighter-rouge">-Xclang -ast-dump</code>.</p>
+
+<p>In the example above</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>clang <span class="nt">-Xclang</span> <span class="nt">-ast-dump</span> <span class="nt">-fsyntax-only</span> t.cc</code></pre></figure>
+
+<p>This prints a giant tree, after all header <code class="language-plaintext highlighter-rouge">mutex</code> will include lots of things,
+but the interesting bits are at the end.</p>
+
+<pre><font color="#3465A4">`-</font><font color="#8AE234"><b>FunctionDecl</b></font><font color="#C4A000"> 0x12506090</font> &lt;<font color="#C4A000">line:10:1</font>, <font color="#C4A000">line:18:1</font>&gt; <font color="#C4A000">line:10:6</font><font color="#34E2E2"><b> critical</b></font> <font color="#4E9A06">&apos;void ()&apos;</font>
+<font color="#3465A4">  `-</font><font color="#AD7FA8"><b>CompoundStmt</b></font><font color="#C4A000"> 0x12507588</font> &lt;<font color="#C4A000">col:17</font>, <font color="#C4A000">line:18:1</font>&gt;
+<font color="#3465A4">    |-</font><font color="#AD7FA8"><b>CompoundStmt</b></font><font color="#C4A000"> 0x12506fe0</font> &lt;<font color="#C4A000">line:11:3</font>, <font color="#C4A000">line:13:3</font>&gt;
+<font color="#3465A4">    | `-</font><font color="#AD7FA8"><b>ExprWithCleanups</b></font><font color="#C4A000"> 0x12506fc8</font> &lt;<font color="#C4A000">line:12:6</font>, <font color="#C4A000">col:50</font>&gt; <font color="#4E9A06">&apos;std::lock_guard&lt;std::mutex&gt;&apos;:&apos;std::lock_guard&lt;std::mutex&gt;&apos;</font>
+<font color="#3465A4">    |   `-</font><font color="#AD7FA8"><b>CXXBindTemporaryExpr</b></font><font color="#C4A000"> 0x12506fa8</font> &lt;<font color="#C4A000">col:6</font>, <font color="#C4A000">col:50</font>&gt; <font color="#4E9A06">&apos;std::lock_guard&lt;std::mutex&gt;&apos;:&apos;std::lock_guard&lt;std::mutex&gt;&apos;</font> (CXXTemporary<font color="#C4A000"> 0x12506fa8</font>)
+<font color="#3465A4">    |     `-</font><font color="#AD7FA8"><b>CXXTemporaryObjectExpr</b></font><font color="#C4A000"> 0x12506f68</font> &lt;<font color="#C4A000">col:6</font>, <font color="#C4A000">col:50</font>&gt; <font color="#4E9A06">&apos;std::lock_guard&lt;std::mutex&gt;&apos;:&apos;std::lock_guard&lt;std::mutex&gt;&apos;</font> <font color="#4E9A06">&apos;void (std::lock_guard&lt;std::mutex&gt;::mutex_type &amp;)&apos;</font> list
+<font color="#3465A4">    |       `-</font><font color="#AD7FA8"><b>DeclRefExpr</b></font><font color="#C4A000"> 0x12506368</font> &lt;<font color="#C4A000">col:34</font>&gt; <font color="#4E9A06">&apos;std::mutex&apos;:&apos;std::mutex&apos;</font><font color="#06989A"> lvalue</font> <font color="#8AE234"><b>Var</b></font><font color="#C4A000"> 0x125056e0</font><font color="#34E2E2"><b> &apos;protect_resource&apos;</b></font> <font color="#4E9A06">&apos;std::mutex&apos;:&apos;std::mutex&apos;</font>
+<font color="#3465A4">    `-</font><font color="#AD7FA8"><b>CompoundStmt</b></font><font color="#C4A000"> 0x12507568</font> &lt;<font color="#C4A000">line:14:3</font>, <font color="#C4A000">line:17:3</font>&gt;
+<font color="#3465A4">      |-</font><font color="#AD7FA8"><b>CXXTemporaryObjectExpr</b></font><font color="#C4A000"> 0x125073c8</font> &lt;<font color="#C4A000">line:15:7</font>, <font color="#C4A000">col:10</font>&gt; <font color="#4E9A06">&apos;A&apos;</font> <font color="#4E9A06">&apos;void (int)&apos;</font> list
+<font color="#3465A4">      | `-</font><font color="#AD7FA8"><b>IntegerLiteral</b></font><font color="#C4A000"> 0x12507008</font> &lt;<font color="#C4A000">col:9</font>&gt; <font color="#4E9A06">&apos;int&apos;</font><font color="#34E2E2"><b> 3</b></font>
+<font color="#3465A4">      `-</font><font color="#AD7FA8"><b>CXXFunctionalCastExpr</b></font><font color="#C4A000"> 0x12507540</font> &lt;<font color="#C4A000">line:16:7</font>, <font color="#C4A000">col:10</font>&gt; <font color="#4E9A06">&apos;A&apos;</font> functional cast to struct A &lt;ConstructorConversion&gt;
+<font color="#3465A4">        `-</font><font color="#AD7FA8"><b>CXXConstructExpr</b></font><font color="#C4A000"> 0x12507510</font> &lt;<font color="#C4A000">col:7</font>, <font color="#C4A000">col:10</font>&gt; <font color="#4E9A06">&apos;A&apos;</font> <font color="#4E9A06">&apos;void (int)&apos;</font>
+<font color="#3465A4">          `-</font><font color="#AD7FA8"><b>IntegerLiteral</b></font><font color="#C4A000"> 0x125074f0</font> &lt;<font color="#C4A000">col:9</font>&gt; <font color="#4E9A06">&apos;int&apos;</font><font color="#34E2E2"><b> 3</b></font>
+</pre>
+
+<p>As you can see this is a representation of our function <code class="language-plaintext highlighter-rouge">critical</code>. It has two
+compound statements of which we care about the one including that
+<code class="language-plaintext highlighter-rouge">CXXTemporaryObjectExpr</code>. This is exactly the node we matched above in the
+matcher. To avoid matching other things like <code class="language-plaintext highlighter-rouge">A{3}</code> we need to ensure the
+expression has type <code class="language-plaintext highlighter-rouge">std::lock_guard&lt;std::mutex&gt;</code>, again a fact we stated in
+the matcher.</p>
+
+<p>Cool right? 😃</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2020/11/22/process-wide-information-and-keys/">&laquo; Process-wide information and Linux key management</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
