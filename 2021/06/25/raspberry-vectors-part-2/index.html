@@ -171,7 +171,7 @@ defining vectors of double precision, this will be 64 bit. The second operand
 represents the offset within the register. In contrast to <code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code> registers that
 do include two consecutive registers, VFP vectors may include non-consecutive
 registers due to the wraparound within a vector bank (recall <code class="language-plaintext highlighter-rouge">(d7, d4)</code>). So we
-specify <code class="language-plaintext highlighter-rouge">-1</code> to represent that this is not a phyisical subregister but a
+specify <code class="language-plaintext highlighter-rouge">-1</code> to represent that this is not a physical subregister but a
 logical one.</p>
 
 <p>Now we can use tablegen looping features to define the pairs of registers.</p>
