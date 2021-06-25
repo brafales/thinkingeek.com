@@ -235,8 +235,8 @@ non-power of 2 vector lengths are a bit unusual. In fact the vectorizer of
 LLVM currently only considers powers of two. To avoid complicating ourselves
 a lot, we will consider only <code class="language-plaintext highlighter-rouge">&lt;2 x double&gt;</code> and <code class="language-plaintext highlighter-rouge">&lt;4 x float&gt;</code>.</p>
 
-<p>Technically speaking, <code class="language-plaintext highlighter-rouge">&lt;4 x double&gt;</code> is something we could consider,
-however if you look at the register banks above you will see that in practice
+<p>Technically speaking, <code class="language-plaintext highlighter-rouge">&lt;4 x double&gt;</code> is something we could consider too.
+However if you look at the register banks above you will see that in practice
 we can only represent 3 of those vectors at a time. A few algorithms can live
 with this but it will be often too limiting.</p>
 
