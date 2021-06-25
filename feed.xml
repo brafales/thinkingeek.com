@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-25T14:14:20+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;In the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-25T14:15:14+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;In the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
 we discussed a bit how to generate code using the vector feature of the CPU of
 the Raspberry Pi 1.&lt;/p&gt;
 
@@ -29,17 +29,7 @@ them directly in C++.&lt;/p&gt;
 backends have to specialise this class, so the Arm backend uses a class called
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMFReg&lt;/code&gt; for floating point registers&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;// Registers are identified with 4-bit ID numbers.
-class ARMReg&amp;lt;bits&amp;lt;16&amp;gt; Enc, string n, list&amp;lt;Register&amp;gt; subregs = [],
-             list&amp;lt;string&amp;gt; altNames = []&amp;gt; : Register&amp;lt;n, altNames&amp;gt; {
-  let HWEncoding = Enc;
-  let Namespace = &quot;ARM&quot;;
-  let SubRegs = subregs;
-  // All bits of ARM registers with sub-registers are covered by sub-registers.
-  let CoveredBySubRegs = 1;
-}
-
-class ARMFReg&amp;lt;bits&amp;lt;16&amp;gt; Enc, string n&amp;gt; : Register&amp;lt;n&amp;gt; {
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;class ARMFReg&amp;lt;bits&amp;lt;16&amp;gt; Enc, string n&amp;gt; : Register&amp;lt;n&amp;gt; {
   let HWEncoding = Enc;
   let Namespace = &quot;ARM&quot;;
 }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;

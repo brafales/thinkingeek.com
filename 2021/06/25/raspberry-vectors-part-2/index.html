@@ -104,17 +104,7 @@ them directly in C++.</p>
 backends have to specialise this class, so the Arm backend uses a class called
 <code class="language-plaintext highlighter-rouge">ARMFReg</code> for floating point registers</p>
 
-<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">// Registers are identified with 4-bit ID numbers.
-class ARMReg&lt;bits&lt;16&gt; Enc, string n, list&lt;Register&gt; subregs = [],
-             list&lt;string&gt; altNames = []&gt; : Register&lt;n, altNames&gt; {
-  let HWEncoding = Enc;
-  let Namespace = "ARM";
-  let SubRegs = subregs;
-  // All bits of ARM registers with sub-registers are covered by sub-registers.
-  let CoveredBySubRegs = 1;
-}
-
-class ARMFReg&lt;bits&lt;16&gt; Enc, string n&gt; : Register&lt;n&gt; {
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">class ARMFReg&lt;bits&lt;16&gt; Enc, string n&gt; : Register&lt;n&gt; {
   let HWEncoding = Enc;
   let Namespace = "ARM";
 }</code></pre></figure>
