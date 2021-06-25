@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 1</title>
+  <meta name="description" content="Long ago, we saw that the Raspberry Pi 1 has vector computation capabilities.. However to the best of my knowledge no compiler attempted to exploit the vector capability in general. I think we are going to have some fun in trying to fix this.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-1/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 1">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-1/">
+  <meta property="og:description" content="Long ago, we saw that the Raspberry Pi 1 has vector computation capabilities.. However to the best of my knowledge no compiler attempted to exploit the vector capability in general. I think we are going to have some fun in trying to fix this.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 1">
+  <meta name="twitter:description" content="Long ago, we saw that the Raspberry Pi 1 has vector computation capabilities.. However to the best of my knowledge no compiler attempted to exploit the vector capability in general. I think we are ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 1</h1>
+    
+    <p class="post-meta"><time datetime="2021-06-25T12:32:00+00:00" itemprop="datePublished">Jun 25, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="/2013/05/12/arm-assembler-raspberry-pi-chapter-13/">
+Long ago, we saw that the Raspberry Pi 1 has vector computation
+capabilities.</a>. However to the best of my knowledge no compiler attempted to
+exploit the vector capability in general.</p>
+
+<p>I think we are going to have some fun in trying to fix this.</p>
+
+<!--more-->
+
+<h1>A bit of a reminder</h1>
+
+<p>The Raspberry Pi 1 comes with a BCM2835 SoC that includes a ARM1176JZF-S core.
+This core implements the ARMv6 architecture and includes support for floating
+point operations via an extension of ARMv6 that was commercially called
+VFP. VFP had several versions but the one included in the ARM1176JZF-S core
+is VFPv2.</p>
+
+<p>VFP provides 32 registers of single precison which can be grouped in pairs to
+provide 16 registers of double precision.</p>
+
+<p>However the registers are grouped in banks, a first scalar bank and three
+vector banks.</p>
+
+<figure>
+  <img src="/wp-content/uploads/2013/04/vfp-registers.png" alt="VFP registers" />
+  <figcaption>Vector registers of VFP</figcaption>
+</figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">fpscr</code> register has a field called <code class="language-plaintext highlighter-rouge">len</code> that encodes the vector length.</p>
+
+<figure>
+  <img src="/assets/images/fpscr-description.png" alt="fpscr description" />
+  <figcaption>Description of the <code>fpscr</code> register.
+  Image from <a href="https://developer.arm.com/documentation/qrc0007/e/">Vector Floating Point Instruction Set Quick Reference Card</a>.</figcaption>
+</figure>
+
+<p>By default the vector length is set to 1 (encoded as <code class="language-plaintext highlighter-rouge">0b000</code> in the <code class="language-plaintext highlighter-rouge">len</code> field
+of <code class="language-plaintext highlighter-rouge">fpscr</code>) and so all the operations with all the registers are regular scalar
+floating point operations, regardless of the bank they are found in.</p>
+
+<p>However if we set <code class="language-plaintext highlighter-rouge">len</code> to a value larger than 1, typically 2 or 4 but it is
+possible to use any value from 2 to 8, the behaviour changes for a few
+instructions. If the operands only involve registers in the <em>scalar bank</em>,
+then they will continue computing scalar values.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"># vector length is 3
+vfadd.f32 s2, s4, s5
+# s2  ← s4 + s5</code></pre></figure>
+
+<p>If the operands involve registers in the vector banks, the computation will be
+extended to the next <code class="language-plaintext highlighter-rouge">len</code> registers, wrapping around inside the bank if
+needed.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"># vector length is 3
+vfadd.f32 s9, s17 s30
+# s9  ← s17 + s30
+# s10 ← s18 + s31
+# s11 ← s19 + s24</code></pre></figure>
+
+<p>Finally there is a mixed mode where one source register is in the scalar bank
+and the other one in a vector bank, the value of the scalar bank will be reused
+<code class="language-plaintext highlighter-rouge">len</code> times as operand of each vec</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"># vector length is 3
+vfadd.f32 s9, s4 s30
+# s9  ← s4 + s30
+# s10 ← s4 + s31
+# s11 ← s4 + s24</code></pre></figure>
+
+<p>Finally note that not all the instructions honour <code class="language-plaintext highlighter-rouge">len</code>. Only the following
+instructions do:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Instruction</th>
+      <th style="text-align: left">Meaning</th>
+      <th style="text-align: left">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vadd.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← b + c</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vsub.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← b - c</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vmul.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← b * c</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vnmul.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← -(b * c)</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vdiv.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← b / c</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vmla.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← a + (b * c)</code></td>
+      <td style="text-align: left">Different rounding to <code class="language-plaintext highlighter-rouge">vmul</code> followed by <code class="language-plaintext highlighter-rouge">vadd</code></td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vmls.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← a - (b * c)</code></td>
+      <td style="text-align: left">Ditto.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vnmla.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← -a - (b * c)</code></td>
+      <td style="text-align: left">Ditto.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vnmls.&lt;ty&gt; a, b, c</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← -a + (b * c)</code></td>
+      <td style="text-align: left">Ditto.</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vneg.&lt;ty&gt; a, b</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← -b</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vabs.&lt;ty&gt; a, b</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← |b|</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">vsqrt.&lt;ty&gt; a, b</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">a ← √b</code></td>
+      <td style="text-align: left"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<h1>Modelling in LLVM</h1>
+
+<p>Before we can even try to generate code, we need to think a bit how to model the
+vector computation in the LLVM infrastructure.</p>
+
+<h2>Types</h2>
+
+<p>LLVM IR supports vector types of the form <code class="language-plaintext highlighter-rouge">&lt;k x ty&gt;</code> where <code class="language-plaintext highlighter-rouge">k</code> is a constant
+and <code class="language-plaintext highlighter-rouge">ty</code> is the base type of the vector. In our case <code class="language-plaintext highlighter-rouge">ty</code> is either going to be
+<code class="language-plaintext highlighter-rouge">double</code> (called <code class="language-plaintext highlighter-rouge">f64</code> in the code generator of LLVM) and <code class="language-plaintext highlighter-rouge">float</code> (called <code class="language-plaintext highlighter-rouge">f32</code>
+in the code generator).</p>
+
+<p>Technically speaking we could support a range of vector types, specially
+for <code class="language-plaintext highlighter-rouge">float</code> from 2 to 8, as in <code class="language-plaintext highlighter-rouge">&lt;2 x float&gt;</code>, <code class="language-plaintext highlighter-rouge">&lt;3 x float&gt;</code>, etc. However
+non-power of 2 vector lengths are a bit unusual. In fact the vectorizer of
+LLVM currently only considers powers of two. To avoid complicating ourselves
+a lot, we will consider only <code class="language-plaintext highlighter-rouge">&lt;2 x double&gt;</code> and <code class="language-plaintext highlighter-rouge">&lt;4 x float&gt;</code>.</p>
+
+<p>Technically speaking, <code class="language-plaintext highlighter-rouge">&lt;4 x double&gt;</code> is something we could consider,
+however if you look at the register banks above you will see that in practice
+we can only represent 3 of those vectors at a time. A few algorithms can live
+with this but it will be often too limiting.</p>
+
+<h2>Registers</h2>
+
+<p>Now the next step is thinking what storage we are going to use to
+represent those vectors.</p>
+
+<p>If you look closely at the table above and given the behaviour of VFP, any
+consecutive pair of <code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code> registers within the same bank can be used for <code class="language-plaintext highlighter-rouge">&lt;2 x
+double&gt;</code>. This means that <code class="language-plaintext highlighter-rouge">(d4, d5)</code>, <code class="language-plaintext highlighter-rouge">(d5, d6)</code>, <code class="language-plaintext highlighter-rouge">(d6, d7)</code> and <code class="language-plaintext highlighter-rouge">(d7,d4)</code> are
+four options available in the first bank. Note that the pair <code class="language-plaintext highlighter-rouge">(d5, d6)</code> may
+feel a bit suboptimal but we still can use `(d7, d4) if needed. LLVM knows when
+two groups of registers overlap, so in principle we can give all the options
+and let LLVM generate correct code.</p>
+
+<p>We will see later than some other parts of VFP will lead us to prefer pairs
+whose first component is an even numbered <code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code> register. It is also possible
+to suggest LLVM to prefer some specific order for registers.</p>
+
+<p>A similar rationale applies for <code class="language-plaintext highlighter-rouge">&lt;4 x float&gt;</code> but this time it will be groups
+of 4 consecutive (including the wrap-around within the bank) <code class="language-plaintext highlighter-rouge">s&lt;n&gt;</code> registers.
+So for instance <code class="language-plaintext highlighter-rouge">(s8, s9, s10, 11)</code> but also <code class="language-plaintext highlighter-rouge">(s14, s15, s8, s9)</code>. Similarly
+groups whose first <code class="language-plaintext highlighter-rouge">s&lt;n&gt;</code> register is a multiple of four will be preferable.</p>
+
+<p>Effectively, not counting overlaps, VFPv2 provides us with the following
+resources:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th style="text-align: right">Number of registers</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">&lt;2 x double&gt;</code></td>
+      <td style="text-align: right">6</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">&lt;4 x float&gt;</code></td>
+      <td style="text-align: right">12</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Operations</h2>
+
+<p>LLVM IR does not have explicit operations for all the instructions above but it
+will be relatively easy to pattern match them when possible. For instance if we
+are happy with floating-point contraction (i.e. we don’t care about all the
+roundings that IEEE 754 might require) a <code class="language-plaintext highlighter-rouge">vmla.&lt;ty&gt;</code> instruction can be used
+when the program wants to compute <code class="language-plaintext highlighter-rouge">a + (b * c)</code></p>
+
+<p>The contentious part, however, is that we need to make sure the field <code class="language-plaintext highlighter-rouge">len</code> of
+the <code class="language-plaintext highlighter-rouge">fpscr</code> register is correctly set.</p>
+
+<p>The following LLVM IR means add two vectors of type <code class="language-plaintext highlighter-rouge">&lt;2 x double&gt;</code>. The
+operands of this operation are represented by values <code class="language-plaintext highlighter-rouge">%va</code> and <code class="language-plaintext highlighter-rouge">%vb</code>. The
+result of the operation is represented by <code class="language-plaintext highlighter-rouge">%vc</code>.</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="nv">%vc</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%va</span><span class="p">,</span> <span class="nv">%vb</span></code></pre></figure>
+
+<p>Note however that VFP also supports scalar operations and LLVM lowers them
+to those instructions. So a piece of IR like the following one</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="nv">%c</span> <span class="p">=</span> <span class="k">fadd</span> <span class="kt">double</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span></code></pre></figure>
+
+<p>may be lowered into the following instruction</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vadd.f64 d2, d3, d8</code></pre></figure>
+
+<p>This is correct because the state of the program is assumed to be such that
+the <code class="language-plaintext highlighter-rouge">len</code> field is always 0.</p>
+
+<p>However, because we want to use vectors, we are about to break this assumption.
+This means that our program will need to ensure that the <code class="language-plaintext highlighter-rouge">len</code> field has the
+right value before executing the corresponding instruction: scalar or vector.</p>
+
+<p style="padding: 0.7em; background-color: bisque;">
+We will see that maintaining this invariant when generating code is going to
+give us some headaches. These sort of designs actually complicate compilers.
+Now a compiler needs to introduce computation that sets
+the CPU state (in our case the `len` field) as needed but at the same time
+we want it to do it in the most efficient way possible (i.e. avoiding resetting
+the CPU state more than it is needed).
+</p>
+
+<p>VFP will help us here a bit because not all the operations will care about the
+<code class="language-plaintext highlighter-rouge">len</code> field so we will have a bit of leeway here.</p>
+
+<p>And that should be it for today. The rest of the chapters will be more deep
+down how we can hammer LLVM so it emits vector code for the Raspberry Pi 1.</p>
+
+<h1>Goal</h1>
+
+<p>Our first goal is to add enough functionality to LLVM so the
+following <em>hello world</em> of vectorization:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">vadd_f32</span><span class="p">(</span><span class="kt">float</span> <span class="o">*</span><span class="k">restrict</span> <span class="n">c</span><span class="p">,</span> <span class="kt">float</span> <span class="o">*</span><span class="k">restrict</span> <span class="n">a</span><span class="p">,</span> <span class="kt">float</span> <span class="o">*</span><span class="k">restrict</span> <span class="n">b</span><span class="p">,</span> <span class="kt">int</span> <span class="n">n</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>is emitted like this:</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="err">⋮</span>
+<span class="err">@</span> <span class="o">%</span><span class="n">bb</span><span class="mf">.2</span><span class="o">:</span>                                <span class="err">@</span> <span class="o">%</span><span class="n">vector</span><span class="p">.</span><span class="n">ph</span>
+    <span class="n">vmrs</span>    <span class="n">r4</span><span class="p">,</span> <span class="n">fpscr</span>                   <span class="err">@</span> \
+    <span class="n">mvn</span> <span class="n">r7</span><span class="p">,</span> <span class="err">#</span><span class="mi">458752</span>                     <span class="err">@</span>  <span class="o">|</span>
+    <span class="n">and</span> <span class="n">r4</span><span class="p">,</span> <span class="n">r4</span><span class="p">,</span> <span class="n">r7</span>                      <span class="err">@</span>  <span class="o">|</span>
+    <span class="n">mov</span> <span class="n">r7</span><span class="p">,</span> <span class="err">#</span><span class="mi">196608</span>                     <span class="err">@</span>  <span class="o">|</span> <span class="n">Sets</span> <span class="n">the</span> <span class="n">vector</span> <span class="n">length</span> <span class="n">to</span> <span class="mi">4</span>
+    <span class="n">orr</span> <span class="n">r4</span><span class="p">,</span> <span class="n">r4</span><span class="p">,</span> <span class="n">r7</span>                      <span class="err">@</span>  <span class="o">|</span>
+    <span class="n">vmsr</span>    <span class="n">fpscr</span><span class="p">,</span> <span class="n">r4</span>                   <span class="err">@</span> <span class="o">/</span>
+<span class="p">.</span><span class="n">LBB0_3</span><span class="o">:</span>                                <span class="err">@</span> <span class="o">%</span><span class="n">vector</span><span class="p">.</span><span class="n">body</span>
+                                        <span class="err">@</span> <span class="o">=&gt;</span><span class="n">This</span> <span class="n">Inner</span> <span class="n">Loop</span> <span class="n">Header</span><span class="o">:</span> <span class="n">Depth</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">vldmia</span>  <span class="n">r6</span><span class="p">,</span> <span class="p">{</span><span class="n">s8</span><span class="p">,</span> <span class="n">s9</span><span class="p">,</span> <span class="n">s10</span><span class="p">,</span> <span class="n">s11</span><span class="p">}</span>      <span class="err">@</span> <span class="n">Loads</span> <span class="err">'</span><span class="n">b</span><span class="p">[</span><span class="n">i</span> <span class="o">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span><span class="err">'</span>
+    <span class="n">vldmia</span>  <span class="n">r5</span><span class="p">,</span> <span class="p">{</span><span class="n">s12</span><span class="p">,</span> <span class="n">s13</span><span class="p">,</span> <span class="n">s14</span><span class="p">,</span> <span class="n">s15</span><span class="p">}</span>    <span class="err">@</span> <span class="n">Loads</span> <span class="err">'</span><span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span><span class="err">'</span> 
+    <span class="n">vadd</span><span class="p">.</span><span class="n">f32</span>    <span class="n">s8</span><span class="p">,</span> <span class="n">s12</span><span class="p">,</span> <span class="n">s8</span>             <span class="err">@</span> <span class="n">Computes</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span> <span class="o">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span> <span class="o">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+    <span class="n">subs</span>    <span class="n">lr</span><span class="p">,</span> <span class="n">lr</span><span class="p">,</span> <span class="err">#</span><span class="mi">4</span>
+    <span class="n">add</span> <span class="n">r5</span><span class="p">,</span> <span class="n">r5</span><span class="p">,</span> <span class="err">#</span><span class="mi">16</span>
+    <span class="n">add</span> <span class="n">r6</span><span class="p">,</span> <span class="n">r6</span><span class="p">,</span> <span class="err">#</span><span class="mi">16</span>
+    <span class="n">vstmia</span>  <span class="n">r8</span><span class="o">!</span><span class="p">,</span> <span class="p">{</span><span class="n">s8</span><span class="p">,</span> <span class="n">s9</span><span class="p">,</span> <span class="n">s10</span><span class="p">,</span> <span class="n">s11</span><span class="p">}</span>     <span class="err">@</span> <span class="n">Stores</span> <span class="n">into</span> <span class="err">'</span><span class="n">c</span><span class="p">[</span><span class="n">i</span> <span class="o">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span><span class="err">'</span>
+    <span class="n">bne</span> <span class="p">.</span><span class="n">LBB0_3</span>
+    <span class="err">⋮</span></code></pre></figure>
+
+<h2>Is any of this useful?</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/ARM_architecture#Floating-point_(VFP)">According to the Wikipedia:</a></p>
+
+<blockquote>
+  <p>The VFP architecture was intended to support execution of short “vector mode”
+instructions but these operated on each vector element sequentially and thus
+did not offer the performance of true single instruction, multiple data
+(SIMD) vector parallelism. This vector mode was therefore removed shortly
+after its introduction, to be replaced with the much more powerful Advanced
+SIMD, also known as Neon.</p>
+</blockquote>
+
+<p>I don’t expect any performance improvement when using vector operations in the
+Raspberry Pi 1. In fact the only metric we may possibly improve is code size.</p>
+
+<p>It is going to be fun anyways.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/03/01/raii-locks-clang-tidy/">&laquo; RAII, locks and clang-tidy</a>
+
+
+  <a class="next" href="/2021/06/25/raspberry-vectors-part-2/">Fun with vectors in the Raspberry Pi 1 - Part 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

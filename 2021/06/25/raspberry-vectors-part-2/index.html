@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 2</title>
+  <meta name="description" content="Ok so in the previous installment we discussed a bit how to generate code using the vector feature of the CPU of the Raspberry Pi 1. Let’s start hacking LLVM.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">
+  <meta property="og:description" content="Ok so in the previous installment we discussed a bit how to generate code using the vector feature of the CPU of the Raspberry Pi 1. Let’s start hacking LLVM.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 2">
+  <meta name="twitter:description" content="Ok so in the previous installment we discussed a bit how to generate code using the vector feature of the CPU of the Raspberry Pi 1. Let’s start hacking LLVM.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2021-06-25T12:36:00+00:00" itemprop="datePublished">Jun 25, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Ok so in the <a href="/2021/06/25/raspberry-vectors-part-1/">previous installment</a>
+we discussed a bit how to generate code using the vector feature of the CPU of
+the Raspberry Pi 1.</p>
+
+<p>Let’s start hacking LLVM.</p>
+
+<!--more-->
+
+<h1>Registers</h1>
+
+<p>One way to understand registers in LLVM is a set of storage resources that we
+can group in register classes. Those register classes can then be mentioned as
+register operands of instructions.</p>
+
+<p>The register information for the <code class="language-plaintext highlighter-rouge">ARM</code> backend (the one used for 32-bit Arm
+CPUs, currently known as the AArch32 execution state of the Arm architecture)
+is found in <code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/ARMRegisterInfo.td</code>.</p>
+
+<p>This is a <a href="https://llvm.org/docs/TableGen/">tablegen</a> file. Tablegen is a
+domain specific language to generate records called <em>definitions</em>. Each
+definition is an instance of a <em>class</em> and classes define the attributes
+that a definition will contain. A tablegen file is then processed by one
+or more <em>backends</em> commonly to generate C++ code. This tablegen-generated C++
+code is compiled along with the rest of the C++ code that makes up LLVM. This way
+it is relatively quick to update parts of the compiler without having to express
+them directly in C++.</p>
+
+<p>Registers in LLVM are specified using definitions of class <code class="language-plaintext highlighter-rouge">Register</code>. Most
+backends have to specialise this class, so the Arm backend uses a class called
+<code class="language-plaintext highlighter-rouge">ARMFReg</code> for floating point registers</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">// Registers are identified with 4-bit ID numbers.
+class ARMReg&lt;bits&lt;16&gt; Enc, string n, list&lt;Register&gt; subregs = [],
+             list&lt;string&gt; altNames = []&gt; : Register&lt;n, altNames&gt; {
+  let HWEncoding = Enc;
+  let Namespace = "ARM";
+  let SubRegs = subregs;
+  // All bits of ARM registers with sub-registers are covered by sub-registers.
+  let CoveredBySubRegs = 1;
+}
+
+class ARMFReg&lt;bits&lt;16&gt; Enc, string n&gt; : Register&lt;n&gt; {
+  let HWEncoding = Enc;
+  let Namespace = "ARM";
+}</code></pre></figure>
+
+<p>The single precision floating point registers (<code class="language-plaintext highlighter-rouge">s&lt;n&gt;</code>) are defined like this.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">def S0  : ARMFReg&lt; 0, "s0"&gt;;  def S1  : ARMFReg&lt; 1, "s1"&gt;;
+def S2  : ARMFReg&lt; 2, "s2"&gt;;  def S3  : ARMFReg&lt; 3, "s3"&gt;;
+def S4  : ARMFReg&lt; 4, "s4"&gt;;  def S5  : ARMFReg&lt; 5, "s5"&gt;;
+def S6  : ARMFReg&lt; 6, "s6"&gt;;  def S7  : ARMFReg&lt; 7, "s7"&gt;;
+def S8  : ARMFReg&lt; 8, "s8"&gt;;  def S9  : ARMFReg&lt; 9, "s9"&gt;;
+def S10 : ARMFReg&lt;10, "s10"&gt;; def S11 : ARMFReg&lt;11, "s11"&gt;;
+def S12 : ARMFReg&lt;12, "s12"&gt;; def S13 : ARMFReg&lt;13, "s13"&gt;;
+def S14 : ARMFReg&lt;14, "s14"&gt;; def S15 : ARMFReg&lt;15, "s15"&gt;;
+def S16 : ARMFReg&lt;16, "s16"&gt;; def S17 : ARMFReg&lt;17, "s17"&gt;;
+def S18 : ARMFReg&lt;18, "s18"&gt;; def S19 : ARMFReg&lt;19, "s19"&gt;;
+def S20 : ARMFReg&lt;20, "s20"&gt;; def S21 : ARMFReg&lt;21, "s21"&gt;;
+def S22 : ARMFReg&lt;22, "s22"&gt;; def S23 : ARMFReg&lt;23, "s23"&gt;;
+def S24 : ARMFReg&lt;24, "s24"&gt;; def S25 : ARMFReg&lt;25, "s25"&gt;;
+def S26 : ARMFReg&lt;26, "s26"&gt;; def S27 : ARMFReg&lt;27, "s27"&gt;;
+def S28 : ARMFReg&lt;28, "s28"&gt;; def S29 : ARMFReg&lt;29, "s29"&gt;;
+def S30 : ARMFReg&lt;30, "s30"&gt;; def S31 : ARMFReg&lt;31, "s31"&gt;;</code></pre></figure>
+
+<p>The double precision registers (<code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code>) are defined as registers
+that include two single precision registers in it. This is achieved by
+first declaring what is called a subregister index.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">def ssub_0  : SubRegIndex&lt;32&gt;;
+def ssub_1  : SubRegIndex&lt;32, 32&gt;;</code></pre></figure>
+
+<p>Now the registers can be defined by telling LLVM that they have two subregister
+indices and then linking each subregister index to the corresponding <code class="language-plaintext highlighter-rouge">s&lt;n&gt;</code> and <code class="language-plaintext highlighter-rouge">s&lt;n+1&gt;</code>
+registers.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">// Aliases of the F* registers used to hold 64-bit fp values (doubles)
+let SubRegIndices = [ssub_0, ssub_1] in {
+def D0  : ARMReg&lt; 0,  "d0", [S0,   S1]&gt;, DwarfRegNum&lt;[256]&gt;;
+def D1  : ARMReg&lt; 1,  "d1", [S2,   S3]&gt;, DwarfRegNum&lt;[257]&gt;;
+def D2  : ARMReg&lt; 2,  "d2", [S4,   S5]&gt;, DwarfRegNum&lt;[258]&gt;;
+def D3  : ARMReg&lt; 3,  "d3", [S6,   S7]&gt;, DwarfRegNum&lt;[259]&gt;;
+def D4  : ARMReg&lt; 4,  "d4", [S8,   S9]&gt;, DwarfRegNum&lt;[260]&gt;;
+def D5  : ARMReg&lt; 5,  "d5", [S10, S11]&gt;, DwarfRegNum&lt;[261]&gt;;
+def D6  : ARMReg&lt; 6,  "d6", [S12, S13]&gt;, DwarfRegNum&lt;[262]&gt;;
+def D7  : ARMReg&lt; 7,  "d7", [S14, S15]&gt;, DwarfRegNum&lt;[263]&gt;;
+def D8  : ARMReg&lt; 8,  "d8", [S16, S17]&gt;, DwarfRegNum&lt;[264]&gt;;
+def D9  : ARMReg&lt; 9,  "d9", [S18, S19]&gt;, DwarfRegNum&lt;[265]&gt;;
+def D10 : ARMReg&lt;10, "d10", [S20, S21]&gt;, DwarfRegNum&lt;[266]&gt;;
+def D11 : ARMReg&lt;11, "d11", [S22, S23]&gt;, DwarfRegNum&lt;[267]&gt;;
+def D12 : ARMReg&lt;12, "d12", [S24, S25]&gt;, DwarfRegNum&lt;[268]&gt;;
+def D13 : ARMReg&lt;13, "d13", [S26, S27]&gt;, DwarfRegNum&lt;[269]&gt;;
+def D14 : ARMReg&lt;14, "d14", [S28, S29]&gt;, DwarfRegNum&lt;[270]&gt;;
+def D15 : ARMReg&lt;15, "d15", [S30, S31]&gt;, DwarfRegNum&lt;[271]&gt;;
+}</code></pre></figure>
+
+<p>Ok so we can use a similar strategy for our vector registers. Let’s define
+first a couple of new subregister indices. For now let’s focus on double
+precision.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">def dsub_len2_0: SubRegIndex&lt;64, -1&gt;;
+def dsub_len2_1: SubRegIndex&lt;64, -1&gt;;</code></pre></figure>
+
+<p>The first argument to <code class="language-plaintext highlighter-rouge">SubRegIndex</code> is the size of the register. Because we are
+defining vectors of double precision, this will be 64 bit. The second operand
+represents the offset within the register. In contrast to <code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code> registers that
+do include two consecutive registers, VFP vectors may include non-consecutive
+registers due to the wraparound within a vector bank (recall <code class="language-plaintext highlighter-rouge">(d7, d4)</code>). So we
+specify <code class="language-plaintext highlighter-rouge">-1</code> to represent that this is not a phyisical subregister but a
+logical one.</p>
+
+<p>Now we can use tablegen looping features to define the pairs of registers.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">// Double precision pairs
+defset list&lt;Register&gt; DPRx2Regs = {
+foreach base = [4, 8, 12] in {
+    foreach offset = [0, 1, 2, 3] in {
+        defvar m = !add(base, offset);
+        defvar mnext = !add(base, !and(!add(offset, 1), 0x3));
+        let SubRegIndices = [dsub_len2_0, dsub_len2_1] in {
+            def "D" # m # "_D" # mnext # "x2" :
+                VFPRegistersWithSubregs&lt;
+                    !cast&lt;Register&gt;("D" # m),
+                    "d" # m # "x2",
+                    [!cast&lt;Register&gt;("D" # m), !cast&lt;Register&gt;("D" # mnext)],
+                    ["d" # m # "x2"]&gt;;
+        }
+    }
+}
+}</code></pre></figure>
+
+<p>This is a bit difficult to read. <code class="language-plaintext highlighter-rouge">base</code> represents the <code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code> that begins a
+vector bank: <code class="language-plaintext highlighter-rouge">d4</code>, <code class="language-plaintext highlighter-rouge">d8</code> and <code class="language-plaintext highlighter-rouge">d12</code>. <code class="language-plaintext highlighter-rouge">offset</code> represents how many elements there
+are within each bank. These two loops execute and will be generating definitions.
+Because of the <code class="language-plaintext highlighter-rouge">defset</code> directive enclosing everything, those definitions will
+also be referenced in a list called <code class="language-plaintext highlighter-rouge">DPRx2Regs</code>.</p>
+
+<p>So we compute first <code class="language-plaintext highlighter-rouge">base + offset</code> and we name this <code class="language-plaintext highlighter-rouge">m</code>.
+Then we compute <code class="language-plaintext highlighter-rouge">mnext</code> as the logical next one but making sure we wrap around
+(we achieve this using <code class="language-plaintext highlighter-rouge">!and(..., 0x3)</code> as we have to compute mod 4). T</p>
+
+<p>Now that we have <code class="language-plaintext highlighter-rouge">m</code> and <code class="language-plaintext highlighter-rouge">mnext</code> we can define the pair itself. The definition
+will be named <code class="language-plaintext highlighter-rouge">D&lt;m&gt;_D&lt;mnext&gt;x2</code> (e.g. <code class="language-plaintext highlighter-rouge">D4_D5x2</code>, D5_D6x2<code class="language-plaintext highlighter-rouge">, </code>D6_D7x2<code class="language-plaintext highlighter-rouge">,
+</code>D7_D4x2<code class="language-plaintext highlighter-rouge">, </code>D8_D9x2`, …) this name is arbitrary but should be a valid C++ identifier
+because one of the tablegen backends will add enumerators for those registers.</p>
+
+<p>In order to generate the register we use a specialised class called
+<code class="language-plaintext highlighter-rouge">VFPRegistersWithSubregs</code> which is just a convenience for this task.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">class VFPRegistersWithSubregs&lt;Register EncReg, string n, list&lt;Register&gt; subregs,
+                          list&lt;string&gt; alt = []&gt;
+      : RegisterWithSubRegs&lt;n, subregs&gt; {
+  let HWEncoding = EncReg.HWEncoding;
+  let AltNames = alt;
+  let Namespace = "ARM";
+}</code></pre></figure>
+
+<p>If you check above how we use this class, the first argument is the encoding
+register. We will always use the first register of the group for the encoding.
+(however you will see that eventually we won’t be using this). We are naming
+those registers <code class="language-plaintext highlighter-rouge">d&lt;n&gt;x2</code> in the assembly. We will not use them and in fact we
+should forbid those names in the assembler that LLVM will generate for the ARM
+backend, but for simplicity we will ignore this. Finally see how we link
+the current definition to each <code class="language-plaintext highlighter-rouge">d&lt;m&gt;</code> and <code class="language-plaintext highlighter-rouge">d&lt;mnext&gt;</code>.</p>
+
+<p>Now we have the registers defined. Those are the resources. Those resources
+can be used in instructions via register classes, which are the sets of useable
+registers in instructions. Due to the way we have designed the registers
+all of them will be usable in a register class for vectors of doubles. We can
+simply use the list <code class="language-plaintext highlighter-rouge">DPRx2Regs</code> that we built using <code class="language-plaintext highlighter-rouge">defset</code> above.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">def DPRx2 : RegisterClass&lt;"ARM", [v2f64], 64, (add DPRx2Regs)&gt;;</code></pre></figure>
+
+<p>The second operand is the list of <em>machine</em> types that we can represent with
+this register. In this case <code class="language-plaintext highlighter-rouge">v2f64</code> is equivalent to <code class="language-plaintext highlighter-rouge">&lt;2 x double&gt;</code> in LLVM IR.
+Machine types are fixed set of types that backends can use (i.e. LLVM IR has
+types that machine types do not represent) and are somehow associated to the
+physical types of CPUs. The third operand is the alignment, in bits, used
+when loading or storing a register from memory. Due to the way we are going
+to load them, they can be aligned to 8 bytes (64 bit).</p>
+
+<p>And that’s it. We can do the same for single precision. This time sizes
+are 32 and each register will contain 4 subregisters. The type of the
+registers will be <code class="language-plaintext highlighter-rouge">v4f32</code>.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">def ssub_len4_0: SubRegIndex&lt;32, -1&gt;;
+def ssub_len4_1: SubRegIndex&lt;32, -1&gt;;
+def ssub_len4_2: SubRegIndex&lt;32, -1&gt;;
+def ssub_len4_3: SubRegIndex&lt;32, -1&gt;;
+
+// Single precision quads
+defset list&lt;Register&gt; SPRx4Regs = {
+foreach base = [8, 16, 24] in {
+    foreach offset = [0, 1, 2, 3, 4, 5, 6, 7] in {
+        defvar m = !add(base, offset);
+        defvar mnext1 = !add(base, !and(!add(offset, 1), 0x7));
+        defvar mnext2 = !add(base, !and(!add(offset, 2), 0x7));
+        defvar mnext3 = !add(base, !and(!add(offset, 3), 0x7));
+        let SubRegIndices = [ssub_len4_0, ssub_len4_1, ssub_len4_2, ssub_len4_3]
+        in {
+            def "S" # m # "_S" # mnext1 # "_S" # mnext2 # "_S" # mnext3 # "x4" :
+                VFPRegistersWithSubregs&lt;
+                    !cast&lt;Register&gt;("S" # m),
+                    "s" # m # "x4",
+                    [!cast&lt;Register&gt;("S" # m),
+                     !cast&lt;Register&gt;("S" # mnext1),
+                     !cast&lt;Register&gt;("S" # mnext2),
+                     !cast&lt;Register&gt;("S" # mnext3)],
+                    ["s" # m # "x4"]&gt;;
+        }
+    }
+}
+}
+def SPRx4 : RegisterClass&lt;"ARM", [v4f32], 32, (add SPRx4Regs)&gt;;</code></pre></figure>
+
+<p>In the next chapter we will talk about what changes we have to do to be able
+to track <code class="language-plaintext highlighter-rouge">fpscr</code> so we can change the <code class="language-plaintext highlighter-rouge">len</code> field with confidence.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/06/25/raspberry-vectors-part-1/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 1</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
