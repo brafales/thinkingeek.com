@@ -249,7 +249,7 @@ represent those vectors.</p>
 consecutive pair of <code class="language-plaintext highlighter-rouge">d&lt;n&gt;</code> registers within the same bank can be used for <code class="language-plaintext highlighter-rouge">&lt;2 x
 double&gt;</code>. This means that <code class="language-plaintext highlighter-rouge">(d4, d5)</code>, <code class="language-plaintext highlighter-rouge">(d5, d6)</code>, <code class="language-plaintext highlighter-rouge">(d6, d7)</code> and <code class="language-plaintext highlighter-rouge">(d7,d4)</code> are
 four options available in the first bank. Note that the pair <code class="language-plaintext highlighter-rouge">(d5, d6)</code> may
-feel a bit suboptimal but we still can use `(d7, d4) if needed. LLVM knows when
+feel a bit suboptimal but we still can use <code class="language-plaintext highlighter-rouge">(d7, d4)</code> if needed. LLVM knows when
 two groups of registers overlap, so in principle we can give all the options
 and let LLVM generate correct code.</p>
 
@@ -326,7 +326,7 @@ we want it to do it in the most efficient way possible (i.e. avoiding resetting
 the CPU state more than it is needed).
 </p>
 
-<p>VFP will help us here a bit because not all the operations will care about the
+<p>VFP will help us a bit because not all the operations will care about the
 <code class="language-plaintext highlighter-rouge">len</code> field so we will have a bit of leeway here.</p>
 
 <h1>Goal</h1>

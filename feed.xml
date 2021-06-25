@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-25T14:12:21+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;Ok so in the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-25T14:13:49+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;Ok so in the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
 we discussed a bit how to generate code using the vector feature of the CPU of
 the Raspberry Pi 1.&lt;/p&gt;
 
@@ -390,7 +390,7 @@ represent those vectors.&lt;/p&gt;
 consecutive pair of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;&lt;/code&gt; registers within the same bank can be used for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x
 double&amp;gt;&lt;/code&gt;. This means that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d4, d5)&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d5, d6)&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d6, d7)&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d7,d4)&lt;/code&gt; are
 four options available in the first bank. Note that the pair &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d5, d6)&lt;/code&gt; may
-feel a bit suboptimal but we still can use `(d7, d4) if needed. LLVM knows when
+feel a bit suboptimal but we still can use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d7, d4)&lt;/code&gt; if needed. LLVM knows when
 two groups of registers overlap, so in principle we can give all the options
 and let LLVM generate correct code.&lt;/p&gt;
 
@@ -467,7 +467,7 @@ we want it to do it in the most efficient way possible (i.e. avoiding resetting
 the CPU state more than it is needed).
 &lt;/p&gt;
 
-&lt;p&gt;VFP will help us here a bit because not all the operations will care about the
+&lt;p&gt;VFP will help us a bit because not all the operations will care about the
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field so we will have a bit of leeway here.&lt;/p&gt;
 
 &lt;h1&gt;Goal&lt;/h1&gt;
