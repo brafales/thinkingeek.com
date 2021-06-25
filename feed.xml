@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-25T13:56:48+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;Ok so in the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-25T14:06:32+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;Ok so in the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
 we discussed a bit how to generate code using the vector feature of the CPU of
 the Raspberry Pi 1.&lt;/p&gt;
 
@@ -462,16 +462,13 @@ right value before executing the corresponding instruction: scalar or vector.&lt
 We will see that maintaining this invariant when generating code is going to
 give us some headaches. These sort of designs actually complicate compilers.
 Now a compiler needs to introduce computation that sets
-the CPU state (in our case the `len` field) as needed but at the same time
+the CPU state (in our case the &lt;code&gt;len&lt;/code&gt; field) as needed but at the same time
 we want it to do it in the most efficient way possible (i.e. avoiding resetting
 the CPU state more than it is needed).
 &lt;/p&gt;
 
 &lt;p&gt;VFP will help us here a bit because not all the operations will care about the
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field so we will have a bit of leeway here.&lt;/p&gt;
-
-&lt;p&gt;And that should be it for today. The rest of the chapters will be more deep
-down how we can hammer LLVM so it emits vector code for the Raspberry Pi 1.&lt;/p&gt;
 
 &lt;h1&gt;Goal&lt;/h1&gt;
 
@@ -520,9 +517,11 @@ SIMD, also known as Neon.&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;I don’t expect any performance improvement when using vector operations in the
-Raspberry Pi 1. In fact the only metric we may possibly improve is code size.&lt;/p&gt;
+Raspberry Pi 1. In fact the only metric we may possibly improve is code size.
+It is going to be fun anyways.&lt;/p&gt;
 
-&lt;p&gt;It is going to be fun anyways.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Long ago, we saw that the Raspberry Pi 1 has vector computation capabilities.. However to the best of my knowledge no compiler attempted to exploit the vector capability in general. I think we are going to have some fun in trying to fix this.</summary></entry><entry><title type="html">RAII, locks and clang-tidy</title><link href="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/" rel="alternate" type="text/html" title="RAII, locks and clang-tidy" /><published>2021-03-01T21:52:00+00:00</published><updated>2021-03-01T21:52:00+00:00</updated><id>https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy</id><content type="html" xml:base="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/">&lt;p&gt;A colleague of mine spent some time chasing a bug in a C++ library related
+&lt;p&gt;And that should be it for today. The rest of the chapters will be more deep
+down how we can hammer LLVM so it emits vector code for the Raspberry Pi 1.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Long ago, we saw that the Raspberry Pi 1 has vector computation capabilities.. However to the best of my knowledge no compiler attempted to exploit the vector capability in general. I think we are going to have some fun in trying to fix this.</summary></entry><entry><title type="html">RAII, locks and clang-tidy</title><link href="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/" rel="alternate" type="text/html" title="RAII, locks and clang-tidy" /><published>2021-03-01T21:52:00+00:00</published><updated>2021-03-01T21:52:00+00:00</updated><id>https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy</id><content type="html" xml:base="https://thinkingeek.com/2021/03/01/raii-locks-clang-tidy/">&lt;p&gt;A colleague of mine spent some time chasing a bug in a C++ library related
 to concurrency.&lt;/p&gt;
 
 &lt;p&gt;At the end it all boiled down to a silly declaration that wasn’t one.&lt;/p&gt;

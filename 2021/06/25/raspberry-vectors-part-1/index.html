@@ -321,16 +321,13 @@ right value before executing the corresponding instruction: scalar or vector.</p
 We will see that maintaining this invariant when generating code is going to
 give us some headaches. These sort of designs actually complicate compilers.
 Now a compiler needs to introduce computation that sets
-the CPU state (in our case the `len` field) as needed but at the same time
+the CPU state (in our case the <code>len</code> field) as needed but at the same time
 we want it to do it in the most efficient way possible (i.e. avoiding resetting
 the CPU state more than it is needed).
 </p>
 
 <p>VFP will help us here a bit because not all the operations will care about the
 <code class="language-plaintext highlighter-rouge">len</code> field so we will have a bit of leeway here.</p>
-
-<p>And that should be it for today. The rest of the chapters will be more deep
-down how we can hammer LLVM so it emits vector code for the Raspberry Pi 1.</p>
 
 <h1>Goal</h1>
 
@@ -379,9 +376,12 @@ SIMD, also known as Neon.</p>
 </blockquote>
 
 <p>I don’t expect any performance improvement when using vector operations in the
-Raspberry Pi 1. In fact the only metric we may possibly improve is code size.</p>
+Raspberry Pi 1. In fact the only metric we may possibly improve is code size.
+It is going to be fun anyways.</p>
 
-<p>It is going to be fun anyways.</p>
+<p>And that should be it for today. The rest of the chapters will be more deep
+down how we can hammer LLVM so it emits vector code for the Raspberry Pi 1.</p>
+
 
   </div>
 
