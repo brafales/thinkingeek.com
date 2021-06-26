@@ -107,7 +107,7 @@ input DAG, built using the information from LLVM IR, to what is called the
 output DAG, where the nodes are instructions. One important difference between
 the input DAG and the output DAG is that the input DAG operates at the level of
 machine types (a finite set of types many of which have equivalent LLVM IR
-types) while the output DAG works operates at the level of register classes.</p>
+types) while the output DAG operates at the level of register classes.</p>
 
 <p>Instruction selection completes when the output DAG is linearized, this is, a
 schedule is determined for it. Now the nodes of the output DAG are converted
@@ -248,7 +248,7 @@ register (<code class="language-plaintext highlighter-rouge">r15</code> in AArch
 expansion also have this restriction in the way they use <code class="language-plaintext highlighter-rouge">$scratch2</code>. These two
 output registers will be initially virtual registers and then register
 allocation will assign two physical registers for them. This ensures we can
-expand the pseud instruction safely.</p>
+expand the pseudo instruction safely.</p>
 
 <p>Finally, <code class="language-plaintext highlighter-rouge">IIC_fpSTAT</code> is an <em>instruction itinerary</em> and we can ignore it for
 now: it is used for scheduling. Then we specify this is only for VFPv2 which we
