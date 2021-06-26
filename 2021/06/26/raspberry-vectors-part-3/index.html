@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 3</title>
+  <meta name="description" content="In the last chapter we modelled the storage in form of pairs and quadruples of registers that we will use for vectors of double and single precision, respectively. But before we can do anything we need to deal with fpscr.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/">
+  <meta property="og:description" content="In the last chapter we modelled the storage in form of pairs and quadruples of registers that we will use for vectors of double and single precision, respectively. But before we can do anything we need to deal with fpscr.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 3">
+  <meta name="twitter:description" content="In the last chapter we modelled the storage in form of pairs and quadruples of registers that we will use for vectors of double and single precision, respectively. But before we can do anything we ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2021-06-26T05:55:00+00:00" itemprop="datePublished">Jun 26, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last chapter we modelled the storage in form of pairs and quadruples of
+registers that we will use for vectors of double and single precision,
+respectively.</p>
+
+<p>But before we can do anything we need to deal with <code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
+
+<!--more-->
+
+<h1>The way to machine instructions</h1>
+
+<p>LLVM is famously known for its intermediate representation (IR) called LLVM
+IR. Compilers, however, and LLVM is not an exception, cannot do their job with
+just a single intermediate representation. The reason is that different steps
+in the compilation pipeline have different requirements. No IR can cater for
+all of them at the same time.</p>
+
+<h2>SelectionDAG</h2>
+
+<p>So, during code generation LLVM goes through two intermediate representations.
+LLVM IR is lowered, one basic block at a time, into a graph representation
+called <a href="https://llvm.org/docs/CodeGenerator.html#instruction-selection-section">SelectionDAG</a>.
+It is called SelectionDAG because its goal is to do one of the main tasks of
+any backend: <a href="https://en.wikipedia.org/wiki/Instruction_selection">instruction selection</a>.</p>
+
+<p>Instruction selection can be understood as taking a directed acyclic graph
+(DAG) or a tree (which is a restricted form of DAG) and “tiling” it. This is,
+we will group several connected nodes and replace them with one or more nodes.
+Those new nodes correspond to actual instructions of the machine we target.</p>
+
+<p>In the context of LLVM, instruction selection goes from what it is called the
+input DAG, built using the information from LLVM IR, to what is called the
+output DAG, where the nodes are instructions. One important difference between
+the input DAG and the output DAG is that the input DAG operates at the level of
+machine types (a finite set of types many of which have equivalent LLVM IR
+types) while the output DAG works operates at the level of register classes.</p>
+
+<p>Instruction selection completes when the output DAG is linearized, this is, a
+schedule is determined for it. Now the nodes of the output DAG are converted
+into the second intermediate representation used by LLVM in code generation.</p>
+
+<h2>Machine IR</h2>
+
+<p>This second intermediate representation is called Machine IR or MIR (this is
+unrelated to <a href="https://blog.rust-lang.org/2016/04/19/MIR.html">Rust MIR</a>). MIR
+is a more conventional representation where each <em>machine function</em> is a graph
+of <em>machine basic blocks</em> and each (machine) basic block is a sequence of
+<a href="https://llvm.org/docs/CodeGenerator.html#the-machineinstr-class"><em>machine instructions</em></a>.  One way to understand machine instructions is looking
+at them as containers of operands along with an operation code (or <em>opcode</em>).
+Machine instructions can have different kinds of operands but commonly they are
+registers (of some specific register class) or immediates (i.e. a constant like
+42).</p>
+
+<p>Operands of machine instructions can be <em>explicit</em> or <em>implicit</em>. Explicit
+operands are those that are encoded as part of the instruction and they can be
+inputs or outputs. Explicit operands are the common ones and what we
+intuitively understand for operands.  Implicit operands are those that are
+inputs or outputs of the instruction but are not explicitly encoded in the
+instruction.</p>
+
+<p>For instance, in an architecture like Arm, conditional branches use (read)
+the <code class="language-plaintext highlighter-rouge">cpsr</code> register (later renamed into <code class="language-plaintext highlighter-rouge">apsr</code> in Armv7-A) that has been
+defined (written) earlier usually in a comparison.  That register is an
+implicit operand in those instructions because it is not encoded in the
+instruction itself. Instead, instructions only encode things like the operands
+being compared or, for the branch instruction, the target of the branch (where
+we jump to) and the branching condition (when whe have to jump), etc.</p>
+
+<p>Machine instructions need to know what operands they are using and defining.
+If they fail to do so, later scheduling passes that operate in the MIR may
+reorder instructions and break the semantics of the represented code.</p>
+
+<h2>Virtual registers</h2>
+
+<p>Most compilation infrastructures use the concept of <em>virtual register</em>. During
+compilation the compiler assumes that there is an infinite number of registers.
+Those registers are called <em>virtual</em> and belong to a register class. This
+largely simplifies code generation particularly because LLVM favours using
+Static Single Assignment (SSA). Under SSA, virtual registers are only defined
+once (i.e. assigned a value) and can be used many times. This constrained form
+is very beneficial for analysis because removes the ambiguity of knowing what
+was the last update to a register.</p>
+
+<p>The opposite of a virtual register is a <em>physical register</em> (in compilers
+physical registers correspond to what in computer architecture are known by
+<em>architectural registers</em>). Physical registers are not subject to the regime of
+SSA: they can be redefined many times. This makes analysing them a bit harder.</p>
+
+<p>Virtual registers do not exist in CPUs. So a process called <em>register
+allocation</em> assigns physical registers in place of virtual registers. This is
+an effective approach because the life spans of virtual registers is often very
+short. This means that, in general, not many physical registers are needed at
+the same time.  However if this happens, register allocation uses memory so it
+can temporarily store a value held in a register to retrieve it later. This
+store operation is commonly known as a <em>spill</em> and its later retrieval it is
+known as a <em>reload</em>.</p>
+
+<p>Machine instructions in MIR can have either virtual register operands and
+physical register operands. After register allocation, no virtual register
+remains in the machine function. This is largely true but some very late code
+generation steps may be easier to implement using virtual registers. LLVM
+provides a simplified mechanism to assign those virtual registers to physical
+registers without involving a full register allocation process.</p>
+
+<p><code class="language-plaintext highlighter-rouge">fpscr</code> is a physical register so unfortunately we will not be able to benefit
+the SSA advantages that virtual registers enjoy.</p>
+
+<h1>Approach</h1>
+
+<p>The approach I chose is similar, if simpler, to the one used in the RISC-V
+backend of LLVM to support vectors. By using <em>pseudo instructions</em> we define
+vector operations and handle them as needed.</p>
+
+<p>For instance, an instruction like <code class="language-plaintext highlighter-rouge">vadd.f64</code>, is represented in the ARM backend
+of LLVM with a machine instruction with opcode <code class="language-plaintext highlighter-rouge">VADDD</code>. <code class="language-plaintext highlighter-rouge">VADDD</code> is currently
+used for scalar operations. Our idea is to introduce a pseudo instruction
+called <code class="language-plaintext highlighter-rouge">VADDDx2</code>. Those pseudo instructions will use the register class <code class="language-plaintext highlighter-rouge">DPRx2</code>
+that we defined already. Similarly for <code class="language-plaintext highlighter-rouge">vadd.f32</code>, the instruction is called
+<code class="language-plaintext highlighter-rouge">VADDS</code> and we will define the pseudo instruction <code class="language-plaintext highlighter-rouge">VADDSx4</code> that uses the
+<code class="language-plaintext highlighter-rouge">SPRx4</code> register class. We will repeat this operation for all the 12
+instructions (in their two variants for double and single precision) that
+honour the <code class="language-plaintext highlighter-rouge">len</code> field of <code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
+
+<p>By using pseudo instructions we can make SelectionDAG to select those
+pseudo instructions. For instance a LLVM IR like</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="nv">%vc</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%va</span><span class="p">,</span> <span class="nv">%vb</span></code></pre></figure>
+
+<p>will be selected using the <code class="language-plaintext highlighter-rouge">VADDDx2</code> instruction.</p>
+
+<p>A pseudo instruction is no different to an instruction for the purpose of code
+generation. The difference to actual instructions, is that the target does not
+have such instruction. So at some point we will need to expand it into real
+instructions. This happens at a later stage, after register allocation and will
+be part of a later installment in this series.</p>
+
+<h2>Tracking fpscr</h2>
+
+<p>Currently the ARM backend assumes the <code class="language-plaintext highlighter-rouge">fpscr</code> does not have to be tracked for
+scalar operations. Technically they do depend on the rounding mode in <code class="language-plaintext highlighter-rouge">fpscr</code>
+but this part is not very well defined in LLVM (only recently <a href="https://llvm.org/docs/LangRef.html#constrained-floating-point-intrinsics">constrained
+floating point operations</a>
+have been introduced).</p>
+
+<p>However, if we plan to use <code class="language-plaintext highlighter-rouge">VADDD</code> and <code class="language-plaintext highlighter-rouge">VADDDx2</code> in the same code we need to
+make sure the <code class="language-plaintext highlighter-rouge">len</code> field of the <code class="language-plaintext highlighter-rouge">fpscr</code> has the right value for each
+instruction. The easiest way to do that is to set the <code class="language-plaintext highlighter-rouge">len</code> to the required
+value right before every instruction.</p>
+
+<p>In order to change the <code class="language-plaintext highlighter-rouge">len</code> we will add a pseudo instruction called
+<code class="language-plaintext highlighter-rouge">VFPSETLEN</code>.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">let Defs = [FPSCR],
+    hasNoSchedulingInfo = 1,
+    mayLoad = 0,
+    mayStore = 0,
+    hasSideEffects = 0 in
+def VFPSETLEN : PseudoInst&lt;(outs GPR:$scratch1, GPRnopc:$scratch2),
+                           (ins imm0_7:$len),
+                           IIC_fpSTAT, []&gt;,
+                           Requires&lt;[HasVFP2]&gt;;</code></pre></figure>
+
+<p>This tablegen definition of a pseudo instruction has a lot of information.</p>
+
+<p>First, this instruction has one input called <code class="language-plaintext highlighter-rouge">$len</code>. This input is an immediate
+that ranges from 0 to 7 (3 bits). This is defined by the operand kind specifier
+<code class="language-plaintext highlighter-rouge">imm0_7</code> which is conveniently already defined in the ARM backend.</p>
+
+<p>Second, this instruction has two register outputs <code class="language-plaintext highlighter-rouge">$scratch1</code> and <code class="language-plaintext highlighter-rouge">$scratch2</code>.
+We will need those later on when we expand this pseudo instruction into the
+actual instructions that set the <code class="language-plaintext highlighter-rouge">len</code> field of the <code class="language-plaintext highlighter-rouge">fpscr</code>. Note the different
+register classes <code class="language-plaintext highlighter-rouge">GPR</code> and <code class="language-plaintext highlighter-rouge">GPRnopc</code>. The latter does not allow to use the <code class="language-plaintext highlighter-rouge">pc</code>
+register (<code class="language-plaintext highlighter-rouge">r15</code> in AArch32). We do this because the instructions used in the
+expansion also have this restriction in the way they use <code class="language-plaintext highlighter-rouge">$scratch2</code>. These two
+output registers will be initially virtual registers and then register
+allocation will assign two physical registers for them. This ensures we can
+expand the pseud instruction safely.</p>
+
+<p>Finally, <code class="language-plaintext highlighter-rouge">IIC_fpSTAT</code> is an <em>instruction itinerary</em> and we can ignore it for
+now: it is used for scheduling. Then we specify this is only for VFPv2 which we
+do using <code class="language-plaintext highlighter-rouge">Requires&lt;[HasVFP2]&gt;</code>.</p>
+
+<p>Tablegen allows to <em>push</em> attributes into definitions using the <code class="language-plaintext highlighter-rouge">let</code> syntax,
+above the definition.  This is useful when we want a number of definitions to
+have the same values in the attributes by avoiding having to specify it in each
+definition.</p>
+
+<p>A first attribute is <code class="language-plaintext highlighter-rouge">Defs = [FPSCR]</code> that means this instruction defines
+(writes) the register <code class="language-plaintext highlighter-rouge">fpscr</code>. When instruction selection finally creates the
+machine instructions (of MIR) it will add an implicit defining operand for
+<code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
+
+<p>The other attributes are used to state that this instruction does not have
+scheduling info, does not load memory, does not store memory and does not have
+any further unmodelled side-effects.</p>
+
+<p>It should be possible now to mark <code class="language-plaintext highlighter-rouge">VADDD</code> and <code class="language-plaintext highlighter-rouge">VADDDx2</code> as <code class="language-plaintext highlighter-rouge">Uses = [FPSCR]</code>,
+so after instruction selection they have an implicit use of the register <code class="language-plaintext highlighter-rouge">fpscr</code>.
+However if we do so, then the instructions are reading a <code class="language-plaintext highlighter-rouge">fpscr</code> that nobody
+wrote and this is a bit odd. We will do something slightly different.</p>
+
+<h2>How to configure fpscr</h2>
+
+<p>It is possible to mark instructions (including pseudo instructions) with the
+attribute <code class="language-plaintext highlighter-rouge">hasCustomInserter</code>. When doing this an extra callback is invoked for
+each instruction, right before finishing instruction selection. This allows
+the compiler to tweak or change the instruction selection.</p>
+
+<p>The idea is that for every instruction like <code class="language-plaintext highlighter-rouge">VADDD</code>, <code class="language-plaintext highlighter-rouge">VADDDx2</code>, <code class="language-plaintext highlighter-rouge">VADDSx4</code>, …
+the custom inserter will prepend the instruction with an appropriate
+<code class="language-plaintext highlighter-rouge">VFPSETLEN</code> and will mark the instruction to implicitly use <code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
+
+<p>We mentioned there are 12 instructions in VFPv2 that honour the vector length.
+Because in LLVM those are split between the single precision and the double
+precision there are 24 machine instructions. Because we are adding the <code class="language-plaintext highlighter-rouge">x2</code> and
+<code class="language-plaintext highlighter-rouge">x4</code> forms, we end with 48 cases. This is perhaps too many cases to handle
+individually, so one option we have is to create a table that gives us
+information for each instruction. There is a tablegen backend in LLVM to create
+<a href="https://llvm.org/docs/TableGen/BackEnds.html#generic-tables">generic searchable tables</a>.</p>
+
+<h2>Generic table</h2>
+
+<p>Firt we need to specify what we will have as elements of that table.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">class VFPPseudo {
+  // Note: Pseudo will be the same as BaseInstr for VectorLength == 000b
+  Instruction Pseudo = !cast&lt;Instruction&gt;(NAME); // Used as a key.
+  Instruction BaseInstr;
+  bits&lt;3&gt; VectorLength; // Encoded with offset +1 (i.e. 000b = 1, 111b = 8)
+}</code></pre></figure>
+
+<p>Any tablegen definition of this class (including those due to to inheritance)
+will be part of the table. Each element of the table will contain 3 fields. The
+first field is the <code class="language-plaintext highlighter-rouge">Pseudo</code> instruction and will be used for lookups in the
+table. This field is a bit of a misnomer, specially for the existing scalar
+instructions such as <code class="language-plaintext highlighter-rouge">VADDD</code> and <code class="language-plaintext highlighter-rouge">VADDS</code> but I think we can live with this for
+now.</p>
+
+<p>The second field <code class="language-plaintext highlighter-rouge">BaseInstr</code> links each pseudo instruction with its base one.
+This is <code class="language-plaintext highlighter-rouge">VADDDx2</code> and <code class="language-plaintext highlighter-rouge">VADDSx4</code> will both be linked to <code class="language-plaintext highlighter-rouge">VADDD</code> and <code class="language-plaintext highlighter-rouge">VADDS</code>
+respectively.</p>
+
+<p>A final field <code class="language-plaintext highlighter-rouge">VectorLength</code> encoded in the same way as the <code class="language-plaintext highlighter-rouge">len</code> field of
+<code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
+
+<p>Now that we know what every element of the table will contain, we can define
+the table itself.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">def VFPPseudosTable : GenericTable {
+  let FilterClass = "VFPPseudo";
+  let CppTypeName = "PseudoInfo";
+  let Fields = [ "Pseudo", "BaseInstr", "VectorLength" ];
+  let PrimaryKey = [ "Pseudo" ];
+  let PrimaryKeyName = "getPseudoInfo";
+  let PrimaryKeyEarlyOut = true;
+}</code></pre></figure>
+
+<p>The first field, <code class="language-plaintext highlighter-rouge">FilterClass</code>, is the class whose definitions will make up the
+table. This is the <code class="language-plaintext highlighter-rouge">VFPPseudo</code> we defined above. Field <code class="language-plaintext highlighter-rouge">CppTypeName</code> will be
+used as the class generated in C++. This class will have a number of fields
+that we specify in the <code class="language-plaintext highlighter-rouge">Fields</code> attributes. We specify that <code class="language-plaintext highlighter-rouge">Pseudo</code> will be
+used as primary key, this is, used to look up elements in the table (the term
+<em>primary key</em> comes from databases). Field <code class="language-plaintext highlighter-rouge">PrimaryKeyName</code> is the name of the
+method we will use on the table to retrieve an element. This function will
+receive the values of the <code class="language-plaintext highlighter-rouge">PrimaryKey</code> for the lookup: in this case the opcode
+of an instruction. Finaly the field <code class="language-plaintext highlighter-rouge">PrimaryKeyEarlyOut</code> is a small
+optimisation when doing lookups in large spaces like the instructions.</p>
+
+<p>OK. How do we use this? As mentioned earlier, any class that inherits from
+this one will automatically be part of the table. So we will first label
+all the scalar operations. Before, that, let’s create a convenience subclass
+for them.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">class VFPPseudoScalar : VFPPseudo {
+  let BaseInstr = !cast&lt;Instruction&gt;(NAME);
+  let VectorLength = 0b000;
+}</code></pre></figure>
+
+<p>This subclass hardcodes some values for scalar operations: the <code class="language-plaintext highlighter-rouge">VectorLength</code>
+will always be <code class="language-plaintext highlighter-rouge">0b000</code>, which encodes a value of 1 in the <code class="language-plaintext highlighter-rouge">len</code> field. The base
+instruction will be itself. <code class="language-plaintext highlighter-rouge">NAME</code> is a special identifier which evaluates
+to the string of the name of the current tablegen definition. The cast is
+needed to convert that string to the <code class="language-plaintext highlighter-rouge">Instruction</code> definition identifier.</p>
+
+<p>With this we can now annotate the existing operations. I will show only
+here <code class="language-plaintext highlighter-rouge">VADDD</code> and <code class="language-plaintext highlighter-rouge">VADDS</code> but this can be extended to the other ones.</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"> //===----------------------------------------------------------------------===//
+ // FP Binary Operations.
+ //
+ 
+<span class="gi">+let usesCustomInserter = 1 in
+</span> let TwoOperandAliasConstraint = "$Dn = $Dd" in
+ def VADDD  : ADbI&lt;0b11100, 0b11, 0, 0,
+                   (outs DPR:$Dd), (ins DPR:$Dn, DPR:$Dm),
+                   IIC_fpALU64, "vadd", ".f64\t$Dd, $Dn, $Dm",
+                   [(set DPR:$Dd, (fadd DPR:$Dn, (f64 DPR:$Dm)))]&gt;,
+<span class="gd">-             Sched&lt;[WriteFPALU64]&gt;;
+</span><span class="gi">+             Sched&lt;[WriteFPALU64]&gt;,
++             VFPPseudoScalar;
+</span> 
+<span class="gi">+let usesCustomInserter = 1 in
+</span> let TwoOperandAliasConstraint = "$Sn = $Sd" in
+ def VADDS  : ASbIn&lt;0b11100, 0b11, 0, 0,
+                    (outs SPR:$Sd), (ins SPR:$Sn, SPR:$Sm),
+                    IIC_fpALU32, "vadd", ".f32\t$Sd, $Sn, $Sm",
+                    [(set SPR:$Sd, (fadd SPR:$Sn, SPR:$Sm))]&gt;,
+<span class="gd">-             Sched&lt;[WriteFPALU32]&gt; {
+</span><span class="gi">+             Sched&lt;[WriteFPALU32]&gt;,
++             VFPPseudoScalar {
+</span>   // Some single precision VFP instructions may be executed on both NEON and
+   // VFP pipelines on A8.
+   let D = VFPNeonA8Domain;
+ }</code></pre></figure>
+
+<p>Note that we need to make sure <code class="language-plaintext highlighter-rouge">usesCustomInserter</code> is set to 1 so the hook
+is invoked for these instructions.</p>
+
+<p>In order to make the generated table available to C++ we still need to make
+some changes in files <code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/Utils/ARMBaseInfo.cpp</code> and
+<code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/Utils/ARMBaseInfo.h</code>. This will make sure the
+tablegen-generated C++ is included appropriately.</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/llvm/lib/Target/ARM/Utils/ARMBaseInfo.cpp b/llvm/lib/Target/ARM/Utils/ARMBaseInfo.cpp
+index 3356d56481e5..4ced4d57109a 100644
+</span><span class="gd">--- a/llvm/lib/Target/ARM/Utils/ARMBaseInfo.cpp
+</span><span class="gi">+++ b/llvm/lib/Target/ARM/Utils/ARMBaseInfo.cpp
+</span><span class="p">@@ -74,4 +74,10 @@</span> namespace ARMBankedReg {
+ #define GET_BANKEDREG_IMPL
+ #include "ARMGenSystemRegister.inc"
+ } // end namespce ARMSysReg
+<span class="gi">+
++// VFP Pseudo Instructions
++namespace VFPPseudos {
++#define GET_VFPPseudosTable_IMPL
++#include "ARMGenSystemRegister.inc"
++} // namespace VFPPseudos
+</span> } // end namespace llvm</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/llvm/lib/Target/ARM/Utils/ARMBaseInfo.h b/llvm/lib/Target/ARM/Utils/ARMBaseInfo.h
+index 80b7276adb4e..3b0346d790aa 100644
+</span><span class="gd">--- a/llvm/lib/Target/ARM/Utils/ARMBaseInfo.h
+</span><span class="gi">+++ b/llvm/lib/Target/ARM/Utils/ARMBaseInfo.h
+</span><span class="p">@@ -232,6 +232,19 @@</span> namespace ARMBankedReg {
+   #include "ARMGenSystemRegister.inc"
+ } // end namespace ARMBankedReg
+ 
+<span class="gi">+// VFP Pseudo Instructions
++namespace VFPPseudos {
++using namespace ARM;
++struct PseudoInfo {
++  unsigned Pseudo;
++  unsigned BaseInst;
++  // Encoded with +1 offset (i.e. 000 means 1)
++  unsigned VectorLength;
++};
++#define GET_VFPPseudosTable_DECL
++#include "ARMGenSystemRegister.inc"
++} // namespace VFPPseudos
++
+</span> } // end namespace llvm
+ 
+ #endif // LLVM_LIB_TARGET_ARM_UTILS_ARMBASEINFO_H</code></pre></figure>
+
+<h2>The pseudo instructions</h2>
+
+<p>Ok so now we have annotated our existing scalar instructions to have
+<code class="language-plaintext highlighter-rouge">VectorLength</code> equals to 1. Now it is a good moment to introduce our
+pseudo instructions. Again I’ll show only <code class="language-plaintext highlighter-rouge">VADDDx2</code> and <code class="language-plaintext highlighter-rouge">VADDSx4</code>.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">let usesCustomInserter = 1 in {
+
+// VectorLength=2
+let VectorLength = 0b001 in {
+
+let BaseInstr = VADDD in
+def VADDDx2  : PseudoInst&lt;(outs DPRx2:$Dd), (ins DPRx2:$Dn, DPRx2:$Dm, pred:$p),
+                  IIC_fpALU64,
+                  [(set DPRx2:$Dd, (fadd DPRx2:$Dn, (v2f64 DPRx2:$Dm)))]&gt;,
+             Sched&lt;[WriteFPALU64]&gt;,
+             Requires&lt;[HasVFP2]&gt;,
+             VFPPseudo;
+
+} // VectorLength
+
+// VectorLength=4
+let VectorLength = 0b011 in {
+
+let BaseInstr = VABSS in
+def VABSSx4  : PseudoInst&lt;(outs SPRx4:$Dd), (ins SPRx4:$Dm, pred:$p),
+                  IIC_fpUNA32,
+                  [(set SPRx4:$Dd, (fabs (v4f32 SPRx4:$Dm)))]&gt;,
+             Sched&lt;[WriteFPALU32]&gt;,
+             Requires&lt;[HasVFP2]&gt;,
+             VFPPseudo;
+
+} // VectorLength
+
+} // usesCustomInserter</code></pre></figure>
+
+<p>If you look closely you will see that these are almost identical to their
+scalar counterparts. That is intentional because we want these machine
+instructions be structurally identical as their scalar counterpart ones. The
+only differences are in the register classes (<code class="language-plaintext highlighter-rouge">DPR</code> is now <code class="language-plaintext highlighter-rouge">DPRx2</code> and <code class="language-plaintext highlighter-rouge">SPR</code> is now <code class="language-plaintext highlighter-rouge">SPRx4</code>).</p>
+
+<p>These definitions, like the scalar ones, include what is called a <em>pattern</em> for
+instruction selection. For instance, the one for VADDDx2 includes this
+pattern.</p>
+
+<figure class="highlight"><pre><code class="language-tablegen" data-lang="tablegen">   [(set DPRx2:$Dd, (fadd DPRx2:$Dn, (v2f64 DPRx2:$Dm)))]&gt;,</code></pre></figure>
+
+<p>This basically says that we can match an input selection DAG with opcode <code class="language-plaintext highlighter-rouge">fadd</code>
+that receives two input registers <code class="language-plaintext highlighter-rouge">$Dn</code> and <code class="language-plaintext highlighter-rouge">$Dm</code> to set a register <code class="language-plaintext highlighter-rouge">$Dd</code> with
+the current instruction. <code class="language-plaintext highlighter-rouge">DPRx2</code> is here the register class used for those
+registers. <code class="language-plaintext highlighter-rouge">v2f64</code> is a type and it must be representable by <code class="language-plaintext highlighter-rouge">DPRx2</code>, but if
+you recall we did this in the previous installment when we created the register
+class.</p>
+
+<div style="padding: 0.7em; background-color: honeydew;">
+  <p>Tablegen can in general infer the types of the operands of the patterns. So
+specifying <code class="language-plaintext highlighter-rouge">v2f64</code> in the pattern fragment <code class="language-plaintext highlighter-rouge">(v2f64 DPRx2:$Dm)</code> is redundant.</p>
+
+  <p>However tablegen cannot infer the types if the involved register class allows
+more than one machine type. In the ARM backend, the <code class="language-plaintext highlighter-rouge">DPR</code> register class
+contains more than one machine type, hence the pattern needs to at least
+specify one type (the rest of types can be inferred because the properties of
+the <code class="language-plaintext highlighter-rouge">fadd</code> SelectionDAG node).</p>
+
+  <p>If you check the above definition of <code class="language-plaintext highlighter-rouge">VADDS</code> you will see that its pattern does
+not include a type (in contrast to the one for <code class="language-plaintext highlighter-rouge">VADDD</code>): the reason is that the
+register class <code class="language-plaintext highlighter-rouge">SPR</code> only includes the machine type <code class="language-plaintext highlighter-rouge">f32</code>.</p>
+
+  <p>I decided to leave at least one type for clarity as a balanced alternative
+to cluttering everything with types.</p>
+</div>
+
+<h1>Custom inserter</h1>
+
+<p>Now we are in a situation in which we can finally use the custom inserter
+to insert the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> instruction.</p>
+
+<p>We can do that in the file <code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARMISelLowering.cpp</code>. The hook
+called per instruction is <code class="language-plaintext highlighter-rouge">EmitInstrWithCustomInserter</code>. We will check
+if the <code class="language-plaintext highlighter-rouge">MachineInstr</code> is included in our table of <code class="language-plaintext highlighter-rouge">VFPPseudos</code> we have defined
+above.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">MachineBasicBlock</span> <span class="o">*</span>
+<span class="n">ARMTargetLowering</span><span class="o">::</span><span class="n">EmitInstrWithCustomInserter</span><span class="p">(</span><span class="n">MachineInstr</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">,</span>
+                                               <span class="n">MachineBasicBlock</span> <span class="o">*</span><span class="n">BB</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="k">const</span> <span class="n">VFPPseudos</span><span class="o">::</span><span class="n">PseudoInfo</span> <span class="o">*</span><span class="n">VFPInfo</span> <span class="o">=</span>
+          <span class="n">VFPPseudos</span><span class="o">::</span><span class="n">getPseudoInfo</span><span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOpcode</span><span class="p">()))</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">Subtarget</span><span class="o">-&gt;</span><span class="n">hasVFP2Base</span><span class="p">())</span> <span class="p">{</span>
+      <span class="c1">// Don't do anything if we are not generating code for VFP2.</span>
+      <span class="n">setFPCSRLength</span><span class="p">(</span><span class="o">*</span><span class="n">BB</span><span class="p">,</span> <span class="n">MI</span><span class="p">,</span> <span class="n">VFPInfo</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">BB</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="c1">// rest of the code</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We will query the table <code class="language-plaintext highlighter-rouge">VFPPseudos</code>. If an instruction appears there it means
+we need to make sure the <code class="language-plaintext highlighter-rouge">fpscr</code> has the <code class="language-plaintext highlighter-rouge">len</code> field correctly set. This is
+what the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> instruction was for.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="n">ARMTargetLowering</span><span class="o">::</span><span class="n">setFPCSRLength</span><span class="p">(</span>
+    <span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">BB</span><span class="p">,</span> <span class="n">MachineInstr</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">,</span>
+    <span class="k">const</span> <span class="n">VFPPseudos</span><span class="o">::</span><span class="n">PseudoInfo</span> <span class="o">*</span><span class="n">VFPInfo</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
+  <span class="n">MachineFunction</span> <span class="o">*</span><span class="n">MF</span> <span class="o">=</span> <span class="n">BB</span><span class="p">.</span><span class="n">getParent</span><span class="p">();</span>
+  <span class="n">MachineRegisterInfo</span> <span class="o">&amp;</span><span class="n">MRI</span> <span class="o">=</span> <span class="n">MF</span><span class="o">-&gt;</span><span class="n">getRegInfo</span><span class="p">();</span>
+  <span class="n">ARMFunctionInfo</span> <span class="o">*</span><span class="n">AFI</span> <span class="o">=</span> <span class="n">MF</span><span class="o">-&gt;</span><span class="n">getInfo</span><span class="o">&lt;</span><span class="n">ARMFunctionInfo</span><span class="o">&gt;</span><span class="p">();</span>
+  <span class="k">const</span> <span class="n">TargetInstrInfo</span> <span class="o">*</span><span class="n">TII</span> <span class="o">=</span> <span class="n">Subtarget</span><span class="o">-&gt;</span><span class="n">getInstrInfo</span><span class="p">();</span>
+  <span class="n">DebugLoc</span> <span class="n">dl</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getDebugLoc</span><span class="p">();</span>
+
+  <span class="n">Register</span> <span class="n">Scratch1</span> <span class="o">=</span> <span class="n">MRI</span><span class="p">.</span><span class="n">createVirtualRegister</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ARM</span><span class="o">::</span><span class="n">GPRRegClass</span><span class="p">);</span>
+  <span class="n">Register</span> <span class="n">Scratch2</span> <span class="o">=</span> <span class="n">MRI</span><span class="p">.</span><span class="n">createVirtualRegister</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ARM</span><span class="o">::</span><span class="n">GPRnopcRegClass</span><span class="p">);</span>
+
+  <span class="n">BuildMI</span><span class="p">(</span><span class="n">BB</span><span class="p">,</span> <span class="n">MI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLEN</span><span class="p">))</span>
+      <span class="p">.</span><span class="n">addDef</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">,</span> <span class="n">RegState</span><span class="o">::</span><span class="n">Dead</span><span class="p">)</span>
+      <span class="p">.</span><span class="n">addDef</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">,</span> <span class="n">RegState</span><span class="o">::</span><span class="n">Dead</span><span class="p">)</span>
+      <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">VectorLength</span><span class="p">);</span>
+
+  <span class="c1">// If we are setting it to something different to zero, let's make sure</span>
+  <span class="c1">// it gets cleared upon return.</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">VectorLength</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="n">AFI</span><span class="o">-&gt;</span><span class="n">setMustClearFPSCRLen</span><span class="p">();</span>
+
+  <span class="c1">// Now mark this instruction that it uses FPCSR implicitly.</span>
+  <span class="n">MI</span><span class="p">.</span><span class="n">addOperand</span><span class="p">(</span><span class="n">MachineOperand</span><span class="o">::</span><span class="n">CreateReg</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">FPSCR</span><span class="p">,</span> <span class="cm">/* isDef */</span> <span class="nb">false</span><span class="p">,</span>
+                                          <span class="cm">/* isImp */</span> <span class="nb">true</span><span class="p">));</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We basically create two virtual registers of the appropriate class for <code class="language-plaintext highlighter-rouge">VFPSETLEN</code>
+and then we build a machine instruction corresponding to the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> itself.
+Note how we mark the scratch registers as dead: nobody will use their values
+after this instruction.</p>
+
+<p>We will discuss the reason of the call to <code class="language-plaintext highlighter-rouge">AFI-&gt;setMustClearFPSCRLen()</code> in a
+later installment, but for now consider it means we have acknowledged that this
+function sets the <code class="language-plaintext highlighter-rouge">len</code> of <code class="language-plaintext highlighter-rouge">fpscr</code> to something other than 0 (recall that 0
+means length equals to 1).</p>
+
+<p>We finally insert an implicit operand to the current instruction (not to
+<code class="language-plaintext highlighter-rouge">VFPSETLEN</code> but <code class="language-plaintext highlighter-rouge">VADDD</code>, <code class="language-plaintext highlighter-rouge">VADDS</code>, <code class="language-plaintext highlighter-rouge">VADDDx2</code>, <code class="language-plaintext highlighter-rouge">VADDSx4</code>, etc) in order to signify
+that this instruction now uses <code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
+
+<p>At this point we are still not able to lower vector operations because we are
+still missing a few bits which we will see in next installments. However we
+can see the impact of our changes in scalar code.</p>
+
+<p>The following simple IR function can be used to observe the effect of
+the custom inserter.</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="k">define</span> <span class="kt">void</span> <span class="vg">@test_scalar</span><span class="p">(</span><span class="kt">double</span> <span class="p">*</span><span class="nv">%pa</span><span class="p">,</span> <span class="kt">double</span> <span class="p">*</span><span class="nv">%pb</span><span class="p">,</span> <span class="kt">double</span> <span class="p">*</span><span class="nv">%pc</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nv">%a</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">double</span><span class="p">,</span> <span class="kt">double</span><span class="p">*</span> <span class="nv">%pa</span>
+  <span class="nv">%b</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">double</span><span class="p">,</span> <span class="kt">double</span><span class="p">*</span> <span class="nv">%pb</span>
+  <span class="nv">%c</span> <span class="p">=</span> <span class="k">fadd</span> <span class="kt">double</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="k">store</span> <span class="kt">double</span> <span class="nv">%c</span><span class="p">,</span> <span class="kt">double</span> <span class="p">*</span><span class="nv">%pc</span>
+  <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We can use <code class="language-plaintext highlighter-rouge">llc</code>, the code generator of LLVM, to inspect the machine
+instructions. We have to stop right after instruction selection (isel)
+finalises because we have still not implemented how <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> is to be
+lowered and that would cause <code class="language-plaintext highlighter-rouge">llc</code> to crash.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2 <span class="se">\</span>
+      <span class="nt">-stop-after</span><span class="o">=</span>finalize-isel <span class="nt">-simplify-mir</span> scalar.ll <span class="nt">-o</span> scalar.mir</code></pre></figure>
+
+<figure class="highlight"><figcaption>scalar.mir</figcaption><pre><code class="language-yaml" data-lang="yaml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+</pre></td><td class="code"><pre><span class="nn">---</span> <span class="pi">|</span>
+  <span class="s">; ModuleID = 'scalar.ll'</span>
+  <span class="s">source_filename = "scalar.ll"</span>
+  <span class="s">target datalayout = "e-m:e-p:32:32-Fi8-i64:64-v128:64:128-a:0:32-n32-S64"</span>
+  <span class="s">target triple = "armv6kz-unknown-linux-gnu"</span>
+  
+  <span class="s">define void @test_scalar(double* %pa, double* %pb, double* %pc) #0 {</span>
+    <span class="s">%a = load double, double* %pa, align 8</span>
+    <span class="s">%b = load double, double* %pb, align 8</span>
+    <span class="s">%c = fadd double %a, %b</span>
+    <span class="s">store double %c, double* %pc, align 8</span>
+    <span class="s">ret void</span>
+  <span class="s">}</span>
+  
+  <span class="s">attributes #0 = { "target-features"="+vfp2" }</span>
+
+<span class="s">...</span>
+<span class="nn">---</span>
+<span class="na">name</span><span class="pi">:</span>            <span class="s">test_scalar</span>
+<span class="na">alignment</span><span class="pi">:</span>       <span class="m">4</span>
+<span class="na">tracksRegLiveness</span><span class="pi">:</span> <span class="no">true</span>
+<span class="na">registers</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">0</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">gpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">1</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">gpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">2</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">gpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">3</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">dpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">4</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">dpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">5</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">dpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">6</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">gpr</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">id</span><span class="pi">:</span> <span class="nv">7</span><span class="pi">,</span> <span class="nv">class</span><span class="pi">:</span> <span class="nv">gprnopc</span> <span class="pi">}</span>
+<span class="na">liveins</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">reg</span><span class="pi">:</span> <span class="s1">'</span><span class="s">$r0'</span><span class="pi">,</span> <span class="nv">virtual-reg</span><span class="pi">:</span> <span class="s1">'</span><span class="s">%0'</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">reg</span><span class="pi">:</span> <span class="s1">'</span><span class="s">$r1'</span><span class="pi">,</span> <span class="nv">virtual-reg</span><span class="pi">:</span> <span class="s1">'</span><span class="s">%1'</span> <span class="pi">}</span>
+  <span class="pi">-</span> <span class="pi">{</span> <span class="nv">reg</span><span class="pi">:</span> <span class="s1">'</span><span class="s">$r2'</span><span class="pi">,</span> <span class="nv">virtual-reg</span><span class="pi">:</span> <span class="s1">'</span><span class="s">%2'</span> <span class="pi">}</span>
+<span class="na">frameInfo</span><span class="pi">:</span>
+  <span class="na">maxAlignment</span><span class="pi">:</span>    <span class="m">1</span>
+  <span class="na">maxCallFrameSize</span><span class="pi">:</span> <span class="m">0</span>
+<span class="na">machineFunctionInfo</span><span class="pi">:</span> <span class="pi">{}</span>
+<span class="na">body</span><span class="pi">:</span>             <span class="pi">|</span>
+  <span class="s">bb.0 (%ir-block.0):</span>
+    <span class="s">liveins: $r0, $r1, $r2</span>
+  
+    <span class="s">%2:gpr = COPY $r2</span>
+    <span class="s">%1:gpr = COPY $r1</span>
+    <span class="s">%0:gpr = COPY $r0</span>
+    <span class="s">%3:dpr = VLDRD %1, 0, 14 /* CC::al */, $noreg :: (load 8 from %ir.pb)</span>
+    <span class="s">%4:dpr = VLDRD %0, 0, 14 /* CC::al */, $noreg :: (load 8 from %ir.pa)</span>
+    <span class="s">dead %6:gpr, dead %7:gprnopc = VFPSETLEN 0, implicit-def $fpscr</span>
+    <span class="s">%5:dpr = VADDD killed %4, killed %3, 14 /* CC::al */, $noreg, implicit $fpscr</span>
+    <span class="s">VSTRD killed %5, %2, 0, 14 /* CC::al */, $noreg :: (store 8 into %ir.pc)</span>
+    <span class="s">BX_RET 14 /* CC::al */, $noreg</span>
+
+<span class="s">...</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>In line 48 the newly introduced <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> appears. It implicitly defines
+<code class="language-plaintext highlighter-rouge">fpscr</code> (physical registers are prepended with a <code class="language-plaintext highlighter-rouge">$</code> sign while virtual
+registers use <code class="language-plaintext highlighter-rouge">%</code>). And then the <code class="language-plaintext highlighter-rouge">VADDD</code> instruction in line 49 implicitly uses
+it.</p>
+
+<p>This is all still very basic but it is a necessary step for correct code
+generation for VFPv2.</p>
+
+<p>In the next installment we will continue adding the missing bits in the
+instruction selection and lowering of operations for vector types.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/06/25/raspberry-vectors-part-2/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 2</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

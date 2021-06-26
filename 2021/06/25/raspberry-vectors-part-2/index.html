@@ -205,9 +205,10 @@ Then we compute <code class="language-plaintext highlighter-rouge">mnext</code> 
 (we achieve this using <code class="language-plaintext highlighter-rouge">!and(..., 0x3)</code> as we have to compute mod 4). T</p>
 
 <p>Now that we have <code class="language-plaintext highlighter-rouge">m</code> and <code class="language-plaintext highlighter-rouge">mnext</code> we can define the pair itself. The definition
-will be named <code class="language-plaintext highlighter-rouge">D&lt;m&gt;_D&lt;mnext&gt;x2</code> (e.g. <code class="language-plaintext highlighter-rouge">D4_D5x2</code>, D5_D6x2<code class="language-plaintext highlighter-rouge">, </code>D6_D7x2<code class="language-plaintext highlighter-rouge">,
-</code>D7_D4x2<code class="language-plaintext highlighter-rouge">, </code>D8_D9x2`, …) this name is arbitrary but should be a valid C++ identifier
-because one of the tablegen backends will add enumerators for those registers.</p>
+will be named <code class="language-plaintext highlighter-rouge">D&lt;m&gt;_D&lt;mnext&gt;x2</code> (e.g. <code class="language-plaintext highlighter-rouge">D4_D5x2</code>, <code class="language-plaintext highlighter-rouge">D5_D6x2</code>, <code class="language-plaintext highlighter-rouge">D6_D7x2</code>,
+<code class="language-plaintext highlighter-rouge">D7_D4x2</code>, <code class="language-plaintext highlighter-rouge">D8_D9x2</code>, …) this name is arbitrary but should be a valid C++
+identifier because one of the tablegen backends will define enumerators for
+those registers.</p>
 
 <p>In order to generate the register we use a specialised class called
 <code class="language-plaintext highlighter-rouge">VFPRegistersWithSubregs</code> which is just a convenience for this task.</p>
@@ -289,6 +290,8 @@ to track <code class="language-plaintext highlighter-rouge">fpscr</code> so we c
 
   <a class="previous" href="/2021/06/25/raspberry-vectors-part-1/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 1</a>
 
+
+  <a class="next" href="/2021/06/26/raspberry-vectors-part-3/">Fun with vectors in the Raspberry Pi 1 - Part 3 &raquo;</a>
 
 </div>
 
