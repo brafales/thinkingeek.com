@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-26T14:06:27+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 3</title><link href="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 3" /><published>2021-06-26T05:55:00+00:00</published><updated>2021-06-26T05:55:00+00:00</updated><id>https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3</id><content type="html" xml:base="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/">&lt;p&gt;In the last chapter we modelled the storage in form of pairs and quadruples of
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-26T14:10:44+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 3</title><link href="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 3" /><published>2021-06-26T05:55:00+00:00</published><updated>2021-06-26T05:55:00+00:00</updated><id>https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3</id><content type="html" xml:base="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/">&lt;p&gt;In the last chapter we modelled the storage in form of pairs and quadruples of
 registers that we will use for vectors of double and single precision,
 respectively.&lt;/p&gt;
 
@@ -11,7 +11,7 @@ respectively.&lt;/p&gt;
 &lt;p&gt;LLVM is famously known for its intermediate representation (IR) called LLVM
 IR. Compilers, however, and LLVM is not an exception, cannot do their job with
 just a single intermediate representation. The reason is that different steps
-in the compilation pipeline have different requirements. No IR can cater for
+in the compilation pipeline have different requirements. No IR can cater to
 all of them at the same time.&lt;/p&gt;
 
 &lt;h2&gt;SelectionDAG&lt;/h2&gt;
