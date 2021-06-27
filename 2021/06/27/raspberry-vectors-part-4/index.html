@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 4</title>
+  <meta name="description" content="In the last chapter we devised a way to tame the issue with fpscr. Today we are going to complete the code generation bits that we are still missing so we can start emitting code.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 4">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/">
+  <meta property="og:description" content="In the last chapter we devised a way to tame the issue with fpscr. Today we are going to complete the code generation bits that we are still missing so we can start emitting code.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 4">
+  <meta name="twitter:description" content="In the last chapter we devised a way to tame the issue with fpscr. Today we are going to complete the code generation bits that we are still missing so we can start emitting code.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 4</h1>
+    
+    <p class="post-meta"><time datetime="2021-06-27T17:09:00+00:00" itemprop="datePublished">Jun 27, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last chapter we devised a way to tame the issue with <code class="language-plaintext highlighter-rouge">fpscr</code>. Today
+we are going to complete the code generation bits that we are still missing
+so we can start emitting code.</p>
+
+<!--more-->
+
+<h1>Expand VFPSETLEN</h1>
+
+<p>Given that last week we finished with a <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> instruction being emitted
+I guess it makes sense we expand this first.</p>
+
+<p>The easiest way to achieve this is extending the file
+<code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/ARMExpandPseudoInsts.cpp</code> which contains the
+implementation of a pass, running after register allocation, intended to expand
+pseudo instructions.</p>
+
+<p>If you check the first installment of this series, you will see that the <code class="language-plaintext highlighter-rouge">len</code>
+field of <code class="language-plaintext highlighter-rouge">fpscr</code> is a field of 3 bits located in bits 18, 17 and 16. Setting
+the length mostly means reading the <code class="language-plaintext highlighter-rouge">fpscr</code>, which we can do using the
+instruction <code class="language-plaintext highlighter-rouge">vmrs</code>, change the bits and write them back into <code class="language-plaintext highlighter-rouge">fpscr</code> using the
+<code class="language-plaintext highlighter-rouge">vmsr</code> instruction.</p>
+
+<p>The complex part of this process is changing the bits. We need to ensure the
+<code class="language-plaintext highlighter-rouge">len</code> field has the bits we want. We can do this in general masking what we
+obtained from the <code class="language-plaintext highlighter-rouge">vmrs</code> instruction with <code class="language-plaintext highlighter-rouge">~(0x7 &lt;&lt; 16)</code>. This will clear the
+three bits of the <code class="language-plaintext highlighter-rouge">len</code> field and then we can do a bitwise or to set
+the precise operation we want. All this is what explained why we needed
+two scratch output registers as outputs of <code class="language-plaintext highlighter-rouge">VFPSETLEN</code>.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span> <span class="n">ARMExpandPseudo</span><span class="o">::</span><span class="n">ExpandMI</span><span class="p">(</span><span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">,</span>
+                               <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">MBBI</span><span class="p">,</span>
+                               <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="o">&amp;</span><span class="n">NextMBBI</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="k">case</span> <span class="n">ARM</span><span class="p">:</span><span class="o">:</span><span class="n">VFPSETLEN</span><span class="o">:</span> <span class="p">{</span>
+      <span class="n">Register</span> <span class="n">Scratch1</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
+      <span class="n">Register</span> <span class="n">Scratch2</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
+      <span class="n">DebugLoc</span> <span class="n">dl</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getDebugLoc</span><span class="p">();</span>
+
+      <span class="c1">// Scratch2 ← FPSCR</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VMRS</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">));</span>
+      <span class="c1">// Scratch1 ← ~(0x7 &lt;&lt; 16)</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">MVNi</span><span class="p">),</span> <span class="n">Scratch1</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="mh">0x7</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+      <span class="c1">// Scratch2 ← and Scratch2, Scratch1</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">ANDrr</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+      <span class="c1">// Scratch1 ← (Length &lt;&lt; 16)</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">MOVi</span><span class="p">),</span> <span class="n">Scratch1</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+      <span class="c1">// Scratch2 ← or Scratch2, Scratch1</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">ORRrr</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+      <span class="c1">// FPSCR ← Scratch2</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VMSR</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">));</span>
+
+      <span class="n">MI</span><span class="p">.</span><span class="n">eraseFromParent</span><span class="p">();</span>
+      <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="err">}</span></code></pre></figure>
+
+<p>The code may look loong but it should be relatively straightforward to follow.
+There are two unobvious elements due to the AArch32 Arm ISA itself. Most
+instructions can be predicated, but we want them to be always executed so we
+set it to <em>always</em> using <code class="language-plaintext highlighter-rouge">.add(predOps(ARMCC::AL))</code>. Many Arm instructions may
+optionally update the <code class="language-plaintext highlighter-rouge">cpsr</code>, because we do not want to do this so we state
+that using <code class="language-plaintext highlighter-rouge">.add(consCodeOps())</code>.</p>
+
+<p>Other than that, the code above is basically constructing the instruction and
+finally removing the pseudo instruction.  Opcode <code class="language-plaintext highlighter-rouge">ARM::MVNi</code> represents a <code class="language-plaintext highlighter-rouge">mvn</code>
+instruction that uses an immediate as an input, <code class="language-plaintext highlighter-rouge">ARM::ADDrr</code> is an <code class="language-plaintext highlighter-rouge">add</code>
+instruction with two registers as inputs. <code class="language-plaintext highlighter-rouge">ARM::ORRrr</code> is an <code class="language-plaintext highlighter-rouge">orr</code> (a bitwise
+or) with two registers as inputs.</p>
+
+<p>One very simple optimization we can do happens when the vector length is 1
+(encoded as <code class="language-plaintext highlighter-rouge">len</code>).  In that case we can use the <code class="language-plaintext highlighter-rouge">bic</code> instruction whose task
+is precisely clearing consecutive bits in a register. So this function will
+look like this.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span> <span class="n">ARMExpandPseudo</span><span class="o">::</span><span class="n">ExpandMI</span><span class="p">(</span><span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">,</span>
+                               <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">MBBI</span><span class="p">,</span>
+                               <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="o">&amp;</span><span class="n">NextMBBI</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="k">case</span> <span class="n">ARM</span><span class="p">:</span><span class="o">:</span><span class="n">VFPSETLEN</span><span class="o">:</span> <span class="p">{</span>
+      <span class="n">Register</span> <span class="n">Scratch1</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
+      <span class="n">Register</span> <span class="n">Scratch2</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
+      <span class="n">DebugLoc</span> <span class="n">dl</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getDebugLoc</span><span class="p">();</span>
+
+      <span class="c1">// Scratch2 ← FPSCR</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VMRS</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">));</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">())</span> <span class="p">{</span>
+        <span class="c1">// Scratch1 ← ~(0x7 &lt;&lt; 16)</span>
+        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">MVNi</span><span class="p">),</span> <span class="n">Scratch1</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="mh">0x7</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+        <span class="c1">// Scratch2 ← and Scratch2, Scratch1</span>
+        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">ANDrr</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+        <span class="c1">// Scratch1 ← (Length &lt;&lt; 16)</span>
+        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">MOVi</span><span class="p">),</span> <span class="n">Scratch1</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+        <span class="c1">// Scratch2 ← or Scratch2, Scratch1</span>
+        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">ORRrr</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="c1">// Scratch2 ← clear bits 16, 17, 18</span>
+        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">BICri</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="mh">0x7</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
+      <span class="p">}</span>
+      <span class="c1">// FPSCR ← Scratch2</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VMSR</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">));</span>
+
+      <span class="n">MI</span><span class="p">.</span><span class="n">eraseFromParent</span><span class="p">();</span>
+      <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="err">}</span></code></pre></figure>
+
+<p style="padding: 0.7em; background-color: honeydew;">
+There is an instruction <code class="language-plaintext highlighter-rouge">bfi</code> in a special variant of Armv6, called Armv6T2,
+and as of Armv7-A similar to <code class="language-plaintext highlighter-rouge">bic</code> to insert arbitrary values into bitfields.
+Unfortunately the core of the Raspberry Pi 1 does not implement such
+instruction, hence all the dance with <code class="language-plaintext highlighter-rouge">mvn</code>, <code class="language-plaintext highlighter-rouge">and</code> and <code class="language-plaintext highlighter-rouge">orr</code> instructions.
+</p>
+
+<p>Now we can see what happens with our last example of a scalar addition.</p>
+
+<figure class="highlight"><figcaption>scalar.ll</figcaption><pre><code class="language-llvm" data-lang="llvm"><span class="k">define</span> <span class="kt">void</span> <span class="vg">@test_scalar</span><span class="p">(</span><span class="kt">double</span> <span class="p">*</span><span class="nv">%pa</span><span class="p">,</span> <span class="kt">double</span> <span class="p">*</span><span class="nv">%pb</span><span class="p">,</span> <span class="kt">double</span> <span class="p">*</span><span class="nv">%pc</span><span class="p">)</span> <span class="p">{</span> 
+  <span class="nv">%a</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">double</span><span class="p">,</span> <span class="kt">double</span><span class="p">*</span> <span class="nv">%pa</span>
+  <span class="nv">%b</span> <span class="p">=</span> <span class="k">load</span> <span class="kt">double</span><span class="p">,</span> <span class="kt">double</span><span class="p">*</span> <span class="nv">%pb</span>
+  <span class="nv">%c</span> <span class="p">=</span> <span class="k">fadd</span> <span class="kt">double</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="k">store</span> <span class="kt">double</span> <span class="nv">%c</span><span class="p">,</span> <span class="kt">double</span> <span class="p">*</span><span class="nv">%pc</span>
+  <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>clang <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o</span> - <span class="nt">--target</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mfloat-abi</span><span class="o">=</span>hard scalar.ll</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_scalar:
+	.fnstart
+@ %bb.0:
+	vldr	d0, [r0]
+	vldr	d1, [r1]
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
+	vmsr	fpscr, r1
+	vadd.f64	d0, d0, d1
+	vstr	d0, [r2]
+	bx	lr</code></pre></figure>
+
+<p>Above we can see the <code class="language-plaintext highlighter-rouge">bic</code> instruction in action because here <code class="language-plaintext highlighter-rouge">len</code> is set
+to zero.</p>
+
+<p>We can manually modify the file <code class="language-plaintext highlighter-rouge">scalar.mir</code> we generated at the end of the
+previous installment so it does <code class="language-plaintext highlighter-rouge">VFPSETLEN 1</code> instead of <code class="language-plaintext highlighter-rouge">VFPSETLEN 0</code>. We
+get this:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2 <span class="se">\</span>
+      <span class="nt">-start-after</span><span class="o">=</span>finalize-isel scalar.mir <span class="nt">-o</span> -</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_scalar:
+	.fnstart
+@ %bb.0:
+	vldr	d0, [r0]
+	vldr	d1, [r1]
+	vmrs	r1, fpscr
+	mvn	r0, #458752
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d0, d0, d1
+	vstr	d0, [r2]
+	bx	lr</code></pre></figure>
+
+<p>So the lowering of <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> is done.</p>
+
+<p>Next is teaching SelectionDAG to actually try to select operations
+involving <code class="language-plaintext highlighter-rouge">v2f64</code> and <code class="language-plaintext highlighter-rouge">v4f32</code>.</p>
+
+<h1>Instruction selection</h1>
+
+<p>Even if in the previous installment we added patterns that instruction
+selection can use to select <code class="language-plaintext highlighter-rouge">VADDDx2</code> and <code class="language-plaintext highlighter-rouge">VADDSx4</code>, those will not be
+selected. The reason is that instruction selection believes that <code class="language-plaintext highlighter-rouge">v2f64</code> and
+<code class="language-plaintext highlighter-rouge">v4f32</code> are <em>illegal</em> types. In LLVM parlance, this means that operations
+with these types need to be softened so they only use <em>legal</em> types. Legal
+types and operations are, intuitively, those that are supported more
+or less straightforwardly by the target.</p>
+
+<p>We can specify this in file <code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/ARMISelLowering.cpp</code>. For now we will
+focus only on <code class="language-plaintext highlighter-rouge">v2f64</code> but <code class="language-plaintext highlighter-rouge">v2f32</code> is the same.</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/llvm/lib/Target/ARM/ARMISelLowering.cpp b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+index 4b63f3f8b3b6..f70e0435241d 100644
+</span><span class="gd">--- a/llvm/lib/Target/ARM/ARMISelLowering.cpp
+</span><span class="gi">+++ b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+</span><span class="p">@@ -746,6 +746,31 @@</span> ARMTargetLowering::ARMTargetLowering(const TargetMachine &amp;TM,
+       setAllExpand(MVT::f32);
+     if (!Subtarget-&gt;hasFP64())
+       setAllExpand(MVT::f64);
+<span class="gi">+    if (Subtarget-&gt;hasVFP2Base()) {
++      addRegisterClass(MVT::v2f64, &amp;ARM::DPRx2RegClass);
++      setOperationAction(ISD::LOAD, MVT::v2f64, Custom);
++      setOperationAction(ISD::STORE, MVT::v2f64, Custom);
++
++      setOperationAction(ISD::FADD, MVT::v2f64, Legal);
++    }
+</span>   }
+ 
+   if (Subtarget-&gt;hasFullFP16()) {</code></pre></figure>
+
+<p>First we associate the machine type <code class="language-plaintext highlighter-rouge">v2f64</code> with the register class
+<code class="language-plaintext highlighter-rouge">DPRx2RegClass</code>. This is a class generated by one of the tablegen backends
+based on the register classes we defined in <code class="language-plaintext highlighter-rouge">ARMRegisterInfo.td</code>. We do this
+with a call to <code class="language-plaintext highlighter-rouge">addRegisterClass</code>.</p>
+
+<p>Then we say that <code class="language-plaintext highlighter-rouge">ISD::FADD</code> is a legal operation for this target. This means
+this operation can be directly selected. Because we have a pattern for it,
+we know it will select the <code class="language-plaintext highlighter-rouge">VADDDx4</code> instruction.</p>
+
+<p>One side-effect of linking the <code class="language-plaintext highlighter-rouge">v2f64</code> to the <code class="language-plaintext highlighter-rouge">DRPx2</code> register class is that
+now SelectionDAG expects us to be able to lower loads and stores of <code class="language-plaintext highlighter-rouge">v2f64</code>.
+Unfortunately the field <code class="language-plaintext highlighter-rouge">len</code> is not used by the load and store instructions of
+VFPv2. Because of this we need a way to express a load of <code class="language-plaintext highlighter-rouge">v2f64</code> in a set of
+instructions of <code class="language-plaintext highlighter-rouge">f64</code>. Before we can do that we need to let SelectionDAG know
+that we will manually handle the lowering of a load and a store of type
+<code class="language-plaintext highlighter-rouge">v2f64</code>.</p>
+
+<h2>Lowering load/store</h2>
+
+<p>Before we can proceed any further we will need to implement the lowering
+of loads and stores of <code class="language-plaintext highlighter-rouge">v2f64</code>. When an operation is marked as <code class="language-plaintext highlighter-rouge">Custom</code>,
+the function <code class="language-plaintext highlighter-rouge">LowerOperation</code> is invoked for it. We will create two functions
+<code class="language-plaintext highlighter-rouge">LowerShortVectorLoad</code> and <code class="language-plaintext highlighter-rouge">LowerShortVectorStore</code> that we will use for
+those types.</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/llvm/lib/Target/ARM/ARMISelLowering.cpp b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+index 4b63f3f8b3b6..f70e0435241d 100644
+</span><span class="gd">--- a/llvm/lib/Target/ARM/ARMISelLowering.cpp
+</span><span class="gi">+++ b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+</span><span class="p">@@ -10044,8 +10239,16 @@</span> SDValue ARMTargetLowering::LowerOperation(SDValue Op, SelectionDAG &amp;DAG) const {
+   case ISD::SSUBSAT:
+     return LowerSADDSUBSAT(Op, DAG, Subtarget);
+   case ISD::LOAD:
+<span class="gi">+    if (Subtarget-&gt;hasVFP2Base() &amp;&amp;
++        (Op.getValueType() == MVT::v2f64 || Op.getValueType() == MVT::v4f32))
++      return LowerShortVectorLoad(Op, DAG);
+</span>     return LowerPredicateLoad(Op, DAG);
+   case ISD::STORE:
+<span class="gi">+    if (Subtarget-&gt;hasVFP2Base()) {
++      EVT VT = Op.getOperand(1).getValueType();
++      if (VT == MVT::v2f64 || VT == MVT::v4f32)
++        return LowerShortVectorStore(Op, DAG);
++    }
+</span>     return LowerSTORE(Op, DAG, Subtarget);
+   case ISD::MLOAD:
+     return LowerMLOAD(Op, DAG);</code></pre></figure>
+
+<p>I am going to show only the <code class="language-plaintext highlighter-rouge">v2f64</code> case, the <code class="language-plaintext highlighter-rouge">v4f32</code> is similar (just a bit
+longer to write). First the vector load.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="n">SDValue</span> <span class="nf">LowerShortVectorLoad</span><span class="p">(</span><span class="n">SDValue</span> <span class="n">Op</span><span class="p">,</span> <span class="n">SelectionDAG</span> <span class="o">&amp;</span><span class="n">DAG</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">LoadSDNode</span> <span class="o">*</span><span class="n">LD</span> <span class="o">=</span> <span class="n">cast</span><span class="o">&lt;</span><span class="n">LoadSDNode</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Op</span><span class="p">.</span><span class="n">getNode</span><span class="p">());</span>
+  <span class="n">EVT</span> <span class="n">MemVT</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getMemoryVT</span><span class="p">();</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">MemVT</span><span class="p">.</span><span class="n">getSimpleVT</span><span class="p">().</span><span class="n">SimpleTy</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nl">default:</span>
+    <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Unexpected type"</span><span class="p">);</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v2f64</span><span class="o">:</span> <span class="p">{</span>
+    <span class="c1">// This is fundamentally the same that SplitVecRes_LOAD does but assembling</span>
+    <span class="c1">// a vector at the end.</span>
+    <span class="n">SDLoc</span> <span class="n">dl</span><span class="p">(</span><span class="n">LD</span><span class="p">);</span>
+    <span class="n">ISD</span><span class="o">::</span><span class="n">LoadExtType</span> <span class="n">ExtType</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getExtensionType</span><span class="p">();</span>
+    <span class="n">assert</span><span class="p">(</span><span class="n">ExtType</span> <span class="o">==</span> <span class="n">ISD</span><span class="o">::</span><span class="n">NON_EXTLOAD</span><span class="p">);</span>
+    <span class="n">SDValue</span> <span class="n">Ch</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getChain</span><span class="p">();</span>
+    <span class="n">SDValue</span> <span class="n">Ptr</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getBasePtr</span><span class="p">();</span>
+    <span class="n">SDValue</span> <span class="n">Offset</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getUNDEF</span><span class="p">(</span><span class="n">Ptr</span><span class="p">.</span><span class="n">getValueType</span><span class="p">());</span>
+    <span class="n">MachineMemOperand</span><span class="o">::</span><span class="n">Flags</span> <span class="n">MMOFlags</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getMemOperand</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getFlags</span><span class="p">();</span>
+    <span class="n">AAMDNodes</span> <span class="n">AAInfo</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getAAInfo</span><span class="p">();</span>
+
+    <span class="n">SDValue</span> <span class="n">First</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getLoad</span><span class="p">(</span><span class="n">ISD</span><span class="o">::</span><span class="n">UNINDEXED</span><span class="p">,</span> <span class="n">ExtType</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">f64</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">Ch</span><span class="p">,</span> <span class="n">Ptr</span><span class="p">,</span>
+                                <span class="n">Offset</span><span class="p">,</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getPointerInfo</span><span class="p">(),</span> <span class="n">MVT</span><span class="o">::</span><span class="n">f64</span><span class="p">,</span>
+                                <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getOriginalAlign</span><span class="p">(),</span> <span class="n">MMOFlags</span><span class="p">,</span> <span class="n">AAInfo</span><span class="p">);</span>
+
+    <span class="n">MachinePointerInfo</span> <span class="n">MPI</span> <span class="o">=</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getPointerInfo</span><span class="p">().</span><span class="n">getWithOffset</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+    <span class="n">Ptr</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getObjectPtrOffset</span><span class="p">(</span><span class="n">dl</span><span class="p">,</span> <span class="n">Ptr</span><span class="p">,</span> <span class="n">TypeSize</span><span class="o">::</span><span class="n">Fixed</span><span class="p">(</span><span class="mi">8</span><span class="p">));</span>
+
+    <span class="n">SDValue</span> <span class="n">Second</span> <span class="o">=</span>
+        <span class="n">DAG</span><span class="p">.</span><span class="n">getLoad</span><span class="p">(</span><span class="n">ISD</span><span class="o">::</span><span class="n">UNINDEXED</span><span class="p">,</span> <span class="n">ExtType</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">f64</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">Ch</span><span class="p">,</span> <span class="n">Ptr</span><span class="p">,</span> <span class="n">Offset</span><span class="p">,</span> <span class="n">MPI</span><span class="p">,</span>
+                    <span class="n">MVT</span><span class="o">::</span><span class="n">f64</span><span class="p">,</span> <span class="n">LD</span><span class="o">-&gt;</span><span class="n">getOriginalAlign</span><span class="p">(),</span> <span class="n">MMOFlags</span><span class="p">,</span> <span class="n">AAInfo</span><span class="p">);</span>
+
+    <span class="c1">// Remember that the loads are parallel.</span>
+    <span class="n">SDValue</span> <span class="n">NewCh</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">ISD</span><span class="o">::</span><span class="n">TokenFactor</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">Other</span><span class="p">,</span>
+                                <span class="n">First</span><span class="p">.</span><span class="n">getValue</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">Second</span><span class="p">.</span><span class="n">getValue</span><span class="p">(</span><span class="mi">1</span><span class="p">));</span>
+
+    <span class="n">SDValue</span> <span class="n">Vec</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getUNDEF</span><span class="p">(</span><span class="n">MVT</span><span class="o">::</span><span class="n">v2f64</span><span class="p">);</span>
+    <span class="n">Vec</span> <span class="o">=</span>
+        <span class="n">DAG</span><span class="p">.</span><span class="n">getTargetInsertSubreg</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">dsub_len2_0</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">v2f64</span><span class="p">,</span> <span class="n">Vec</span><span class="p">,</span> <span class="n">First</span><span class="p">);</span>
+    <span class="n">Vec</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getTargetInsertSubreg</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">dsub_len2_1</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">v2f64</span><span class="p">,</span> <span class="n">Vec</span><span class="p">,</span>
+                                    <span class="n">Second</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getMergeValues</span><span class="p">({</span><span class="n">Vec</span><span class="p">,</span> <span class="n">NewCh</span><span class="p">},</span> <span class="n">dl</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v4f32</span><span class="o">:</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+  <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This is a bit of code to explain but basically we obtain the specific information
+of a load node and we keep it in the <code class="language-plaintext highlighter-rouge">LD</code> variable. We use this to discriminate
+the machine type we are handling.</p>
+
+<p>To create a load we need a bunch of information, but basically we will assume
+this is an unindexed load (this means there is no pre/postincrement or
+pre/postdecrement involved). The kind of extension load, <code class="language-plaintext highlighter-rouge">ExtType, is for
+non-extending/zero-extending/sign-extending loads. We do not support it for now
+(hence the </code>assert`).</p>
+
+<p>The chain, <code class="language-plaintext highlighter-rouge">Ch</code>, is a special operand that can be consumed as input or be
+generated as part of the results of a SelectionDAG node and it is used for
+control dependencies that cannot be represented via conventional data-flow
+dependences (e.g.  a load that follows a store will usually be linked to the
+store via a chain).</p>
+
+<p><code class="language-plaintext highlighter-rouge">Ptr</code> is the value that contains the address. <code class="language-plaintext highlighter-rouge">Offset</code> will be left to
+undefined. There is a bunch of flags we want to propagate from the memory
+operands of this SelectionDAG node so (<code class="language-plaintext highlighter-rouge">MMOFlags</code>) alongwith alias analysis
+information (<code class="language-plaintext highlighter-rouge">AAInfo</code>).</p>
+
+<p>With all this information we can build a first load, that loads the first
+element of the vector. Note the machine type is <code class="language-plaintext highlighter-rouge">f64</code> here.</p>
+
+<p>The second part of the vector is found at an offsets of 8 bytes of the original
+<code class="language-plaintext highlighter-rouge">Ptr</code> address. <code class="language-plaintext highlighter-rouge">MPI</code> contains the abstract pointer information and we will state
+that it is the same as the original pointer information plus 8 bytes. Similarly
+we overwrite <code class="language-plaintext highlighter-rouge">Ptr</code> with computing an offset of <code class="language-plaintext highlighter-rouge">8</code> bytes after it. Now we
+can build a load for the second element of the vector. Again the type loaded
+is <code class="language-plaintext highlighter-rouge">f64</code>.</p>
+
+<p>Now we have to build a vector value in the input SelectionDAG. We will take
+the two values we just loaded and insert them to the proper subregisters
+that we defined in the second installment in <code class="language-plaintext highlighter-rouge">ARMRegisterInfo.td</code>. Our
+vector value is <code class="language-plaintext highlighter-rouge">Vec</code>.</p>
+
+<p>Finally because this is a load, we need to return the vector value we just
+loaded (<code class="language-plaintext highlighter-rouge">Vec</code>) and a chain (<code class="language-plaintext highlighter-rouge">NewCh</code>). The chain is such that represents the two
+loads in parallel (i.e.  any operation chained to this value will happen after
+both loads but either load can be scheduled at any order). The node that
+represents this <em>parallel join</em> of other chains is called <code class="language-plaintext highlighter-rouge">ISD::TokenFactor</code>.</p>
+
+<p>A similar process happens with stores.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="n">SDValue</span> <span class="nf">LowerShortVectorStore</span><span class="p">(</span><span class="n">SDValue</span> <span class="n">Op</span><span class="p">,</span> <span class="n">SelectionDAG</span> <span class="o">&amp;</span><span class="n">DAG</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">StoreSDNode</span> <span class="o">*</span><span class="n">ST</span> <span class="o">=</span> <span class="n">cast</span><span class="o">&lt;</span><span class="n">StoreSDNode</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Op</span><span class="p">.</span><span class="n">getNode</span><span class="p">());</span>
+  <span class="n">SDLoc</span> <span class="n">dl</span><span class="p">(</span><span class="n">Op</span><span class="p">);</span>
+  <span class="n">assert</span><span class="p">(</span><span class="n">ST</span><span class="o">-&gt;</span><span class="n">isUnindexed</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="s">"Stores should be unindexed at this point."</span><span class="p">);</span>
+  <span class="n">EVT</span> <span class="n">MemoryVT</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getMemoryVT</span><span class="p">();</span>
+  <span class="k">switch</span> <span class="p">(</span><span class="n">MemoryVT</span><span class="p">.</span><span class="n">getSimpleVT</span><span class="p">().</span><span class="n">SimpleTy</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nl">default:</span>
+    <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Unexpected type"</span><span class="p">);</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v2f64</span><span class="o">:</span> <span class="p">{</span>
+    <span class="c1">// This is basically SplitVecOp_STORE but sourcing it from</span>
+    <span class="c1">// a vector.</span>
+    <span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="n">ST</span><span class="o">-&gt;</span><span class="n">isTruncatingStore</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="s">"Truncating stores not supported"</span><span class="p">);</span>
+    <span class="n">SDValue</span> <span class="n">Ch</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getChain</span><span class="p">();</span>
+    <span class="n">SDValue</span> <span class="n">Ptr</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getBasePtr</span><span class="p">();</span>
+    <span class="n">Align</span> <span class="n">Alignment</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getOriginalAlign</span><span class="p">();</span>
+    <span class="n">MachineMemOperand</span><span class="o">::</span><span class="n">Flags</span> <span class="n">MMOFlags</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getMemOperand</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">getFlags</span><span class="p">();</span>
+    <span class="n">AAMDNodes</span> <span class="n">AAInfo</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getAAInfo</span><span class="p">();</span>
+    <span class="n">SDValue</span> <span class="n">First</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getTargetExtractSubreg</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">dsub_len2_0</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">f64</span><span class="p">,</span>
+                                               <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getValue</span><span class="p">());</span>
+    <span class="n">SDValue</span> <span class="n">Second</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getTargetExtractSubreg</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">dsub_len2_1</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">f64</span><span class="p">,</span>
+                                                <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getValue</span><span class="p">());</span>
+
+    <span class="n">First</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getStore</span><span class="p">(</span><span class="n">Ch</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">First</span><span class="p">,</span> <span class="n">Ptr</span><span class="p">,</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getPointerInfo</span><span class="p">(),</span> <span class="n">Alignment</span><span class="p">,</span>
+                         <span class="n">MMOFlags</span><span class="p">,</span> <span class="n">AAInfo</span><span class="p">);</span>
+
+    <span class="n">MachinePointerInfo</span> <span class="n">MPI</span> <span class="o">=</span> <span class="n">ST</span><span class="o">-&gt;</span><span class="n">getPointerInfo</span><span class="p">().</span><span class="n">getWithOffset</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+    <span class="n">Ptr</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getObjectPtrOffset</span><span class="p">(</span><span class="n">dl</span><span class="p">,</span> <span class="n">Ptr</span><span class="p">,</span> <span class="n">TypeSize</span><span class="o">::</span><span class="n">Fixed</span><span class="p">(</span><span class="mi">8</span><span class="p">));</span>
+
+    <span class="n">Second</span> <span class="o">=</span>
+        <span class="n">DAG</span><span class="p">.</span><span class="n">getStore</span><span class="p">(</span><span class="n">Ch</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">Second</span><span class="p">,</span> <span class="n">Ptr</span><span class="p">,</span> <span class="n">MPI</span><span class="p">,</span> <span class="n">Alignment</span><span class="p">,</span> <span class="n">MMOFlags</span><span class="p">,</span> <span class="n">AAInfo</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">ISD</span><span class="o">::</span><span class="n">TokenFactor</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">Other</span><span class="p">,</span> <span class="n">First</span><span class="p">,</span> <span class="n">Second</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v4f32</span><span class="o">:</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+  <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>In contrast to the load, we need to extract the different subregisters from
+the vector value and then we can store them using regular <code class="language-plaintext highlighter-rouge">f64</code> stores. Also note
+that stores do not return any value but a chain. So our lowered store must
+return a chain as well. Like we did with loads, <code class="language-plaintext highlighter-rouge">ISD::TokenFactor</code> is used
+to state that the two chained operations can happen in parallel.</p>
+
+<h1>MC layer</h1>
+
+<p>We are missing a final change so we can emit our instructions: we still have
+to replace the pseudo instructions into actual instructions.
+From a code generation point of view our vector pseudo instructions are fine.
+What it is not fine is that we do not know how to encode them as instructions.</p>
+
+<p>The MC layer is the part of LLVM devoted to assembly and disassembly of
+instructions.  All the instructions defined by tablegen have conceptual mirrors
+called MC Instructions and they are used when encoding (assembling) and
+decoding (disassembling) instructions.</p>
+
+<p>If you remember from the last installment, we linked the pseudo instructions
+to the real instruction. Now it is the moment to use this.</p>
+
+<p>Once machine instructions have reached their final stage, they are handed to 
+a process that creates MC instructions for each one. These MC instructions
+can then be streamed as assembly output (like what <code class="language-plaintext highlighter-rouge">llc</code> prints as an output)
+or to generate an object file (such an ELF file).</p>
+
+<p>So what we will do is change this lowering from machine instructions to
+MC instructions, so our pseudo instructions get encoded like normal
+VFPv2 instructions.</p>
+
+<p>This goes in two steps: first we need to use the real opcode of each
+pseudo instruction. Second we need to make sure we use the regular register
+that would be encoded. All the changes are in file
+<code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/ARMMCInstLower.cpp</code>.</p>
+
+<p>First let’s add a small diversion in <code class="language-plaintext highlighter-rouge">llvm::LowerARMMachineInstrToMCInst</code>.</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"> void llvm::LowerARMMachineInstrToMCInst(const MachineInstr *MI, MCInst &amp;OutMI,
+                                         ARMAsmPrinter &amp;AP) {
+<span class="gi">+  if (lowerVFPMachineInstrToMCInst(MI, OutMI, AP))
++    return;
++
+</span>   OutMI.setOpcode(MI-&gt;getOpcode());
+ 
+   // In the MC layer, we keep modified immediates in their encoded form</code></pre></figure>
+
+<p>If the function <code class="language-plaintext highlighter-rouge">lowerVFPMachineInstrToMCInst</code> returns true we do not have
+to do anything else here. That function looks like this</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="kt">bool</span> <span class="nf">lowerVFPMachineInstrToMCInst</span><span class="p">(</span><span class="k">const</span> <span class="n">MachineInstr</span> <span class="o">*</span><span class="n">MI</span><span class="p">,</span> <span class="n">MCInst</span> <span class="o">&amp;</span><span class="n">OutMI</span><span class="p">,</span>
+                                         <span class="n">ARMAsmPrinter</span> <span class="o">&amp;</span><span class="n">AP</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">VFPPseudos</span><span class="o">::</span><span class="n">PseudoInfo</span> <span class="o">*</span><span class="n">VFPInfo</span> <span class="o">=</span>
+      <span class="n">VFPPseudos</span><span class="o">::</span><span class="n">getPseudoInfo</span><span class="p">(</span><span class="n">MI</span><span class="o">-&gt;</span><span class="n">getOpcode</span><span class="p">());</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">VFPInfo</span> <span class="o">||</span> <span class="o">!</span><span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">VectorLength</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+
+  <span class="n">assert</span><span class="p">(</span><span class="n">MI</span><span class="o">-&gt;</span><span class="n">getOpcode</span><span class="p">()</span> <span class="o">!=</span> <span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">BaseInst</span> <span class="o">&amp;&amp;</span>
+         <span class="s">"Opcodes should be different at this point"</span><span class="p">);</span>
+  <span class="n">OutMI</span><span class="p">.</span><span class="n">setOpcode</span><span class="p">(</span><span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">BaseInst</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">MachineOperand</span> <span class="o">&amp;</span><span class="n">MO</span> <span class="o">:</span> <span class="n">MI</span><span class="o">-&gt;</span><span class="n">operands</span><span class="p">())</span> <span class="p">{</span>
+    <span class="n">MCOperand</span> <span class="n">MCOp</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">AP</span><span class="p">.</span><span class="n">lowerOperand</span><span class="p">(</span><span class="n">MO</span><span class="p">,</span> <span class="n">MCOp</span><span class="p">))</span> <span class="p">{</span>
+      <span class="n">OutMI</span><span class="p">.</span><span class="n">addOperand</span><span class="p">(</span><span class="n">MCOp</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We query in our <code class="language-plaintext highlighter-rouge">VFPPseudos</code> table if this is a VFP instruction that demands a
+length larger than 1.</p>
+
+<p>If this is the case, we set the opcode of the MC instruction being created
+(<code class="language-plaintext highlighter-rouge">OutMI</code>) to the opcode of the base instruction. E.g. in this step we go from
+<code class="language-plaintext highlighter-rouge">VADDDx2</code> to <code class="language-plaintext highlighter-rouge">VADDD</code>. Now we proceed as usual lowering the operands.</p>
+
+<p>When lowering the operands we need to be careful not to emit operands of
+the register classes <code class="language-plaintext highlighter-rouge">DPRx2</code> or <code class="language-plaintext highlighter-rouge">SPRx4</code>. If this is the case, we use the first
+subregister instead. To do that we change lowerOperand.</p>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"> bool ARMAsmPrinter::lowerOperand(const MachineOperand &amp;MO,
+                                  MCOperand &amp;MCOp) {
+<span class="gi">+  const MachineInstr *MI = MO.getParent();
++  assert(MI &amp;&amp; "Operand expected to belong to a machine instruction");
++  const MachineBasicBlock *MBB = MI-&gt;getParent();
++  assert(MBB &amp;&amp; "MI expected to be in a basic block");
++  const MachineFunction *MF = MBB-&gt;getParent();
++  assert(MF &amp;&amp; "MBB expected to be in a machine function");
++  const TargetRegisterInfo *TRI =
++      MF-&gt;getSubtarget&lt;ARMSubtarget&gt;().getRegisterInfo();
++
+</span>   switch (MO.getType()) {
+   default: llvm_unreachable("unknown operand type");
+<span class="gd">-  case MachineOperand::MO_Register:
+</span><span class="gi">+  case MachineOperand::MO_Register: {
+</span>     // Ignore all implicit register operands.
+     if (MO.isImplicit())
+       return false;
+     assert(!MO.getSubReg() &amp;&amp; "Subregs should be eliminated!");
+<span class="gd">-    MCOp = MCOperand::createReg(MO.getReg());
+-    break;
+</span><span class="gi">+    unsigned Reg = MO.getReg();
++    // Replace the tuple register with the one used in the encoding.
++    if (ARM::DPRx2RegClass.contains(Reg)) {
++      Reg = TRI-&gt;getSubReg(Reg, ARM::dsub_len2_0);
++      assert(Reg &amp;&amp; "Subregister does not exist");
++    } else if (ARM::SPRx4RegClass.contains(Reg)) {
++      Reg = TRI-&gt;getSubReg(Reg, ARM::ssub_len4_0);
++      assert(Reg &amp;&amp; "Subregister does not exist");
++    }
++    MCOp = MCOperand::createReg(Reg);
++  } break;
+</span>   case MachineOperand::MO_Immediate:
+     MCOp = MCOperand::createImm(MO.getImm());
+     break;
+<span class="p">@@ -120,8 +139,32 @@</span> bool ARMAsmPrinter::lowerOperand(const MachineOperand &amp;MO,
+   return true;
+ }</code></pre></figure>
+
+<h1>First test</h1>
+
+<p>With all this we can do a first experiment with the following LLVM IR.</p>
+
+<figure class="highlight"><figcaption>vector.ll</figcaption><pre><code class="language-llvm" data-lang="llvm"><span class="k">define</span> <span class="kt">void</span> <span class="vg">@test_vector</span><span class="p">(&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pa</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pb</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pc</span><span class="p">)</span> <span class="p">{</span> 
+  <span class="nv">%a</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pa</span>
+  <span class="nv">%b</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pb</span>
+  <span class="nv">%c</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="k">store</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%c</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pc</span>
+  <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2 <span class="nt">-o</span> - vector.ll</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_vector:
+	.fnstart
+	vldmia	r0, {d6, d7}
+	mvn	r0, #458752
+	vldmia	r1, {d4, d5}
+	vmrs	r1, fpscr
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d4, d6, d4
+	vstmia	r2, {d4, d5}
+	bx lr</code></pre></figure>
+
+<p>Hey, not bad.</p>
+
+<p>OK. We still need to think about preserving the <code class="language-plaintext highlighter-rouge">len</code> field upon returning
+the function (i.e. <code class="language-plaintext highlighter-rouge">len</code> should be 0b00 again) but this is a start.</p>
+
+<h2>Under the hood</h2>
+
+<p>I think this is a good moment to take a look under the hood in the different
+steps. Let’s take a look at the whole instruction selection.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">llc <span class="nt">-mtriple</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2 <span class="se">\</span>
+    <span class="nt">-o</span> /dev/null vector.ll <span class="nt">-debug-only</span><span class="o">=</span>isel <span class="nt">-print-before-all</span> <span class="nt">-print-after-all</span></code></pre></figure>
+
+<p>This testcase has a single basic block, so only a single SelectionDAG will
+be built for it. This is the initial SelectionDAG</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Initial selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 15 nodes:
+  t0: ch = EntryToken
+  t7: i32 = Constant&lt;0&gt;
+    t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t9: v2f64,ch = load&lt;(load 16 from %ir.pa, align 8)&gt; t0, t2, undef:i32
+    t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t10: v2f64,ch = load&lt;(load 16 from %ir.pb, align 8)&gt; t0, t4, undef:i32
+      t12: ch = TokenFactor t9:1, t10:1
+      t11: v2f64 = fadd t9, t10
+      t6: i32,ch = CopyFromReg t0, Register:i32 %2
+    t13: ch = store&lt;(store 16 into %ir.pc, align 8)&gt; t12, t11, t6, undef:i32
+  t14: ch = ARMISD::RET_FLAG t13
+</code></pre></div></div>
+
+<p>Note how node <code class="language-plaintext highlighter-rouge">t11</code> adds two vectors, loaded in <code class="language-plaintext highlighter-rouge">t9</code> and <code class="language-plaintext highlighter-rouge">t10</code> respectively.
+The SelectionDAG now undergoes a first optimisation step, which makes nothing
+because it is so simple. Next a type legalisation step happens but all the types
+mentioned are legal (<code class="language-plaintext highlighter-rouge">i32</code>, <code class="language-plaintext highlighter-rouge">v2f64</code>).</p>
+
+<p>Next is legalisation of operations. Now the loads and the stores get custom
+lowered as we wanted.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Legalized selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 33 nodes:
+  t0: ch = EntryToken
+  t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t6: i32,ch = CopyFromReg t0, Register:i32 %2
+    t35: ch = TokenFactor t32:1, t34:1
+    t27: ch = TokenFactor t24:1, t26:1
+  t12: ch = TokenFactor t35, t27
+      t36: v2f64 = INSERT_SUBREG undef:v2f64, t32, TargetConstant:i32&lt;9&gt;
+    t37: v2f64 = INSERT_SUBREG t36, t34, TargetConstant:i32&lt;10&gt;
+      t29: v2f64 = INSERT_SUBREG undef:v2f64, t24, TargetConstant:i32&lt;9&gt;
+    t30: v2f64 = INSERT_SUBREG t29, t26, TargetConstant:i32&lt;10&gt;
+  t11: v2f64 = fadd t37, t30
+  t24: f64,ch = load&lt;(load 8 from %ir.pb)&gt; t0, t4, undef:i32
+    t25: i32 = add nuw t4, Constant:i32&lt;8&gt;
+  t26: f64,ch = load&lt;(load 8 from %ir.pb + 8)&gt; t0, t25, undef:i32
+  t32: f64,ch = load&lt;(load 8 from %ir.pa)&gt; t0, t2, undef:i32
+    t33: i32 = add nuw t2, Constant:i32&lt;8&gt;
+  t34: f64,ch = load&lt;(load 8 from %ir.pa + 8)&gt; t0, t33, undef:i32
+        t16: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&lt;9&gt;
+      t19: ch = store&lt;(store 8 into %ir.pc)&gt; t12, t16, t6, undef:i32
+        t18: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&lt;10&gt;
+        t21: i32 = add nuw t6, Constant:i32&lt;8&gt;
+      t22: ch = store&lt;(store 8 into %ir.pc + 8)&gt; t12, t18, t21, undef:i32
+    t23: ch = TokenFactor t19, t22
+  t14: ch = ARMISD::RET_FLAG t23
+</code></pre></div></div>
+
+<p>Let’s take a look at <code class="language-plaintext highlighter-rouge">t9</code> in the initial SelectionDAG. It has been expanded into
+two stores <code class="language-plaintext highlighter-rouge">t32</code> and <code class="language-plaintext highlighter-rouge">t34</code> (note how we annotate the proper 8 bytes offsets in
+<code class="language-plaintext highlighter-rouge">t34</code>).  Then <code class="language-plaintext highlighter-rouge">t32</code> and <code class="language-plaintext highlighter-rouge">t34</code> are inserted as subregisters in <code class="language-plaintext highlighter-rouge">t36</code> and <code class="language-plaintext highlighter-rouge">t37</code>.
+The last one will make up the value of the original type <code class="language-plaintext highlighter-rouge">v2f64</code> we had in
+<code class="language-plaintext highlighter-rouge">t9</code>. The original chain of <code class="language-plaintext highlighter-rouge">t9</code> (denoted by <code class="language-plaintext highlighter-rouge">t9:1</code> because it is the second
+result of the operation) is now represented by <code class="language-plaintext highlighter-rouge">t35</code> which is the parallel join
+of the chains of the already mentioned loads <code class="language-plaintext highlighter-rouge">t32</code> and <code class="language-plaintext highlighter-rouge">t34</code> (i.e. <code class="language-plaintext highlighter-rouge">t32:1</code> and
+<code class="language-plaintext highlighter-rouge">t34:1</code>).</p>
+
+<p>The SelectionDAG undergoes another optimisation pass which only simplifies the
+token factors (check <code class="language-plaintext highlighter-rouge">t39</code>).</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Optimized legalized selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 31 nodes:
+  t0: ch = EntryToken
+  t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t6: i32,ch = CopyFromReg t0, Register:i32 %2
+      t36: v2f64 = INSERT_SUBREG undef:v2f64, t32, TargetConstant:i32&lt;9&gt;
+    t37: v2f64 = INSERT_SUBREG t36, t34, TargetConstant:i32&lt;10&gt;
+      t29: v2f64 = INSERT_SUBREG undef:v2f64, t24, TargetConstant:i32&lt;9&gt;
+    t30: v2f64 = INSERT_SUBREG t29, t26, TargetConstant:i32&lt;10&gt;
+  t11: v2f64 = fadd t37, t30
+  t24: f64,ch = load&lt;(load 8 from %ir.pb)&gt; t0, t4, undef:i32
+    t25: i32 = add nuw t4, Constant:i32&lt;8&gt;
+  t26: f64,ch = load&lt;(load 8 from %ir.pb + 8)&gt; t0, t25, undef:i32
+  t32: f64,ch = load&lt;(load 8 from %ir.pa)&gt; t0, t2, undef:i32
+    t33: i32 = add nuw t2, Constant:i32&lt;8&gt;
+  t34: f64,ch = load&lt;(load 8 from %ir.pa + 8)&gt; t0, t33, undef:i32
+  t39: ch = TokenFactor t32:1, t34:1, t24:1, t26:1
+        t16: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&lt;9&gt;
+      t43: ch = store&lt;(store 8 into %ir.pc)&gt; t39, t16, t6, undef:i32
+        t18: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&lt;10&gt;
+        t21: i32 = add nuw t6, Constant:i32&lt;8&gt;
+      t40: ch = store&lt;(store 8 into %ir.pc + 8)&gt; t39, t18, t21, undef:i32
+    t42: ch = TokenFactor t43, t40
+  t14: ch = ARMISD::RET_FLAG t42
+</code></pre></div></div>
+
+<p>At this point the input SelectionDAG can be “instruction selected”. This
+gives us the output SelectionDAG.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>===== Instruction selection ends:
+Selected selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 30 nodes:
+  t0: ch = EntryToken
+  t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t6: i32,ch = CopyFromReg t0, Register:i32 %2
+  t32: f64,ch = VLDRD&lt;Mem:(load 8 from %ir.pa)&gt; t2, TargetConstant:i32&lt;0&gt;, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t0
+  t24: f64,ch = VLDRD&lt;Mem:(load 8 from %ir.pb)&gt; t4, TargetConstant:i32&lt;0&gt;, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t0
+  t34: f64,ch = VLDRD&lt;Mem:(load 8 from %ir.pa + 8)&gt; t2, TargetConstant:i32&lt;2&gt;, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t0
+  t26: f64,ch = VLDRD&lt;Mem:(load 8 from %ir.pb + 8)&gt; t4, TargetConstant:i32&lt;2&gt;, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t0
+  t39: ch = TokenFactor t32:1, t34:1, t24:1, t26:1
+      t36: v2f64 = INSERT_SUBREG IMPLICIT_DEF:v2f64, t32, TargetConstant:i32&lt;9&gt;
+    t37: v2f64 = INSERT_SUBREG t36, t34, TargetConstant:i32&lt;10&gt;
+      t29: v2f64 = INSERT_SUBREG IMPLICIT_DEF:v2f64, t24, TargetConstant:i32&lt;9&gt;
+    t30: v2f64 = INSERT_SUBREG t29, t26, TargetConstant:i32&lt;10&gt;
+  t11: v2f64 = VADDDx2 t37, t30, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg
+        t16: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&lt;9&gt;
+      t43: ch = VSTRD&lt;Mem:(store 8 into %ir.pc)&gt; t16, t6, TargetConstant:i32&lt;0&gt;, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t39
+        t18: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&lt;10&gt;
+      t40: ch = VSTRD&lt;Mem:(store 8 into %ir.pc + 8)&gt; t18, t6, TargetConstant:i32&lt;2&gt;, TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t39
+    t42: ch = TokenFactor t43, t40
+  t14: ch = BX_RET TargetConstant:i32&lt;14&gt;, Register:i32 $noreg, t42
+</code></pre></div></div>
+
+<p>Note how the <code class="language-plaintext highlighter-rouge">fadd</code> now is <code class="language-plaintext highlighter-rouge">VADDDx2</code> as expected. The other operations are also
+opcodes of the ARM backend. Now this output SelectionDAG is linearised
+(scheduled) to obtain a machine basic block. There is only one in this function,
+but all the basic blocks would be put together for the machine function.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># *** IR Dump Before Finalize ISel and expand pseudo-instructions (finalize-isel) ***:
+# Machine code for function test_vector: IsSSA, TracksLiveness
+Function Live Ins: $r0 in %0, $r1 in %1, $r2 in %2
+
+bb.0 (%ir-block.0):
+  liveins: $r0, $r1, $r2
+  %2:gpr = COPY $r2
+  %1:gpr = COPY $r1
+  %0:gpr = COPY $r0
+  %3:dpr = VLDRD %1:gpr, 0, 14, $noreg :: (load 8 from %ir.pb)
+  %4:dpr = VLDRD %1:gpr, 2, 14, $noreg :: (load 8 from %ir.pb + 8)
+  %5:dpr = VLDRD %0:gpr, 0, 14, $noreg :: (load 8 from %ir.pa)
+  %6:dpr = VLDRD %0:gpr, 2, 14, $noreg :: (load 8 from %ir.pa + 8)
+  %8:dprx2 = IMPLICIT_DEF
+  %7:dprx2 = INSERT_SUBREG %8:dprx2(tied-def 0), killed %3:dpr, %subreg.dsub_len2_0
+  %10:dprx2 = IMPLICIT_DEF
+  %9:dprx2 = INSERT_SUBREG %10:dprx2(tied-def 0), killed %5:dpr, %subreg.dsub_len2_0
+  %11:dprx2 = INSERT_SUBREG %7:dprx2(tied-def 0), killed %4:dpr, %subreg.dsub_len2_1
+  %12:dprx2 = INSERT_SUBREG %9:dprx2(tied-def 0), killed %6:dpr, %subreg.dsub_len2_1
+  %13:dprx2 = VADDDx2 killed %12:dprx2, killed %11:dprx2, 14, $noreg
+  %14:dpr = COPY %13.dsub_len2_1:dprx2
+  VSTRD killed %14:dpr, %2:gpr, 2, 14, $noreg :: (store 8 into %ir.pc + 8)
+  %15:dpr = COPY %13.dsub_len2_0:dprx2
+  VSTRD killed %15:dpr, %2:gpr, 0, 14, $noreg :: (store 8 into %ir.pc)
+  BX_RET 14, $noreg
+</code></pre></div></div>
+
+<p>And then the custom inserter runs and adds <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> where due. In this case
+right before <code class="language-plaintext highlighter-rouge">VADDDx2</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># *** IR Dump After Finalize ISel and expand pseudo-instructions (finalize-isel) ***:
+# Machine code for function test_vector: IsSSA, TracksLiveness
+Function Live Ins: $r0 in %0, $r1 in %1, $r2 in %2
+
+bb.0 (%ir-block.0):
+  liveins: $r0, $r1, $r2
+  %2:gpr = COPY $r2
+  %1:gpr = COPY $r1
+  %0:gpr = COPY $r0
+  %3:dpr = VLDRD %1:gpr, 0, 14, $noreg :: (load 8 from %ir.pb)
+  %4:dpr = VLDRD %1:gpr, 2, 14, $noreg :: (load 8 from %ir.pb + 8)
+  %5:dpr = VLDRD %0:gpr, 0, 14, $noreg :: (load 8 from %ir.pa)
+  %6:dpr = VLDRD %0:gpr, 2, 14, $noreg :: (load 8 from %ir.pa + 8)
+  %8:dprx2 = IMPLICIT_DEF
+  %7:dprx2 = INSERT_SUBREG %8:dprx2(tied-def 0), killed %3:dpr, %subreg.dsub_len2_0
+  %10:dprx2 = IMPLICIT_DEF
+  %9:dprx2 = INSERT_SUBREG %10:dprx2(tied-def 0), killed %5:dpr, %subreg.dsub_len2_0
+  %11:dprx2 = INSERT_SUBREG %7:dprx2(tied-def 0), killed %4:dpr, %subreg.dsub_len2_1
+  %12:dprx2 = INSERT_SUBREG %9:dprx2(tied-def 0), killed %6:dpr, %subreg.dsub_len2_1
+  dead %16:gpr, dead %17:gprnopc = VFPSETLEN 1, implicit-def $fpscr
+  %13:dprx2 = VADDDx2 killed %12:dprx2, killed %11:dprx2, 14, $noreg, implicit $fpscr
+  %14:dpr = COPY %13.dsub_len2_1:dprx2
+  VSTRD killed %14:dpr, %2:gpr, 2, 14, $noreg :: (store 8 into %ir.pc + 8)
+  %15:dpr = COPY %13.dsub_len2_0:dprx2
+  VSTRD killed %15:dpr, %2:gpr, 0, 14, $noreg :: (store 8 into %ir.pc)
+  BX_RET 14, $noreg
+</code></pre></div></div>
+
+<p>You may be wondering how is it that the 4 loads and the 2 stores have 
+become 2 load multiples and 1 store multiple. This is due a later pass
+in the ARM backend that knows how to optimise those consecutive loads.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># *** IR Dump After ARM load / store optimization pass (arm-ldst-opt) ***:
+# Machine code for function test_vector: NoPHIs, TracksLiveness, NoVRegs, TiedOpsRewritten
+Frame Objects:
+  fi#0: size=4, align=4, at location [SP-4]
+  fi#1: size=4, align=4, at location [SP-8]
+Function Live Ins: $r0, $r1, $r2
+
+bb.0 (%ir-block.0):
+  liveins: $r0, $r1, $r2, $r4, $lr
+  $sp = frame-setup STMDB_UPD $sp(tied-def 0), 14, $noreg, killed $r4, killed $lr
+  frame-setup CFI_INSTRUCTION def_cfa_offset 8
+  frame-setup CFI_INSTRUCTION offset $lr, -4
+  frame-setup CFI_INSTRUCTION offset $r4, -8
+  VLDMDIA killed $r1, 14, $noreg, def $d4, def $d5, implicit-def $d4_d5x2 :: (load 8 from %ir.pb), (load 8 from %ir.pb + 8)
+  VLDMDIA killed $r0, 14, $noreg, def $d6, def $d7, implicit-def $d6_d7x2 :: (load 8 from %ir.pa), (load 8 from %ir.pa + 8)
+  dead renamable $r0, dead renamable $r1 = VFPSETLEN 1, implicit-def $fpscr
+  renamable $d4_d5x2 = VADDDx2 killed renamable $d6_d7x2, killed renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  VSTMDIA killed $r2, 14, $noreg, $d4, $d5 :: (store 8 into %ir.pc), (store 8 into %ir.pc + 8)
+  $r4 = VMRS 14, $noreg, implicit $fpscr
+  $r4 = BICri $r4, 458752, 14, $noreg, $noreg
+  VMSR $r4, 14, $noreg, implicit-def $fpscr
+  $sp = frame-destroy LDMIA_RET $sp(tied-def 0), 14, $noreg, def $r4, def $pc
+</code></pre></div></div>
+
+<h2>Final observation</h2>
+
+<p>What happens if our IR does two adds?</p>
+
+<figure class="highlight"><figcaption>vector2.ll</figcaption><pre><code class="language-llvm" data-lang="llvm"><span class="k">define</span> <span class="kt">void</span> <span class="vg">@test_vector2</span><span class="p">(&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pa</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pb</span><span class="p">,</span>
+                          <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pc</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pd</span><span class="p">)</span> <span class="p">{</span> 
+  <span class="nv">%a</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pa</span>
+  <span class="nv">%b</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pb</span>
+  <span class="nv">%c</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pc</span>
+  <span class="nv">%t1</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="nv">%t2</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%t1</span><span class="p">,</span> <span class="nv">%c</span>
+  <span class="k">store</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%t2</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pd</span>
+  <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Well, we get the following output</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_vector2:
+	.fnstart
+@ %bb.0:
+	vldmia	r0, {d6, d7}
+	mvn	r0, #458752
+	vldmia	r1, {d4, d5}
+	vmrs	r1, fpscr
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	mvn	r0, #458752
+	vmsr	fpscr, r1
+	vadd.f64	d4, d6, d4
+	vldmia	r2, {d6, d7}
+	vmrs	r1, fpscr
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d4, d4, d6
+	vstmia	r3, {d4, d5}
+	bx	lr</code></pre></figure>
+
+<p>As you can see we are setting the field <code class="language-plaintext highlighter-rouge">len</code> in <code class="language-plaintext highlighter-rouge">fpscr</code> twice. But once should
+be enough: <code class="language-plaintext highlighter-rouge">fpscr</code> is already encoding vector length 2 when we’re about to
+execute the second <code class="language-plaintext highlighter-rouge">vadd.f64</code>.</p>
+
+<p>In a next installment we will see how to improve this and emit only the required
+<code class="language-plaintext highlighter-rouge">VFPSETLEN</code> instructions.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/06/26/raspberry-vectors-part-3/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 3</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -67,6 +67,42 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2007/06/27/customizing-irb/">Customizing IRB</a></h1>
+
+          <p class="post-meta">
+            Jun 27, 2007• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Javier Segura</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/programming-tips/">programming tips</a>, <a href="/tags/ruby/">ruby</a>, <a href="/tags/tools/">tools</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>While developing a Ruby application or while learning ruby, one of the things you must use is IRB (interactive ruby). As in its man page is said "irb is a tool to execute interactively ruby expressions read from stdin.". In this tool you can type and execute directly ruby code. It's very useful but like most other programs like <a href="http://www.vim.org/">ViM</a> (Vi IMproved) the real power is its customization.</p>
+
+<p>Here I post my .irbrc and to make things clear there are some explanations on each line.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1"># autocompletion of methods when pressing TAB</span>
+<span class="nb">require</span> <span class="s1">'irb/completion'</span>
+<span class="c1"># Wirble is a plugin to colorize your irb, it's installed from a gem (gem install -y wirble)</span>
+<span class="nb">require</span> <span class="s1">'rubygems'</span>
+<span class="nb">require</span> <span class="s1">'wirble'</span>
+
+<span class="c1"># Make use of readline library</span>
+<span class="no">ARGV</span><span class="p">.</span><span class="nf">concat</span> <span class="p">[</span> <span class="s2">"--readline"</span> <span class="p">]</span>
+
+<span class="c1"># autoindent of code while typing it</span>
+<span class="no">IRB</span><span class="p">.</span><span class="nf">conf</span><span class="p">[</span><span class="ss">:AUTO_INDENT</span><span class="p">]</span><span class="o">=</span><span class="kp">true</span>
+
+<span class="c1"># wirble initializations</span>
+<span class="no">Wirble</span><span class="p">.</span><span class="nf">init</span>
+<span class="no">Wirble</span><span class="p">.</span><span class="nf">colorize</span></code></pre></figure>
+
+<p>
+As I said before, IRB is very powerful and a proof is that in <a href="http://www.ruby-lang.org/">Ruby Lang</a> they encourage you to <a href="http://tryruby.hobix.com/">try ruby in your browser</a> with an embedded IRB.
+</p>
+<p>
+Also in rails the console for debugging your application is an irb instance preloaded with all rails configuration. In <a href="http://www.railscasts.com/">RailsCasts</a> there is a <a href="http://railscasts.com/episodes/48">screencast</a> that shows you some tricks about it. 
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2007/06/23/developing-javascript-involved-web-applications-with-firebug/">Developing Javascript involved web applications with Firebug</a></h1>
 
           <p class="post-meta">
@@ -136,28 +172,7 @@ Apart from the functions of the kit, there is a good community of runners. On Ni
 <p>For ending I have to say that the sensor doesn't have the possibility of changing this battery but Apple people says that the sensor's battery should outlast five pairs of running shoes. Would it be true?</p>
 <p><a href="/wp-content/uploads/2008/10/nike.png"><img src="/wp-content/uploads/2008/10/nike-300x131.png" alt="Nike+" title="nike" width="300" height="130" class="size-medium wp-image-29" /></a></p>
 
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2007/06/15/code-snippets-in-visual-studio-2005/">Code Snippets in Visual Studio 2005</a></h1>
-
-          <p class="post-meta">
-            Jun 15, 2007• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/programming-tips/">programming tips</a>, <a href="/tags/visual-studio/">visual studio</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>In the developing process of applications that are not as small as the typical "Hello, World!" examples, there are a variety of factors than can lead to important time savings.</p>
-
-<p>There's a lot of documentation out there on how to design and specify application before the coding process starts, but there is a crucial factor on success that is not usually spoken of: the way you manage, create and edit your source files.</p>
-
-<p>And of course there are some beautiful software pieces to help developers in that process. They're called IDEs (Integrated Development Environment).</p>
-
-<p>The problem with most of those IDEs is that they offer so many options that you usually have to read a user's manual to really take the best from them. Ok, this is something normal, you might say. Maybe you're right, but be honest, how many software user guides have you read in your life? And I'm not talking about the usual RTFM for a linux man page which can be 4 pages long at most. I'm talking about a user's manual of 500 pages. I haven't.</p>
-
-<p>And that's the reason today I'll be talking about a nice feature I found on one of the most powerful IDEs out there (regardless of being from Microsoft): Visual Studio 2005 Code Snippets.</p>
-
-        </div><p class="post-continue">
-            <a href="/2007/06/15/code-snippets-in-visual-studio-2005/">Read on &rarr;</a>
-          </p></li></ul>
+        </div></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/30/">&laquo; Older</a>

@@ -67,6 +67,41 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2011/10/20/iterate-collection-groups/">Iterate over a collection in groups, and other things</a></h1>
+
+          <p class="post-meta">
+            Oct 20, 2011• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/enumerable/">enumerable</a>, <a href="/tags/ruby/">ruby</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+One thing I find fascinating about Ruby is the fact that most common tasks are already programmed for you in its library. The <em>Enumerable</em> module is a clear example of that, providing you with lots of functionality to manipulate collections of objects.
+</p>
+<p>
+One of those useful methods I discovered the other day was <em><a href="http://www.ruby-doc.org/core-1.9.2/Enumerable.html#method-i-each_slice">each_slice</a></em>. This method allows you to iterate over the collection, just as <em>each</em> does, but lets you do it changing how many elements of the collection you get on each iteration. This is the example you can get from the documentation page:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="p">(</span><span class="mi">1</span><span class="o">..</span><span class="mi">10</span><span class="p">).</span><span class="nf">each_slice</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">a</span><span class="o">|</span> <span class="nb">p</span> <span class="n">a</span><span class="p">}</span>
+<span class="c1"># outputs below</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]</span>
+<span class="p">[</span><span class="mi">10</span><span class="p">]</span></code></pre></figure>
+
+</p>
+<p>
+You can see that from the original array from 1 to 10, on every iteration Ruby prints the numbers in groups of three, and the last one alone since the collection is not a multiple of 3. Now think about having to do this manually: it's not that hard, but its error prone and you have to do all that typical arithmetic logic that should be easy but never is. How handy that Ruby has already done that job for you.
+</p>
+<p>
+This method is also pretty useful when working in <em>Ruby on Rails</em>. One simple example is when you have to manually implement some kind of pagination, or show a list of elements in columns or rows of fixed size: you have to simply iterate with <em>each_slice</em> and put the page/row/column logic on the block, and <em>voilà</em>.
+</p>
+<p>
+I strongly suggest you take a look at the <a href="http://www.ruby-doc.org/core-1.9.2/Enumerable.html">Enumerable</a> module reference to take a look at all the other flavours of <em>each</em> methods it has and I'm sure you'll find all of them pretty useful in lots of situations!
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2011/07/04/easily-select-random-records-rails/">Easily select random records in rails</a></h1>
 
           <p class="post-meta">
@@ -224,40 +259,6 @@ And that's all, you should be able to start your fresh new xmonad setup in ArchL
 Cheers!
 </p>
 </em></p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2011/04/15/handling-resizing-in-adobe-air-with-html/">Handling resizing in Adobe Air with HTML</a></h1>
-
-          <p class="post-meta">
-            Apr 15, 2011• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/adobe-air/">adobe air</a>, <a href="/tags/air/">air</a>, <a href="/tags/html/">html</a>, <a href="/tags/javascript/">javascript</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-If you develop a widget with Adobe AIR using HTML and Javascript, you may want to resize some elements of the HTML page depending on the size of the widget, thus having to resize them when the user decides to resize the widget. However, there's a little trick on using the <em>RESIZE</em> event of the <em>air.Event</em> object.
-</p>
-<p>
-The trick is that when the event is raised, and you execute some method on the corresponding event handler, the widget won't have the correct size yet, so if you use the <em>window.nativeWindow.width</em> or <em>window.nativeWindow.height</em> values there you'll be getting erroneus results.
-</p>
-<p>
-The solution is quite easy, though. You just have to let the HTML engine to adjust everything he needs to sort out the new sizes and get those attributes after that. How do you do that? By putting your code in a <em>setTimeout</em> call with 0 milliseconds timer. Here you can find an example (assuming use of jQuery):
-</p>
-<p>
-
-<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">$</span><span class="p">(</span><span class="nb">document</span><span class="p">).</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-    <span class="nb">window</span><span class="p">.</span><span class="nx">nativeWindow</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span><span class="nx">air</span><span class="p">.</span><span class="nx">Event</span><span class="p">.</span><span class="nx">RESIZE</span><span class="p">,</span> <span class="nx">onResize</span><span class="p">);</span>
-<span class="p">});</span>
-
-<span class="kd">function</span> <span class="nx">onResize</span><span class="p">()</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">nativeWin</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nx">nativeWindow</span><span class="p">;</span>
-    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
-    <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="nx">nativeWin</span><span class="p">.</span><span class="nx">width</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="nx">nativeWin</span><span class="p">.</span><span class="nx">height</span><span class="p">;</span>
-    <span class="p">},</span> <span class="mi">0</span><span class="p">);</span>
-<span class="p">}</span> <span class="c1">//Here the values are correct</span></code></pre></figure>
-
-</p>
 
         </div></li></ul>
   <div class="pagination">

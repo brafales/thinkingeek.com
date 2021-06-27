@@ -67,6 +67,37 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2012/02/01/give-ruby-console-dash-colour/">Give your Ruby console a dash of colour</a></h1>
+
+          <p class="post-meta">
+            Feb 1, 2012• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/irb/">irb</a>, <a href="/tags/ruby/">ruby</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a>, <a href="/tags/wirble/">wirble</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+When you're developing an application in Rails (or Ruby), you spend lots of time in the <em>IRB</em>, the Interactive Ruby Shell. Usually just to test some Ruby code, start an application console or debug something going on inside the project. Yesterday, looking at a coworker screen, I saw he had his console with lots of color hints, and I thought it was pretty nice. I asked him about that and he told me he was using a special gem for that.
+</p>
+<p>
+The gem is called <a href="http://pablotron.org/software/wirble/">wirble</a>. It has some nice defaults and allows you to configure the colors as you wish. To use it in your consoles, just add this lines to your <code>~/.irbrc</code> file:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">begin</span>
+  <span class="nb">require</span> <span class="s1">'rubygems'</span>
+  <span class="nb">require</span> <span class="s1">'wirble'</span>
+  <span class="no">Wirble</span><span class="p">.</span><span class="nf">init</span>
+  <span class="no">Wirble</span><span class="p">.</span><span class="nf">colorize</span>
+<span class="k">rescue</span> <span class="no">LoadError</span> <span class="o">=&gt;</span> <span class="n">err</span>
+  <span class="nb">warn</span> <span class="s2">"Couldn't load Wirble: </span><span class="si">#{</span><span class="n">err</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+Of course, you'll need to install the gem. Just issue a <code>gem install wirble</code> and you'll be good to go!
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2012/01/24/fix-java-gui-applications-xmonad/">Fix Java GUI applications in xmonad</a></h1>
 
           <p class="post-meta">
@@ -262,42 +293,7 @@ The final result of this configuration should look like this:
 
         </div><p class="post-continue">
             <a href="/2011/11/21/simple-guide-configure-xmonad-dzen2-conky/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2011/10/20/iterate-collection-groups/">Iterate over a collection in groups, and other things</a></h1>
-
-          <p class="post-meta">
-            Oct 20, 2011• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/enumerable/">enumerable</a>, <a href="/tags/ruby/">ruby</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-One thing I find fascinating about Ruby is the fact that most common tasks are already programmed for you in its library. The <em>Enumerable</em> module is a clear example of that, providing you with lots of functionality to manipulate collections of objects.
-</p>
-<p>
-One of those useful methods I discovered the other day was <em><a href="http://www.ruby-doc.org/core-1.9.2/Enumerable.html#method-i-each_slice">each_slice</a></em>. This method allows you to iterate over the collection, just as <em>each</em> does, but lets you do it changing how many elements of the collection you get on each iteration. This is the example you can get from the documentation page:
-</p>
-<p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="p">(</span><span class="mi">1</span><span class="o">..</span><span class="mi">10</span><span class="p">).</span><span class="nf">each_slice</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">a</span><span class="o">|</span> <span class="nb">p</span> <span class="n">a</span><span class="p">}</span>
-<span class="c1"># outputs below</span>
-<span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
-<span class="p">[</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">]</span>
-<span class="p">[</span><span class="mi">10</span><span class="p">]</span></code></pre></figure>
-
-</p>
-<p>
-You can see that from the original array from 1 to 10, on every iteration Ruby prints the numbers in groups of three, and the last one alone since the collection is not a multiple of 3. Now think about having to do this manually: it's not that hard, but its error prone and you have to do all that typical arithmetic logic that should be easy but never is. How handy that Ruby has already done that job for you.
-</p>
-<p>
-This method is also pretty useful when working in <em>Ruby on Rails</em>. One simple example is when you have to manually implement some kind of pagination, or show a list of elements in columns or rows of fixed size: you have to simply iterate with <em>each_slice</em> and put the page/row/column logic on the block, and <em>voilà</em>.
-</p>
-<p>
-I strongly suggest you take a look at the <a href="http://www.ruby-doc.org/core-1.9.2/Enumerable.html">Enumerable</a> module reference to take a look at all the other flavours of <em>each</em> methods it has and I'm sure you'll find all of them pretty useful in lots of situations!
-</p>
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/23/">&laquo; Older</a>

@@ -1,4 +1,843 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-26T18:00:49+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 3</title><link href="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 3" /><published>2021-06-26T05:55:00+00:00</published><updated>2021-06-26T05:55:00+00:00</updated><id>https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3</id><content type="html" xml:base="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/">&lt;p&gt;In the last chapter we modelled the storage in form of pairs and quadruples of
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-27T20:47:26+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 4</title><link href="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 4" /><published>2021-06-27T17:09:00+00:00</published><updated>2021-06-27T17:09:00+00:00</updated><id>https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4</id><content type="html" xml:base="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/">&lt;p&gt;In the last chapter we devised a way to tame the issue with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;. Today
+we are going to complete the code generation bits that we are still missing
+so we can start emitting code.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h1&gt;Expand VFPSETLEN&lt;/h1&gt;
+
+&lt;p&gt;Given that last week we finished with a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; instruction being emitted
+I guess it makes sense we expand this first.&lt;/p&gt;
+
+&lt;p&gt;The easiest way to achieve this is extending the file
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm/lib/Target/ARM/ARMExpandPseudoInsts.cpp&lt;/code&gt; which contains the
+implementation of a pass, running after register allocation, intended to expand
+pseudo instructions.&lt;/p&gt;
+
+&lt;p&gt;If you check the first installment of this series, you will see that the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;
+field of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; is a field of 3 bits located in bits 18, 17 and 16. Setting
+the length mostly means reading the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;, which we can do using the
+instruction &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmrs&lt;/code&gt;, change the bits and write them back into &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; using the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmsr&lt;/code&gt; instruction.&lt;/p&gt;
+
+&lt;p&gt;The complex part of this process is changing the bits. We need to ensure the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field has the bits we want. We can do this in general masking what we
+obtained from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmrs&lt;/code&gt; instruction with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;~(0x7 &amp;lt;&amp;lt; 16)&lt;/code&gt;. This will clear the
+three bits of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field and then we can do a bitwise or to set
+the precise operation we want. All this is what explained why we needed
+two scratch output registers as outputs of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMExpandPseudo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ExpandMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                               &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                               &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NextMBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPSETLEN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;DebugLoc&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getDebugLoc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+      &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← FPSCR&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VMRS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// Scratch1 ← ~(0x7 &amp;lt;&amp;lt; 16)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MVNi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mh&quot;&gt;0x7&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← and Scratch2, Scratch1&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ANDrr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// Scratch1 ← (Length &amp;lt;&amp;lt; 16)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MOVi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← or Scratch2, Scratch1&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ORRrr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// FPSCR ← Scratch2&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VMSR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+      &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;eraseFromParent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The code may look loong but it should be relatively straightforward to follow.
+There are two unobvious elements due to the AArch32 Arm ISA itself. Most
+instructions can be predicated, but we want them to be always executed so we
+set it to &lt;em&gt;always&lt;/em&gt; using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.add(predOps(ARMCC::AL))&lt;/code&gt;. Many Arm instructions may
+optionally update the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cpsr&lt;/code&gt;, because we do not want to do this so we state
+that using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.add(consCodeOps())&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Other than that, the code above is basically constructing the instruction and
+finally removing the pseudo instruction.  Opcode &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARM::MVNi&lt;/code&gt; represents a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mvn&lt;/code&gt;
+instruction that uses an immediate as an input, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARM::ADDrr&lt;/code&gt; is an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add&lt;/code&gt;
+instruction with two registers as inputs. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARM::ORRrr&lt;/code&gt; is an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;orr&lt;/code&gt; (a bitwise
+or) with two registers as inputs.&lt;/p&gt;
+
+&lt;p&gt;One very simple optimization we can do happens when the vector length is 1
+(encoded as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;).  In that case we can use the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bic&lt;/code&gt; instruction whose task
+is precisely clearing consecutive bits in a register. So this function will
+look like this.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMExpandPseudo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ExpandMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                               &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                               &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NextMBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPSETLEN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;DebugLoc&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getDebugLoc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+      &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← FPSCR&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VMRS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Scratch1 ← ~(0x7 &amp;lt;&amp;lt; 16)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MVNi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mh&quot;&gt;0x7&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← and Scratch2, Scratch1&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ANDrr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Scratch1 ← (Length &amp;lt;&amp;lt; 16)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MOVi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← or Scratch2, Scratch1&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ORRrr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Scratch2 ← clear bits 16, 17, 18&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BICri&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mh&quot;&gt;0x7&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;condCodeOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// FPSCR ← Scratch2&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VMSR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predOps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARMCC&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+      &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;eraseFromParent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p style=&quot;padding: 0.7em; background-color: honeydew;&quot;&gt;
+There is an instruction &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bfi&lt;/code&gt; in a special variant of Armv6, called Armv6T2,
+and as of Armv7-A similar to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bic&lt;/code&gt; to insert arbitrary values into bitfields.
+Unfortunately the core of the Raspberry Pi 1 does not implement such
+instruction, hence all the dance with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mvn&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;and&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;orr&lt;/code&gt; instructions.
+&lt;/p&gt;
+
+&lt;p&gt;Now we can see what happens with our last example of a scalar addition.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;scalar.ll&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_scalar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; 
+  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;-O2&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mfloat-abi&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;hard scalar.ll&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;test_scalar:
+	.fnstart
+@ %bb.0:
+	vldr	d0, [r0]
+	vldr	d1, [r1]
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
+	vmsr	fpscr, r1
+	vadd.f64	d0, d0, d1
+	vstr	d0, [r2]
+	bx	lr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Above we can see the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bic&lt;/code&gt; instruction in action because here &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is set
+to zero.&lt;/p&gt;
+
+&lt;p&gt;We can manually modify the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scalar.mir&lt;/code&gt; we generated at the end of the
+previous installment so it does &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN 1&lt;/code&gt; instead of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN 0&lt;/code&gt;. We
+get this:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;-start-after&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;finalize-isel scalar.mir &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; -&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;test_scalar:
+	.fnstart
+@ %bb.0:
+	vldr	d0, [r0]
+	vldr	d1, [r1]
+	vmrs	r1, fpscr
+	mvn	r0, #458752
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d0, d0, d1
+	vstr	d0, [r2]
+	bx	lr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;So the lowering of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; is done.&lt;/p&gt;
+
+&lt;p&gt;Next is teaching SelectionDAG to actually try to select operations
+involving &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v4f32&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h1&gt;Instruction selection&lt;/h1&gt;
+
+&lt;p&gt;Even if in the previous installment we added patterns that instruction
+selection can use to select &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDDx2&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDSx4&lt;/code&gt;, those will not be
+selected. The reason is that instruction selection believes that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v4f32&lt;/code&gt; are &lt;em&gt;illegal&lt;/em&gt; types. In LLVM parlance, this means that operations
+with these types need to be softened so they only use &lt;em&gt;legal&lt;/em&gt; types. Legal
+types and operations are, intuitively, those that are supported more
+or less straightforwardly by the target.&lt;/p&gt;
+
+&lt;p&gt;We can specify this in file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm/lib/Target/ARM/ARMISelLowering.cpp&lt;/code&gt;. For now we will
+focus only on &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; but &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f32&lt;/code&gt; is the same.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;gh&quot;&gt;diff --git a/llvm/lib/Target/ARM/ARMISelLowering.cpp b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+index 4b63f3f8b3b6..f70e0435241d 100644
+&lt;/span&gt;&lt;span class=&quot;gd&quot;&gt;--- a/llvm/lib/Target/ARM/ARMISelLowering.cpp
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+++ b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;@@ -746,6 +746,31 @@&lt;/span&gt; ARMTargetLowering::ARMTargetLowering(const TargetMachine &amp;amp;TM,
+       setAllExpand(MVT::f32);
+     if (!Subtarget-&amp;gt;hasFP64())
+       setAllExpand(MVT::f64);
+&lt;span class=&quot;gi&quot;&gt;+    if (Subtarget-&amp;gt;hasVFP2Base()) {
++      addRegisterClass(MVT::v2f64, &amp;amp;ARM::DPRx2RegClass);
++      setOperationAction(ISD::LOAD, MVT::v2f64, Custom);
++      setOperationAction(ISD::STORE, MVT::v2f64, Custom);
++
++      setOperationAction(ISD::FADD, MVT::v2f64, Legal);
++    }
+&lt;/span&gt;   }
+ 
+   if (Subtarget-&amp;gt;hasFullFP16()) {&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;First we associate the machine type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; with the register class
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DPRx2RegClass&lt;/code&gt;. This is a class generated by one of the tablegen backends
+based on the register classes we defined in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMRegisterInfo.td&lt;/code&gt;. We do this
+with a call to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;addRegisterClass&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Then we say that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ISD::FADD&lt;/code&gt; is a legal operation for this target. This means
+this operation can be directly selected. Because we have a pattern for it,
+we know it will select the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDDx4&lt;/code&gt; instruction.&lt;/p&gt;
+
+&lt;p&gt;One side-effect of linking the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; to the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DRPx2&lt;/code&gt; register class is that
+now SelectionDAG expects us to be able to lower loads and stores of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt;.
+Unfortunately the field &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is not used by the load and store instructions of
+VFPv2. Because of this we need a way to express a load of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; in a set of
+instructions of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f64&lt;/code&gt;. Before we can do that we need to let SelectionDAG know
+that we will manually handle the lowering of a load and a store of type
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2&gt;Lowering load/store&lt;/h2&gt;
+
+&lt;p&gt;Before we can proceed any further we will need to implement the lowering
+of loads and stores of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt;. When an operation is marked as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Custom&lt;/code&gt;,
+the function &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LowerOperation&lt;/code&gt; is invoked for it. We will create two functions
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LowerShortVectorLoad&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LowerShortVectorStore&lt;/code&gt; that we will use for
+those types.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;gh&quot;&gt;diff --git a/llvm/lib/Target/ARM/ARMISelLowering.cpp b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+index 4b63f3f8b3b6..f70e0435241d 100644
+&lt;/span&gt;&lt;span class=&quot;gd&quot;&gt;--- a/llvm/lib/Target/ARM/ARMISelLowering.cpp
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+++ b/llvm/lib/Target/ARM/ARMISelLowering.cpp
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;@@ -10044,8 +10239,16 @@&lt;/span&gt; SDValue ARMTargetLowering::LowerOperation(SDValue Op, SelectionDAG &amp;amp;DAG) const {
+   case ISD::SSUBSAT:
+     return LowerSADDSUBSAT(Op, DAG, Subtarget);
+   case ISD::LOAD:
+&lt;span class=&quot;gi&quot;&gt;+    if (Subtarget-&amp;gt;hasVFP2Base() &amp;amp;&amp;amp;
++        (Op.getValueType() == MVT::v2f64 || Op.getValueType() == MVT::v4f32))
++      return LowerShortVectorLoad(Op, DAG);
+&lt;/span&gt;     return LowerPredicateLoad(Op, DAG);
+   case ISD::STORE:
+&lt;span class=&quot;gi&quot;&gt;+    if (Subtarget-&amp;gt;hasVFP2Base()) {
++      EVT VT = Op.getOperand(1).getValueType();
++      if (VT == MVT::v2f64 || VT == MVT::v4f32)
++        return LowerShortVectorStore(Op, DAG);
++    }
+&lt;/span&gt;     return LowerSTORE(Op, DAG, Subtarget);
+   case ISD::MLOAD:
+     return LowerMLOAD(Op, DAG);&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I am going to show only the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; case, the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v4f32&lt;/code&gt; is similar (just a bit
+longer to write). First the vector load.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;LowerShortVectorLoad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SelectionDAG&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;LoadSDNode&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LoadSDNode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;EVT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MemVT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getMemoryVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;switch&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MemVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getSimpleVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SimpleTy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nl&quot;&gt;default:&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;llvm_unreachable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Unexpected type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// This is fundamentally the same that SplitVecRes_LOAD does but assembling&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// a vector at the end.&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDLoc&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;ISD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LoadExtType&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ExtType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getExtensionType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ExtType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ISD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NON_EXTLOAD&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ch&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getChain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getBasePtr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Offset&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getUNDEF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValueType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;MachineMemOperand&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Flags&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MMOFlags&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getMemOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;AAMDNodes&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AAInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getAAInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getLoad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ISD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UNINDEXED&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ExtType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                &lt;span class=&quot;n&quot;&gt;Offset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getPointerInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOriginalAlign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MMOFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AAInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;MachinePointerInfo&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MPI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getPointerInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getWithOffset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getObjectPtrOffset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TypeSize&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Fixed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getLoad&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ISD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UNINDEXED&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ExtType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Offset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MPI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                    &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOriginalAlign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MMOFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AAInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;// Remember that the loads are parallel.&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NewCh&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ISD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;TokenFactor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Other&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Vec&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getUNDEF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Vec&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getTargetInsertSubreg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dsub_len2_0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Vec&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getTargetInsertSubreg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dsub_len2_1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                    &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getMergeValues&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NewCh&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;break&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v4f32&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This is a bit of code to explain but basically we obtain the specific information
+of a load node and we keep it in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LD&lt;/code&gt; variable. We use this to discriminate
+the machine type we are handling.&lt;/p&gt;
+
+&lt;p&gt;To create a load we need a bunch of information, but basically we will assume
+this is an unindexed load (this means there is no pre/postincrement or
+pre/postdecrement involved). The kind of extension load, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExtType, is for
+non-extending/zero-extending/sign-extending loads. We do not support it for now
+(hence the &lt;/code&gt;assert`).&lt;/p&gt;
+
+&lt;p&gt;The chain, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Ch&lt;/code&gt;, is a special operand that can be consumed as input or be
+generated as part of the results of a SelectionDAG node and it is used for
+control dependencies that cannot be represented via conventional data-flow
+dependences (e.g.  a load that follows a store will usually be linked to the
+store via a chain).&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Ptr&lt;/code&gt; is the value that contains the address. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Offset&lt;/code&gt; will be left to
+undefined. There is a bunch of flags we want to propagate from the memory
+operands of this SelectionDAG node so (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MMOFlags&lt;/code&gt;) alongwith alias analysis
+information (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;AAInfo&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;With all this information we can build a first load, that loads the first
+element of the vector. Note the machine type is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f64&lt;/code&gt; here.&lt;/p&gt;
+
+&lt;p&gt;The second part of the vector is found at an offsets of 8 bytes of the original
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Ptr&lt;/code&gt; address. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MPI&lt;/code&gt; contains the abstract pointer information and we will state
+that it is the same as the original pointer information plus 8 bytes. Similarly
+we overwrite &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Ptr&lt;/code&gt; with computing an offset of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;8&lt;/code&gt; bytes after it. Now we
+can build a load for the second element of the vector. Again the type loaded
+is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f64&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now we have to build a vector value in the input SelectionDAG. We will take
+the two values we just loaded and insert them to the proper subregisters
+that we defined in the second installment in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMRegisterInfo.td&lt;/code&gt;. Our
+vector value is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Vec&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Finally because this is a load, we need to return the vector value we just
+loaded (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Vec&lt;/code&gt;) and a chain (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;NewCh&lt;/code&gt;). The chain is such that represents the two
+loads in parallel (i.e.  any operation chained to this value will happen after
+both loads but either load can be scheduled at any order). The node that
+represents this &lt;em&gt;parallel join&lt;/em&gt; of other chains is called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ISD::TokenFactor&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;A similar process happens with stores.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;LowerShortVectorStore&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SelectionDAG&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;StoreSDNode&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;StoreSDNode&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;SDLoc&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isUnindexed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Stores should be unindexed at this point.&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;EVT&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MemoryVT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getMemoryVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;switch&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MemoryVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getSimpleVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SimpleTy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nl&quot;&gt;default:&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;llvm_unreachable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Unexpected type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// This is basically SplitVecOp_STORE but sourcing it from&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// a vector.&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isTruncatingStore&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Truncating stores not supported&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ch&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getChain&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getBasePtr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Align&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Alignment&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOriginalAlign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;MachineMemOperand&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Flags&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MMOFlags&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getMemOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;AAMDNodes&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AAInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getAAInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getTargetExtractSubreg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dsub_len2_0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                               &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;SDValue&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getTargetExtractSubreg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dsub_len2_1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                                &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getStore&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Ch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getPointerInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Alignment&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                         &lt;span class=&quot;n&quot;&gt;MMOFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AAInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;MachinePointerInfo&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MPI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getPointerInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getWithOffset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getObjectPtrOffset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TypeSize&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Fixed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getStore&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Ch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MPI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Alignment&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MMOFlags&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;AAInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DAG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ISD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;TokenFactor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Other&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;First&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Second&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MVT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v4f32&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// ...&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;In contrast to the load, we need to extract the different subregisters from
+the vector value and then we can store them using regular &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f64&lt;/code&gt; stores. Also note
+that stores do not return any value but a chain. So our lowered store must
+return a chain as well. Like we did with loads, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ISD::TokenFactor&lt;/code&gt; is used
+to state that the two chained operations can happen in parallel.&lt;/p&gt;
+
+&lt;h1&gt;MC layer&lt;/h1&gt;
+
+&lt;p&gt;We are missing a final change so we can emit our instructions: we still have
+to replace the pseudo instructions into actual instructions.
+From a code generation point of view our vector pseudo instructions are fine.
+What it is not fine is that we do not know how to encode them as instructions.&lt;/p&gt;
+
+&lt;p&gt;The MC layer is the part of LLVM devoted to assembly and disassembly of
+instructions.  All the instructions defined by tablegen have conceptual mirrors
+called MC Instructions and they are used when encoding (assembling) and
+decoding (disassembling) instructions.&lt;/p&gt;
+
+&lt;p&gt;If you remember from the last installment, we linked the pseudo instructions
+to the real instruction. Now it is the moment to use this.&lt;/p&gt;
+
+&lt;p&gt;Once machine instructions have reached their final stage, they are handed to 
+a process that creates MC instructions for each one. These MC instructions
+can then be streamed as assembly output (like what &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llc&lt;/code&gt; prints as an output)
+or to generate an object file (such an ELF file).&lt;/p&gt;
+
+&lt;p&gt;So what we will do is change this lowering from machine instructions to
+MC instructions, so our pseudo instructions get encoded like normal
+VFPv2 instructions.&lt;/p&gt;
+
+&lt;p&gt;This goes in two steps: first we need to use the real opcode of each
+pseudo instruction. Second we need to make sure we use the regular register
+that would be encoded. All the changes are in file
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm/lib/Target/ARM/ARMMCInstLower.cpp&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;First let’s add a small diversion in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm::LowerARMMachineInstrToMCInst&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt; void llvm::LowerARMMachineInstrToMCInst(const MachineInstr *MI, MCInst &amp;amp;OutMI,
+                                         ARMAsmPrinter &amp;amp;AP) {
+&lt;span class=&quot;gi&quot;&gt;+  if (lowerVFPMachineInstrToMCInst(MI, OutMI, AP))
++    return;
++
+&lt;/span&gt;   OutMI.setOpcode(MI-&amp;gt;getOpcode());
+ 
+   // In the MC layer, we keep modified immediates in their encoded form&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If the function &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lowerVFPMachineInstrToMCInst&lt;/code&gt; returns true we do not have
+to do anything else here. That function looks like this&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;lowerVFPMachineInstrToMCInst&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineInstr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MCInst&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                         &lt;span class=&quot;n&quot;&gt;ARMAsmPrinter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;VFPPseudos&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PseudoInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;VFPPseudos&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getPseudoInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOpcode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPInfo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VectorLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOpcode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;VFPInfo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BaseInst&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt;
+         &lt;span class=&quot;s&quot;&gt;&quot;Opcodes should be different at this point&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;OutMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setOpcode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPInfo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BaseInst&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineOperand&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MO&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;operands&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;MCOperand&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MCOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AP&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lowerOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MO&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MCOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;OutMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MCOp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We query in our &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPPseudos&lt;/code&gt; table if this is a VFP instruction that demands a
+length larger than 1.&lt;/p&gt;
+
+&lt;p&gt;If this is the case, we set the opcode of the MC instruction being created
+(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;OutMI&lt;/code&gt;) to the opcode of the base instruction. E.g. in this step we go from
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDDx2&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDD&lt;/code&gt;. Now we proceed as usual lowering the operands.&lt;/p&gt;
+
+&lt;p&gt;When lowering the operands we need to be careful not to emit operands of
+the register classes &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DPRx2&lt;/code&gt; or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SPRx4&lt;/code&gt;. If this is the case, we use the first
+subregister instead. To do that we change lowerOperand.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt; bool ARMAsmPrinter::lowerOperand(const MachineOperand &amp;amp;MO,
+                                  MCOperand &amp;amp;MCOp) {
+&lt;span class=&quot;gi&quot;&gt;+  const MachineInstr *MI = MO.getParent();
++  assert(MI &amp;amp;&amp;amp; &quot;Operand expected to belong to a machine instruction&quot;);
++  const MachineBasicBlock *MBB = MI-&amp;gt;getParent();
++  assert(MBB &amp;amp;&amp;amp; &quot;MI expected to be in a basic block&quot;);
++  const MachineFunction *MF = MBB-&amp;gt;getParent();
++  assert(MF &amp;amp;&amp;amp; &quot;MBB expected to be in a machine function&quot;);
++  const TargetRegisterInfo *TRI =
++      MF-&amp;gt;getSubtarget&amp;lt;ARMSubtarget&amp;gt;().getRegisterInfo();
++
+&lt;/span&gt;   switch (MO.getType()) {
+   default: llvm_unreachable(&quot;unknown operand type&quot;);
+&lt;span class=&quot;gd&quot;&gt;-  case MachineOperand::MO_Register:
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+  case MachineOperand::MO_Register: {
+&lt;/span&gt;     // Ignore all implicit register operands.
+     if (MO.isImplicit())
+       return false;
+     assert(!MO.getSubReg() &amp;amp;&amp;amp; &quot;Subregs should be eliminated!&quot;);
+&lt;span class=&quot;gd&quot;&gt;-    MCOp = MCOperand::createReg(MO.getReg());
+-    break;
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    unsigned Reg = MO.getReg();
++    // Replace the tuple register with the one used in the encoding.
++    if (ARM::DPRx2RegClass.contains(Reg)) {
++      Reg = TRI-&amp;gt;getSubReg(Reg, ARM::dsub_len2_0);
++      assert(Reg &amp;amp;&amp;amp; &quot;Subregister does not exist&quot;);
++    } else if (ARM::SPRx4RegClass.contains(Reg)) {
++      Reg = TRI-&amp;gt;getSubReg(Reg, ARM::ssub_len4_0);
++      assert(Reg &amp;amp;&amp;amp; &quot;Subregister does not exist&quot;);
++    }
++    MCOp = MCOperand::createReg(Reg);
++  } break;
+&lt;/span&gt;   case MachineOperand::MO_Immediate:
+     MCOp = MCOperand::createImm(MO.getImm());
+     break;
+&lt;span class=&quot;p&quot;&gt;@@ -120,8 +139,32 @@&lt;/span&gt; bool ARMAsmPrinter::lowerOperand(const MachineOperand &amp;amp;MO,
+   return true;
+ }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h1&gt;First test&lt;/h1&gt;
+
+&lt;p&gt;With all this we can do a first experiment with the following LLVM IR.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;vector.ll&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_vector&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; 
+  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - vector.ll&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;test_vector:
+	.fnstart
+	vldmia	r0, {d6, d7}
+	mvn	r0, #458752
+	vldmia	r1, {d4, d5}
+	vmrs	r1, fpscr
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d4, d6, d4
+	vstmia	r2, {d4, d5}
+	bx lr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Hey, not bad.&lt;/p&gt;
+
+&lt;p&gt;OK. We still need to think about preserving the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field upon returning
+the function (i.e. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; should be 0b00 again) but this is a start.&lt;/p&gt;
+
+&lt;h2&gt;Under the hood&lt;/h2&gt;
+
+&lt;p&gt;I think this is a good moment to take a look under the hood in the different
+steps. Let’s take a look at the whole instruction selection.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; /dev/null vector.ll &lt;span class=&quot;nt&quot;&gt;-debug-only&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;isel &lt;span class=&quot;nt&quot;&gt;-print-before-all&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-print-after-all&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This testcase has a single basic block, so only a single SelectionDAG will
+be built for it. This is the initial SelectionDAG&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Initial selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 15 nodes:
+  t0: ch = EntryToken
+  t7: i32 = Constant&amp;lt;0&amp;gt;
+    t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t9: v2f64,ch = load&amp;lt;(load 16 from %ir.pa, align 8)&amp;gt; t0, t2, undef:i32
+    t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t10: v2f64,ch = load&amp;lt;(load 16 from %ir.pb, align 8)&amp;gt; t0, t4, undef:i32
+      t12: ch = TokenFactor t9:1, t10:1
+      t11: v2f64 = fadd t9, t10
+      t6: i32,ch = CopyFromReg t0, Register:i32 %2
+    t13: ch = store&amp;lt;(store 16 into %ir.pc, align 8)&amp;gt; t12, t11, t6, undef:i32
+  t14: ch = ARMISD::RET_FLAG t13
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Note how node &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t11&lt;/code&gt; adds two vectors, loaded in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t9&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t10&lt;/code&gt; respectively.
+The SelectionDAG now undergoes a first optimisation step, which makes nothing
+because it is so simple. Next a type legalisation step happens but all the types
+mentioned are legal (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;i32&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;Next is legalisation of operations. Now the loads and the stores get custom
+lowered as we wanted.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Legalized selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 33 nodes:
+  t0: ch = EntryToken
+  t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t6: i32,ch = CopyFromReg t0, Register:i32 %2
+    t35: ch = TokenFactor t32:1, t34:1
+    t27: ch = TokenFactor t24:1, t26:1
+  t12: ch = TokenFactor t35, t27
+      t36: v2f64 = INSERT_SUBREG undef:v2f64, t32, TargetConstant:i32&amp;lt;9&amp;gt;
+    t37: v2f64 = INSERT_SUBREG t36, t34, TargetConstant:i32&amp;lt;10&amp;gt;
+      t29: v2f64 = INSERT_SUBREG undef:v2f64, t24, TargetConstant:i32&amp;lt;9&amp;gt;
+    t30: v2f64 = INSERT_SUBREG t29, t26, TargetConstant:i32&amp;lt;10&amp;gt;
+  t11: v2f64 = fadd t37, t30
+  t24: f64,ch = load&amp;lt;(load 8 from %ir.pb)&amp;gt; t0, t4, undef:i32
+    t25: i32 = add nuw t4, Constant:i32&amp;lt;8&amp;gt;
+  t26: f64,ch = load&amp;lt;(load 8 from %ir.pb + 8)&amp;gt; t0, t25, undef:i32
+  t32: f64,ch = load&amp;lt;(load 8 from %ir.pa)&amp;gt; t0, t2, undef:i32
+    t33: i32 = add nuw t2, Constant:i32&amp;lt;8&amp;gt;
+  t34: f64,ch = load&amp;lt;(load 8 from %ir.pa + 8)&amp;gt; t0, t33, undef:i32
+        t16: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&amp;lt;9&amp;gt;
+      t19: ch = store&amp;lt;(store 8 into %ir.pc)&amp;gt; t12, t16, t6, undef:i32
+        t18: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&amp;lt;10&amp;gt;
+        t21: i32 = add nuw t6, Constant:i32&amp;lt;8&amp;gt;
+      t22: ch = store&amp;lt;(store 8 into %ir.pc + 8)&amp;gt; t12, t18, t21, undef:i32
+    t23: ch = TokenFactor t19, t22
+  t14: ch = ARMISD::RET_FLAG t23
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Let’s take a look at &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t9&lt;/code&gt; in the initial SelectionDAG. It has been expanded into
+two stores &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t32&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t34&lt;/code&gt; (note how we annotate the proper 8 bytes offsets in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t34&lt;/code&gt;).  Then &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t32&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t34&lt;/code&gt; are inserted as subregisters in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t36&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t37&lt;/code&gt;.
+The last one will make up the value of the original type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; we had in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t9&lt;/code&gt;. The original chain of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t9&lt;/code&gt; (denoted by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t9:1&lt;/code&gt; because it is the second
+result of the operation) is now represented by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t35&lt;/code&gt; which is the parallel join
+of the chains of the already mentioned loads &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t32&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t34&lt;/code&gt; (i.e. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t32:1&lt;/code&gt; and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t34:1&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;The SelectionDAG undergoes another optimisation pass which only simplifies the
+token factors (check &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t39&lt;/code&gt;).&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Optimized legalized selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 31 nodes:
+  t0: ch = EntryToken
+  t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t6: i32,ch = CopyFromReg t0, Register:i32 %2
+      t36: v2f64 = INSERT_SUBREG undef:v2f64, t32, TargetConstant:i32&amp;lt;9&amp;gt;
+    t37: v2f64 = INSERT_SUBREG t36, t34, TargetConstant:i32&amp;lt;10&amp;gt;
+      t29: v2f64 = INSERT_SUBREG undef:v2f64, t24, TargetConstant:i32&amp;lt;9&amp;gt;
+    t30: v2f64 = INSERT_SUBREG t29, t26, TargetConstant:i32&amp;lt;10&amp;gt;
+  t11: v2f64 = fadd t37, t30
+  t24: f64,ch = load&amp;lt;(load 8 from %ir.pb)&amp;gt; t0, t4, undef:i32
+    t25: i32 = add nuw t4, Constant:i32&amp;lt;8&amp;gt;
+  t26: f64,ch = load&amp;lt;(load 8 from %ir.pb + 8)&amp;gt; t0, t25, undef:i32
+  t32: f64,ch = load&amp;lt;(load 8 from %ir.pa)&amp;gt; t0, t2, undef:i32
+    t33: i32 = add nuw t2, Constant:i32&amp;lt;8&amp;gt;
+  t34: f64,ch = load&amp;lt;(load 8 from %ir.pa + 8)&amp;gt; t0, t33, undef:i32
+  t39: ch = TokenFactor t32:1, t34:1, t24:1, t26:1
+        t16: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&amp;lt;9&amp;gt;
+      t43: ch = store&amp;lt;(store 8 into %ir.pc)&amp;gt; t39, t16, t6, undef:i32
+        t18: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&amp;lt;10&amp;gt;
+        t21: i32 = add nuw t6, Constant:i32&amp;lt;8&amp;gt;
+      t40: ch = store&amp;lt;(store 8 into %ir.pc + 8)&amp;gt; t39, t18, t21, undef:i32
+    t42: ch = TokenFactor t43, t40
+  t14: ch = ARMISD::RET_FLAG t42
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;At this point the input SelectionDAG can be “instruction selected”. This
+gives us the output SelectionDAG.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;===== Instruction selection ends:
+Selected selection DAG: %bb.0 'test_vector:'
+SelectionDAG has 30 nodes:
+  t0: ch = EntryToken
+  t2: i32,ch = CopyFromReg t0, Register:i32 %0
+  t4: i32,ch = CopyFromReg t0, Register:i32 %1
+  t6: i32,ch = CopyFromReg t0, Register:i32 %2
+  t32: f64,ch = VLDRD&amp;lt;Mem:(load 8 from %ir.pa)&amp;gt; t2, TargetConstant:i32&amp;lt;0&amp;gt;, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t0
+  t24: f64,ch = VLDRD&amp;lt;Mem:(load 8 from %ir.pb)&amp;gt; t4, TargetConstant:i32&amp;lt;0&amp;gt;, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t0
+  t34: f64,ch = VLDRD&amp;lt;Mem:(load 8 from %ir.pa + 8)&amp;gt; t2, TargetConstant:i32&amp;lt;2&amp;gt;, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t0
+  t26: f64,ch = VLDRD&amp;lt;Mem:(load 8 from %ir.pb + 8)&amp;gt; t4, TargetConstant:i32&amp;lt;2&amp;gt;, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t0
+  t39: ch = TokenFactor t32:1, t34:1, t24:1, t26:1
+      t36: v2f64 = INSERT_SUBREG IMPLICIT_DEF:v2f64, t32, TargetConstant:i32&amp;lt;9&amp;gt;
+    t37: v2f64 = INSERT_SUBREG t36, t34, TargetConstant:i32&amp;lt;10&amp;gt;
+      t29: v2f64 = INSERT_SUBREG IMPLICIT_DEF:v2f64, t24, TargetConstant:i32&amp;lt;9&amp;gt;
+    t30: v2f64 = INSERT_SUBREG t29, t26, TargetConstant:i32&amp;lt;10&amp;gt;
+  t11: v2f64 = VADDDx2 t37, t30, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg
+        t16: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&amp;lt;9&amp;gt;
+      t43: ch = VSTRD&amp;lt;Mem:(store 8 into %ir.pc)&amp;gt; t16, t6, TargetConstant:i32&amp;lt;0&amp;gt;, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t39
+        t18: f64 = EXTRACT_SUBREG t11, TargetConstant:i32&amp;lt;10&amp;gt;
+      t40: ch = VSTRD&amp;lt;Mem:(store 8 into %ir.pc + 8)&amp;gt; t18, t6, TargetConstant:i32&amp;lt;2&amp;gt;, TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t39
+    t42: ch = TokenFactor t43, t40
+  t14: ch = BX_RET TargetConstant:i32&amp;lt;14&amp;gt;, Register:i32 $noreg, t42
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Note how the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fadd&lt;/code&gt; now is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDDx2&lt;/code&gt; as expected. The other operations are also
+opcodes of the ARM backend. Now this output SelectionDAG is linearised
+(scheduled) to obtain a machine basic block. There is only one in this function,
+but all the basic blocks would be put together for the machine function.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# *** IR Dump Before Finalize ISel and expand pseudo-instructions (finalize-isel) ***:
+# Machine code for function test_vector: IsSSA, TracksLiveness
+Function Live Ins: $r0 in %0, $r1 in %1, $r2 in %2
+
+bb.0 (%ir-block.0):
+  liveins: $r0, $r1, $r2
+  %2:gpr = COPY $r2
+  %1:gpr = COPY $r1
+  %0:gpr = COPY $r0
+  %3:dpr = VLDRD %1:gpr, 0, 14, $noreg :: (load 8 from %ir.pb)
+  %4:dpr = VLDRD %1:gpr, 2, 14, $noreg :: (load 8 from %ir.pb + 8)
+  %5:dpr = VLDRD %0:gpr, 0, 14, $noreg :: (load 8 from %ir.pa)
+  %6:dpr = VLDRD %0:gpr, 2, 14, $noreg :: (load 8 from %ir.pa + 8)
+  %8:dprx2 = IMPLICIT_DEF
+  %7:dprx2 = INSERT_SUBREG %8:dprx2(tied-def 0), killed %3:dpr, %subreg.dsub_len2_0
+  %10:dprx2 = IMPLICIT_DEF
+  %9:dprx2 = INSERT_SUBREG %10:dprx2(tied-def 0), killed %5:dpr, %subreg.dsub_len2_0
+  %11:dprx2 = INSERT_SUBREG %7:dprx2(tied-def 0), killed %4:dpr, %subreg.dsub_len2_1
+  %12:dprx2 = INSERT_SUBREG %9:dprx2(tied-def 0), killed %6:dpr, %subreg.dsub_len2_1
+  %13:dprx2 = VADDDx2 killed %12:dprx2, killed %11:dprx2, 14, $noreg
+  %14:dpr = COPY %13.dsub_len2_1:dprx2
+  VSTRD killed %14:dpr, %2:gpr, 2, 14, $noreg :: (store 8 into %ir.pc + 8)
+  %15:dpr = COPY %13.dsub_len2_0:dprx2
+  VSTRD killed %15:dpr, %2:gpr, 0, 14, $noreg :: (store 8 into %ir.pc)
+  BX_RET 14, $noreg
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And then the custom inserter runs and adds &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; where due. In this case
+right before &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VADDDx2&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# *** IR Dump After Finalize ISel and expand pseudo-instructions (finalize-isel) ***:
+# Machine code for function test_vector: IsSSA, TracksLiveness
+Function Live Ins: $r0 in %0, $r1 in %1, $r2 in %2
+
+bb.0 (%ir-block.0):
+  liveins: $r0, $r1, $r2
+  %2:gpr = COPY $r2
+  %1:gpr = COPY $r1
+  %0:gpr = COPY $r0
+  %3:dpr = VLDRD %1:gpr, 0, 14, $noreg :: (load 8 from %ir.pb)
+  %4:dpr = VLDRD %1:gpr, 2, 14, $noreg :: (load 8 from %ir.pb + 8)
+  %5:dpr = VLDRD %0:gpr, 0, 14, $noreg :: (load 8 from %ir.pa)
+  %6:dpr = VLDRD %0:gpr, 2, 14, $noreg :: (load 8 from %ir.pa + 8)
+  %8:dprx2 = IMPLICIT_DEF
+  %7:dprx2 = INSERT_SUBREG %8:dprx2(tied-def 0), killed %3:dpr, %subreg.dsub_len2_0
+  %10:dprx2 = IMPLICIT_DEF
+  %9:dprx2 = INSERT_SUBREG %10:dprx2(tied-def 0), killed %5:dpr, %subreg.dsub_len2_0
+  %11:dprx2 = INSERT_SUBREG %7:dprx2(tied-def 0), killed %4:dpr, %subreg.dsub_len2_1
+  %12:dprx2 = INSERT_SUBREG %9:dprx2(tied-def 0), killed %6:dpr, %subreg.dsub_len2_1
+  dead %16:gpr, dead %17:gprnopc = VFPSETLEN 1, implicit-def $fpscr
+  %13:dprx2 = VADDDx2 killed %12:dprx2, killed %11:dprx2, 14, $noreg, implicit $fpscr
+  %14:dpr = COPY %13.dsub_len2_1:dprx2
+  VSTRD killed %14:dpr, %2:gpr, 2, 14, $noreg :: (store 8 into %ir.pc + 8)
+  %15:dpr = COPY %13.dsub_len2_0:dprx2
+  VSTRD killed %15:dpr, %2:gpr, 0, 14, $noreg :: (store 8 into %ir.pc)
+  BX_RET 14, $noreg
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;You may be wondering how is it that the 4 loads and the 2 stores have 
+become 2 load multiples and 1 store multiple. This is due a later pass
+in the ARM backend that knows how to optimise those consecutive loads.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;# *** IR Dump After ARM load / store optimization pass (arm-ldst-opt) ***:
+# Machine code for function test_vector: NoPHIs, TracksLiveness, NoVRegs, TiedOpsRewritten
+Frame Objects:
+  fi#0: size=4, align=4, at location [SP-4]
+  fi#1: size=4, align=4, at location [SP-8]
+Function Live Ins: $r0, $r1, $r2
+
+bb.0 (%ir-block.0):
+  liveins: $r0, $r1, $r2, $r4, $lr
+  $sp = frame-setup STMDB_UPD $sp(tied-def 0), 14, $noreg, killed $r4, killed $lr
+  frame-setup CFI_INSTRUCTION def_cfa_offset 8
+  frame-setup CFI_INSTRUCTION offset $lr, -4
+  frame-setup CFI_INSTRUCTION offset $r4, -8
+  VLDMDIA killed $r1, 14, $noreg, def $d4, def $d5, implicit-def $d4_d5x2 :: (load 8 from %ir.pb), (load 8 from %ir.pb + 8)
+  VLDMDIA killed $r0, 14, $noreg, def $d6, def $d7, implicit-def $d6_d7x2 :: (load 8 from %ir.pa), (load 8 from %ir.pa + 8)
+  dead renamable $r0, dead renamable $r1 = VFPSETLEN 1, implicit-def $fpscr
+  renamable $d4_d5x2 = VADDDx2 killed renamable $d6_d7x2, killed renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  VSTMDIA killed $r2, 14, $noreg, $d4, $d5 :: (store 8 into %ir.pc), (store 8 into %ir.pc + 8)
+  $r4 = VMRS 14, $noreg, implicit $fpscr
+  $r4 = BICri $r4, 458752, 14, $noreg, $noreg
+  VMSR $r4, 14, $noreg, implicit-def $fpscr
+  $sp = frame-destroy LDMIA_RET $sp(tied-def 0), 14, $noreg, def $r4, def $pc
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2&gt;Final observation&lt;/h2&gt;
+
+&lt;p&gt;What happens if our IR does two adds?&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;vector2.ll&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_vector2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                          &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; 
+  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%t1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%t2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%t1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%t2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pd&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Well, we get the following output&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;test_vector2:
+	.fnstart
+@ %bb.0:
+	vldmia	r0, {d6, d7}
+	mvn	r0, #458752
+	vldmia	r1, {d4, d5}
+	vmrs	r1, fpscr
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	mvn	r0, #458752
+	vmsr	fpscr, r1
+	vadd.f64	d4, d6, d4
+	vldmia	r2, {d6, d7}
+	vmrs	r1, fpscr
+	and	r1, r1, r0
+	mov	r0, #65536
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d4, d4, d6
+	vstmia	r3, {d4, d5}
+	bx	lr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;As you can see we are setting the field &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; twice. But once should
+be enough: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; is already encoding vector length 2 when we’re about to
+execute the second &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vadd.f64&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In a next installment we will see how to improve this and emit only the required
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; instructions.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the last chapter we devised a way to tame the issue with fpscr. Today we are going to complete the code generation bits that we are still missing so we can start emitting code.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 3</title><link href="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 3" /><published>2021-06-26T05:55:00+00:00</published><updated>2021-06-26T05:55:00+00:00</updated><id>https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3</id><content type="html" xml:base="https://thinkingeek.com/2021/06/26/raspberry-vectors-part-3/">&lt;p&gt;In the last chapter we modelled the storage in form of pairs and quadruples of
 registers that we will use for vectors of double and single precision,
 respectively.&lt;/p&gt;
 
@@ -4000,297 +4839,4 @@ would add the following lines. &lt;code class=&quot;language-plaintext highlight
 names in its DNS database.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;/etc/hosts&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;192.168.1.1	router.mydomain router
-192.168.1.2	dns.mydomain dns&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present here a simpler alternative built on top of dnsmasq which is an integrated DNS and DHCP.</summary></entry><entry><title type="html">Using SSH Certificates</title><link href="https://thinkingeek.com/2020/06/06/using-ssh-certificates/" rel="alternate" type="text/html" title="Using SSH Certificates" /><published>2020-06-06T13:31:00+00:00</published><updated>2020-06-06T13:31:00+00:00</updated><id>https://thinkingeek.com/2020/06/06/using-ssh-certificates</id><content type="html" xml:base="https://thinkingeek.com/2020/06/06/using-ssh-certificates/">&lt;p&gt;Password-based authentication has a number of drawbacks, so many services (such
-as github) use SSH keys to authenticate. However distributing the keys over
-several nodes (be virtual machines or single-board computers such as
-Raspberry Pi) doesn’t scale over the number of nodes and users.&lt;/p&gt;
-
-&lt;p&gt;Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism.
-This mechanism may help reducing the complexity of users trusting SSH hosts and
-hosts trusting SSH users.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;Before we continue, a caveat&lt;/p&gt;
-
-&lt;div style=&quot;padding: 1em; background-color: #fee;&quot;&gt;
-Using SSH certificates is not a security panacea. Like every other technological
-solution it has pros and cons that have to be gauged against the existing
-requirements.
-&lt;/div&gt;
-
-&lt;h1&gt;Concepts&lt;/h1&gt;
-
-&lt;p&gt;Public key cryptography (I’d dare to say cryptography in general) is
-notoriously confusing because it uses several terms at the same time that often
-are at the same “semantic” level and so they are easy to mix up.&lt;/p&gt;
-
-&lt;p&gt;In this post we will use the following terminology:&lt;/p&gt;
-
-&lt;dl&gt;
-  &lt;dt&gt;SSH key&lt;/dt&gt;
-  &lt;dd&gt;A SSH key is a cryptographic widget made up of two keys (each one stored in a different file): the public SSH key and the private SSH key. These two keys are related mathematically but deriving one from the other is not possible.&lt;/dd&gt;
-  &lt;dt&gt;public SSH key&lt;/dt&gt;
-  &lt;dd&gt;The public key of a SSH key is the part that can be disclosed and distributed.&lt;/dd&gt;
-  &lt;dt&gt;private SSH key&lt;/dt&gt;
-  &lt;dd&gt;The private key of a SSH key is the part that should never be disclosed or distributed.&lt;/dd&gt;
-  &lt;dt&gt;Certificate Authority&lt;/dt&gt;
-  &lt;dd&gt;Entity which has its own SSH key (i.e. a public SSH key and a private SSH key) which will be used to emit certificates that we can trust.&lt;/dd&gt;
-  &lt;dt&gt;certificate&lt;/dt&gt;
-  &lt;dd&gt;Digital signature issued by a Certificate Authority that asserts the authenticity of something, such a SSH key. If the Certificate Authority is trusted we can trust the certificate.&lt;/dd&gt;
-  &lt;dt&gt;Host&lt;/dt&gt;
-  &lt;dd&gt;The host is the machine we want to connect to using SSH.&lt;/dd&gt;
-  &lt;dt&gt;Host Key&lt;/dt&gt;
-  &lt;dd&gt;Each host has its own SSH key (again, a public and private one) which is used to identify the host. The public key is presented to a user connecting to the host.&lt;/dd&gt;
-  &lt;dt&gt;User Key&lt;/dt&gt;
-  &lt;dd&gt;Each user can have one (or more than one) SSH key(s). These keys are used to authenticate the user against each host.&lt;/dd&gt;
-&lt;/dl&gt;
-
-&lt;p&gt;In most scenarios users need to copy (using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-copy-id&lt;/code&gt; or similar) their
-public SSH key to each host. Auhtentication proceeds by a challenge mechanism.
-We need to prove that the user has the private SSH key related to the public
-SSH key found in the host. So the host encrypts a challenge using the public
-SSH key to be decrypted by the user. The user decrypts the challenge the
-private SSH key and sends that to the host. If the user had the right private
-key, the challenge suceeds and no password is required.&lt;/p&gt;
-
-&lt;p&gt;However, the first time a user connects to a host, SSH asks if we really want
-to trust the host. The rationale here is that we might be fooled to login
-somehwere other than the real host (which could be abused, among others, to
-disclose our password while trying to login).&lt;/p&gt;
-
-&lt;p&gt;We want to make the hosts trusted by the user (imagine a new host is set up)
-but also we want the hosts trust the user.&lt;/p&gt;
-
-&lt;p&gt;When trust is involved a Certificate Authority is required so we will need to
-create one so the users can trust the hosts and one so the hosts can trust the
-users.&lt;/p&gt;
-
-&lt;dl&gt;
-  &lt;dt&gt;Host Certificate Authority (Host CA)&lt;/dt&gt;
-  &lt;dd&gt;A SSH key. Its private SSH key will be used to issue host certificates. Its public SSH key will be used by users to verify that host certificates were issued by the Host Certificate Authority they trust.&lt;/dd&gt;
-  &lt;dt&gt;User Certificate Authority (User CA)&lt;/dt&gt;
-  &lt;dd&gt;A SSH key. Its private SSH key will be used to issue user certificates. Its public SSH key will be used by hosts to verify that user certificates were issued by the User Certificate Authority they trust.&lt;/dd&gt;
-&lt;/dl&gt;
-
-&lt;h1&gt;Host Certificate Authority&lt;/h1&gt;
-
-&lt;p&gt;A certificate authority is a big sounding name, but in SSH it is going
-to be just another SSH key (again with public SSH key and its private SSH key).&lt;/p&gt;
-
-&lt;p&gt;We will be using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt; all the time so be careful with the flags. First
-we need to create the SSH key that will act as the Host Certificate Authority.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; ed25519 &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; host_ca&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This will generate two files: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca&lt;/code&gt; is the private SSH key and
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca.pub&lt;/code&gt; is the public SSH key. The private key is trusted and so it is
-essential to keep it super safe. If you use another name in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-f&lt;/code&gt; option,
-say &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-f my_host_ca&lt;/code&gt;, the created files will be &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;my_host_ca&lt;/code&gt; and
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;my_host_ca.pub&lt;/code&gt;, respectively.&lt;/p&gt;
-
-&lt;p&gt;If you look at the contents of the public key&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;$ cat host_ca.pub
-ssh-ed25519 AAAA... comment&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The first part &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-ed25519&lt;/code&gt; is the kind of SSH key. A key of kind &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ed25591&lt;/code&gt;
-seems to be recommended over the default &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rsa&lt;/code&gt;, hence the flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-t ed25519&lt;/code&gt;
-earlier. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;AAAA...&lt;/code&gt; part is specific to your SSH key and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;comment&lt;/code&gt; is
-usually &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user@host&lt;/code&gt; but can be changed to be more informative with an option
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-C comment&lt;/code&gt; in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt; call above.&lt;/p&gt;
-
-&lt;h2&gt;Set a user to trust the Host CA&lt;/h2&gt;
-
-&lt;p&gt;In order to make a user trust our new Host CA, we need to distribute the
-&lt;strong&gt;public&lt;/strong&gt; SSH key of the Host CA and tell &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; to trust it.&lt;/p&gt;
-
-&lt;p&gt;This can be used system-wide (i.e. the computer of the user) or per user
-in that system.&lt;/p&gt;
-
-&lt;p&gt;Let’s assume we want the node &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; trust the Host CA.&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;If we want the trust relationship be system-wide, the file to edit is
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/ssh_known_hosts&lt;/code&gt; of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;. In general only administrators
-can edit this file.&lt;/li&gt;
-  &lt;li&gt;If a user in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; wants to individually trust that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Host CA&lt;/code&gt; the file
-to edit is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/ssh_known_hosts&lt;/code&gt;.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;In either case we have to add the following line.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;@cert-authority *.example.com ssh-ed25519 AAAA...&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Here &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;*.example.com&lt;/code&gt; will be your domain name (it is very handy to have your
-own domain name even in your LAN at home either
-&lt;a href=&quot;/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/&quot;&gt;using ISC BIND and ISC DHCP&lt;/a&gt;
-or &lt;a href=&quot;/2020/06/06/local-domain-and-dhcp-with-dnsmasq/&quot;&gt;using dnsmasq&lt;/a&gt;) for which the certificate will be
-trusted. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-ed25519 AAAA...&lt;/code&gt; part is the contents of the public SSH key
-of the Host CA.&lt;/p&gt;
-
-&lt;p&gt;And that’s it. From now on when trying to connect to a host that matches
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;*.example.com&lt;/code&gt;, if that host presents a certificate that has been signed by
-the Host CA we trust, we will also trust the host.&lt;/p&gt;
-
-&lt;p&gt;So the next logical step is how to create a host certificate.&lt;/p&gt;
-
-&lt;h2&gt;Issue a Host Certificate&lt;/h2&gt;
-
-&lt;p&gt;To issue a host certificate we need the host public key of the host. This 
-key is found in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/ssh_host_ed25519_key.pub&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Imagine we have a host &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. What we have to do is to
-obtain its host public SSH key. We have to copy it (over the network or via a USB
-if we’ve got physical access) to the place where we have our &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca&lt;/code&gt; (the
-private SSH key of the Host CA).&lt;/p&gt;
-
-&lt;p&gt;Now we need to emit a host certificate. We do that again using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh-keygen&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; host_ca &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;-I&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;ServerMachine1&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt; ServerMachine1.example.com &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;-V&lt;/span&gt; +52w &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-    ssh_host_ed25519_key.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;There are many flags here so let’s see each one:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-s host_ca&lt;/code&gt; means issuing a certificate using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host_ca&lt;/code&gt; private SSH key.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-I &quot;ServerMachine1&quot;&lt;/code&gt; is an arbitrary identifier we can use to help us identify the key in the server logs.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-h&lt;/code&gt; means create a host certificate&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-n ServerMachine1.example.com&lt;/code&gt; is the set of host names (comma-separated) for which this certificate is issued.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-V +52w&lt;/code&gt; means that this certificate will be valid for 52 week, after that time the certificate won’t be trusted. If this option is not specified, the issued certificate will be valid forever.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh_host_ed25519_key.pub&lt;/code&gt; this is the host public SSH key for which we are issuing a certificate (copied from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;).&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;This will generate a file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh_host_ed25519_key-cert.pub&lt;/code&gt; (note the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-cert&lt;/code&gt; before &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.pub&lt;/code&gt;). This file now has to be copied back to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. For instance
- we can copy it into &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/ssh_host_ed25519_key-cert.pub&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Now we need to tell the SSH server in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt; to offer that certificate to all incoming SSH connections. We can do that editing the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/sshd_config&lt;/code&gt;
-and adding the following line (in general only administrators can change this file).&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now we have to restart the SSH server. In mosts systems with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;systemd&lt;/code&gt; an
-administrator can do that by running the following comment.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart ssh&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h2&gt;Testing the Host Certificate&lt;/h2&gt;
-
-&lt;p&gt;Now a user that trusts the Host Certificate Authority should be able to trust
-without having to do anything. We already established that trust relationship
-in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; so let’s use that machine to test it.&lt;/p&gt;
-
-&lt;p&gt;First make sure no trust relationship is remembered in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-R&lt;/span&gt; ServerMachine1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Still from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; try to to login to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh ServerMachine1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If you see something like this&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;The authenticity of host 'ServerMachine.example.com (1.2.3.4)' can't be established.
-RSA key fingerprint is SHA256:aeghei4Cao0quuteij3aechu.
-Are you sure you want to continue connecting (yes/no)?&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;something is wrong and you need to recheck the steps above.&lt;/p&gt;
-
-&lt;p&gt;If you’re directly requested the password (or some previous SSH key allows you to login) then
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; is trusting &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Note that some organizations add domain suffixes when solving names. So
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt; can be used to access &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. However
-SSH is strict about names and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh ServerMachine1&lt;/code&gt; will not trust the machine.&lt;/p&gt;
-
-&lt;p&gt;If you want to use the short name (or any other name)  my recommendation is to
-teach ssh in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt; is actually
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt;. You can do that adding the following lines in
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/config&lt;/code&gt;&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;Host ServerName1
-  HostName ServerName1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h1&gt;User Certificate Authority&lt;/h1&gt;
-
-&lt;p&gt;Now that we trust the servers in our organization, the next step is that the
-servers trust our users.&lt;/p&gt;
-
-&lt;p&gt;To do that we need to create a user certificate authority.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; ed25519 &lt;span class=&quot;nt&quot;&gt;-f&lt;/span&gt; user_ca&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Again this will generate a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca&lt;/code&gt; file with the private SSH key that must be kept
-safe and secret, and a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca.pub&lt;/code&gt; that contains the public SSH key.&lt;/p&gt;
-
-&lt;h2&gt;Set a server to trust the User CA&lt;/h2&gt;
-
-&lt;p&gt;A server like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt; needs to trust the User CA before it can
-trust any certificate issued by that User CA.&lt;/p&gt;
-
-&lt;p&gt;We do this copying the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca.pub&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;. For instance in
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/user_ca.pub&lt;/code&gt;. Now we edit the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/ssh/sshd_config&lt;/code&gt; and we add
-the following lines.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;TrustedUserCAKeys /etc/ssh/user_ca.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now we need to restart the SSH server.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;sudo &lt;/span&gt;systemctl restart ssh&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now the SSH server in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1.example.com&lt;/code&gt; trusts the user certificates
-issued by the User CA we created in the earlier section.&lt;/p&gt;
-
-&lt;h2&gt;Issue a User Certificate&lt;/h2&gt;
-
-&lt;p&gt;To issue a user certificate, we need the public SSH key of a user. I’m assuming
-that the user already has one in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/id_ed25519.pub&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Copy the public SSH key of the user where the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca&lt;/code&gt; private SSH of the User
-CA is found.&lt;/p&gt;
-
-&lt;p&gt;Now use the following command&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh-keygen &lt;span class=&quot;nt&quot;&gt;-s&lt;/span&gt; user_ca &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-      &lt;span class=&quot;nt&quot;&gt;-I&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;user_name&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-      &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt; userid1 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-      &lt;span class=&quot;nt&quot;&gt;-V&lt;/span&gt; +52w &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-      id_ed25519.pub&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Let’s review each flag&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-s user_ca&lt;/code&gt; means issuing a certificate using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user_ca&lt;/code&gt; private SSH key.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-I &quot;user_name&quot;&lt;/code&gt; is an arbitrary identifier we can use to help us identify the key in the server logs.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-n userid1&lt;/code&gt; is the set of user identifiers (comma-separated) for which this certificate is issued. This is the userid used to login.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-V +52w&lt;/code&gt; means that this certificate will be valid for 52 week, after that time the certificate won’t be trusted. If this option is not specified, the issued certificate will be valid forever.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;id_ed25519_key.pub&lt;/code&gt; this is the user public SSH key for which we are issuing a certificate (the user must provide it).&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;This will create a file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;id_ed25519_key-cert.pub&lt;/code&gt; (mind the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-cert&lt;/code&gt; before
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.pub&lt;/code&gt;) that we have to copy back to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;. It has to be copied in
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/id_ed25519-cert.pub&lt;/code&gt; (be careful not to overwrite the public SSH
-key).&lt;/p&gt;
-
-&lt;h2&gt;Testing the User Certificate&lt;/h2&gt;
-
-&lt;p&gt;Note the user should be able to login to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh ServerMachine1.example.com&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;It is necessary that no password is requested otherwise something is wrong.&lt;/p&gt;
-
-&lt;p&gt;It is not sufficient however. A key in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;, found in
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; could still be being used to allow us to login.&lt;/p&gt;
-
-&lt;p&gt;Make sure &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt; does not contain any
-public key of the user of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt;. If there is one it might be allowing
-password-less login instead of our certificate. So, make sure no key from
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;UserMachine1&lt;/code&gt; is listed in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine&lt;/code&gt; (a
-more radical alternative is to remove &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;$HOME/.ssh/authorized_keys&lt;/code&gt; of
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ServerMachine1&lt;/code&gt;). After that, you should be able to login without being
-requested a password, otherwise recheck the steps above.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Password-based authentication has a number of drawbacks, so many services (such as github) use SSH keys to authenticate. However distributing the keys over several nodes (be virtual machines or single-board computers such as Raspberry Pi) doesn’t scale over the number of nodes and users. Luckily, OpenSSH implementation of SSH supports a certificate-based mechanism. This mechanism may help reducing the complexity of users trusting SSH hosts and hosts trusting SSH users.</summary></entry></feed>
+192.168.1.2	dns.mydomain dns&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present here a simpler alternative built on top of dnsmasq which is an integrated DNS and DHCP.</summary></entry></feed>
