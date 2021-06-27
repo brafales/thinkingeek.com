@@ -275,8 +275,10 @@ with these types need to be softened so they only use <em>legal</em> types. Lega
 types and operations are, intuitively, those that are supported more
 or less straightforwardly by the target.</p>
 
-<p>We can specify this in file <code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/ARMISelLowering.cpp</code>. For now we will
-focus only on <code class="language-plaintext highlighter-rouge">v2f64</code> but <code class="language-plaintext highlighter-rouge">v2f32</code> is the same.</p>
+<p>We can specify this in file <code class="language-plaintext highlighter-rouge">llvm/lib/Target/ARM/ARMISelLowering.cpp</code>. For now
+we will focus only on <code class="language-plaintext highlighter-rouge">v2f64</code> but <code class="language-plaintext highlighter-rouge">v2f32</code> is the same. We are only going to
+make float addition legal (<code class="language-plaintext highlighter-rouge">fadd</code> / <code class="language-plaintext highlighter-rouge">ISD::FADD</code>), but the same applies to all
+other operations appearing in the patterns we addded.</p>
 
 <figure class="highlight"><pre><code class="language-diff" data-lang="diff"><span class="gh">diff --git a/llvm/lib/Target/ARM/ARMISelLowering.cpp b/llvm/lib/Target/ARM/ARMISelLowering.cpp
 index 4b63f3f8b3b6..f70e0435241d 100644
