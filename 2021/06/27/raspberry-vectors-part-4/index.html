@@ -147,7 +147,7 @@ two scratch output registers as outputs of <code class="language-plaintext highl
   <span class="p">}</span>
 <span class="err">}</span></code></pre></figure>
 
-<p>The code may look loong but it should be relatively straightforward to follow.
+<p>The code may look long but it should be relatively straightforward to follow.
 There are two unobvious elements due to the AArch32 Arm ISA itself. Most
 instructions can be predicated, but we want them to be always executed so we
 set it to <em>always</em> using <code class="language-plaintext highlighter-rouge">.add(predOps(ARMCC::AL))</code>. Many Arm instructions may
@@ -162,8 +162,8 @@ or) with two registers as inputs.</p>
 
 <p>One very simple optimization we can do happens when the vector length is 1
 (encoded as <code class="language-plaintext highlighter-rouge">len</code>).  In that case we can use the <code class="language-plaintext highlighter-rouge">bic</code> instruction whose task
-is precisely clearing consecutive bits in a register. So this function will
-look like this.</p>
+is precisely clearing consecutive bits in a register. So we can improve the
+emitted instructions like below.</p>
 
 <figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span> <span class="n">ARMExpandPseudo</span><span class="o">::</span><span class="n">ExpandMI</span><span class="p">(</span><span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">,</span>
                                <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">MBBI</span><span class="p">,</span>
@@ -177,18 +177,13 @@ look like this.</p>
       <span class="c1">// Scratch2 ← FPSCR</span>
       <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VMRS</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
           <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">));</span>
+      <span class="c1">// Scratch2 ← clear bits 16, 17, 18</span>
+      <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">BICri</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="mh">0x7</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
+          <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
       <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">())</span> <span class="p">{</span>
-        <span class="c1">// Scratch1 ← ~(0x7 &lt;&lt; 16)</span>
-        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">MVNi</span><span class="p">),</span> <span class="n">Scratch1</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="mh">0x7</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
-            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
-        <span class="c1">// Scratch2 ← and Scratch2, Scratch1</span>
-        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">ANDrr</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
-            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
         <span class="c1">// Scratch1 ← (Length &lt;&lt; 16)</span>
         <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">MOVi</span><span class="p">),</span> <span class="n">Scratch1</span><span class="p">)</span>
             <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
@@ -198,13 +193,6 @@ look like this.</p>
         <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">ORRrr</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
             <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
             <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
-            <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
-      <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-        <span class="c1">// Scratch2 ← clear bits 16, 17, 18</span>
-        <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MBBI</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">BICri</span><span class="p">),</span> <span class="n">Scratch2</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">)</span>
-            <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="mh">0x7</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
             <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">predOps</span><span class="p">(</span><span class="n">ARMCC</span><span class="o">::</span><span class="n">AL</span><span class="p">))</span>
             <span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="n">condCodeOp</span><span class="p">());</span>
       <span class="p">}</span>
@@ -223,7 +211,7 @@ look like this.</p>
 There is an instruction <code class="language-plaintext highlighter-rouge">bfi</code> in a special variant of Armv6, called Armv6T2,
 and as of Armv7-A similar to <code class="language-plaintext highlighter-rouge">bic</code> to insert arbitrary values into bitfields.
 Unfortunately the core of the Raspberry Pi 1 does not implement such
-instruction, hence all the dance with <code class="language-plaintext highlighter-rouge">mvn</code>, <code class="language-plaintext highlighter-rouge">and</code> and <code class="language-plaintext highlighter-rouge">orr</code> instructions.
+instruction, hence the dance with <code class="language-plaintext highlighter-rouge">mov</code> and <code class="language-plaintext highlighter-rouge">orr</code>.
 </p>
 
 <p>Now we can see what happens with our last example of a scalar addition.</p>
@@ -239,14 +227,12 @@ instruction, hence all the dance with <code class="language-plaintext highlighte
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>clang <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o</span> - <span class="nt">--target</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mfloat-abi</span><span class="o">=</span>hard scalar.ll</code></pre></figure>
 
 <figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_scalar:
-	.fnstart
-@ %bb.0:
-	vldr	d0, [r0]
-	vldr	d1, [r1]
+	vldr	d0, [r1]
+	vldr	d1, [r0]
 	vmrs	r1, fpscr
 	bic	r1, r1, #458752
 	vmsr	fpscr, r1
-	vadd.f64	d0, d0, d1
+	vadd.f64	d0, d1, d0
 	vstr	d0, [r2]
 	bx	lr</code></pre></figure>
 
@@ -263,15 +249,14 @@ get this:</p>
 <figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_scalar:
 	.fnstart
 @ %bb.0:
-	vldr	d0, [r0]
-	vldr	d1, [r1]
-	vmrs	r1, fpscr
-	mvn	r0, #458752
-	and	r1, r1, r0
+	vldr	d1, [r0]
 	mov	r0, #65536
+	vldr	d0, [r1]
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
 	orr	r1, r1, r0
 	vmsr	fpscr, r1
-	vadd.f64	d0, d0, d1
+	vadd.f64	d0, d1, d0
 	vstr	d0, [r2]
 	bx	lr</code></pre></figure>
 
@@ -629,17 +614,17 @@ subregister instead. To do that we change lowerOperand.</p>
 
 <figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_vector:
 	.fnstart
+@ %bb.0:
 	vldmia	r0, {d6, d7}
-	mvn	r0, #458752
+	mov	r0, #65536
 	vldmia	r1, {d4, d5}
 	vmrs	r1, fpscr
-	and	r1, r1, r0
-	mov	r0, #65536
+	bic	r1, r1, #458752
 	orr	r1, r1, r0
 	vmsr	fpscr, r1
 	vadd.f64	d4, d6, d4
 	vstmia	r2, {d4, d5}
-	bx lr</code></pre></figure>
+	bx	lr</code></pre></figure>
 
 <p>Hey, not bad.</p>
 
@@ -888,19 +873,17 @@ bb.0 (%ir-block.0):
 	.fnstart
 @ %bb.0:
 	vldmia	r0, {d6, d7}
-	mvn	r0, #458752
+	mov	r0, #65536
 	vldmia	r1, {d4, d5}
 	vmrs	r1, fpscr
-	and	r1, r1, r0
-	mov	r0, #65536
+	bic	r1, r1, #458752
 	orr	r1, r1, r0
-	mvn	r0, #458752
+	mov	r0, #65536
 	vmsr	fpscr, r1
 	vadd.f64	d4, d6, d4
 	vldmia	r2, {d6, d7}
 	vmrs	r1, fpscr
-	and	r1, r1, r0
-	mov	r0, #65536
+	bic	r1, r1, #458752
 	orr	r1, r1, r0
 	vmsr	fpscr, r1
 	vadd.f64	d4, d4, d6
