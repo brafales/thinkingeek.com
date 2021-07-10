@@ -67,6 +67,512 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2012/08/08/common-linking-issues-c/">Common linking issues in C++</a></h1>
+
+          <p class="post-meta">
+            Aug 8, 2012• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/uncategorized/">Uncategorized</a></p>
+        </header>
+
+        <div class="post-content">
+          <h2>Introduction</h2>
+
+<p>
+C++ is a language derived from C, so in essence all problems at link time boil down at declaring stuff but not defining it.
+</p>
+
+<p>
+Declaring something in C++ means bringing the entity into existence in the program, so it can be used after the declaration point.  Defining something means giving a complete description of the entity itself.  You can declare a class or a function, and it means this class and this function do exist. But to completely describe a class and a function you have to define them. A class definition provides a list of base classes of that class, a list of members (data members and member functions) of that class, etc.  A function definition provides the executable code of that function. All definitions are declarations but not all declarations are definitions.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+</pre></td><td class="code"><pre><span class="c1">// Defines variable 'x'</span>
+<span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+<span class="c1">// Declares variable 'y'</span>
+<span class="k">extern</span> <span class="kt">int</span> <span class="n">y</span><span class="p">;</span>
+<span class="c1">// Declares class 'A'</span>
+<span class="k">struct</span> <span class="nc">A</span><span class="p">;</span>
+<span class="c1">// Declares function 'f(int)'</span>
+<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+
+<span class="c1">// Defines class 'A'</span>
+<span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="c1">// Declares member function 'A::g(float)'</span>
+    <span class="kt">void</span> <span class="n">g</span><span class="p">(</span><span class="kt">float</span><span class="p">);</span>
+
+    <span class="c1">// Defines member function 'A::h(char)'</span>
+    <span class="kt">void</span> <span class="n">h</span><span class="p">(</span><span class="kt">char</span><span class="p">)</span> 
+    <span class="p">{</span> 
+      <span class="c1">// Code</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Defines data member 'A::x'</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
+
+    <span class="c1">// Declares static data member 'A::y'</span>
+    <span class="k">static</span> <span class="kt">int</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// Defines  function'f(int)'</span>
+<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span>
+<span class="p">{</span>
+ <span class="c1">// Code</span>
+<span class="p">}</span>
+
+<span class="c1">// Defines member function 'A::g(float)'</span>
+<span class="kt">void</span> <span class="n">A</span><span class="o">::</span><span class="n">g</span><span class="p">(</span><span class="kt">float</span><span class="p">)</span>
+<span class="p">{</span>
+ <span class="c1">// Code</span>
+<span class="p">}</span>
+
+<span class="c1">// Defines static data member 'A::y'</span>
+<span class="kt">int</span> <span class="n">A</span><span class="o">::</span><span class="n">y</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+C++, in contrast to C, strongly sticks to the One Definition Rule which states that entities can be defined at most once in an entire program. Of course this may not be completely true depending your own the definition of "entity": template functions when instantiated by the compiler can be defined more than once in the program, and some magic happens so this does not become a problem.
+</p>
+
+<p>
+Anyway, C++ brings its own set of linking issues which may fool even the most experienced C++ developer.
+</p>
+
+<h2>Static data members are only declared inside the class specifier</h2>
+
+<p>
+Some might argue that this is one of the most common source of linking issues when using C++. Truth be told, static data members are just global variables in disguise so most people will avoid them. However, there are cases where a static data member may come in handy, for instance when implementing the singleton pattern.
+</p>
+
+<p>
+The problem lies that, although usual (nonstatic) data members are defined when they are declared inside a class (like in line 23 of the example above), static data members are only declared.  Thus in line 26 of the example above <code>A::y</code> is only being declared.  Its actual definition is given in line 42. The actual definition of a static data member will go in the implementation file (usually a <code>.cpp</code> or <code>.cc</code> file).
+</p>
+
+<p>
+So the usual case goes like this: you realize you need a static data member. You add it to the class. Your code compiles fine but does not link. In fact 'A::y', the static data member you just added is undefined? How can this be? 
+</p>
+
+<p>
+Now you know the reason.
+</p>
+
+<p>
+What is the reason this issue is hit so many times? Well, there are three reasons. A historical one, where early versions of C++ compilers allowed this. A quirk in the C++ language itself where <code>const</code> integral and enumerator static data members can be declared and initialized in the class itself (thus defining them as well). And finally, a <q>linguistic</q> issue, since in Java and C# static fields are declared like any other fields plus a <code>static</code> specifier.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre></td><td class="code"><pre><span class="c1">// -- Header file</span>
+<span class="k">class</span> <span class="nc">MySingleton</span>
+<span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="k">static</span> <span class="n">MySingleton</span><span class="o">&amp;</span> <span class="n">getInstance</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">singleton_</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">singleton_</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MySingleton</span><span class="p">;</span>
+        <span class="k">return</span> <span class="o">*</span><span class="n">singleton_</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="nl">private:</span>
+    <span class="c1">// Usual private constructor</span>
+    <span class="n">MySingleton</span><span class="p">()</span> <span class="p">{</span> <span class="p">}</span>
+    <span class="c1">// Declaration</span>
+    <span class="k">static</span> <span class="n">MySingleton</span> <span class="o">*</span><span class="n">singleton_</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// -- Implementation file</span>
+<span class="c1">// Definition</span>
+<span class="n">MySingleton</span><span class="o">*</span> <span class="n">MySingleton</span><span class="o">::</span><span class="n">singleton_</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2>Not all headers are created equal</h2>
+
+<p>
+The usual myth is that C++ is a superset of C. Well, it looks like as a superset of C but they are actually two different languages. That said, they share so many thinks that interfacing C++ and C is pretty straightforward, in particular when the former must call the latter (the opposite may be a bit more challenging).
+</p>
+
+<p>
+Thus, it is not unsual to see that a C++ program <code>#include</code>s C header files. Chances are that the headers of your operating system will be in C. Being able to #include a C header and using the entities declared in it is one of the strengths of C++. And this is the source of our second problem.
+</p>
+
+<p>
+Remember that in C++ functions may be overloaded. This means that we can use the same name when declaring two functions in the same scope as long as they have different enough parameter types.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="c1">// Declaration of 'f(int)'</span>
+<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+<span class="c1">// Declaration of 'f(float)'</span>
+<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">float</span><span class="p">);</span>
+<span class="c1">// Redeclaration of 'f(int)' since, in a parameter, 'const int' cannot</span>
+<span class="c1">// be distinguished from 'int'</span>
+<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="k">const</span> <span class="kt">int</span><span class="p">);</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+It may be non obvious, but we cannot give these two functions declared above the same <code>f</code> name.  So the compiler crafts an artificial name for <code>f(int)</code> and <code>f(float)</code> (this is called a decorated name or a mangled name). For instance they could be <code>f_1_int</code> and <code>f_1_float</code> (here 1 would mean the number of parameters). The C++ compiler will internally use these names when generating code and the lower levels will just see two diferent names.
+</p>
+
+<p>
+But overloading cannot be applied to C. Thus we run into a problem here. If we <code>#include</code> C headers, the names of these functions cannot be overloaded thus a C compiler will generated code using the (undecorated) name of the function.  If our C++ compiler always uses a decorated name, there will be an unresolved symbol. The C++ compiler cannot tell if this is C or C++.  Can it?
+</p>
+
+<p>
+Good news, it can. You can define the linkage of declarations in the code. By default linkage is <code>C++</code> so overload works as described above. When you want to <code>#include</code> a C header, you will have to tell the C++ compiler that the linkage of the declarations is C, not C++. Most of the time you will find these lines in the beginning of a C header intended to be used from C++.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="c1">// Remember this is a C header so protect ourselves when this is compiled using C</span>
+<span class="cp">#ifdef __cplusplus 
+</span><span class="c1">// This 'extern "C"' syntax is only valid in C++, not in C.</span>
+<span class="k">extern</span> <span class="s">"C"</span> <span class="p">{</span> 
+<span class="c1">// From now everything has C linkage. </span>
+<span class="cp">#endif
+</span>
+<span class="cm">/* Library declarations in C */</span>
+
+<span class="cp">#ifdef __cplusplus 
+</span><span class="c1">// Close the brace opened above</span>
+<span class="p">}</span>
+<span class="cp">#endif</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2>Virtual member functions and virtual tables</h2>
+
+<p>
+Finally one of the, in my opinion, most confusing link errors when using a C++ compilers: virtual table unresolved references.
+</p>
+
+<p>
+Virtual member functions are, in C++ parlance, polymorphic methods of other programming languages (like Java). Virtual member functions can be overridden by derived classes (descendant classes) thus when called, they must be dispatched dinamically.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">vmf</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">);</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">vmf2</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">);</span>
+<span class="p">};</span>
+<span class="k">struct</span> <span class="nc">B</span> <span class="o">:</span> <span class="n">A</span>
+<span class="p">{</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">vmf</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">);</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">vmf3</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">);</span>
+<span class="p">};</span>
+
+<span class="k">virtual</span> <span class="n">B</span><span class="o">::</span><span class="n">vmf</span><span class="p">(</span><span class="kt">float</span><span class="o">*</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// Code</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">g</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">pa</span><span class="p">,</span> <span class="kt">float</span> <span class="o">*</span><span class="n">pfl</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="c1">// Dynamic dispatch </span>
+  <span class="c1">// we don't really know if A::vmf or B::vmf will be called</span>
+  <span class="n">pa</span><span class="o">-&gt;</span><span class="n">vmf</span><span class="p">(</span><span class="n">pfl</span><span class="p">);</span>
+
+  <span class="c1">// Static call to A::vmf since we qualified the function being called</span>
+  <span class="n">pa</span><span class="o">-&gt;</span><span class="n">A</span><span class="o">::</span><span class="n">vmf</span><span class="p">(</span><span class="n">pfl</span><span class="p">);</span>
+
+  <span class="n">B</span> <span class="n">b</span><span class="p">;</span>
+  <span class="c1">// Static call to B::vmf, no doubts here since the dynamic type (in memory)</span>
+  <span class="c1">// of 'b' and its declared type must be the same</span>
+  <span class="n">b</span><span class="p">.</span><span class="n">vmf</span><span class="p">(</span><span class="n">pfl</span><span class="p">);</span>
+
+  <span class="n">A</span><span class="o">&amp;</span> <span class="n">ra</span><span class="p">(</span><span class="o">*</span><span class="n">pa</span><span class="p">);</span>
+  <span class="c1">// Dynamic dispatch again</span>
+  <span class="n">ra</span><span class="p">.</span><span class="n">vmf</span><span class="p">(</span><span class="n">pfl</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+Dynamic dispatch is implemented using a virtual method table (or vtable).  Every class with virtual methods (called a dynamic class) has a vtable.  This vtable is a sequence of addresses to member functions. Every virtual member function is assigned an index in this table and the addresses points to the function implementing the virtual member function for that class. For instance class <code>A</code> above has two member functions <code>vmf</code> and <code>vmf2</code>. The vtable of <code>A</code>, then will have two entries, 0 and 1, and will point to the functions <code>A::vmf</code> and <code>A::vmf2</code> respectively. The vtable of <code>B</code> will have three entries, 0, 1, 2, that will point to functions <code>B::vmf</code>, <code>A::vmf2</code> and <code>B::vmf3</code> respectively.
+</p>
+
+<p>
+Every object of a dynamic class has a hidden data member (called the virtual pointer) that points to the vtable of its class. When C++ specifies that a call goes through dynamic dispatch (in C++ parlance, a call to the ultimate overrider), we do not call directly any function but instead, through this hidden data member, we reach the vtable and using the index of the virtual member function being called, we retrieve the entry containing the addresses to the real function. Then this addresses is used in an indirect call.
+</p>
+
+<p>
+Since both the virtual table and the virtual pointer are hidden from the eyes of the developer, sometimes errors in our code may cause link errors.
+</p>
+
+<h3>The compiler does not emit a vtable</h3>
+
+<p>
+This may not apply to all C++ compilers, but usually a C++ compiler only emits a vtable when it finds a definition of a virtual member function. Note that virtual member function definitions for a given class may be scattered in several files. Magic happens again so more than one definition of the vtable of a given class in several files does not become a problem at link time.
+</p>
+
+<p>
+But, what if you forget to define all virtual functions? This may look contrived but in my experience this may happen by accident. The problem lies on the error at link time, which is really confusing.
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">x_</span><span class="p">;</span>
+    <span class="n">A</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="o">:</span> <span class="n">x_</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="c1">// We forget to define A::foo</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">foo</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">quux</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// Dynamic dispatch</span>
+    <span class="n">a</span><span class="o">-&gt;</span><span class="n">foo</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+    <span class="n">A</span> <span class="n">a</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+    <span class="n">quux</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+If you compile and link this with g++ (I use <code>-g</code> since it improves link error messages by using the debugging information).
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">$ g++ -o prova test.cc -g
+/tmp/ccl71r2A.o: In function `A':
+test.cc:4: undefined reference to `vtable for A'
+collect2: ld returned 1 exit status</code></pre></figure>
+
+<p>
+But the line 4 is the constructor. You see now how confusing this message is, don't you? What is going on?
+</p>
+
+<p>
+Well, everything makes sense if we remember that hidden data member I mentioned above, the virtual pointer. As a data member of a class it must be initialized in the constructor. It is initialized with the address of the virtual table of A. But the virtual table of A was not emitted since we forgot to define <strong>all</strong> virtual member functions. Thus, unresolved reference for the virtual table.  
+</p>
+
+<h3>Missing virtual member functions in base classes</h3>
+
+<p>
+Remember that the vtable contains entries for all the virtual member functions of the base tables. The vtable is statically initialized (this is, the compiler "hardcodes" in the generated code, in the data section) the addresses of each entry. What if we forget to define a virtual member function of a base class?
+</p>
+
+<p>
+Consider this example
+</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+</pre></td><td class="code"><pre><span class="k">struct</span> <span class="nc">A</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">x_</span><span class="p">;</span>
+    <span class="n">A</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="o">:</span> <span class="n">x_</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">foo</span><span class="p">();</span>
+    <span class="c1">// We forget to define A::foo2</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">foo2</span><span class="p">();</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="n">A</span><span class="o">::</span><span class="n">foo</span><span class="p">()</span> 
+<span class="p">{</span>
+    <span class="c1">// Definition of A::foo</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="nc">B</span> <span class="o">:</span> <span class="n">A</span> 
+<span class="p">{</span>
+    <span class="n">B</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="o">:</span> <span class="n">A</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">foo</span><span class="p">()</span> 
+    <span class="p">{</span> 
+        <span class="c1">// Definition of B::foo</span>
+    <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="kt">void</span> <span class="nf">quux</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">a</span><span class="o">-&gt;</span><span class="n">foo</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+    <span class="n">B</span> <span class="n">b</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+    <span class="n">quux</span><span class="p">(</span><span class="o">&amp;</span><span class="n">b</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>
+If we compile and link with g++ we get
+</p>
+
+<figure class="highlight"><pre><code class="language-plaintext" data-lang="plaintext">/tmp/cc4t9NG3.o:(.rodata._ZTV1B[vtable for B]+0xc): undefined reference to `A::foo2()'
+/tmp/cc4t9NG3.o:(.rodata._ZTV1A[vtable for A]+0xc): undefined reference to `A::foo2()'
+collect2: ld returned 1 exit status</code></pre></figure>
+
+<p>
+This happens because vtables of <code>A</code> and <code>B</code> refer to <code>A::foo2</code>, but we forgot to define it. Fortunately, now the error message is easier to grasp: some function is missing.
+</p>
+
+<p>
+Obviously, many more link errors caused by C++ exist, but I think the ones shown here are quite common and the error messages related to them are quite confusing.
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2012/07/29/crazy-stuff-c-1/">Crazy stuff in C++ (1)</a></h1>
 
           <p class="post-meta">
@@ -567,24 +1073,6 @@ I was just reading about how you can use the <a href="http://www.ruby-doc.org/co
 </p>
 <p>
 You can also find the code in its GitHub repository: <a href="https://github.com/brafales/ruby-fizzbuzz">https://github.com/brafales/ruby-fizzbuzz</a>.
-</p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2012/06/07/push-git-tags-remote-repository/">Push git tags to a remote repository</a></h1>
-
-          <p class="post-meta">
-            Jun 7, 2012• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/git/">git</a>, <a href="/tags/tags/">tags</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-If you ever wondered how to push the tags you set locally to a remote repository in git, you can do it with the following simple command:
-</p>
-<p>
-
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">git push <span class="nt">--tags</span></code></pre></figure>
-
 </p>
 
         </div></li></ul>

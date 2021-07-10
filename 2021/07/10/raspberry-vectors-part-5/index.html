@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 5</title>
+  <meta name="description" content="In the last installment we completed all the code generation step. However the whole process is still a bit suboptimal. Today we are going to see how we can improve this.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 5">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/">
+  <meta property="og:description" content="In the last installment we completed all the code generation step. However the whole process is still a bit suboptimal. Today we are going to see how we can improve this.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 5">
+  <meta name="twitter:description" content="In the last installment we completed all the code generation step. However the whole process is still a bit suboptimal. Today we are going to see how we can improve this.">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 5</h1>
+    
+    <p class="post-meta"><time datetime="2021-07-10T10:04:00+00:00" itemprop="datePublished">Jul 10, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last installment we completed all the code generation step. However
+the whole process is still a bit suboptimal. Today we are going to see how 
+we can improve this.</p>
+
+<!--more-->
+
+<h1>Discussion</h1>
+
+<p>From a modelling point of view, our biggest problem is that now all the vector
+floating point operations use an extra operand: the <code class="language-plaintext highlighter-rouge">len</code> field of <code class="language-plaintext highlighter-rouge">fpscr</code>. So
+we need to make sure the right value of <code class="language-plaintext highlighter-rouge">len</code> is set. Perhaps the most annoying
+fact here is that <code class="language-plaintext highlighter-rouge">len</code> is in practice like a global variable.</p>
+
+<p>Our approach is a very simple one: every instruction will ensure <code class="language-plaintext highlighter-rouge">len</code> is
+correctly set before executing. There is an important upside to this approach:
+it is simple and it provides code that is trivially correct very early in the
+pipeline. This last property is important because it sets what we could call a
+<em>correctness baseline</em> within the code generation process. The downside is that
+we need to remove many redundant cases, so the quality of the code will
+directly depend on how good we are at removing them. Having a baseline is
+actually beneficial because it allows us to tell if there are functional
+differences once we have removed the redundant assignments to <code class="language-plaintext highlighter-rouge">len</code>.</p>
+
+<p>However this is not the only approach possible. Another option is to delay as
+much as possible the updates to <code class="language-plaintext highlighter-rouge">len</code> and insert them when needed based on some
+analysis. This approach potentially can be faster, because we do not add
+instructions just to later remove them. The downside is that we will not enjoy
+a reference baseline that we can use. This means this is not an optimisation
+anymore, instead this is a non-optional step. The amount of analysis required
+for both approaches is similar. So, if we do not care about the correctness
+baseline, then this approach would be a better choice.</p>
+
+<h1>Strategy to remove redundant <code class="language-plaintext highlighter-rouge">VFPSETLEN</code></h1>
+
+<p>We are going to use a relatively simple data flow algorithm to approximate the
+value of <code class="language-plaintext highlighter-rouge">len</code> through the program, very similar to a simple constant
+propagation. Our goal is to know if at a given point, what is the value of
+<code class="language-plaintext highlighter-rouge">len</code>. For the purpose of the analysis, only the value at the entry and the value
+at the exit of a basic block are the ones we care about.</p>
+
+<p>The value of <code class="language-plaintext highlighter-rouge">len</code> can be modelled under three different circumstances:</p>
+
+<ul>
+  <li>we do not know anything, yet, about the value of <code class="language-plaintext highlighter-rouge">len</code></li>
+  <li>we do know its exact value</li>
+  <li>we do not know the value because at this point of the program <code class="language-plaintext highlighter-rouge">len</code> could have two or more different values.</li>
+</ul>
+
+<p>The first case happens at the beginning of the algorithm. For each basic block,
+its incoming <code class="language-plaintext highlighter-rouge">len</code> value is unknown. The only exception is the entry
+block of the function where the AAPCS (the Arm calling convention) guarantees
+that the vector length is 1 (i.e. <code class="language-plaintext highlighter-rouge">len</code> is 0).</p>
+
+<p style="padding: 0.7em; background-color: bisque;">
+So far we have not addressed the case where we do function calls, so our
+compiler is generating code that does not ensure <code class="language-plaintext highlighter-rouge">len</code> is 1 at the beginning or
+exit of a function. We will address this in a later chapter.
+</p>
+
+<p>The second case happens, for instance, right after a <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> instruction.
+After that instruction we know exactly the value of <code class="language-plaintext highlighter-rouge">len</code> (it is represented as
+an immediate of <code class="language-plaintext highlighter-rouge">VFPSETLEN</code>). So, given a basic block that contains
+<code class="language-plaintext highlighter-rouge">VFPSETLEN</code>, its last <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> determines the outgoing <code class="language-plaintext highlighter-rouge">len</code>.</p>
+
+<p>The third case happens, for instance, in the basic block that follows an if
+construct. Suppose the <em>then</em> block sets <code class="language-plaintext highlighter-rouge">len</code> to one value and the <em>else</em> block
+sets <code class="language-plaintext highlighter-rouge">len</code> to another different value. In this case we do not know which branch
+will be executed so <code class="language-plaintext highlighter-rouge">len</code> is in practice <em>variable</em> here.</p>
+
+<p>Now, it should be possible, using an iterative algorithm, to propagate this
+information through the basic blocks.</p>
+
+<h1>Implementation</h1>
+
+<p>We are going to represent the length with the following convenience class.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">Length</span> <span class="p">{</span>
+  <span class="c1">// Value is encoded with offset +1. 0b000 is length 1, 0b111 is length 8.</span>
+<span class="nl">private:</span>
+  <span class="k">enum</span> <span class="p">{</span> <span class="n">Variable</span> <span class="o">=</span> <span class="mb">0b1000</span><span class="p">,</span> <span class="n">Uninit</span> <span class="o">=</span> <span class="mb">0b1111</span> <span class="p">};</span>
+  <span class="kt">uint8_t</span> <span class="n">Value</span> <span class="o">=</span> <span class="n">Uninit</span><span class="p">;</span>
+
+<span class="nl">public:</span>
+  <span class="n">Length</span><span class="p">()</span> <span class="p">{}</span>
+
+  <span class="kt">unsigned</span> <span class="n">getValue</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+    <span class="n">assert</span><span class="p">(</span><span class="n">hasValue</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="s">"No value held"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">Value</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="kt">void</span> <span class="n">setValue</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">V</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">assert</span><span class="p">(</span><span class="mb">0b000</span> <span class="o">&lt;=</span> <span class="n">V</span> <span class="o">&amp;&amp;</span> <span class="n">V</span> <span class="o">&lt;=</span> <span class="mb">0b111</span> <span class="o">&amp;&amp;</span> <span class="s">"Invalid value"</span><span class="p">);</span>
+    <span class="n">Value</span> <span class="o">=</span> <span class="n">V</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="kt">bool</span> <span class="n">hasValue</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="o">!</span><span class="n">isVariable</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isUninitialized</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kt">void</span> <span class="n">setVariable</span><span class="p">()</span> <span class="p">{</span> <span class="n">Value</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">;</span> <span class="p">}</span>
+  <span class="kt">bool</span> <span class="n">isVariable</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">Value</span> <span class="o">==</span> <span class="n">Variable</span><span class="p">;</span> <span class="p">}</span>
+
+  <span class="kt">bool</span> <span class="n">isUninitialized</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">Value</span> <span class="o">==</span> <span class="n">Uninit</span><span class="p">;</span> <span class="p">}</span>
+
+  <span class="kt">bool</span> <span class="k">operator</span><span class="o">==</span><span class="p">(</span><span class="k">const</span> <span class="n">Length</span> <span class="o">&amp;</span><span class="n">L</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span> 
+      <span class="k">return</span> <span class="k">this</span><span class="o">-&gt;</span><span class="n">Value</span> <span class="o">==</span> <span class="n">L</span><span class="p">.</span><span class="n">Value</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="kt">bool</span> <span class="k">operator</span><span class="o">!=</span><span class="p">(</span><span class="k">const</span> <span class="n">Length</span> <span class="o">&amp;</span><span class="n">L</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span> 
+      <span class="k">return</span> <span class="o">!</span><span class="p">(</span><span class="o">*</span><span class="k">this</span> <span class="o">==</span> <span class="n">L</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>An instance of class <code class="language-plaintext highlighter-rouge">Length</code> can represent a length (from <code class="language-plaintext highlighter-rouge">0b000</code> to <code class="language-plaintext highlighter-rouge">0b111</code>)
+and two extra values: uninitialised (which means unknown but as in <em>no
+information is available</em>, first case above) and variable (which also means
+unknown but as in <em>conflicting information is available</em>, third case above). The
+initial value of an object of class <code class="language-plaintext highlighter-rouge">Length</code> is uninitialised.</p>
+
+<p>For each basic block we will want to know the length at the beginning of the
+basic block and at the end. Because the last instruction that changes <code class="language-plaintext highlighter-rouge">len</code>
+is relevant for the outgoing <code class="language-plaintext highlighter-rouge">len</code>, we will have a pointer to that instruction
+(if it exists).</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">BlockData</span> <span class="p">{</span>
+  <span class="c1">// The incoming and outgoing lengths of this block.</span>
+  <span class="n">Length</span> <span class="n">InLen</span><span class="p">;</span>
+  <span class="n">Length</span> <span class="n">OutLen</span><span class="p">;</span>
+
+  <span class="k">const</span> <span class="n">MachineInstr</span><span class="o">*</span> <span class="n">LastChange</span> <span class="o">=</span> <span class="nb">nullptr</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>In order to link this information to each basic block we will use a vector
+that we will index using the basic block number (an identifier that LLVM gives
+to each basic block).</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">BlockData</span><span class="o">&gt;</span> <span class="n">BlockInfo</span><span class="p">;</span></code></pre></figure>
+
+<h2>Initialisation</h2>
+
+<p>A very basic step will be computing the initial information for each basic
+block.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="n">ARMOptimizeVFP2Len</span><span class="o">::</span><span class="n">computeLocalBlockInfo</span><span class="p">(</span><span class="k">const</span> <span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">BlockData</span> <span class="o">&amp;</span><span class="n">LI</span> <span class="o">=</span> <span class="n">BlockInfo</span><span class="p">[</span><span class="n">MBB</span><span class="p">.</span><span class="n">getNumber</span><span class="p">()];</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">MBB</span><span class="p">.</span><span class="n">isEntryBlock</span><span class="p">())</span>
+    <span class="n">LI</span><span class="p">.</span><span class="n">InLen</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+
+  <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span> <span class="o">=</span> <span class="n">LI</span><span class="p">.</span><span class="n">InLen</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="n">MI</span> <span class="o">:</span> <span class="n">MBB</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOpcode</span><span class="p">()</span> <span class="o">==</span> <span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLEN</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">());</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">LastChange</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">;</span>
+      <span class="k">continue</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// If the FPSCR is modified outside of our control, assume</span>
+    <span class="c1">// that it is variable.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">modifiesRegister</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">FPSCR</span><span class="p">)</span> <span class="o">||</span> <span class="n">MI</span><span class="p">.</span><span class="n">isInlineAsm</span><span class="p">())</span> <span class="p">{</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span><span class="p">.</span><span class="n">setVariable</span><span class="p">();</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">LastChange</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">;</span>
+      <span class="k">continue</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">isCall</span><span class="p">())</span> <span class="p">{</span>
+      <span class="c1">// On exit, functions restore vector length == 1.</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">LastChange</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">;</span>
+      <span class="k">continue</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>As mentioned above, we know the entry block will have a vector length of 1. In
+absence of any instruction that changes the <code class="language-plaintext highlighter-rouge">fpscr</code>, the initial value of <code class="language-plaintext highlighter-rouge">len</code>
+will be the same as the final value of <code class="language-plaintext highlighter-rouge">len</code>, hence <code class="language-plaintext highlighter-rouge">LI.OutLen = LI.InLen;</code>.</p>
+
+<p>Now, for each instruction of the basic block (in sequence order), we analyze it.
+If the instruction is a <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> it is very easy to extract the value of the
+length from its immediate operand.</p>
+
+<p>We need to deal with instructions that might modify the <code class="language-plaintext highlighter-rouge">fpscr</code> or inline
+assembly. We conservatively assume they could set <code class="language-plaintext highlighter-rouge">len</code> to any value.</p>
+
+<p>Finally, function calls have to preserve the length in the <code class="language-plaintext highlighter-rouge">fpscr</code>, so after
+a call the length is always 1.</p>
+
+<p>In all those cases we update <code class="language-plaintext highlighter-rouge">LastChange</code> to the instruction that made the
+change. If no instruction in a basic block may change <code class="language-plaintext highlighter-rouge">len</code> then <code class="language-plaintext highlighter-rouge">LastChange</code>
+will remain as <code class="language-plaintext highlighter-rouge">nullptr</code>.</p>
+
+<h2>Propagation</h2>
+
+<p>Now we can propagate this information through all the basic blocks. The
+algoritm will iterate until no more lengths need to be propagated. This is out
+of scope of this post but the theoretical underpinnings (semilattice and join
+operation) guarantee that this should happen.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td><td class="code"><pre><span class="kt">void</span> <span class="n">ARMOptimizeVFP2Len</span><span class="o">::</span><span class="n">computeBlocksInfo</span><span class="p">()</span> <span class="p">{</span>
+  <span class="c1">// Compute the initial information for the entry block.</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">queue</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">MachineBasicBlock</span><span class="o">*&gt;</span> <span class="n">WorkList</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="n">MBB</span> <span class="o">:</span> <span class="o">*</span><span class="n">MF</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">computeLocalBlockInfo</span><span class="p">(</span><span class="n">MBB</span><span class="p">);</span>
+    <span class="n">WorkList</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="o">&amp;</span><span class="n">MBB</span><span class="p">);</span>
+    <span class="n">BlockInfo</span><span class="p">[</span><span class="n">MBB</span><span class="p">.</span><span class="n">getNumber</span><span class="p">()].</span><span class="n">InQueue</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">WorkList</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span> <span class="p">{</span>
+    <span class="k">const</span> <span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span> <span class="o">=</span> <span class="o">*</span><span class="n">WorkList</span><span class="p">.</span><span class="n">front</span><span class="p">();</span>
+    <span class="n">WorkList</span><span class="p">.</span><span class="n">pop</span><span class="p">();</span>
+    <span class="n">BlockData</span> <span class="o">&amp;</span><span class="n">LI</span> <span class="o">=</span> <span class="n">BlockInfo</span><span class="p">[</span><span class="n">MBB</span><span class="p">.</span><span class="n">getNumber</span><span class="p">()];</span>
+    <span class="n">LI</span><span class="p">.</span><span class="n">InQueue</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="n">computeIncomingLen</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">WorkList</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>To implement this we will use a <em>worklist</em>. The worklist is a queue that will
+contain the basic blocks pending to propagate. Initially all the basic blocks
+should be propagated their predecessors so all of them should be in the queue.
+Given that we need to initialise all the basic blocks, we can initialise them
+and add them to the worklist queue at the same time (lines 4 to 9).</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">InQueue</code> attribute will be used to know if a basic block is in the queue
+or not. It will avoid infinite recursion in case of loops but may also avoid
+propagating too many times the same basic blocks. The <code class="language-plaintext highlighter-rouge">InQueue</code> field is in
+<code class="language-plaintext highlighter-rouge">BlockData</code>, which now looks like this.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">struct</span> <span class="nc">BlockData</span> <span class="p">{</span>
+  <span class="c1">// The incoming and outgoing lengths of this block.</span>
+  <span class="n">Length</span> <span class="n">InLen</span><span class="p">;</span>
+  <span class="n">Length</span> <span class="n">OutLen</span><span class="p">;</span>
+
+  <span class="k">const</span> <span class="n">MachineInstr</span><span class="o">*</span> <span class="n">LastChange</span> <span class="o">=</span> <span class="nb">nullptr</span><span class="p">;</span>
+  <span class="kt">bool</span> <span class="n">InQueue</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>Now we can proceed with propagating the values of the length through
+the different basic blocks (lines 11 to 17).</p>
+
+<p>The function <code class="language-plaintext highlighter-rouge">computeIncomingLen</code> is responsible to merge all the incoming
+<code class="language-plaintext highlighter-rouge">len</code> values from predecessors of a given block. If the merge results in a
+change of the output of the basic block, all the successors need to be updated
+as well.</p>
+
+<p>But first let’s see how we merge two lengths.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="n">Length</span> <span class="nf">mergeLengths</span><span class="p">(</span><span class="n">Length</span> <span class="n">Current</span><span class="p">,</span> <span class="n">Length</span> <span class="n">New</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Current</span><span class="p">.</span><span class="n">isVariable</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">Current</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">New</span><span class="p">.</span><span class="n">isVariable</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">New</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">Current</span><span class="p">.</span><span class="n">isUninitialized</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">New</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">New</span><span class="p">.</span><span class="n">isUninitialized</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">Current</span><span class="p">;</span>
+
+  <span class="n">assert</span><span class="p">(</span><span class="n">Current</span><span class="p">.</span><span class="n">hasValue</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">New</span><span class="p">.</span><span class="n">hasValue</span><span class="p">());</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Current</span><span class="p">.</span><span class="n">getValue</span><span class="p">()</span> <span class="o">==</span> <span class="n">New</span><span class="p">.</span><span class="n">getValue</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">Current</span><span class="p">;</span>
+
+  <span class="n">Length</span> <span class="n">Ret</span><span class="p">;</span>
+  <span class="n">Ret</span><span class="p">.</span><span class="n">setVariable</span><span class="p">();</span>
+  <span class="k">return</span> <span class="n">Ret</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This function must be commutative (due to the underpinning theory of this
+operation). If either of the merged lengths is variable, the result will be
+variable. This is because, once the length is variable, no other length can
+change that fact when merging them.</p>
+
+<p>The opposite case with uninitialised. If either is uninitialised it means
+it has no information. So we just return the other length which, if not 
+uninitialised, will always provide more information.</p>
+
+<p>Finally if both have a known length, we check if it is the same. If they are
+the same just return that known length. If they are not of the same length,
+then we have a variable case.</p>
+
+<p>Now we are ready to propagate the length through basic blocks.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+</pre></td><td class="code"><pre><span class="kt">void</span> <span class="n">ARMOptimizeVFP2Len</span><span class="o">::</span><span class="n">computeIncomingLen</span><span class="p">(</span>
+    <span class="k">const</span> <span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">,</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">queue</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">MachineBasicBlock</span> <span class="o">*&gt;</span> <span class="o">&amp;</span><span class="n">WorkList</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">BlockData</span> <span class="o">&amp;</span><span class="n">LI</span> <span class="o">=</span> <span class="n">BlockInfo</span><span class="p">[</span><span class="n">MBB</span><span class="p">.</span><span class="n">getNumber</span><span class="p">()];</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">LI</span><span class="p">.</span><span class="n">InLen</span><span class="p">.</span><span class="n">isVariable</span><span class="p">())</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">MachineBasicBlock</span> <span class="o">*</span><span class="n">P</span> <span class="o">:</span> <span class="n">MBB</span><span class="p">.</span><span class="n">predecessors</span><span class="p">())</span> <span class="p">{</span>
+      <span class="n">Length</span> <span class="n">PredOutLen</span> <span class="o">=</span> <span class="n">BlockInfo</span><span class="p">[</span><span class="n">P</span><span class="o">-&gt;</span><span class="n">getNumber</span><span class="p">()].</span><span class="n">OutLen</span><span class="p">;</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">InLen</span> <span class="o">=</span> <span class="n">mergeLengths</span><span class="p">(</span><span class="n">LI</span><span class="p">.</span><span class="n">InLen</span><span class="p">,</span> <span class="n">PredOutLen</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="c1">// If nothing changes the length in this basic block, propagate, the incoming</span>
+  <span class="c1">// length is also the outgoing length.</span>
+  <span class="kt">bool</span> <span class="n">Changed</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">LI</span><span class="p">.</span><span class="n">LastChange</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Length</span> <span class="n">PrevOutLen</span> <span class="o">=</span> <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span><span class="p">;</span>
+    <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span> <span class="o">=</span> <span class="n">LI</span><span class="p">.</span><span class="n">InLen</span><span class="p">;</span>
+    <span class="n">Changed</span> <span class="o">=</span> <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span> <span class="o">!=</span> <span class="n">PrevOutLen</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">Changed</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// If the output has changed, propagate the changes to the successors.</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">MachineBasicBlock</span> <span class="o">*</span><span class="n">S</span> <span class="o">:</span> <span class="n">MBB</span><span class="p">.</span><span class="n">successors</span><span class="p">())</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">BlockInfo</span><span class="p">[</span><span class="n">S</span><span class="o">-&gt;</span><span class="n">getNumber</span><span class="p">()].</span><span class="n">InQueue</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// Don't add again those that are in the queue already.</span>
+        <span class="n">WorkList</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">S</span><span class="p">);</span>
+        <span class="n">BlockInfo</span><span class="p">[</span><span class="n">S</span><span class="o">-&gt;</span><span class="n">getNumber</span><span class="p">()].</span><span class="n">InQueue</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>If the input length of a basic block is not variable (line 6, this is an
+optimisation to avoid unnecessary work because the algorithm would be correct
+anyway) then we merge the current incoming length with the outgoing length of
+all the predecessor basic blocks (lines 7 to 10).  Note that initially, the
+incoming length of a block will be uninitialised (except for the entry block
+but the entry block has no predecessors!).</p>
+
+<p>Once we have updated the value of the incoming length we may have to update the
+value of the outgoing length. This is only relevant if there is no instruction
+that changes <code class="language-plaintext highlighter-rouge">len</code> (i.e. <code class="language-plaintext highlighter-rouge">len</code> is propagated unmodified through the block). If
+this is the case, we update the outgoing length. If the propagation resulted in
+a new value (lines 16 to 20) for the outgoing length then we need to update the
+successors of this basic block (lines 22 to 31). To do that we queue the
+successors in the worklist. Note that successors already in the worklist are
+not considered.</p>
+
+<h2>Removal of redundant instructions</h2>
+
+<p>With all this information now we can proceed to remove the redundant <code class="language-plaintext highlighter-rouge">VFPSETLEN</code>
+instructions.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+</pre></td><td class="code"><pre><span class="kt">bool</span> <span class="n">ARMOptimizeVFP2Len</span><span class="o">::</span><span class="n">removeRedundantVPFSETLEN</span><span class="p">(</span><span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">Length</span> <span class="n">CurrentLength</span> <span class="o">=</span> <span class="n">BlockInfo</span><span class="p">[</span><span class="n">MBB</span><span class="p">.</span><span class="n">getNumber</span><span class="p">()].</span><span class="n">InLen</span><span class="p">;</span>
+
+  <span class="kt">bool</span> <span class="n">Changed</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+  <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">MBBI</span> <span class="o">=</span> <span class="n">MBB</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">E</span> <span class="o">=</span> <span class="n">MBB</span><span class="p">.</span><span class="n">end</span><span class="p">();</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">MBBI</span> <span class="o">!=</span> <span class="n">E</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">NMBBI</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">next</span><span class="p">(</span><span class="n">MBBI</span><span class="p">);</span>
+    <span class="n">MachineInstr</span> <span class="o">&amp;</span><span class="n">MI</span> <span class="o">=</span> <span class="o">*</span><span class="n">MBBI</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOpcode</span><span class="p">()</span> <span class="o">==</span> <span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLEN</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kt">unsigned</span> <span class="n">Length</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">2</span><span class="p">).</span><span class="n">getImm</span><span class="p">();</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">CurrentLength</span><span class="p">.</span><span class="n">hasValue</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="n">CurrentLength</span><span class="p">.</span><span class="n">getValue</span><span class="p">()</span> <span class="o">==</span> <span class="n">Length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">LLVM_DEBUG</span><span class="p">(</span><span class="n">dbgs</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="s">"Removing redundant: "</span> <span class="o">&lt;&lt;</span> <span class="n">MI</span><span class="p">);</span>
+        <span class="c1">// We can remove this one.</span>
+        <span class="n">MI</span><span class="p">.</span><span class="n">removeFromParent</span><span class="p">();</span>
+        <span class="n">Changed</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">Length</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">modifiesRegister</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">FPSCR</span><span class="p">)</span> <span class="o">||</span> <span class="n">MI</span><span class="p">.</span><span class="n">isInlineAsm</span><span class="p">())</span> <span class="p">{</span>
+      <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setVariable</span><span class="p">();</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">isCall</span><span class="p">())</span> <span class="p">{</span>
+        <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">MBBI</span> <span class="o">=</span> <span class="n">NMBBI</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="n">Changed</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>For each basic block we get its initial length, which we computed above, and
+keep it in <code class="language-plaintext highlighter-rouge">CurrentLength</code> (line 2). Now we go through each instruction that changes
+<code class="language-plaintext highlighter-rouge">len</code> and we update again <code class="language-plaintext highlighter-rouge">CurrentLength</code> (lines 6 to 26). If we find that a <code class="language-plaintext highlighter-rouge">VFPSETLEN</code>
+would set the same length as <code class="language-plaintext highlighter-rouge">CurrentLength</code> we can just remove it (lines 12 to 17).</p>
+
+<p>Note that the iteration through the instructions using iterators is a bit
+unusual. The reason is that we may remove an element while iterating, and when
+this happens its iterator becomes invalid, so it would not be possible to get
+to advance the iterator. To avoid this why we first compute the iterator to the
+next instruction (line 7) and we use it to advance the loop (line 25).</p>
+
+<p style="padding: 0.7em; background-color: bisque;">
+Note that there is some amount of replication: the function
+<code class="language-plaintext highlighter-rouge">removeRedundantVPFSETLEN</code> and <code class="language-plaintext highlighter-rouge">computeLocalBlockInfo</code> must track the changes
+of <code class="language-plaintext highlighter-rouge">len</code> in the same way. Failing to do so will lead to errors. It should be
+possible to keep them aligned using a visitor-like pattern.
+</p>
+
+<h2>Entry point</h2>
+
+<p>This optimisation is run as a compiler pass of the ARM backend. There is some
+amount of boilerplate required to do that. This pass is a
+<code class="language-plaintext highlighter-rouge">MachineFunctionPass</code>, so it is run once per function in the program. I will
+skip most of the details (you can find them in the <a href="https://llvm.org/docs/WritingAnLLVMPass.html#the-machinefunctionpass-class">LLVM
+documentation</a>)
+of the boilerplate required except for the entry point of the pass itself.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">bool</span> <span class="n">ARMOptimizeVFP2Len</span><span class="o">::</span><span class="n">runOnMachineFunction</span><span class="p">(</span><span class="n">MachineFunction</span> <span class="o">&amp;</span><span class="n">mf</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">const</span> <span class="n">ARMSubtarget</span> <span class="o">&amp;</span><span class="n">ST</span> <span class="o">=</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="k">const</span> <span class="n">ARMSubtarget</span> <span class="o">&amp;&gt;</span><span class="p">(</span><span class="n">mf</span><span class="p">.</span><span class="n">getSubtarget</span><span class="p">());</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">ST</span><span class="p">.</span><span class="n">hasVFP2Base</span><span class="p">())</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">DoNotOptimizeVFP2Len</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">skipFunction</span><span class="p">(</span><span class="n">mf</span><span class="p">.</span><span class="n">getFunction</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+
+  <span class="n">MF</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">mf</span><span class="p">;</span>
+
+  <span class="n">BlockInfo</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span>
+  <span class="n">BlockInfo</span><span class="p">.</span><span class="n">resize</span><span class="p">(</span><span class="n">MF</span><span class="o">-&gt;</span><span class="n">getNumBlockIDs</span><span class="p">());</span>
+  <span class="n">computeBlocksInfo</span><span class="p">();</span>
+
+  <span class="kt">bool</span> <span class="n">Changed</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+  <span class="k">for</span> <span class="p">(</span><span class="k">auto</span> <span class="o">&amp;</span><span class="n">MBB</span> <span class="o">:</span> <span class="o">*</span><span class="n">MF</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Changed</span> <span class="o">|=</span> <span class="n">removeRedundantVPFSETLEN</span><span class="p">(</span><span class="n">MBB</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">Changed</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This function is invoked once per function. There is a number of cases where
+this function returns a false value meaning nothing was changed: if we do not
+have VFPv2 available, if we have explicitly requested not to optimise it or if
+the function explicitly requests no optimisations (via the LLVM function
+attribute <code class="language-plaintext highlighter-rouge">optnone</code>).</p>
+
+<p>We can explicitly disable this optimisation pass using a command line flag. Those
+are declared like this.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">static</span> <span class="n">cl</span><span class="o">::</span><span class="n">opt</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span>
+    <span class="n">DoNotOptimizeVFP2Len</span><span class="p">(</span><span class="s">"arm-optimize-vfp2-disable"</span><span class="p">,</span> <span class="n">cl</span><span class="o">::</span><span class="n">Hidden</span><span class="p">,</span>
+                         <span class="n">cl</span><span class="o">::</span><span class="n">desc</span><span class="p">(</span><span class="s">"Do not optimize vfp2 length changes"</span><span class="p">),</span>
+                         <span class="n">cl</span><span class="o">::</span><span class="n">init</span><span class="p">(</span><span class="nb">false</span><span class="p">));</span></code></pre></figure>
+
+<p>You can find details on how these flags work in the <a href="https://llvm.org/docs/CommandLine.html">LLVM documentation</a>.</p>
+
+<p>The rest of the function is pretty straightforward. We cache the current
+<code class="language-plaintext highlighter-rouge">MachineFunction</code> in the field <code class="language-plaintext highlighter-rouge">MF</code> of the class. Then we initialize the array
+of the information of the basic blocks. We now invoke <code class="language-plaintext highlighter-rouge">computeBlocksInfo</code> and
+then we remove the redundant instructions.</p>
+
+<h1>Result</h1>
+
+<p>Now we can apply to the final LLVM IR example of last week.</p>
+
+<figure class="highlight"><pre><code class="language-llvm" data-lang="llvm"><span class="k">define</span> <span class="kt">void</span> <span class="vg">@test_vector2</span><span class="p">(&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pa</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pb</span><span class="p">,</span>
+                          <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pc</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pd</span><span class="p">)</span> <span class="p">{</span> 
+  <span class="nv">%a</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pa</span>
+  <span class="nv">%b</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pb</span>
+  <span class="nv">%c</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pc</span>
+  <span class="nv">%t1</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="nv">%t2</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%t1</span><span class="p">,</span> <span class="nv">%c</span>
+  <span class="k">store</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%t2</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pd</span>
+  <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_vector2:
+	.fnstart
+@ %bb.0:
+	vldmia	r0, {d6, d7}
+	vldmia	r1, {d4, d5}
+	vmrs	r1, fpscr
+	mov	r0, #65536
+	bic	r1, r1, #458752
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d4, d6, d4
+	vldmia	r2, {d6, d7}
+	vadd.f64	d4, d4, d6
+	vstmia	r3, {d4, d5}
+	bx	lr</code></pre></figure>
+
+<p>Yay, we set <code class="language-plaintext highlighter-rouge">fpscr</code> just once.</p>
+
+<p>Let’s try a more complex example that shows that the propagation works as expected.</p>
+
+<figure class="highlight"><figcaption>test.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="k">typedef</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">vector_size</span><span class="p">(</span><span class="mi">16</span><span class="p">)))</span> <span class="kt">double</span> <span class="n">v2f64</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">test</span><span class="p">(</span><span class="n">v2f64</span> <span class="o">*</span><span class="n">vdc</span><span class="p">,</span> <span class="n">v2f64</span> <span class="o">*</span><span class="n">vda</span><span class="p">,</span> <span class="n">v2f64</span> <span class="o">*</span><span class="n">vdb</span><span class="p">,</span> <span class="n">v2f64</span> <span class="o">*</span><span class="n">vdd</span><span class="p">,</span> <span class="kt">double</span> <span class="o">*</span><span class="n">dc</span><span class="p">,</span>
+          <span class="kt">double</span> <span class="o">*</span><span class="n">da</span><span class="p">,</span> <span class="kt">double</span> <span class="o">*</span><span class="n">db</span><span class="p">,</span> <span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">)</span> <span class="p">{</span>
+    <span class="o">*</span><span class="n">dc</span> <span class="o">=</span> <span class="o">*</span><span class="n">da</span> <span class="o">+</span> <span class="o">*</span><span class="n">db</span><span class="p">;</span>
+    <span class="o">*</span><span class="n">vdc</span> <span class="o">=</span> <span class="o">*</span><span class="n">vda</span> <span class="o">+</span> <span class="o">*</span><span class="n">vdb</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="o">*</span><span class="n">vdc</span> <span class="o">=</span> <span class="o">*</span><span class="n">vda</span> <span class="o">*</span> <span class="o">*</span><span class="n">vdb</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="o">*</span><span class="n">vdc</span> <span class="o">=</span> <span class="o">*</span><span class="n">vdc</span> <span class="o">/</span> <span class="o">*</span><span class="n">vdd</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Using the flag <code class="language-plaintext highlighter-rouge">-mllvm -arm-optimize-vfp2-disable</code> we can disable the
+optimisation and observe its effects.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>diff <span class="nt">-U1000</span> <span class="nt">-u</span>  &lt;<span class="o">(</span>clang <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o</span> - <span class="nt">--target</span><span class="o">=</span>armv6kz-unknown-linux-gnu       <span class="se">\</span>
+                          <span class="nt">-mfloat-abi</span><span class="o">=</span>hard <span class="nt">-arm-optimize-vfp2-disable</span> test.c <span class="o">)</span> <span class="se">\</span>
+                  &lt;<span class="o">(</span>clang <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o</span> - <span class="nt">--target</span><span class="o">=</span>armv6kz-unknown-linux-gnu       <span class="se">\</span>
+                          <span class="nt">-mfloat-abi</span><span class="o">=</span>hard test.c <span class="o">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-diff" data-lang="diff"> test:
+ 	.fnstart
+ @ %bb.0:                                @ %entry
+<span class="gd">-	push	{r4, r5, r6, lr}
+-	ldr	r12, [sp, #28]
+</span><span class="gi">+	push	{r4, lr}
++	ldr	r12, [sp, #20]
+</span> 	cmp	r12, #11
+ 	blt	.LBB0_2
+ @ %bb.1:                                @ %if.then
+<span class="gd">-	ldr	r12, [sp, #24]
+-	ldr	lr, [sp, #20]
+-	ldr	r6, [sp, #16]
+</span><span class="gi">+	ldr	r12, [sp, #16]
++	ldr	lr, [sp, #12]
++	ldr	r4, [sp, #8]
+</span> 	vldr	d0, [r12]
+ 	vldr	d1, [lr]
+<span class="gd">-	vmrs	r5, fpscr
+-	bic	r5, r5, #458752
+-	vmsr	fpscr, r5
+</span> 	vadd.f64	d0, d1, d0
+<span class="gd">-	vstr	d0, [r6]
+</span><span class="gi">+	vstr	d0, [r4]
+</span> 	vldmia	r1, {d6, d7}
+ 	vldmia	r2, {d4, d5}
+ 	vmrs	r2, fpscr
+ 	mov	r1, #65536
+ 	bic	r2, r2, #458752
+ 	orr	r2, r2, r1
+ 	vmsr	fpscr, r2
+ 	vadd.f64	d4, d6, d4
+ 	b	.LBB0_3
+ .LBB0_2:                                @ %if.else
+ 	vldmia	r1, {d6, d7}
+ 	vldmia	r2, {d4, d5}
+ 	vmrs	r2, fpscr
+ 	mov	r1, #65536
+ 	bic	r2, r2, #458752
+ 	orr	r2, r2, r1
+ 	vmsr	fpscr, r2
+ 	vmul.f64	d4, d6, d4
+ .LBB0_3:                                @ %if.end
+ 	vstmia	r0, {d4, d5}
+ 	vldmia	r3, {d6, d7}
+<span class="gd">-	vmrs	r2, fpscr
+-	mov	r1, #65536
+-	bic	r2, r2, #458752
+-	orr	r2, r2, r1
+-	vmsr	fpscr, r2
+</span> 	vdiv.f64	d4, d4, d6
+ 	vstmia	r0, {d4, d5}
+<span class="gd">-	pop	{r4, r5, r6, pc}
+</span><span class="gi">+	pop	{r4, pc}</span></code></pre></figure>
+
+<p>In this test we can remove 2 of the three changes to <code class="language-plaintext highlighter-rouge">len</code>. A first one sets
+<code class="language-plaintext highlighter-rouge">len</code> to 0 (i.e. vector length equals to 1) to execute the scalar operation
+<code class="language-plaintext highlighter-rouge">*dc = *da + *db;</code>. But we know that upon entry <code class="language-plaintext highlighter-rouge">len</code> will be 0, so no need
+to change that. After the <code class="language-plaintext highlighter-rouge">if</code> statement, we set <code class="language-plaintext highlighter-rouge">len</code> to 1 (i.e. vector length
+equals to two) to execute <code class="language-plaintext highlighter-rouge">*vdc = *vdc / *vdd;</code>, but both branches of the
+<code class="language-plaintext highlighter-rouge">if</code> will have already set <code class="language-plaintext highlighter-rouge">len</code> to 1, so no need to do that again.</p>
+
+<h2>Current limitation</h2>
+
+<p>There is still a suboptimal case left: if we use vector operations inside a loop
+they will set <code class="language-plaintext highlighter-rouge">len</code> at every iteration. This is redundant if all the vector operations
+inside the loop use the same length. We could set the length before the loop, just
+once. We will address this issue in a later installment.</p>
+
+<p>In the next episode we will fix the issue related to the value of <code class="language-plaintext highlighter-rouge">len</code> when
+entering and returning from a function.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/06/27/raspberry-vectors-part-4/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 4</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

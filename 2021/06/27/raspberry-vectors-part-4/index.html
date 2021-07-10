@@ -151,7 +151,7 @@ two scratch output registers as outputs of <code class="language-plaintext highl
 There are two unobvious elements due to the AArch32 Arm ISA itself. Most
 instructions can be predicated, but we want them to be always executed so we
 set it to <em>always</em> using <code class="language-plaintext highlighter-rouge">.add(predOps(ARMCC::AL))</code>. Many Arm instructions may
-optionally update the <code class="language-plaintext highlighter-rouge">cpsr</code>, because we do not want to do this so we state
+optionally update the <code class="language-plaintext highlighter-rouge">cpsr</code>, because we do not want to do this we state
 that using <code class="language-plaintext highlighter-rouge">.add(consCodeOps())</code>.</p>
 
 <p>Other than that, the code above is basically constructing the instruction and
@@ -907,6 +907,8 @@ execute the second <code class="language-plaintext highlighter-rouge">vadd.f64</
 
   <a class="previous" href="/2021/06/26/raspberry-vectors-part-3/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 3</a>
 
+
+  <a class="next" href="/2021/07/10/raspberry-vectors-part-5/">Fun with vectors in the Raspberry Pi 1 - Part 5 &raquo;</a>
 
 </div>
 

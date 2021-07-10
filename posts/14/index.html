@@ -67,6 +67,21 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2015/01/03/dvd-with-bogus-permissions-ubuntu/">Read DVDs with bogus permissions in Ubuntu</a></h1>
+
+          <p class="post-meta">
+            Jan 3, 2015• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/linux/">Linux</a> • <a href="/tags/debian/">debian</a>, <a href="/tags/fixes/">fixes</a>, <a href="/tags/opensource/">opensource</a>, <a href="/tags/packages/">packages</a>, <a href="/tags/ubuntu/">ubuntu</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+What if your DVD recorder sets bogus permissions to your DVDs?
+</p>
+
+        </div><p class="post-continue">
+            <a href="/2015/01/03/dvd-with-bogus-permissions-ubuntu/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2015/01/02/arm-assembler-raspberry-pi-chapter-23/">ARM assembler in Raspberry Pi – Chapter 23</a></h1>
 
           <p class="post-meta">
@@ -126,92 +141,7 @@ Today we will see how to make indirect calls.
 
         </div><p class="post-continue">
             <a href="/2014/08/20/arm-assembler-raspberry-pi-chapter-20/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2014/06/09/tinymce-checkbox-toggler-jquery/">TinyMCE checkbox toggler for jQuery</a></h1>
-
-          <p class="post-meta">
-            Jun 9, 2014• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a>, <a href="/tags/tinymce/">tinymce</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>Here’s a small <a href="http://jquery.com/" target="_blank">jQuery</a> code snippet that you can use to have an easy to use checkbox toggler to enable or disable a <a href="http://www.tinymce.com/" target="_blank">TinyMCE</a> editor with ease (tested on TinyMCE version 4 and jQuery version 2.1.1).</p>
-
-<p>It’s really easy to use. You just need to create a checkbox element with the class tiny_mce_toggler and a data attribute with the key editor and the text area id used as a TinyMCE editor as a value. The snippet can be easily extracted if you want to use it differently.</p>
-
-<p>Here is the javascript snippet:</p>
-
-<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">$</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-  <span class="kd">var</span> <span class="nx">TinyMceToggler</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">_checkbox</span><span class="p">){</span>
-    <span class="kd">var</span> <span class="nx">checkbox</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="nx">_checkbox</span><span class="p">);</span>
-    <span class="kd">var</span> <span class="nx">editor</span> <span class="o">=</span> <span class="nx">checkbox</span><span class="p">.</span><span class="nx">data</span><span class="p">(</span><span class="dl">'</span><span class="s1">editor</span><span class="dl">'</span><span class="p">);</span>
-
-    <span class="nx">checkbox</span><span class="p">.</span><span class="nx">click</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
-      <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">checked</span><span class="p">)</span> <span class="p">{</span>
-      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">Add</span><span class="dl">"</span><span class="p">);</span>
-        <span class="nx">tinyMCE</span><span class="p">.</span><span class="nx">execCommand</span><span class="p">(</span> <span class="dl">'</span><span class="s1">mceAddEditor</span><span class="dl">'</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">editor</span> <span class="p">);</span>
-      <span class="p">}</span>
-      <span class="k">else</span> <span class="p">{</span>
-      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">Remove</span><span class="dl">"</span><span class="p">);</span>
-        <span class="nx">tinyMCE</span><span class="p">.</span><span class="nx">execCommand</span><span class="p">(</span> <span class="dl">'</span><span class="s1">mceRemoveEditor</span><span class="dl">'</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="nx">editor</span> <span class="p">);</span>
-      <span class="p">}</span>
-    <span class="p">});</span>
-  <span class="p">};</span>
-
-  <span class="nx">$</span><span class="p">(</span><span class="dl">"</span><span class="s2">input.tiny_mce_toggler</span><span class="dl">"</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
-    <span class="k">new</span> <span class="nx">TinyMceToggler</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
-  <span class="p">});</span>
-<span class="p">});</span></code></pre></figure>
-
-<p>And here you can see how to integrate it on a page with a TinyMCE editor:</p>
-
-<figure class="highlight"><pre><code class="language-html5" data-lang="html5">&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;head&gt;
-  &lt;meta charset="utf-8" /&gt;
-  &lt;title&gt;TinyMCE - Toggler&lt;/title&gt;
-  &lt;link type="text/css" rel="stylesheet" href="http://moxiecode.cachefly.net/tinymce/v8/css/all.min.css?v=8" /&gt;
-  &lt;script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"&gt;&lt;/script&gt;
-  &lt;script type="text/javascript" src="javascript/tinymce/tinymce.min.js"&gt;&lt;/script&gt;
-  &lt;script type="text/javascript"&gt;
-  $(function() {
-    tinymce.init({
-        selector: "textarea"
-    });
-
-    var TinyMceToggler = function(_checkbox){
-      var checkbox = $(_checkbox);
-      var editor = checkbox.data('editor');
-
-      checkbox.click(function(){
-        if (this.checked) {
-        console.log("Add");
-          tinyMCE.execCommand( 'mceAddEditor', false, editor );
-        }
-        else {
-        console.log("Remove");
-          tinyMCE.execCommand( 'mceRemoveEditor', false, editor );
-        }
-      });
-    };
-
-    $("input.tiny_mce_toggler").each(function(){
-      new TinyMceToggler(this);
-    });
-  });
-  &lt;/script&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;form method="post" action="#"&gt;
-    &lt;input type="checkbox" data-editor="tiny" checked="checked" class="tiny_mce_toggler" style="display: block;" /&gt;
-    &lt;textarea id="tiny"&gt;&lt;/textarea&gt;
-&lt;/form&gt;
-&lt;/body&gt;
-&lt;/html&gt;</code></pre></figure>
-
-<p>You can run the example on this fiddle: <a href="http://fiddle.tinymce.com/7jeaab" target="_blank">http://fiddle.tinymce.com/7jeaab</a></p>
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/15/">&laquo; Older</a>

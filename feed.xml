@@ -1,4 +1,648 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-06-27T21:07:03+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 4</title><link href="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 4" /><published>2021-06-27T17:09:00+00:00</published><updated>2021-06-27T17:09:00+00:00</updated><id>https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4</id><content type="html" xml:base="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/">&lt;p&gt;In the last chapter we devised a way to tame the issue with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;. Today
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-07-10T21:02:00+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 5</title><link href="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 5" /><published>2021-07-10T10:04:00+00:00</published><updated>2021-07-10T10:04:00+00:00</updated><id>https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5</id><content type="html" xml:base="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/">&lt;p&gt;In the last installment we completed all the code generation step. However
+the whole process is still a bit suboptimal. Today we are going to see how 
+we can improve this.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h1&gt;Discussion&lt;/h1&gt;
+
+&lt;p&gt;From a modelling point of view, our biggest problem is that now all the vector
+floating point operations use an extra operand: the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;. So
+we need to make sure the right value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is set. Perhaps the most annoying
+fact here is that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is in practice like a global variable.&lt;/p&gt;
+
+&lt;p&gt;Our approach is a very simple one: every instruction will ensure &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is
+correctly set before executing. There is an important upside to this approach:
+it is simple and it provides code that is trivially correct very early in the
+pipeline. This last property is important because it sets what we could call a
+&lt;em&gt;correctness baseline&lt;/em&gt; within the code generation process. The downside is that
+we need to remove many redundant cases, so the quality of the code will
+directly depend on how good we are at removing them. Having a baseline is
+actually beneficial because it allows us to tell if there are functional
+differences once we have removed the redundant assignments to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;However this is not the only approach possible. Another option is to delay as
+much as possible the updates to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; and insert them when needed based on some
+analysis. This approach potentially can be faster, because we do not add
+instructions just to later remove them. The downside is that we will not enjoy
+a reference baseline that we can use. This means this is not an optimisation
+anymore, instead this is a non-optional step. The amount of analysis required
+for both approaches is similar. So, if we do not care about the correctness
+baseline, then this approach would be a better choice.&lt;/p&gt;
+
+&lt;h1&gt;Strategy to remove redundant &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;&lt;/h1&gt;
+
+&lt;p&gt;We are going to use a relatively simple data flow algorithm to approximate the
+value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; through the program, very similar to a simple constant
+propagation. Our goal is to know if at a given point, what is the value of
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;. For the purpose of the analysis, only the value at the entry and the value
+at the exit of a basic block are the ones we care about.&lt;/p&gt;
+
+&lt;p&gt;The value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; can be modelled under three different circumstances:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;we do not know anything, yet, about the value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;we do know its exact value&lt;/li&gt;
+  &lt;li&gt;we do not know the value because at this point of the program &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; could have two or more different values.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The first case happens at the beginning of the algorithm. For each basic block,
+its incoming &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; value is unknown. The only exception is the entry
+block of the function where the AAPCS (the Arm calling convention) guarantees
+that the vector length is 1 (i.e. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is 0).&lt;/p&gt;
+
+&lt;p style=&quot;padding: 0.7em; background-color: bisque;&quot;&gt;
+So far we have not addressed the case where we do function calls, so our
+compiler is generating code that does not ensure &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is 1 at the beginning or
+exit of a function. We will address this in a later chapter.
+&lt;/p&gt;
+
+&lt;p&gt;The second case happens, for instance, right after a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; instruction.
+After that instruction we know exactly the value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; (it is represented as
+an immediate of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;). So, given a basic block that contains
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;, its last &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; determines the outgoing &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The third case happens, for instance, in the basic block that follows an if
+construct. Suppose the &lt;em&gt;then&lt;/em&gt; block sets &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to one value and the &lt;em&gt;else&lt;/em&gt; block
+sets &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to another different value. In this case we do not know which branch
+will be executed so &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is in practice &lt;em&gt;variable&lt;/em&gt; here.&lt;/p&gt;
+
+&lt;p&gt;Now, it should be possible, using an iterative algorithm, to propagate this
+information through the basic blocks.&lt;/p&gt;
+
+&lt;h1&gt;Implementation&lt;/h1&gt;
+
+&lt;p&gt;We are going to represent the length with the following convenience class.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// Value is encoded with offset +1. 0b000 is length 1, 0b111 is length 8.&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;private:&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;enum&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Variable&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mb&quot;&gt;0b1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Uninit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mb&quot;&gt;0b1111&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;uint8_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Uninit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;nl&quot;&gt;public:&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hasValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;No value held&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;setValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;uint8_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;V&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mb&quot;&gt;0b000&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;V&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;V&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;mb&quot;&gt;0b111&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Invalid value&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;V&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;hasValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isUninitialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;setVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Variable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Variable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isUninitialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Uninit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;operator&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; 
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;operator&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; 
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;L&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;An instance of class &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Length&lt;/code&gt; can represent a length (from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0b000&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0b111&lt;/code&gt;)
+and two extra values: uninitialised (which means unknown but as in &lt;em&gt;no
+information is available&lt;/em&gt;, first case above) and variable (which also means
+unknown but as in &lt;em&gt;conflicting information is available&lt;/em&gt;, third case above). The
+initial value of an object of class &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Length&lt;/code&gt; is uninitialised.&lt;/p&gt;
+
+&lt;p&gt;For each basic block we will want to know the length at the beginning of the
+basic block and at the end. Because the last instruction that changes &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;
+is relevant for the outgoing &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;, we will have a pointer to that instruction
+(if it exists).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BlockData&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// The incoming and outgoing lengths of this block.&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineInstr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LastChange&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;In order to link this information to each basic block we will use a vector
+that we will index using the basic block number (an identifier that LLVM gives
+to each basic block).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vector&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BlockData&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2&gt;Initialisation&lt;/h2&gt;
+
+&lt;p&gt;A very basic step will be computing the initial information for each basic
+block.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;computeLocalBlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;BlockData&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()];&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isEntryBlock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOpcode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPSETLEN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LastChange&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;// If the FPSCR is modified outside of our control, assume&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// that it is variable.&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;modifiesRegister&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FPSCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isInlineAsm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LastChange&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isCall&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// On exit, functions restore vector length == 1.&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LastChange&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;As mentioned above, we know the entry block will have a vector length of 1. In
+absence of any instruction that changes the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;, the initial value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;
+will be the same as the final value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;, hence &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LI.OutLen = LI.InLen;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now, for each instruction of the basic block (in sequence order), we analyze it.
+If the instruction is a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; it is very easy to extract the value of the
+length from its immediate operand.&lt;/p&gt;
+
+&lt;p&gt;We need to deal with instructions that might modify the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; or inline
+assembly. We conservatively assume they could set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to any value.&lt;/p&gt;
+
+&lt;p&gt;Finally, function calls have to preserve the length in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;, so after
+a call the length is always 1.&lt;/p&gt;
+
+&lt;p&gt;In all those cases we update &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LastChange&lt;/code&gt; to the instruction that made the
+change. If no instruction in a basic block may change &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; then &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LastChange&lt;/code&gt;
+will remain as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nullptr&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2&gt;Propagation&lt;/h2&gt;
+
+&lt;p&gt;Now we can propagate this information through all the basic blocks. The
+algoritm will iterate until no more lengths need to be propagated. This is out
+of scope of this post but the theoretical underpinnings (semilattice and join
+operation) guarantee that this should happen.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;computeBlocksInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// Compute the initial information for the entry block.&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;queue&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;computeLocalBlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;push&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InQueue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;empty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;front&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pop&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;BlockData&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()];&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InQueue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;computeIncomingLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;To implement this we will use a &lt;em&gt;worklist&lt;/em&gt;. The worklist is a queue that will
+contain the basic blocks pending to propagate. Initially all the basic blocks
+should be propagated their predecessors so all of them should be in the queue.
+Given that we need to initialise all the basic blocks, we can initialise them
+and add them to the worklist queue at the same time (lines 4 to 9).&lt;/p&gt;
+
+&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;InQueue&lt;/code&gt; attribute will be used to know if a basic block is in the queue
+or not. It will avoid infinite recursion in case of loops but may also avoid
+propagating too many times the same basic blocks. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;InQueue&lt;/code&gt; field is in
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockData&lt;/code&gt;, which now looks like this.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BlockData&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// The incoming and outgoing lengths of this block.&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineInstr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LastChange&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;nullptr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;InQueue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now we can proceed with propagating the values of the length through
+the different basic blocks (lines 11 to 17).&lt;/p&gt;
+
+&lt;p&gt;The function &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;computeIncomingLen&lt;/code&gt; is responsible to merge all the incoming
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; values from predecessors of a given block. If the merge results in a
+change of the output of the basic block, all the successors need to be updated
+as well.&lt;/p&gt;
+
+&lt;p&gt;But first let’s see how we merge two lengths.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;mergeLengths&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isUninitialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isUninitialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hasValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hasValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;New&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Current&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ret&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Ret&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Ret&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This function must be commutative (due to the underpinning theory of this
+operation). If either of the merged lengths is variable, the result will be
+variable. This is because, once the length is variable, no other length can
+change that fact when merging them.&lt;/p&gt;
+
+&lt;p&gt;The opposite case with uninitialised. If either is uninitialised it means
+it has no information. So we just return the other length which, if not 
+uninitialised, will always provide more information.&lt;/p&gt;
+
+&lt;p&gt;Finally if both have a known length, we check if it is the same. If they are
+the same just return that known length. If they are not of the same length,
+then we have a variable case.&lt;/p&gt;
+
+&lt;p&gt;Now we are ready to propagate the length through basic blocks.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;computeIncomingLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;queue&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;BlockData&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()];&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;P&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;predecessors&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PredOutLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;P&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;mergeLengths&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PredOutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;// If nothing changes the length in this basic block, propagate, the incoming&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// length is also the outgoing length.&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LastChange&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PrevOutLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;LI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;OutLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PrevOutLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// If the output has changed, propagate the changes to the successors.&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;successors&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InQueue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Don't add again those that are in the queue already.&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;WorkList&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;push&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InQueue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If the input length of a basic block is not variable (line 6, this is an
+optimisation to avoid unnecessary work because the algorithm would be correct
+anyway) then we merge the current incoming length with the outgoing length of
+all the predecessor basic blocks (lines 7 to 10).  Note that initially, the
+incoming length of a block will be uninitialised (except for the entry block
+but the entry block has no predecessors!).&lt;/p&gt;
+
+&lt;p&gt;Once we have updated the value of the incoming length we may have to update the
+value of the outgoing length. This is only relevant if there is no instruction
+that changes &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; (i.e. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; is propagated unmodified through the block). If
+this is the case, we update the outgoing length. If the propagation resulted in
+a new value (lines 16 to 20) for the outgoing length then we need to update the
+successors of this basic block (lines 22 to 31). To do that we queue the
+successors in the worklist. Note that successors already in the worklist are
+not considered.&lt;/p&gt;
+
+&lt;h2&gt;Removal of redundant instructions&lt;/h2&gt;
+
+&lt;p&gt;With all this information now we can proceed to remove the redundant &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;
+instructions.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;removeRedundantVPFSETLEN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CurrentLength&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumber&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()].&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;InLen&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;begin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;E&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;E&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NMBBI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;std&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;next&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;MachineInstr&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOpcode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPSETLEN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;kt&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOperand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;CurrentLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hasValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;CurrentLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;LLVM_DEBUG&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dbgs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;Removing redundant: &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// We can remove this one.&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;removeFromParent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;CurrentLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Length&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;modifiesRegister&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FPSCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isInlineAsm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;CurrentLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setVariable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isCall&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;CurrentLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;MBBI&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NMBBI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;For each basic block we get its initial length, which we computed above, and
+keep it in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CurrentLength&lt;/code&gt; (line 2). Now we go through each instruction that changes
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; and we update again &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CurrentLength&lt;/code&gt; (lines 6 to 26). If we find that a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;
+would set the same length as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CurrentLength&lt;/code&gt; we can just remove it (lines 12 to 17).&lt;/p&gt;
+
+&lt;p&gt;Note that the iteration through the instructions using iterators is a bit
+unusual. The reason is that we may remove an element while iterating, and when
+this happens its iterator becomes invalid, so it would not be possible to get
+to advance the iterator. To avoid this why we first compute the iterator to the
+next instruction (line 7) and we use it to advance the loop (line 25).&lt;/p&gt;
+
+&lt;p style=&quot;padding: 0.7em; background-color: bisque;&quot;&gt;
+Note that there is some amount of replication: the function
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;removeRedundantVPFSETLEN&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;computeLocalBlockInfo&lt;/code&gt; must track the changes
+of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; in the same way. Failing to do so will lead to errors. It should be
+possible to keep them aligned using a visitor-like pattern.
+&lt;/p&gt;
+
+&lt;h2&gt;Entry point&lt;/h2&gt;
+
+&lt;p&gt;This optimisation is run as a compiler pass of the ARM backend. There is some
+amount of boilerplate required to do that. This pass is a
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MachineFunctionPass&lt;/code&gt;, so it is run once per function in the program. I will
+skip most of the details (you can find them in the &lt;a href=&quot;https://llvm.org/docs/WritingAnLLVMPass.html#the-machinefunctionpass-class&quot;&gt;LLVM
+documentation&lt;/a&gt;)
+of the boilerplate required except for the entry point of the pass itself.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;runOnMachineFunction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MachineFunction&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMSubtarget&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;static_cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMSubtarget&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;gt;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getSubtarget&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ST&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hasVFP2Base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DoNotOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;skipFunction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getFunction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()))&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;MF&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;clear&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;BlockInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;resize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getNumBlockIDs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;computeBlocksInfo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;removeRedundantVPFSETLEN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Changed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This function is invoked once per function. There is a number of cases where
+this function returns a false value meaning nothing was changed: if we do not
+have VFPv2 available, if we have explicitly requested not to optimise it or if
+the function explicitly requests no optimisations (via the LLVM function
+attribute &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;optnone&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;We can explicitly disable this optimisation pass using a command line flag. Those
+are declared like this.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;opt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;DoNotOptimizeVFP2Len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;arm-optimize-vfp2-disable&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Hidden&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                         &lt;span class=&quot;n&quot;&gt;cl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;desc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Do not optimize vfp2 length changes&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+                         &lt;span class=&quot;n&quot;&gt;cl&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;init&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;You can find details on how these flags work in the &lt;a href=&quot;https://llvm.org/docs/CommandLine.html&quot;&gt;LLVM documentation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The rest of the function is pretty straightforward. We cache the current
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MachineFunction&lt;/code&gt; in the field &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MF&lt;/code&gt; of the class. Then we initialize the array
+of the information of the basic blocks. We now invoke &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;computeBlocksInfo&lt;/code&gt; and
+then we remove the redundant instructions.&lt;/p&gt;
+
+&lt;h1&gt;Result&lt;/h1&gt;
+
+&lt;p&gt;Now we can apply to the final LLVM IR example of last week.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_vector2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                          &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; 
+  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%t1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%t2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%t1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%t2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pd&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;test_vector2:
+	.fnstart
+@ %bb.0:
+	vldmia	r0, {d6, d7}
+	vldmia	r1, {d4, d5}
+	vmrs	r1, fpscr
+	mov	r0, #65536
+	bic	r1, r1, #458752
+	orr	r1, r1, r0
+	vmsr	fpscr, r1
+	vadd.f64	d4, d6, d4
+	vldmia	r2, {d6, d7}
+	vadd.f64	d4, d4, d6
+	vstmia	r3, {d4, d5}
+	bx	lr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Yay, we set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; just once.&lt;/p&gt;
+
+&lt;p&gt;Let’s try a more complex example that shows that the propagation works as expected.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;typedef&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__attribute__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vector_size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)))&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vda&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;v2f64&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+          &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;da&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;db&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;da&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;db&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vda&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vda&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdc&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vdd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Using the flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-mllvm -arm-optimize-vfp2-disable&lt;/code&gt; we can disable the
+optimisation and observe its effects.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;diff &lt;span class=&quot;nt&quot;&gt;-U1000&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt;  &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;-O2&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6kz-unknown-linux-gnu       &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                          &lt;span class=&quot;nt&quot;&gt;-mfloat-abi&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;hard &lt;span class=&quot;nt&quot;&gt;-arm-optimize-vfp2-disable&lt;/span&gt; test.c &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                  &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;-O2&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6kz-unknown-linux-gnu       &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                          &lt;span class=&quot;nt&quot;&gt;-mfloat-abi&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;hard test.c &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt; test:
+ 	.fnstart
+ @ %bb.0:                                @ %entry
+&lt;span class=&quot;gd&quot;&gt;-	push	{r4, r5, r6, lr}
+-	ldr	r12, [sp, #28]
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+	push	{r4, lr}
++	ldr	r12, [sp, #20]
+&lt;/span&gt; 	cmp	r12, #11
+ 	blt	.LBB0_2
+ @ %bb.1:                                @ %if.then
+&lt;span class=&quot;gd&quot;&gt;-	ldr	r12, [sp, #24]
+-	ldr	lr, [sp, #20]
+-	ldr	r6, [sp, #16]
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+	ldr	r12, [sp, #16]
++	ldr	lr, [sp, #12]
++	ldr	r4, [sp, #8]
+&lt;/span&gt; 	vldr	d0, [r12]
+ 	vldr	d1, [lr]
+&lt;span class=&quot;gd&quot;&gt;-	vmrs	r5, fpscr
+-	bic	r5, r5, #458752
+-	vmsr	fpscr, r5
+&lt;/span&gt; 	vadd.f64	d0, d1, d0
+&lt;span class=&quot;gd&quot;&gt;-	vstr	d0, [r6]
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+	vstr	d0, [r4]
+&lt;/span&gt; 	vldmia	r1, {d6, d7}
+ 	vldmia	r2, {d4, d5}
+ 	vmrs	r2, fpscr
+ 	mov	r1, #65536
+ 	bic	r2, r2, #458752
+ 	orr	r2, r2, r1
+ 	vmsr	fpscr, r2
+ 	vadd.f64	d4, d6, d4
+ 	b	.LBB0_3
+ .LBB0_2:                                @ %if.else
+ 	vldmia	r1, {d6, d7}
+ 	vldmia	r2, {d4, d5}
+ 	vmrs	r2, fpscr
+ 	mov	r1, #65536
+ 	bic	r2, r2, #458752
+ 	orr	r2, r2, r1
+ 	vmsr	fpscr, r2
+ 	vmul.f64	d4, d6, d4
+ .LBB0_3:                                @ %if.end
+ 	vstmia	r0, {d4, d5}
+ 	vldmia	r3, {d6, d7}
+&lt;span class=&quot;gd&quot;&gt;-	vmrs	r2, fpscr
+-	mov	r1, #65536
+-	bic	r2, r2, #458752
+-	orr	r2, r2, r1
+-	vmsr	fpscr, r2
+&lt;/span&gt; 	vdiv.f64	d4, d4, d6
+ 	vstmia	r0, {d4, d5}
+&lt;span class=&quot;gd&quot;&gt;-	pop	{r4, r5, r6, pc}
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+	pop	{r4, pc}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;In this test we can remove 2 of the three changes to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;. A first one sets
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to 0 (i.e. vector length equals to 1) to execute the scalar operation
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;*dc = *da + *db;&lt;/code&gt;. But we know that upon entry &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; will be 0, so no need
+to change that. After the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if&lt;/code&gt; statement, we set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to 1 (i.e. vector length
+equals to two) to execute &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;*vdc = *vdc / *vdd;&lt;/code&gt;, but both branches of the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if&lt;/code&gt; will have already set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to 1, so no need to do that again.&lt;/p&gt;
+
+&lt;h2&gt;Current limitation&lt;/h2&gt;
+
+&lt;p&gt;There is still a suboptimal case left: if we use vector operations inside a loop
+they will set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; at every iteration. This is redundant if all the vector operations
+inside the loop use the same length. We could set the length before the loop, just
+once. We will address this issue in a later installment.&lt;/p&gt;
+
+&lt;p&gt;In the next episode we will fix the issue related to the value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; when
+entering and returning from a function.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the last installment we completed all the code generation step. However the whole process is still a bit suboptimal. Today we are going to see how we can improve this.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 4</title><link href="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 4" /><published>2021-06-27T17:09:00+00:00</published><updated>2021-06-27T17:09:00+00:00</updated><id>https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4</id><content type="html" xml:base="https://thinkingeek.com/2021/06/27/raspberry-vectors-part-4/">&lt;p&gt;In the last chapter we devised a way to tame the issue with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;. Today
 we are going to complete the code generation bits that we are still missing
 so we can start emitting code.&lt;/p&gt;
 
@@ -76,7 +720,7 @@ two scratch output registers as outputs of &lt;code class=&quot;language-plainte
 There are two unobvious elements due to the AArch32 Arm ISA itself. Most
 instructions can be predicated, but we want them to be always executed so we
 set it to &lt;em&gt;always&lt;/em&gt; using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.add(predOps(ARMCC::AL))&lt;/code&gt;. Many Arm instructions may
-optionally update the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cpsr&lt;/code&gt;, because we do not want to do this so we state
+optionally update the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cpsr&lt;/code&gt;, because we do not want to do this we state
 that using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.add(consCodeOps())&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;Other than that, the code above is basically constructing the instruction and
@@ -4685,143 +5329,4 @@ exactly the register being stored into memory.&lt;/p&gt;
 
 &lt;p&gt;This has been a very long post, so in the &lt;a href=&quot;/2020/06/20/forgotten-memories-2/&quot;&gt;next one&lt;/a&gt;
 we will see what are the results of this experiment, along with other issues I
-found in the way.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Most compiler infrastructures that target register machines do it by using the concept of virtual registers. In their intermediate representations instructions use virtual registers to represent their operands. Because hardware is finite, these virtual registers must be mapped to physical registers at some point. The compiler does this in a process called register allocation. Being physical registers finite, it may happen that not all the virtual registers used by the program can be held in physical registers at the same time. When this happens, the compiler must emit spill code. Spill code stores a value in a memory (spill) and loads it later, often close to the point of use (reload). The memory used for spill code is commonly the function stack. However nothing prevents us from using other kinds of “memories” as long as we can guarantee that nobody is going to use them. This is exactly the kind of experiment we will do today: we’re going to spill general-purpose registers into floating-point registers.</summary></entry><entry><title type="html">Create your own local domain and DHCP with dnsmasq</title><link href="https://thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/" rel="alternate" type="text/html" title="Create your own local domain and DHCP with dnsmasq" /><published>2020-06-06T13:39:00+00:00</published><updated>2020-06-06T13:39:00+00:00</updated><id>https://thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq</id><content type="html" xml:base="https://thinkingeek.com/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">&lt;p&gt;&lt;a href=&quot;/2007/06/19/create-your-own-local-domain-with-dhcp-and-bind/&quot;&gt;Back in 2007&lt;/a&gt;, Bernat
-explained how to set up our own domain name using ISC BIND and ISC DHCP. You
-can’t go wrong with those servers but maybe you prefer something more
-straightforward. I present here a simpler alternative built on top of
-&lt;a href=&quot;http://www.thekelleys.org.uk/dnsmasq/doc.html&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt;&lt;/a&gt; which is an
-integrated DNS and DHCP.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;What we are going to do is to configure our a forwarding DNS (so it will
-forward queries to other DNS servers), it will provide us a DNS &lt;em&gt;zone&lt;/em&gt;
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.mydomain&lt;/code&gt; and also DHCP.&lt;/p&gt;
-
-&lt;p&gt;The following example assumes that your LAN gateway is in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt; and we
-will call it &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;router.mydomain&lt;/code&gt;.  Your DNS server is in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.2&lt;/code&gt; and we
-will call it &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt;. Install &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt; (check your
-Linux distribution on how to do this).  &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt; settings are commonly found
-in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/dnsmasq.conf&lt;/code&gt;.&lt;/p&gt;
-
-&lt;div style=&quot;padding: 1em; background-color: #fee;&quot;&gt;
-Make sure you disable the DHCP of your LAN router if it is providing this
-service. Otherwise you will run into unpleasant conflicts with DHCP (only one
-DHCP server can be running in a LAN at a time). Also you may want to disable
-its DNS forwarding service as you're not going to need it.
-&lt;/div&gt;
-
-&lt;p&gt;&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;/etc/dnsmasq.conf&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;c&quot;&gt;# Never forward plain names (without a dot or domain part)&lt;/span&gt;
-domain-needed
-&lt;span class=&quot;c&quot;&gt;# Never forward addresses in the non-routed address spaces&lt;/span&gt;
-bogus-priv
-&lt;span class=&quot;c&quot;&gt;# Don't read /etc/resolv.conf or any other&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# file to get the forwarding files.&lt;/span&gt;
-no-resolv
-&lt;span class=&quot;c&quot;&gt;# Add other name servers here, with domain specs if they are for&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# non-public domains.&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;server&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;8.8.8.8
-&lt;span class=&quot;nv&quot;&gt;server&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;8.8.4.4
-&lt;span class=&quot;c&quot;&gt;# Add local-only domains here, queries in these domains are answered&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# from /etc/hosts or DHCP only.&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;local&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/mydomain/
-&lt;span class=&quot;c&quot;&gt;# It does the following things.&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# 1) Allows DHCP hosts to have fully qualified domain names, as long&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;#     as the domain part matches this setting.&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# 2) Sets the &quot;domain&quot; DHCP option thereby potentially setting the&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;#    domain of all systems configured by DHCP&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# 3) Provides the domain part for &quot;expand-hosts&quot;&lt;/span&gt;
-&lt;span class=&quot;nv&quot;&gt;domain&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;mydomain
-&lt;span class=&quot;c&quot;&gt;# Uncomment this to enable the integrated DHCP server, you need&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# to supply the range of addresses available for lease and optionally&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# a lease time. If you have more than one network, you will need to&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# repeat this for each network on which you want to supply DHCP&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# service.&lt;/span&gt;
-dhcp-range&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;192.168.1.32,192.168.1.250,24h
-&lt;span class=&quot;c&quot;&gt;# Always give the host with Ethernet address 11:22:33:44:55:66&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# the name fred and IP address 192.168.1.60 and lease time 45 minutes&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# dhcp-host=11:22:33:44:55:66,fred,192.168.1.60,45m&lt;/span&gt;
-dhcp-host&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;11:22:33:44:55:66,uber,192.168.1.3
-dhcp-host&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;21:22:33:44:55:67,dad,192.168.1.4
-dhcp-host&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;31:22:33:44:55:68,xbox360,192.168.1.5
-&lt;span class=&quot;c&quot;&gt;# Override the default route supplied by dnsmasq, which assumes the&lt;/span&gt;
-&lt;span class=&quot;c&quot;&gt;# router is the same machine as the one running dnsmasq.&lt;/span&gt;
-dhcp-option&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;option:router,192.168.1.1
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Option &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;domain-needed&lt;/code&gt; in line 2 is to make sure we don’t forward to DNS
-servers plain names without a domain separator. So we will forward things like
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xbox360.com&lt;/code&gt; or &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xbox360.foo&lt;/code&gt; but not &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;xbox360&lt;/code&gt;. Also option &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bogus-priv&lt;/code&gt; avoids us forwarding
-names like &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;3.1.168.192.in-addr.arpa&lt;/code&gt;. This is a reverse DNS for an IP &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.3&lt;/code&gt; which belongs
-to the non-routable space of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.0.0/24&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;Line 7 tells &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq.conf&lt;/code&gt; that does not try to use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/resolv.conf&lt;/code&gt; to get
-the forwarder servers. We will specify them, for maximum control, in
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq.conf&lt;/code&gt; itself. We do this in lines 10 and 11. Here we use the Google
-DNS servers, but feel free to use other servers such as OpenDNS or the one of
-your ISP.&lt;/p&gt;
-
-&lt;p&gt;Line 14, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;local&lt;/code&gt;, is a way to restrict the domains we’re going to asnswer
-locally. Which we will enable in line 21, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;domain&lt;/code&gt;. Now the names registered in
-the DHCP will have a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.mydomain&lt;/code&gt; suffix as part of their fully qualified domain
-name.&lt;/p&gt;
-
-&lt;p&gt;In line 27, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dhcp-range&lt;/code&gt; we configure the range of IPs for which we will assign
-automatically DHCP addresses. In this example from 32 to 250, leaving us some
-room from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.32&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.250&lt;/code&gt; to
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.254&lt;/code&gt;. The DHCP lease will last 24 hours.&lt;/p&gt;
-
-&lt;p&gt;Next in lines 31 to 33 we statically assign IPs (should be from the range not
-used by DHCP) to specific machines when they do a DHCP request. We match them
-using their MAC address (such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;11:22:33:44:55:66&lt;/code&gt;), use the right MAC
-addresses of your network devices here.&lt;/p&gt;
-
-&lt;p&gt;Finally in line 36 we make sure that when a node in our network requests IP,
-the gateway is correctly set to the IP of our LAN gateway (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;192.168.1.1&lt;/code&gt;).&lt;/p&gt;
-
-&lt;p&gt;A final note for devices with fully static IPs (i.e. those that will never get
-their IP via DHCP) such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;router.mydomain&lt;/code&gt; an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt;. You can
-use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/etc/hosts&lt;/code&gt; in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dns.mydomain&lt;/code&gt; to set them up. In our example setup we
-would add the following lines. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dnsmasq&lt;/code&gt; will use this file to register those
-names in its DNS database.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;/etc/hosts&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;192.168.1.1	router.mydomain router
-192.168.1.2	dns.mydomain dns&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Back in 2007, Bernat explained how to set up our own domain name using ISC BIND and ISC DHCP. You can’t go wrong with those servers but maybe you prefer something more straightforward. I present here a simpler alternative built on top of dnsmasq which is an integrated DNS and DHCP.</summary></entry></feed>
+found in the way.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Most compiler infrastructures that target register machines do it by using the concept of virtual registers. In their intermediate representations instructions use virtual registers to represent their operands. Because hardware is finite, these virtual registers must be mapped to physical registers at some point. The compiler does this in a process called register allocation. Being physical registers finite, it may happen that not all the virtual registers used by the program can be held in physical registers at the same time. When this happens, the compiler must emit spill code. Spill code stores a value in a memory (spill) and loads it later, often close to the point of use (reload). The memory used for spill code is commonly the function stack. However nothing prevents us from using other kinds of “memories” as long as we can guarantee that nobody is going to use them. This is exactly the kind of experiment we will do today: we’re going to spill general-purpose registers into floating-point registers.</summary></entry></feed>
