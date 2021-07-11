@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-07-11T06:34:21+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 5</title><link href="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 5" /><published>2021-07-10T10:04:00+00:00</published><updated>2021-07-10T10:04:00+00:00</updated><id>https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5</id><content type="html" xml:base="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/">&lt;p&gt;In the last installment we completed all the code generation step. However
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-07-11T07:14:58+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 5</title><link href="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 5" /><published>2021-07-10T10:04:00+00:00</published><updated>2021-07-10T10:04:00+00:00</updated><id>https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5</id><content type="html" xml:base="https://thinkingeek.com/2021/07/10/raspberry-vectors-part-5/">&lt;p&gt;In the last installment we completed all the code generation step. However
 the whole process is still a bit suboptimal. Today we are going to see how 
 we can improve this.&lt;/p&gt;
 
@@ -2240,7 +2240,7 @@ also be referenced in a list called &lt;code class=&quot;language-plaintext high
 
 &lt;p&gt;So we compute first &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;base + offset&lt;/code&gt; and we name this &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;m&lt;/code&gt;.
 Then we compute &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mnext&lt;/code&gt; as the logical next one but making sure we wrap around
-(we achieve this using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;!and(..., 0x3)&lt;/code&gt; as we have to compute mod 4). T&lt;/p&gt;
+(we achieve this using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;!and(..., 0x3)&lt;/code&gt; as we have to compute mod 4).&lt;/p&gt;
 
 &lt;p&gt;Now that we have &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;m&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mnext&lt;/code&gt; we can define the pair itself. The definition
 will be named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D&amp;lt;m&amp;gt;_D&amp;lt;mnext&amp;gt;x2&lt;/code&gt; (e.g. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D4_D5x2&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D5_D6x2&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D6_D7x2&lt;/code&gt;,
@@ -2260,7 +2260,7 @@ those registers.&lt;/p&gt;
 }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;If you check above how we use this class, the first argument is the encoding
-register. We will always use the first register of the group for the encoding.
+register. We will always use the first register of the group for the encoding
 (however you will see that eventually we won’t be using this). We are naming
 those registers &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;x2&lt;/code&gt; in the assembly. We will not use them and in fact we
 should forbid those names in the assembler that LLVM will generate for the ARM
