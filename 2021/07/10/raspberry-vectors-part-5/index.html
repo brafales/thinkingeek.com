@@ -643,7 +643,8 @@ then we remove the redundant instructions.</p>
 optimisation and observe its effects.</p>
 
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>diff <span class="nt">-U1000</span> <span class="nt">-u</span>  &lt;<span class="o">(</span>clang <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o</span> - <span class="nt">--target</span><span class="o">=</span>armv6kz-unknown-linux-gnu       <span class="se">\</span>
-                          <span class="nt">-mfloat-abi</span><span class="o">=</span>hard <span class="nt">-arm-optimize-vfp2-disable</span> test.c <span class="o">)</span> <span class="se">\</span>
+                          <span class="nt">-mfloat-abi</span><span class="o">=</span>hard                                     <span class="se">\</span>
+                          <span class="nt">-mllvm</span> <span class="nt">-arm-optimize-vfp2-disable</span> test.c <span class="o">)</span>           <span class="se">\</span>
                   &lt;<span class="o">(</span>clang <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o</span> - <span class="nt">--target</span><span class="o">=</span>armv6kz-unknown-linux-gnu       <span class="se">\</span>
                           <span class="nt">-mfloat-abi</span><span class="o">=</span>hard test.c <span class="o">)</span></code></pre></figure>
 
