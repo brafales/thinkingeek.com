@@ -67,6 +67,92 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2014/02/12/check-progress-mysql-database-import/">Check progress of a mysql database import</a></h1>
+
+          <p class="post-meta">
+            Feb 12, 2014• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/bash/">bash</a>, <a href="/tags/mysql/">mysql</a>, <a href="/tags/scripting/">scripting</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>If you’ve ever had to do a huge mysql import, you’ll probably understand the pain of not being able to know how long it will take to complete.</p>
+
+<p>At work we use the <a href="https://github.com/meskyanichi/backup" target="_blank">backup gem</a> to store daily snapshots of our databases, the main one being several gigabytes in size. This gem basically does a <code>mysqldump</code> with configurable options and takes care of maintaining a number of old snapshots, compressing the data and sending notifications on completion and failure of backup jobs.</p>
+
+<p>When the time comes to restore one of those backups, you are basically in the situation in which you simply have to run a <code>mysql</code> command with the exported <code>sql</code> file as input, which can take ages to complete depending on the size of the file and the speed of the system.</p>
+
+<p>The command used to import the database snapshot from the backup gem may look like this:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">tar</span> <span class="nt">-x</span> <span class="nt">-v</span> <span class="nt">-O</span> <span class="nt">-f</span> database_snapshot.tar path_to_the_database_file_inside_the_tar_file.sql.gz | zcat | mysql <span class="nt">-u</span> mysql_user <span class="nt">-h</span> mysql_host <span class="nt">-ppassword</span> database_name</code></pre></figure>
+
+<p>What this command does is <code>untar</code> the gzipped file and sending it as an input to a <code>mysql</code> command to the database you want to restore (passing it through <code>zcat</code> before to gunzip it).</p>
+
+<p>And then the waiting game begins.</p>
+
+<p>There is a way, though, to get an estimate of the amount of work already done, which may be a big help for the impatiens like myself. You only need to make use of the good <code>proc</code> filesystem on Linux.</p>
+
+<p>The first thing you need to do is find out the <code>tar</code> process that you just started:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">ps ax | <span class="nb">grep</span> <span class="s2">"database_snapshot</span><span class="se">\.</span><span class="s2">tar"</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="nb">grep</span></code></pre></figure>
+
+<p>This last command assumes that no other processes will have that string on their invocation command lines.</p>
+
+<p>We are really interested in the <code>pid</code> of the process, which we can get with some unix commands and pipes, appending them to the last command:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">ps ax | <span class="nb">grep</span> <span class="s2">"database_snapshot</span><span class="se">\.</span><span class="s2">tar"</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="nb">grep</span> | <span class="nb">tail</span> <span class="nt">-n1</span> | <span class="nb">cut</span> <span class="nt">-d</span><span class="s2">" "</span> <span class="nt">-f</span> 1</code></pre></figure>
+
+<p>This will basically get the last line of the process list output (with <code>tail</code>), separate it in fields using the space as a delimiter and getting the first one (<code>cut</code> command). Note that depending on your OS and the <code>ps</code> command output you may have to tweak this.</p>
+
+<p>After we have the <code>pid</code> of the tar process, we can see what it is doing on the <code>proc</code> filesystem. The information we are interested in is the file descriptors it has open, which will be in the folder <code>/proc/pid/fd</code>. If we list the files in that folder, we will get an output similar to this one:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="o">[</span>rails@ip-10-51-43-240 ~]<span class="nv">$ </span><span class="nb">sudo ls</span> <span class="nt">-l</span> /proc/7719/fd
+total 0
+lrwx------ 1 rails rails 64 Jan 22 15:38 0 -&gt; /dev/pts/1
+l-wx------ 1 rails rails 64 Jan 22 15:38 1 -&gt; pipe:[55359574]
+lrwx------ 1 rails rails 64 Jan 22 15:36 2 -&gt; /dev/pts/1
+lr-x------ 1 rails rails 64 Jan 22 15:38 3 -&gt; /path/to/database_snaphot.tar</code></pre></figure>
+
+<p>The important one for our purposes is the number <code>3</code> in this case, which is the file descriptor for the file <code>tar</code> is unpacking.</p>
+
+<p>We can get this number using a similar strategy:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">ls</span> <span class="nt">-la</span> /proc/19577/fd/ | <span class="nb">grep</span> <span class="s2">"database_snaphot</span><span class="se">\.</span><span class="s2">tar"</span> | <span class="nb">cut</span> <span class="nt">-d</span><span class="s2">" "</span> <span class="nt">-f</span> 9</code></pre></figure>
+
+<p>With that number, we can now check the file <code>/proc/pid/fdinfo/fd_id</code>, which will contain something like this:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="o">[</span>rails@ip-10-51-43-240 ~]<span class="nv">$ </span><span class="nb">cat</span> /proc/7719/fdinfo/3
+pos:    4692643840
+flags:  0100000</code></pre></figure>
+
+<p>The useful part of this list is the <code>pos</code> field. This field is telling us in which position of the file the process is now on. Since <code>tar</code> processes the files sequentially, having this position means we know how much percentage of the file <code>tar</code> has processed so far.</p>
+
+<p>Now the only thing we need to do is check the original file size of the <code>tar</code> file and divide both numbers to get the percentage done.</p>
+
+<p>To get the <code>pos</code> field we can use some more unix commands:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">cat</span> /proc/7719/fdinfo/3 | <span class="nb">head</span> <span class="nt">-n1</span> | <span class="nb">cut</span> <span class="nt">-f</span> 2</code></pre></figure>
+
+<p>To get the original file size, we can use the <code>stat</code> command:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">stat</span> <span class="nt">-c</span> %s /path/to/database_snaphot.tar</code></pre></figure>
+
+<p>Finally we can use <code>bc</code> to get the percentage by just dividing both values:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">echo</span> <span class="s2">"</span><span class="sb">`</span><span class="nb">cat</span> /proc/7719/fdinfo/3 | <span class="nb">head</span> <span class="nt">-n1</span> | <span class="nb">cut</span> <span class="nt">-f</span> 2<span class="sb">`</span><span class="s2">/</span><span class="sb">`</span><span class="nb">stat</span> <span class="nt">-c</span> %s /path/to/database_snaphot.tar<span class="sb">`</span><span class="s2"> * 100"</span> | bc <span class="nt">-l</span></code></pre></figure>
+
+<p>To put it all together in a nice script, you can use this one as a template:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">file_path</span><span class="o">=</span><span class="s2">"&lt;full path to your tar db snaphot&gt;"</span>
+<span class="nv">file_size</span><span class="o">=</span><span class="sb">`</span><span class="nb">stat</span> <span class="nt">-c</span> %s <span class="nv">$file_path</span><span class="sb">`</span>
+<span class="nv">file</span><span class="o">=</span><span class="s2">"&lt;filename of yout db snapshot&gt;"</span>
+<span class="nv">pid</span><span class="o">=</span><span class="sb">`</span>ps ax | <span class="nb">grep</span> <span class="nv">$file</span> | <span class="nb">grep</span> <span class="nt">-v</span> <span class="nb">grep</span> | <span class="nb">tail</span> <span class="nt">-n1</span> | <span class="nb">cut</span> <span class="nt">-d</span><span class="s2">" "</span> <span class="nt">-f</span> 1<span class="sb">`</span>
+<span class="nv">fdid</span><span class="o">=</span><span class="sb">`</span><span class="nb">ls</span> <span class="nt">-la</span> /proc/<span class="nv">$pid</span>/fd/ | <span class="nb">grep</span> <span class="nv">$file</span> | <span class="nb">cut</span> <span class="nt">-d</span><span class="s2">" "</span> <span class="nt">-f</span> 9<span class="sb">`</span>
+<span class="nv">pos</span><span class="o">=</span><span class="sb">`</span><span class="nb">cat</span> /proc/<span class="nv">$pid</span>/fdinfo/<span class="nv">$fdid</span> | <span class="nb">head</span> <span class="nt">-n1</span> | <span class="nb">cut</span> <span class="nt">-f</span> 2<span class="sb">`</span>
+<span class="nb">echo</span> <span class="sb">`</span><span class="nb">echo</span> <span class="s2">"</span><span class="nv">$pos</span><span class="s2"> / </span><span class="nv">$file_size</span><span class="s2"> * 100"</span> | bc <span class="nt">-l</span><span class="sb">`</span></code></pre></figure>
+
+<p>I developed this article and script following the tips in this stack overflow answer: <a href="http://stackoverflow.com/questions/5748565/how-to-see-progress-of-csv-upload-in-mysql/14851765#14851765" target="_blank">http://stackoverflow.com/questions/5748565/how-to-see-progress-of-csv-upload-in-mysql/14851765#14851765</a></p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2013/11/20/arm-assembler-raspberry-pi-chapter-17/">ARM assembler in Raspberry Pi – Chapter 17</a></h1>
 
           <p class="post-meta">
@@ -167,24 +253,7 @@ It may be suprising, but the ARMv6 architecture does not provide an integer divi
 
         </div><p class="post-continue">
             <a href="/2013/08/11/arm-assembler-raspberry-pi-chapter-15/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2013/07/10/acts_as_list-gem-single-table-inheritance-rails/">acts_as_list gem and single table inheritance in Rails</a></h1>
-
-          <p class="post-meta">
-            Jul 10, 2013• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/gems/">gems</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a>, <a href="/tags/single-table-inheritance/">single table inheritance</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>If you ever need to use the <a href="http://rubygems.org/gems/acts_as_list" target="_blank">acts_as_list</a> gem in Rails on a model that uses single table inheritance, here’s the snippet you need to use for the list methods to work if you want the setup done on the base model:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">acts_as_list</span> <span class="ss">:scope</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:type</span><span class="p">]</span></code></pre></figure>
-
-<p>You’ll need to use the array syntax as neither the string nor the symbol versions will work. The symbol one assumes the column ending in <code>_id</code>, while the string one will simply not allow you to evaluate the current object’s type.</p>
-
-<p>It’d be nice to have a <code>lambda</code> syntax in future versions of the gem so you can inject code into the conditions.</p>
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/17/">&laquo; Older</a>

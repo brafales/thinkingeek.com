@@ -228,6 +228,14 @@ block.</p>
       <span class="k">continue</span><span class="p">;</span>
     <span class="p">}</span>
 
+    <span class="c1">// Handle calls first.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">isCall</span><span class="p">())</span> <span class="p">{</span>
+      <span class="c1">// On exit, functions restore vector length == 1.</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+      <span class="n">LI</span><span class="p">.</span><span class="n">LastChange</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">;</span>
+      <span class="k">continue</span><span class="p">;</span>
+    <span class="p">}</span>
+
     <span class="c1">// If the FPSCR is modified outside of our control, assume</span>
     <span class="c1">// that it is variable.</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">modifiesRegister</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">FPSCR</span><span class="p">)</span> <span class="o">||</span> <span class="n">MI</span><span class="p">.</span><span class="n">isInlineAsm</span><span class="p">())</span> <span class="p">{</span>
@@ -236,12 +244,6 @@ block.</p>
       <span class="k">continue</span><span class="p">;</span>
     <span class="p">}</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">isCall</span><span class="p">())</span> <span class="p">{</span>
-      <span class="c1">// On exit, functions restore vector length == 1.</span>
-      <span class="n">LI</span><span class="p">.</span><span class="n">OutLen</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
-      <span class="n">LI</span><span class="p">.</span><span class="n">LastChange</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">MI</span><span class="p">;</span>
-      <span class="k">continue</span><span class="p">;</span>
-    <span class="p">}</span>
   <span class="p">}</span>
 <span class="p">}</span></code></pre></figure>
 
@@ -253,11 +255,13 @@ will be the same as the final value of <code class="language-plaintext highlight
 If the instruction is a <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> it is very easy to extract the value of the
 length from its immediate operand.</p>
 
-<p>We need to deal with instructions that might modify the <code class="language-plaintext highlighter-rouge">fpscr</code> or inline
-assembly. We conservatively assume they could set <code class="language-plaintext highlighter-rouge">len</code> to any value.</p>
-
-<p>Finally, function calls have to preserve the length in the <code class="language-plaintext highlighter-rouge">fpscr</code>, so after
+<p>Function calls have to preserve the length in the <code class="language-plaintext highlighter-rouge">fpscr</code>, so after
 a call the length is always 1.</p>
+
+<p>We need to deal with instructions that might modify the <code class="language-plaintext highlighter-rouge">fpscr</code> or inline
+assembly. We conservatively assume they could set <code class="language-plaintext highlighter-rouge">len</code> to any value. One
+detail here, function calls might modify <code class="language-plaintext highlighter-rouge">fpscr</code> but not the <code class="language-plaintext highlighter-rouge">len</code> field we
+care, so we check them first.</p>
 
 <p>In all those cases we update <code class="language-plaintext highlighter-rouge">LastChange</code> to the instruction that made the
 change. If no instruction in a basic block may change <code class="language-plaintext highlighter-rouge">len</code> then <code class="language-plaintext highlighter-rouge">LastChange</code>
@@ -505,10 +509,10 @@ instructions.</p>
         <span class="n">Changed</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
       <span class="p">}</span>
       <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">Length</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">isCall</span><span class="p">())</span> <span class="p">{</span>
+      <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
     <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">modifiesRegister</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">FPSCR</span><span class="p">)</span> <span class="o">||</span> <span class="n">MI</span><span class="p">.</span><span class="n">isInlineAsm</span><span class="p">())</span> <span class="p">{</span>
       <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setVariable</span><span class="p">();</span>
-    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">isCall</span><span class="p">())</span> <span class="p">{</span>
-        <span class="n">CurrentLength</span><span class="p">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
     <span class="p">}</span>
 
     <span class="n">MBBI</span> <span class="o">=</span> <span class="n">NMBBI</span><span class="p">;</span>
@@ -728,6 +732,8 @@ entering and returning from a function.</p>
 
   <a class="previous" href="/2021/06/27/raspberry-vectors-part-4/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 4</a>
 
+
+  <a class="next" href="/2021/07/11/raspberry-vectors-part-6/">Fun with vectors in the Raspberry Pi 1 - Part 6 &raquo;</a>
 
 </div>
 
