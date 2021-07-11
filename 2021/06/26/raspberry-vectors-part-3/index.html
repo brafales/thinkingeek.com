@@ -541,7 +541,6 @@ what the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> ins
     <span class="k">const</span> <span class="n">VFPPseudos</span><span class="o">::</span><span class="n">PseudoInfo</span> <span class="o">*</span><span class="n">VFPInfo</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
   <span class="n">MachineFunction</span> <span class="o">*</span><span class="n">MF</span> <span class="o">=</span> <span class="n">BB</span><span class="p">.</span><span class="n">getParent</span><span class="p">();</span>
   <span class="n">MachineRegisterInfo</span> <span class="o">&amp;</span><span class="n">MRI</span> <span class="o">=</span> <span class="n">MF</span><span class="o">-&gt;</span><span class="n">getRegInfo</span><span class="p">();</span>
-  <span class="n">ARMFunctionInfo</span> <span class="o">*</span><span class="n">AFI</span> <span class="o">=</span> <span class="n">MF</span><span class="o">-&gt;</span><span class="n">getInfo</span><span class="o">&lt;</span><span class="n">ARMFunctionInfo</span><span class="o">&gt;</span><span class="p">();</span>
   <span class="k">const</span> <span class="n">TargetInstrInfo</span> <span class="o">*</span><span class="n">TII</span> <span class="o">=</span> <span class="n">Subtarget</span><span class="o">-&gt;</span><span class="n">getInstrInfo</span><span class="p">();</span>
   <span class="n">DebugLoc</span> <span class="n">dl</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getDebugLoc</span><span class="p">();</span>
 
@@ -553,11 +552,6 @@ what the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> ins
       <span class="p">.</span><span class="n">addDef</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">,</span> <span class="n">RegState</span><span class="o">::</span><span class="n">Dead</span><span class="p">)</span>
       <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">VectorLength</span><span class="p">);</span>
 
-  <span class="c1">// If we are setting it to something different to zero, let's make sure</span>
-  <span class="c1">// it gets cleared upon return.</span>
-  <span class="k">if</span> <span class="p">(</span><span class="n">VFPInfo</span><span class="o">-&gt;</span><span class="n">VectorLength</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
-      <span class="n">AFI</span><span class="o">-&gt;</span><span class="n">setMustClearFPSCRLen</span><span class="p">();</span>
-
   <span class="c1">// Now mark this instruction that it uses FPCSR implicitly.</span>
   <span class="n">MI</span><span class="p">.</span><span class="n">addOperand</span><span class="p">(</span><span class="n">MachineOperand</span><span class="o">::</span><span class="n">CreateReg</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">FPSCR</span><span class="p">,</span> <span class="cm">/* isDef */</span> <span class="nb">false</span><span class="p">,</span>
                                           <span class="cm">/* isImp */</span> <span class="nb">true</span><span class="p">));</span>
@@ -567,11 +561,6 @@ what the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> ins
 and then we build a machine instruction corresponding to the <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> itself.
 Note how we mark the scratch registers as dead: nobody will use their values
 after this instruction.</p>
-
-<p>We will discuss the reason of the call to <code class="language-plaintext highlighter-rouge">AFI-&gt;setMustClearFPSCRLen()</code> in a
-later installment, but for now consider it means we have acknowledged that this
-function sets the <code class="language-plaintext highlighter-rouge">len</code> of <code class="language-plaintext highlighter-rouge">fpscr</code> to something other than 0 (recall that 0
-means length equals to 1).</p>
 
 <p>We finally insert an implicit operand to the current instruction (not to
 <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> but <code class="language-plaintext highlighter-rouge">VADDD</code>, <code class="language-plaintext highlighter-rouge">VADDS</code>, <code class="language-plaintext highlighter-rouge">VADDDx2</code>, <code class="language-plaintext highlighter-rouge">VADDSx4</code>, etc) in order to signify
