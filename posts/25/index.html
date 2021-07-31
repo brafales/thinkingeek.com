@@ -67,6 +67,26 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2011/03/11/jquery-bars-plugin/">jQuery Bars plugin</a></h1>
+
+          <p class="post-meta">
+            Mar 11, 2011• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/bars/">bars</a>, <a href="/tags/html/">html</a>, <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+I was developing an application recently that needed some king of horizontal bars to be drawn on a web page. I found the <a href="http://docs.jquery.com/UI/Progressbar">jQuery Progressbar</a> plugin and found it it was something similar to what I wanted to achieve, so I took some spare time and modified it to convert it in a plugin I could use in my app. The result is the <a href="https://github.com/brafales/jQuery-bars">jQuery Bars plugin</a>. It's a pretty simple plugin that will take a div and convert it into a horizontal bar, in which you can change the background color, the actual bar color, the duration of the animation and the height and width of the bar.
+</p>
+<p>
+You can check a how it works and looks in this simple <a href="https://github.com/brafales/jQuery-bars/blob/master/test/test.html">test</a> I uploaded. It can be useful if you ever have to shown some kind of a percentage bar in a chart and you need a bit more customization that jQuery UI Progressbar gives you.
+</p>
+<p>
+The plugin is dual licensed in MIT and GPLv2, the same license as jQuery, so feel free to use it or modify it at your will.
+</p>
+
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2011/03/09/create-your-own-jsonp-proxy-using-ruby-on-rails/">Create your own JSONP Proxy using Ruby on Rails</a></h1>
 
           <p class="post-meta">
@@ -226,22 +246,7 @@ This will pass the controller <em>Blob</em> a parameter called <em>path</em> tha
 Hope it helps!
 </p>
 
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2010/11/24/execute-javascript-code-every-time-a-form-is-loaded-via-ajax-beginform/">Execute javascript code every time a form is loaded via Ajax.BeginForm</a></h1>
-
-          <p class="post-meta">
-            Nov 24, 2010• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/ajax/">ajax</a>, <a href="/tags/c/">c#</a>, <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a>, <a href="/tags/mvc/">MVC</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-If you've ever used the <em>Ajax.BeginForm</em> code to render a form in ASP MVC using Ajax (via jQuery, for example), you may have wondered there's an object you can pass to the call called <em>AjaxOptions</em>. This object allows you to pass the BeginForm call some interesting options to further enhance the form when it's rendered. One of those options is specially useful if you want some javascript to be executed just after the form has been rendered. You can always use the <em>$(document).ready</em> in jQuery, but this code will not be called if, for example, the form is rendered after a postback and you have some validation errors (a missing required field, for example). Fortunately, you can use the <em>AjaxOptions</em> object to tell the form to execute a method right after the form has been loaded (for the first time or after a postback).
-</p>
-
-        </div><p class="post-continue">
-            <a href="/2010/11/24/execute-javascript-code-every-time-a-form-is-loaded-via-ajax-beginform/">Read on &rarr;</a>
-          </p></li></ul>
+        </div></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/26/">&laquo; Older</a>

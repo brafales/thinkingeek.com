@@ -406,7 +406,7 @@ can be removed.</p>
                  &lt;<span class="o">(</span>llc <span class="nt">-mtriple</span> armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2 <span class="se">\</span>
                        <span class="nt">-o</span> - test-2.ll<span class="o">)</span></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-diff" data-lang="diff"> test_vec:
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm"> test_vec:
  	.fnstart
  @ %bb.0:
  	push	{r11, lr}
@@ -425,10 +425,10 @@ can be removed.</p>
  	vmsr	fpscr, r1
  	mov	r1, #3
  	bl	foo
-<span class="gd">-	vmrs	r1, fpscr
+-	vmrs	r1, fpscr
 -	bic	r1, r1, #458752
 -	vmsr	fpscr, r1
-</span> 	pop	{r11, pc}</code></pre></figure>
+ 	pop	{r11, pc}</code></pre></figure>
 
 <p>However, if we move the call to some other position the backend crashes. The
 reason is that the compiler wants to preserve the value of the vector registers
@@ -446,6 +446,8 @@ onto the stack, but it does not know how to do that.</p>
 
   <a class="previous" href="/2021/07/10/raspberry-vectors-part-5/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 5</a>
 
+
+  <a class="next" href="/2021/07/31/raspberry-vectors-part-7/">Fun with vectors in the Raspberry Pi 1 - Part 7 &raquo;</a>
 
 </div>
 

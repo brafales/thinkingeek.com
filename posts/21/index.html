@@ -67,6 +67,51 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2012/11/17/mac-os-x-iterm-meta-key/">Mac OS X, iTerm and the meta key</a></h1>
+
+          <p class="post-meta">
+            Nov 17, 2012• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/iterm/">iterm</a>, <a href="/tags/mac-os-x/">mac os x</a>, <a href="/tags/shell/">shell</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+If you use your Mac OS X as a development machine and are a regular user of the shell, chances are you are going to be using the <a href="http://www.math.utah.edu/docs/info/features_7.html" target="_blank">movement commands</a> a lot. Chances are, too, that you are using <a href="http://www.iterm2.com" target="_blank">iTerm</a> instead of the system provided Terminal app.
+</p>
+
+<p>
+Using the arrow keys is usually enough, but more often than not you need to move between words. This movements, unless you redefine it in your global or local bashrc profile (or any similar shell you maybe using), are done with the keys <code>b</code> and <code>f</code>. Pressing <code>C-b</code> or <code>C-f</code> moves the cursor one character back or forward. Doing if with <code>M-b</code> or <code>M-f</code> does the same but with a word (if you are an Emacs user you will be familiar with those key shortcuts).
+</p>
+
+<p>
+The <code>C</code> stands for <code>control key</code>, while the <code>M</code> stands for <code>meta key</code>. In most keyboards (or keymaps to be precise), the control key is mapped to the <code>ctrl</code> key and the meta key is mapped to the <code>alt</code> key. In Mac OS X, the meta key is mapped to the <code>alt</code> key, but as you may very well know, this alt key is known as the <code>option</code> key, and has its peculiarities.
+</p>
+
+<p>
+Now, if you open a shell in iTerm and press <code>C-b</code> or <code>C-f</code>, the output will be as expected, but not if you press <code>M-b</code> or <code>M-f</code>. Instead of moving forward or backward a word, you will see that some weird character is written on the command line.
+</p>
+
+<p>
+Fortunately this is really easy to fix in iTerm. You just need to go to the Profiles menu, edit your profile (which is most likely to be the default one), and then go to the keys tab. Now, on the bottom of the keymap lists, you will see that you can configure the behaviour of the option key. Set it up to the last option (+Esc) as shown in the screenshot, and then the alt key in iTerm will be sending the shell the adequate escape sequence so all meta mappings work as expected.
+</p>
+
+<figure>
+<a href="/wp-content/uploads/2012/11/Screen-Shot-2012-11-16-at-17.35.09.png"><img class="size-medium wp-image-310 " title="iTerm profile editor" src="/wp-content/uploads/2012/11/Screen-Shot-2012-11-16-at-17.35.09-300x175.png" alt="iTerm profile editor" width="300" height="175" /></a> <figcaption>iTerm profile editor</figcaption>
+</figure>
+
+<p>
+<strong>EDIT (30/11/2012)</strong>: looks like this breaks some of the characters that are used by typing the meta key, i.e. the # character (meta + 3). Another way to achieve what we want is to manually map all the meta key shortcuts. This can be done in the same window as before. Select Normal instead of +Esc and, for each key shortcut you want to map, click on the + button. On the opening dialog, type the combination you want to map, for example alt + d, and select Send escape sequence from the drop down  Then on the last textbox insert the escape sequence character you want to send (typically the same pressed along the meta key).
+</p>
+
+<figure>
+<a href="/wp-content/uploads/2012/11/Screen-Shot-2012-11-30-at-09.33.34.png"><img class="size-medium wp-image-316" title="Select Send Escape Sequence" src="/wp-content/uploads/2012/11/Screen-Shot-2012-11-30-at-09.33.34-298x300.png" alt="" width="297" height="300" /></a> <figcaption>Select Send Escape Sequence</figcaption>
+</figure>
+
+<figure>
+<a href="/wp-content/uploads/2012/11/Screen-Shot-2012-11-30-at-09.34.11.png"><img class="size-medium wp-image-317" title="Type the character to send" src="/wp-content/uploads/2012/11/Screen-Shot-2012-11-30-at-09.34.11-300x175.png" alt="" width="300" height="175" /></a> <figcaption>Type the character to send</figcaption>
+</figure>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2012/11/05/never-again-buy-apple-product/">Why I will never buy an Apple product again</a></h1>
 
           <p class="post-meta">
@@ -1020,25 +1065,7 @@ Content-Disposition: attachment; filename="</span><span class="si">#{</span><spa
 And that's all! You can use the script as a standalone command to send an email with some command line arguments or just require it in your ruby script and use the class to send the messages.
 </p>
 
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2012/07/16/ruby-rails-varnish-user-dependent-content/">Ruby on Rails, Varnish and user dependent content</a></h1>
-
-          <p class="post-meta">
-            Jul 16, 2012• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/cache/">cache</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a>, <a href="/tags/varnish/">varnish</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-Ruby on Rails performance is a topic that has been widely discussed. Whichever the conclusion you want to make about all the resources out there, the chances you'll be having to use a cache server in front of your application servers are pretty high. <a href="https://www.varnish-cache.org/" title="Varnish">Varnish</a> is a nice option when having to deal with this architecture: it has lots of options and flexibility, and its performance is really good, too.
-</p>
-<p>
-However, adding a cache server in front of your application can lead to problems when the page you are serving has user dependent content. Let's see what can we do to solve this problem.
-</p>
-
-        </div><p class="post-continue">
-            <a href="/2012/07/16/ruby-rails-varnish-user-dependent-content/">Read on &rarr;</a>
-          </p></li></ul>
+        </div></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/22/">&laquo; Older</a>
