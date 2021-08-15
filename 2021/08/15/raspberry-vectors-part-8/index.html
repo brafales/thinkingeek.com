@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 8</title>
+  <meta name="description" content="In the last installment I mentioned we could start looking at enabling the vectoriser in the compiler. However when I did that I realised some benchmarks were giving weird results. I had made a mistake with copies, so let’s remediate this.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 8">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/">
+  <meta property="og:description" content="In the last installment I mentioned we could start looking at enabling the vectoriser in the compiler. However when I did that I realised some benchmarks were giving weird results. I had made a mistake with copies, so let’s remediate this.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 8">
+  <meta name="twitter:description" content="In the last installment I mentioned we could start looking at enabling the vectoriser in the compiler. However when I did that I realised some benchmarks were giving weird results. I had made a mis...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 8</h1>
+    
+    <p class="post-meta"><time datetime="2021-08-15T08:16:00+00:00" itemprop="datePublished">Aug 15, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last installment I mentioned we could start looking at enabling
+the vectoriser in the compiler. However when I did that I realised some
+benchmarks were giving weird results. I had made a mistake with copies,
+so let’s remediate this.</p>
+
+<!--more-->
+
+<h2>Source of the problem: copies and vector length</h2>
+
+<p>In the first installment of this series we discussed about instructions that
+used the vector length. Unfortunately I missed an important one: <code class="language-plaintext highlighter-rouge">vmov</code>, used
+to copy vector registers.  Contrarily as I incorrectly assumed, this
+instruction does use the vector length so we do not have to copy every single
+element of the vector. Instead, we need to make sure the vector length is
+correctly set.</p>
+
+<p>The error I saw is that the compiler intended to copy two scalar floating point
+registers but because the vector length was different to 1, we were overwriting
+more registers than expected (the registers happened to be in banks other than
+the first one). That was an interesting bug to find!</p>
+
+<p>However this creates a bit of a complication here: if we need to change
+the vector length to implement a vector copy between registers, we are actually
+modifying its value. This means that to be safe we need to preserve the current
+vector length, set it to the correct one, do the copy and restore the
+original vector length.</p>
+
+<p>My initial implementation did this, but turns out the code obtained is not very
+smart. It may happen that we are already in the right vector length to emit the
+copy, so we do not have to do all the preserve-copy-restore dance.</p>
+
+<p>How to do this in a way that still allows us the option to remove unnecessary
+changes to the set vector length?</p>
+
+<h2>New design</h2>
+
+<p>Currently we only have a single <code class="language-plaintext highlighter-rouge">VFPSETLEN</code> pseudo instruction that we are able
+to optimise before register allocation.</p>
+
+<p>Copies are introduced as part of the process that leads register allocation,
+when phi instructions are removed. If we want to optimise changes to the vector
+length due to copies, we need to run our pass after register allocation.</p>
+
+<p style="padding: 0.7em; background-color: bisque;">
+In fact, it would be a good idea to also run it before register allocation, to
+reduce the register pressure implicitly created by the redundant instructions.
+For simplicity we will only run it after register allocation.
+</p>
+
+<p>So, when emitting copies we will want to know that we are doing the
+preserve-copy-restore dance in a way that it can be optimised.</p>
+
+<p>So I did the following changes:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">VFPSETLEN</code> is now <code class="language-plaintext highlighter-rouge">VFPSETLENi</code>. The <code class="language-plaintext highlighter-rouge">i</code> designates it receives an immediate for the vector length.</li>
+  <li>A new <code class="language-plaintext highlighter-rouge">VFPSETLENr</code> pseudo instruction that sets the length as preserved in a GPR register (the <code class="language-plaintext highlighter-rouge">r</code> means register).</li>
+  <li>A new <code class="language-plaintext highlighter-rouge">VFPGETLENr</code> pseudo insruction that returns the vector length in a GPR.</li>
+</ul>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMInstrVFP.td</figcaption><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -2927,7 +2927,8 @@</span> let Uses = [FPSCR] in {
+   }
+ }
+ 
+<span class="gd">-// Set LEN field in FPSCR
+</span><span class="gi">+// Set LEN field in FPSCR using an immediate. This is the main way used
++// to change the vector length.
+</span> let Defs = [FPSCR],
+     hasNoSchedulingInfo = 1,
+     mayLoad = 0,
+<span class="p">@@ -2935,11 +2936,38 @@</span> let Defs = [FPSCR],
+     hasSideEffects = 0,
+     hasPostISelHook = 1,
+     Size = 20 in
+<span class="gd">-def VFPSETLEN : PseudoInst&lt;(outs GPR:$scratch1, GPRnopc:$scratch2),
+</span><span class="gi">+def VFPSETLENi : PseudoInst&lt;(outs GPR:$scratch1, GPRnopc:$scratch2),
+</span>                            (ins imm0_7:$len),
+                            IIC_fpSTAT, []&gt;,
+                           Requires&lt;[HasVFP2]&gt;;
+ 
+<span class="gi">+// This is a semantic version of VMSR which is used to signal
++// a change only to the vector length field. This is not used
++// during ISel.
++let Defs = [FPSCR],
++    hasNoSchedulingInfo = 1,
++    mayLoad = 0,
++    mayStore = 0,
++    hasSideEffects = 0,
++    Size = 4 in
++def VFPSETLENr : PseudoInst&lt;(outs),
++                            (ins GPRnopc:$len),
++                            IIC_fpSTAT, []&gt;,
++                           Requires&lt;[HasVFP2]&gt;;
++
++// This is a semantic version of VMRS which is used to signal
++// we read the vector length. This is not used during ISel.
++let Uses = [FPSCR],
++    hasNoSchedulingInfo = 1,
++    mayLoad = 0,
++    mayStore = 0,
++    hasSideEffects = 0,
++    Size = 4 in
++def VFPGETLENr : PseudoInst&lt;(outs GPRnopc:$len),
++                            (ins),
++                            IIC_fpSTAT, []&gt;,
++                           Requires&lt;[HasVFP2]&gt;;
++
+</span> // Spill and reload helpers.
+ let AM = AddrMode4 in {
+ let hasNoSchedulingInfo = 1,
+<span class="p">@@ -3242,4 +3270,4 @@</span> def : Pat&lt;(fsub_mlx (fmul_su SPRx4:$a, SPRx4:$b), SPRx4:$dstin),
+           Requires&lt;[HasVFP2,DontUseNEONForFP,UseFPVMLx]&gt;;
+ 
+ // Set length pattern.
+<span class="gd">-def : Pat&lt;(arm_vfpsetlenzero), (VFPSETLEN 0)&gt;;
+</span><span class="gi">+def : Pat&lt;(arm_vfpsetlenzero), (VFPSETLENi 0)&gt;;</span></code></pre></figure>
+
+<p style="padding: 0.7em; background-color: bisque;">
+For simplicity <code class="language-plaintext highlighter-rouge">VFPSETLENr</code> and <code class="language-plaintext highlighter-rouge">VFPGETLENr</code> will overwrite the whole <code class="language-plaintext highlighter-rouge">fpscr</code>
+register, but the only change we will ever do is to the vector length so this
+should be reasonable. Technically we are changing more bits than the ones we
+claim to do, but ARMv6 is not rich enough to do this in an efficient way, hence
+the coarser approach.
+</p>
+
+<p>When emitting a copy we will first emit a <code class="language-plaintext highlighter-rouge">VFPGETLENr</code> to keep the current
+vector length in a GPR (say <code class="language-plaintext highlighter-rouge">rn</code>). Then we will emit a <code class="language-plaintext highlighter-rouge">VFPSETLENi</code> to set the
+right length of the floating data type (1 for scalars, 2 or 4 for vectors).
+Then the <code class="language-plaintext highlighter-rouge">vmov</code>. Finally we will emit a <code class="language-plaintext highlighter-rouge">VFPSETLENr</code> using <code class="language-plaintext highlighter-rouge">rn</code> to restore
+everything as it was before the copy.</p>
+
+<p>Because those are pseudo instructions, we need to expand them at some point:
+<code class="language-plaintext highlighter-rouge">VFPGETLENr</code> will be expanded to a regular <code class="language-plaintext highlighter-rouge">vmrs</code> instruction, <code class="language-plaintext highlighter-rouge">VFPSETLENr</code> will
+be expanded to the dual <code class="language-plaintext highlighter-rouge">vmsr</code>. <code class="language-plaintext highlighter-rouge">VFPSETLENi</code> is expanded as usual.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMExpandPseudoInsts.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -2991,7 +2991,7 @@</span> bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &amp;MBB,
+       MI.eraseFromParent();
+       return true;
+     }
+<span class="gd">-    case ARM::VFPSETLEN: {
+</span><span class="gi">+    case ARM::VFPSETLENi: {
+</span>       Register Scratch1 = MI.getOperand(0).getReg();
+       Register Scratch2 = MI.getOperand(1).getReg();
+       DebugLoc dl = MI.getDebugLoc();
+<span class="p">@@ -3026,6 +3026,27 @@</span> bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &amp;MBB,
+       MI.eraseFromParent();
+       return true;
+     }
+<span class="gi">+    case ARM::VFPSETLENr: {
++      // This is a semantic version of VMSR intended only
++      // when changing the vector length.
++      DebugLoc dl = MI.getDebugLoc();
++      Register Length = MI.getOperand(0).getReg();
++      BuildMI(MBB, MBBI, dl, TII-&gt;get(ARM::VMSR))
++          .addUse(Length)
++          .add(predOps(ARMCC::AL));
++      MI.eraseFromParent();
++      return true;
++    }
++    case ARM::VFPGETLENr: {
++      // This is a semantic version of VMRS intended only
++      // when reading the vector length.
++      DebugLoc dl = MI.getDebugLoc();
++      Register Length = MI.getOperand(0).getReg();
++      BuildMI(MBB, MBBI, dl, TII-&gt;get(ARM::VMRS), Length)
++          .add(predOps(ARMCC::AL));
++      MI.eraseFromParent();
++      return true;
++    }
+</span>     case ARM::VFPSPILLDx2: {
+       Register Src = MI.getOperand(0).getReg();
+       const MachineOperand &amp;Addr = MI.getOperand(1);</code></pre></figure>
+
+<p>Using pseudo instructions that have trivial expansions is totally intentional:
+we are only using these instructions for copies so we can optimise them.</p>
+
+<h3>Copies</h3>
+
+<p>Let’s overhaul copies to be correct.</p>
+
+<p>There is a bit of complication, that we will not fully address here. In order
+to preserve the vector length (via the <code class="language-plaintext highlighter-rouge">fpscr</code>) we need extra registers around.
+Because the copy expansion happens after register allocation, we cannot enjoy
+virtual registers here. So we need to resort to a class called <code class="language-plaintext highlighter-rouge">RegScavenger</code>
+(the register scavenger) which will try to get us registers for us.</p>
+
+<p>However, the register scavenger may not be able to find free registers. In that
+case we would have to pick victim registers, spill them manually onto the stack
+and then use those registers, to finally reload them. A more complete
+implementation will have to do this though, or it risks itself to not being
+able to compile some codes with high register pressure.</p>
+
+<p>Another important detail is that not all the copies of floating-point values
+need changing the set vector length. If the destination register of the copy
+is found in the first bank, the operation is always scalar. This helps with
+cases where we are copying scalars (vectors will never be register allocated
+in the first bank).</p>
+
+<p>First let’s remove the wrong code.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMBaseInstrInfo.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -979,16 +1068,6 @@</span> void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &amp;MBB,
+     Opc = ARM::VMOVS;
+     BeginIdx = ARM::ssub_0;
+     SubRegs = 2;
+<span class="gd">-  } else if (ARM::DPRx2RegClass.contains(DestReg, SrcReg) &amp;&amp;
+-             Subtarget.hasVFP2Base()) {
+-    Opc = ARM::VMOVD;
+-    BeginIdx = ARM::dsub_len2_0;
+-    SubRegs = 2;
+-  } else if (ARM::SPRx4RegClass.contains(DestReg, SrcReg) &amp;&amp;
+-             Subtarget.hasVFP2Base()) {
+-    Opc = ARM::VMOVS;
+-    BeginIdx = ARM::ssub_len4_0;
+-    SubRegs = 4;
+</span>   } else if (SrcReg == ARM::CPSR) {
+     copyFromCPSR(MBB, I, DestReg, KillSrc, Subtarget);
+     return;</code></pre></figure>
+
+<p>Now let’s extend the part that deals originally with scalar copies of floating
+point values (<code class="language-plaintext highlighter-rouge">SPR</code> and <code class="language-plaintext highlighter-rouge">DPR</code> register classes). We will add cases for <code class="language-plaintext highlighter-rouge">SPRx4</code>
+and <code class="language-plaintext highlighter-rouge">DPRx4</code>. Also we will note the vector length required for each of the
+copies.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMBaseInstrInfo.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><span class="gi">+  unsigned VectorLength = 0;
+</span>   unsigned Opc = 0;
+   if (SPRDest &amp;&amp; SPRSrc)
+     Opc = ARM::VMOVS;
+<span class="p">@@ -913,10 +991,19 @@</span> void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &amp;MBB,
+     Opc = ARM::VMOVSR;
+   else if (ARM::DPRRegClass.contains(DestReg, SrcReg) &amp;&amp; Subtarget.hasFP64())
+     Opc = ARM::VMOVD;
+<span class="gd">-  else if (ARM::QPRRegClass.contains(DestReg, SrcReg))
+</span><span class="gi">+  else if (ARM::DPRx2RegClass.contains(DestReg, SrcReg) &amp;&amp;
++             Subtarget.hasVFP2Base()) {
++    Opc = ARM::VMOVD;
++    VectorLength = 1;
++  } else if (ARM::SPRx4RegClass.contains(DestReg, SrcReg) &amp;&amp;
++             Subtarget.hasVFP2Base()) {
++    Opc = ARM::VMOVS;
++    VectorLength = 3;
++  } else if (ARM::QPRRegClass.contains(DestReg, SrcReg))
+</span>     Opc = Subtarget.hasNEON() ? ARM::VORRq : ARM::MVE_VORR;
+ 
+   if (Opc) {
+<span class="gi">+    RAIISetVLEN SetVLEN(Subtarget, this, MBB, I, DestReg, SrcReg, VectorLength);
+</span>     MachineInstrBuilder MIB = BuildMI(MBB, I, DL, get(Opc), DestReg);
+     MIB.addReg(SrcReg, getKillRegState(KillSrc));
+     if (Opc == ARM::VORRq || Opc == ARM::MVE_VORR)
+<span class="p">@@ -925,6 +1012,8 @@</span> void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &amp;MBB,
+       addUnpredicatedMveVpredROp(MIB, DestReg);
+     else
+       MIB.add(predOps(ARMCC::AL));
+<span class="gi">+    if (SetVLEN.isPreserved() &amp;&amp; (Opc == ARM::VMOVD || Opc == ARM::VMOVS))
++      MIB.addReg(ARM::FPSCR, RegState::Implicit);
+</span>     return;
+   }</code></pre></figure>
+
+<p>To help us here, we use a new class <code class="language-plaintext highlighter-rouge">RAIISetVLEN</code> which given the registers
+being copied and the required <code class="language-plaintext highlighter-rouge">VectorLength</code> will emit the proper <code class="language-plaintext highlighter-rouge">VFPGETLENr</code>,
+<code class="language-plaintext highlighter-rouge">VFPSETLENi</code> sequence. We use a RAII pattern because we may have to restore the
+vector length using <code class="language-plaintext highlighter-rouge">VFPSETLENr</code>. If this class tells us <code class="language-plaintext highlighter-rouge">fpscr</code> is being
+preserved, we add an explicit usage of <code class="language-plaintext highlighter-rouge">fpscr</code> to the <code class="language-plaintext highlighter-rouge">vmov</code> instruction.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMBaseInstrInfo.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="k">class</span> <span class="nc">RAIISetVLEN</span> <span class="p">{</span>
+  <span class="kt">bool</span> <span class="n">MustPreserveFPSCR</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+  <span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">;</span>
+  <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">I</span><span class="p">;</span>
+  <span class="k">const</span> <span class="n">ARMBaseInstrInfo</span> <span class="o">*</span><span class="n">TII</span><span class="p">;</span>
+  <span class="n">Register</span> <span class="n">SaveFPCSR</span><span class="p">;</span>
+
+<span class="nl">public:</span>
+  <span class="n">RAIISetVLEN</span><span class="p">(</span><span class="k">const</span> <span class="n">ARMSubtarget</span> <span class="o">&amp;</span><span class="n">Subtarget</span><span class="p">,</span> <span class="k">const</span> <span class="n">ARMBaseInstrInfo</span> <span class="o">*</span><span class="n">TII</span><span class="p">,</span>
+               <span class="n">MachineBasicBlock</span> <span class="o">&amp;</span><span class="n">MBB</span><span class="p">,</span> <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">I</span><span class="p">,</span>
+               <span class="n">MCRegister</span> <span class="n">DestReg</span><span class="p">,</span> <span class="n">MCRegister</span> <span class="n">SrcReg</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="n">VectorLength</span><span class="p">)</span>
+      <span class="o">:</span> <span class="n">MBB</span><span class="p">(</span><span class="n">MBB</span><span class="p">),</span> <span class="n">I</span><span class="p">(</span><span class="n">I</span><span class="p">),</span> <span class="n">TII</span><span class="p">(</span><span class="n">TII</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">Subtarget</span><span class="p">.</span><span class="n">hasVFP2Base</span><span class="p">())</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="k">auto</span> <span class="n">isFPReg</span> <span class="o">=</span> <span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">MCRegister</span> <span class="n">R</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">ARM</span><span class="o">::</span><span class="n">SPRRegClass</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">||</span> <span class="n">ARM</span><span class="o">::</span><span class="n">DPRRegClass</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="n">R</span><span class="p">);</span>
+    <span class="p">};</span>
+    <span class="k">auto</span> <span class="n">inVectorBank</span> <span class="o">=</span> <span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">MCRegister</span> <span class="n">R</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">D4</span> <span class="o">&lt;=</span> <span class="n">R</span> <span class="o">&amp;&amp;</span> <span class="n">R</span> <span class="o">&lt;=</span> <span class="n">ARM</span><span class="o">::</span><span class="n">D15</span><span class="p">)</span> <span class="o">||</span>
+             <span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">S8</span> <span class="o">&lt;=</span> <span class="n">R</span> <span class="o">&amp;&amp;</span> <span class="n">R</span> <span class="o">&lt;=</span> <span class="n">ARM</span><span class="o">::</span><span class="n">S31</span><span class="p">);</span>
+    <span class="p">};</span>
+    <span class="k">auto</span> <span class="n">isVectorReg</span> <span class="o">=</span> <span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="n">MCRegister</span> <span class="n">R</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">ARM</span><span class="o">::</span><span class="n">SPRx4RegClass</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="n">R</span><span class="p">)</span> <span class="o">||</span> <span class="n">ARM</span><span class="o">::</span><span class="n">DPRx2RegClass</span><span class="p">.</span><span class="n">contains</span><span class="p">(</span><span class="n">R</span><span class="p">);</span>
+    <span class="p">};</span>
+    <span class="c1">// If this is a scalar register copy, and the destination register happens</span>
+    <span class="c1">// to be in a register bank other than the first, we must preserve fpscr.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">isFPReg</span><span class="p">(</span><span class="n">DestReg</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">isFPReg</span><span class="p">(</span><span class="n">SrcReg</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">isVectorBank</span><span class="p">(</span><span class="n">DestReg</span><span class="p">))</span>
+      <span class="n">MustPreserveFPSCR</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="c1">// Vector copies always must preserve fpscr.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">isVectorReg</span><span class="p">(</span><span class="n">DestReg</span><span class="p">)</span> <span class="o">||</span> <span class="n">isVectorReg</span><span class="p">(</span><span class="n">SrcReg</span><span class="p">))</span>
+      <span class="n">MustPreserveFPSCR</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">MustPreserveFPSCR</span><span class="p">)</span>
+      <span class="k">return</span><span class="p">;</span>
+
+    <span class="c1">// We have to set FPSCR to length zero for safety.</span>
+    <span class="n">RegScavenger</span> <span class="n">RS</span><span class="p">;</span>
+    <span class="n">RS</span><span class="p">.</span><span class="n">enterBasicBlock</span><span class="p">(</span><span class="n">MBB</span><span class="p">);</span>
+    <span class="n">RS</span><span class="p">.</span><span class="n">forward</span><span class="p">(</span><span class="n">I</span><span class="p">);</span>
+
+    <span class="n">SaveFPCSR</span> <span class="o">=</span> <span class="n">RS</span><span class="p">.</span><span class="n">FindUnusedReg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ARM</span><span class="o">::</span><span class="n">GPRnopcRegClass</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">SaveFPCSR</span> <span class="o">==</span> <span class="n">ARM</span><span class="o">::</span><span class="n">NoRegister</span><span class="p">)</span>
+      <span class="n">report_fatal_error</span><span class="p">(</span>
+          <span class="s">"When emitting a floating point register copy, failed "</span>
+          <span class="s">"to find a free register"</span><span class="p">);</span>
+    <span class="n">RS</span><span class="p">.</span><span class="n">setRegUsed</span><span class="p">(</span><span class="n">SaveFPCSR</span><span class="p">);</span>
+
+    <span class="n">Register</span> <span class="n">Scratch1</span> <span class="o">=</span> <span class="n">RS</span><span class="p">.</span><span class="n">FindUnusedReg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ARM</span><span class="o">::</span><span class="n">GPRRegClass</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">Scratch1</span> <span class="o">==</span> <span class="n">ARM</span><span class="o">::</span><span class="n">NoRegister</span><span class="p">)</span>
+      <span class="n">report_fatal_error</span><span class="p">(</span>
+          <span class="s">"When emitting a floating point register copy, failed "</span>
+          <span class="s">"to find a free register"</span><span class="p">);</span>
+    <span class="n">RS</span><span class="p">.</span><span class="n">setRegUsed</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">);</span>
+    <span class="n">Register</span> <span class="n">Scratch2</span> <span class="o">=</span> <span class="n">RS</span><span class="p">.</span><span class="n">FindUnusedReg</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ARM</span><span class="o">::</span><span class="n">GPRnopcRegClass</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">Scratch2</span> <span class="o">==</span> <span class="n">ARM</span><span class="o">::</span><span class="n">NoRegister</span><span class="p">)</span>
+      <span class="n">report_fatal_error</span><span class="p">(</span>
+          <span class="s">"When emitting a floating point register copy, failed "</span>
+          <span class="s">"to find a free register"</span><span class="p">);</span>
+    <span class="n">RS</span><span class="p">.</span><span class="n">setRegUsed</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">);</span>
+
+    <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">I</span><span class="o">-&gt;</span><span class="n">getDebugLoc</span><span class="p">(),</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VFPGETLENr</span><span class="p">),</span> <span class="n">SaveFPCSR</span><span class="p">);</span>
+    <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">I</span><span class="o">-&gt;</span><span class="n">getDebugLoc</span><span class="p">(),</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLENi</span><span class="p">))</span>
+        <span class="p">.</span><span class="n">addDef</span><span class="p">(</span><span class="n">Scratch1</span><span class="p">,</span> <span class="n">RegState</span><span class="o">::</span><span class="n">Dead</span><span class="p">)</span>
+        <span class="p">.</span><span class="n">addDef</span><span class="p">(</span><span class="n">Scratch2</span><span class="p">,</span> <span class="n">RegState</span><span class="o">::</span><span class="n">Dead</span><span class="p">)</span>
+        <span class="p">.</span><span class="n">addImm</span><span class="p">(</span><span class="n">VectorLength</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="o">~</span><span class="n">RAIISetVLEN</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">MustPreserveFPSCR</span><span class="p">)</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="c1">// Restore FPCSR</span>
+    <span class="n">BuildMI</span><span class="p">(</span><span class="n">MBB</span><span class="p">,</span> <span class="n">I</span><span class="p">,</span> <span class="n">I</span><span class="o">-&gt;</span><span class="n">getDebugLoc</span><span class="p">(),</span> <span class="n">TII</span><span class="o">-&gt;</span><span class="n">get</span><span class="p">(</span><span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLENr</span><span class="p">))</span>
+        <span class="p">.</span><span class="n">addUse</span><span class="p">(</span><span class="n">SaveFPCSR</span><span class="p">,</span> <span class="n">RegState</span><span class="o">::</span><span class="n">Kill</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kt">bool</span> <span class="n">isPreserved</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">MustPreserveFPSCR</span><span class="p">;</span> <span class="p">}</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>Note the condition cases where the register scavenger would fail to find
+a register. A more complete implementation must handle those cases.</p>
+
+<h3>Optimising</h3>
+
+<p>As we mentioned above, we want the optimisation pass to run after register
+allocation.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMTargetMachine.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -513,13 +513,13 @@</span> void ARMPassConfig::addPreRegAlloc() {
+ 
+     if (!DisableA15SDOptimization)
+       addPass(createA15SDOptimizerPass());
+<span class="gd">-
+-    addPass(createARMOptimizeVFP2Len());
+</span>   }
+ }
+ 
+ void ARMPassConfig::addPreSched2() {
+   if (getOptLevel() != CodeGenOpt::None) {
+<span class="gi">+    addPass(createARMOptimizeVFP2Len());
++
+</span>     if (EnableARMLoadStoreOpt)
+       addPass(createARMLoadStoreOptimizationPass());</code></pre></figure>
+
+<p>To optimise these new instructions, we have to extend our existing pass. When a
+<code class="language-plaintext highlighter-rouge">VFPGETLENr</code> is seen, we will remember what register is keeping the current
+length. If the register is preserved until a further <code class="language-plaintext highlighter-rouge">VFPSETLENr</code> we know we
+are restoring the same length as before.</p>
+
+<p>We can use this knowledge when analysing a single basic block, so we do not
+lose track of the length value during a <code class="language-plaintext highlighter-rouge">VFPSETLENr</code>.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMOptimizeVFP2Len.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -81,6 +81,12 @@</span> struct BlockData {
+   bool InQueue = false;
+ };
+ 
+<span class="gi">+struct KeptVFPInfo {
++  Register Reg = ARM::NoRegister;
++  Length Len;
++  MachineInstr *MI = nullptr;
++};
++
+</span> class ARMOptimizeVFP2Len : public MachineFunctionPass {
+ private:
+   std::vector&lt;BlockData&gt; BlockInfo;
+<span class="p">@@ -124,27 +124,43 @@</span> void ARMOptimizeVFP2Len::computeLocalBlockInfo(const MachineBasicBlock &amp;MBB) {
+   if (MBB.isEntryBlock())
+     LI.InLen.setValue(0);
+ 
+<span class="gi">+  KeptVFPInfo KeptVFP;
++
+</span>   LI.OutLen = LI.InLen;
+   for (auto &amp;MI : MBB) {
+<span class="gd">-    if (MI.getOpcode() == ARM::VFPSETLEN) {
+</span><span class="gi">+    if (MI.getOpcode() == ARM::VFPSETLENi) {
+</span>       LI.OutLen.setValue(MI.getOperand(2).getImm());
+       LI.LastChange = &amp;MI;
+<span class="gd">-      continue;
+-    }
+-
+-    // If the FPSCR is modified outside of our control, assume
+-    // that it is variable.
+-    if (MI.modifiesRegister(ARM::FPSCR) || MI.isInlineAsm()) {
+</span><span class="gi">+    } else if (MI.getOpcode() == ARM::VFPGETLENr) {
++      // This instruction does not change the vector length, but we will note
++      // the register being written because these are usually paired with
++      // VFPSETLENr.
++      KeptVFP.Reg = MI.getOperand(0).getReg();
++      KeptVFP.Len = LI.OutLen;
++    } else if (MI.getOpcode() == ARM::VFPSETLENr) {
++      // If we are restoring a previously kept vector length, we can also
++      // restore the known vector length.
++      if (KeptVFP.Reg == MI.getOperand(0).getReg()) {
++        LI.OutLen = KeptVFP.Len;
++      } else {
++        LI.OutLen.setVariable();
++      }
++      LI.LastChange = &amp;MI;
++    } else if (MI.modifiesRegister(ARM::FPSCR) || MI.isInlineAsm()) {
++      // If the FPSCR is modified outside of our control, assume
++      // that it is variable.
+</span>       LI.OutLen.setVariable();
+       LI.LastChange = &amp;MI;
+<span class="gd">-      continue;
+-    }
+-
+-    if (MI.isCall()) {
+</span><span class="gi">+    } else if (MI.isCall()) {
+</span>       // On exit, functions restore vector length == 1.
+       LI.OutLen.setValue(0);
+       LI.LastChange = &amp;MI;
+<span class="gd">-      continue;
+</span><span class="gi">+    }
++
++    if (MI.getOpcode() != ARM::VFPGETLENr &amp;&amp; KeptVFP.Reg != ARM::NoRegister &amp;&amp;
++        MI.modifiesRegister(KeptVFP.Reg)) {
++      // If this instruction modifies the GPR holding a vector length, reset it.
++      KeptVFP.Reg = ARM::NoRegister;
+</span>     }
+   }
+ }</code></pre></figure>
+
+<p>And then use this in the removal as well.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMOptimizeVFP2Len.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><span class="p">@@ -225,25 +241,61 @@</span> bool ARMOptimizeVFP2Len::removeRedundantVPFSETLEN(MachineBasicBlock &amp;MBB) {
+ 
+   bool Changed = false;
+   MachineBasicBlock::iterator MBBI = MBB.begin(), E = MBB.end();
+<span class="gi">+
++  KeptVFPInfo KeptVFP;
++
+</span>   while (MBBI != E) {
+     MachineBasicBlock::iterator NMBBI = std::next(MBBI);
+     MachineInstr &amp;MI = *MBBI;
+ 
+<span class="gd">-    if (MI.getOpcode() == ARM::VFPSETLEN) {
+</span><span class="gi">+    bool Remove = false;
++
++    if (MI.getOpcode() == ARM::VFPSETLENi) {
+</span>       unsigned Length = MI.getOperand(2).getImm();
+       if (CurrentLength.hasValue() &amp;&amp; CurrentLength.getValue() == Length) {
+         LLVM_DEBUG(dbgs() &lt;&lt; "Removing redundant: " &lt;&lt; MI);
+         // We can remove this one.
+<span class="gd">-        MI.removeFromParent();
+-        Changed = true;
+</span><span class="gi">+        Remove = true;
+</span>       }
+       CurrentLength.setValue(Length);
+<span class="gi">+    } else if (MI.getOpcode() == ARM::VFPSETLENr) {
++      if (KeptVFP.Reg == MI.getOperand(0).getReg()) {
++        if (CurrentLength.hasValue() &amp;&amp; KeptVFP.Len.hasValue() &amp;&amp;
++            CurrentLength == KeptVFP.Len) {
++          // This is restoring to the same length we kept in an earlier
++          // VFPGETLENr, so we can remove this instruction.
++          Remove = true;
++          // If the register is killed here, also remove its last generator
++          // which we know it is a VFPGETLENi).
++          assert(KeptVFP.MI &amp;&amp; KeptVFP.MI-&gt;getOpcode() == ARM::VFPGETLENr);
++          if (MI.getOperand(0).isKill()) {
++            KeptVFP.MI-&gt;removeFromParent();
++          }
++        }
++        CurrentLength = KeptVFP.Len;
++      } else {
++        CurrentLength.setVariable();
++      }
++    } else if (MI.getOpcode() == ARM::VFPGETLENr) {
++      KeptVFP.Reg = MI.getOperand(0).getReg();
++      KeptVFP.Len = CurrentLength;
++      KeptVFP.MI = &amp;MI;
+</span>     } else if (MI.modifiesRegister(ARM::FPSCR) || MI.isInlineAsm()) {
+       CurrentLength.setVariable();
+     } else if (MI.isCall()) {
+       CurrentLength.setValue(0);
+     }
+ 
+<span class="gi">+    if (Remove) {
++      MI.removeFromParent();
++      Changed = true;
++    } else if (MI.getOpcode() != ARM::VFPGETLENr &amp;&amp;
++               KeptVFP.Reg != ARM::NoRegister &amp;&amp;
++               MI.modifiesRegister(KeptVFP.Reg)) {
++      // If this instruction modifies the GPR holding a vector length, reset it.
++      KeptVFP.Reg = ARM::NoRegister;
++    }
++
+</span>     MBBI = NMBBI;
+   }</code></pre></figure>
+
+<h2>Results</h2>
+
+<p>With all the changes above in place, we can retake the example of copies from
+the last chapter and see the code we emit now.</p>
+
+<figure class="highlight"><figcaption>t_doubles_phi.ll</figcaption><pre><code class="language-llvm" data-lang="llvm"><span class="k">define</span> <span class="kt">void</span> <span class="vg">@test_vec</span><span class="p">(</span><span class="kt">i32</span> <span class="nv">%dis</span><span class="p">,</span>
+                      <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pa</span><span class="p">,</span>
+                      <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pb</span><span class="p">,</span>
+                      <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pc</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nv">%a</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pa</span>
+  <span class="nv">%b</span> <span class="p">=</span> <span class="k">load</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;*</span> <span class="nv">%pb</span>
+  <span class="nv">%m</span> <span class="p">=</span> <span class="k">icmp</span> <span class="k">slt</span> <span class="kt">i32</span> <span class="nv">%dis</span><span class="p">,</span> <span class="m">4</span>
+  <span class="k">br</span> <span class="kt">i1</span> <span class="nv">%m</span><span class="p">,</span> <span class="kt">label</span> <span class="nv">%block1</span><span class="p">,</span> <span class="kt">label</span> <span class="nv">%block2</span>
+<span class="nl">block1:</span>
+  <span class="nv">%x</span> <span class="p">=</span> <span class="k">fadd</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="k">br</span> <span class="kt">label</span> <span class="nv">%block3</span>
+<span class="nl">block2:</span>
+  <span class="nv">%y</span> <span class="p">=</span> <span class="k">fmul</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%a</span><span class="p">,</span> <span class="nv">%b</span>
+  <span class="k">br</span> <span class="kt">label</span> <span class="nv">%block3</span>
+<span class="nl">block3:</span>
+  <span class="nv">%p</span> <span class="p">=</span> <span class="k">phi</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">[</span><span class="nv">%x</span><span class="p">,</span> <span class="nv">%block1</span><span class="p">],</span> <span class="p">[</span><span class="nv">%y</span><span class="p">,</span> <span class="nv">%block2</span><span class="p">]</span>
+  <span class="k">store</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="nv">%p</span><span class="p">,</span> <span class="p">&lt;</span><span class="m">2</span> <span class="p">x</span> <span class="kt">double</span><span class="p">&gt;</span> <span class="p">*</span><span class="nv">%pc</span>
+  <span class="k">ret</span> <span class="kt">void</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span> armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2  <span class="nt">-o</span> - t_doubles_phi.ll</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">test_vec:
+	.fnstart
+@ %bb.0:                                @ %block3
+	vpush	{d8, d9}
+	vldmia	r1, {d8, d9}
+	mov	r1, #65536
+	cmp	r0, #4
+	vldmia	r2, {d4, d5}
+	vmrs	r2, fpscr
+	bic	r2, r2, #458752
+	orr	r2, r2, r1
+	vmsr	fpscr, r2
+	vmul.f64	d6, d8, d4
+	vadd.f64	d4, d8, d4
+	vmovge.f64	d4, d6
+	vstmia	r3, {d4, d5}
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
+	vmsr	fpscr, r1
+	vpop	{d8, d9}
+	bx	lr</code></pre></figure>
+
+<p>This is really good as the branch is now gone.</p>
+
+<p>We have to look at the MIR to understand what happened. First let’s see the MIR
+right before the optimisation pass.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span> armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2  <span class="nt">-o</span> - t_doubles_phi.ll <span class="se">\</span>
+      <span class="nt">-print-before</span><span class="o">=</span>arm-optimize-vfp2-len</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+</pre></td><td class="code"><pre>bb.0.block3:
+  successors: %bb.2(0x40000000), %bb.1(0x40000000); %bb.2(50.00%), %bb.1(50.00%)
+  liveins: $r0, $r1, $r2, $r3, $d8, $d9
+  $sp = frame-setup VSTMDDB_UPD $sp(tied-def 0), 14, $noreg, killed $d8, killed $d9
+  frame-setup CFI_INSTRUCTION def_cfa_offset 16
+  frame-setup CFI_INSTRUCTION offset $d9, -8
+  frame-setup CFI_INSTRUCTION offset $d8, -16
+  renamable $d4 = VLDRD renamable $r2, 0, 14, $noreg, implicit-def $d4_d5x2 :: (load 8 from %ir.pb)
+  renamable $d5 = VLDRD killed renamable $r2, 2, 14, $noreg, implicit killed $d4_d5x2, implicit-def $d4_d5x2 :: (load 8 from %ir.pb + 8)
+  renamable $d8 = VLDRD renamable $r1, 0, 14, $noreg, implicit-def $d8_d9x2 :: (load 8 from %ir.pa)
+  renamable $d9 = VLDRD killed renamable $r1, 2, 14, $noreg, implicit killed $d8_d9x2, implicit-def $d8_d9x2 :: (load 8 from %ir.pa + 8)
+  dead renamable $r1, dead renamable $r2 = VFPSETLENi 1, implicit-def $fpscr
+  renamable $d6_d7x2 = VMULDx2 renamable $d8_d9x2, renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  renamable $d4_d5x2 = VADDDx2 killed renamable $d8_d9x2, killed renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  CMPri killed renamable $r0, 4, 14, $noreg, implicit-def $cpsr
+  Bcc %bb.2, 11, killed $cpsr
+
+bb.1.select.false:
+; predecessors: %bb.0
+  successors: %bb.2(0x80000000); %bb.2(100.00%)
+  liveins: $r3, $d6_d7x2
+  $r0 = VFPGETLENr implicit $fpscr
+  dead $r1, dead $r2 = VFPSETLENi 1, implicit-def $fpscr
+  $d4_d5x2 = VMOVD killed $d6_d7x2, 14, $noreg, implicit $fpscr
+  VFPSETLENr killed $r0, implicit-def $fpscr
+
+bb.2.select.end:
+; predecessors: %bb.0, %bb.1
+  liveins: $r3, $d4_d5x2
+  VSTRD renamable $d4, renamable $r3, 0, 14, $noreg :: (store 8 into %ir.pc)
+  VSTRD renamable $d5, killed renamable $r3, 2, 14, $noreg, implicit killed $d4_d5x2 :: (store 8 into %ir.pc + 8)
+  dead renamable $r0, dead renamable $r1 = VFPSETLENi 0, implicit-def $fpscr
+  $sp = frame-destroy VLDMDIA_UPD $sp(tied-def 0), 14, $noreg, def $d8, def $d9
+  BX_RET 14, $noreg
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Before the optimisation, our MIR looks like this. In lines 22 to 25 above, we
+see all the dance of <code class="language-plaintext highlighter-rouge">VFPGETLENr</code>, <code class="language-plaintext highlighter-rouge">VFPSETLENi</code> and <code class="language-plaintext highlighter-rouge">VFPSETLENr</code>.</p>
+
+<p>Note in line 12 above we have already set the vector length to 2 (like we do in
+line 23), so we should be able to reuse this.</p>
+
+<p>Let’s look now at the MIR after the optimiation pas.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span> armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2  <span class="nt">-o</span> - t_doubles_phi.ll <span class="se">\</span>
+      <span class="nt">-print-after</span><span class="o">=</span>arm-optimize-vfp2-len</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+</pre></td><td class="code"><pre>bb.0.block3:
+  successors: %bb.2(0x40000000), %bb.1(0x40000000); %bb.2(50.00%), %bb.1(50.00%)
+  liveins: $r0, $r1, $r2, $r3, $d8, $d9
+  $sp = frame-setup VSTMDDB_UPD $sp(tied-def 0), 14, $noreg, killed $d8, killed $d9
+  frame-setup CFI_INSTRUCTION def_cfa_offset 16
+  frame-setup CFI_INSTRUCTION offset $d9, -8
+  frame-setup CFI_INSTRUCTION offset $d8, -16
+  renamable $d4 = VLDRD renamable $r2, 0, 14, $noreg, implicit-def $d4_d5x2 :: (load 8 from %ir.pb)
+  renamable $d5 = VLDRD killed renamable $r2, 2, 14, $noreg, implicit killed $d4_d5x2, implicit-def $d4_d5x2 :: (load 8 from %ir.pb + 8)
+  renamable $d8 = VLDRD renamable $r1, 0, 14, $noreg, implicit-def $d8_d9x2 :: (load 8 from %ir.pa)
+  renamable $d9 = VLDRD killed renamable $r1, 2, 14, $noreg, implicit killed $d8_d9x2, implicit-def $d8_d9x2 :: (load 8 from %ir.pa + 8)
+  dead renamable $r1, dead renamable $r2 = VFPSETLENi 1, implicit-def $fpscr
+  renamable $d6_d7x2 = VMULDx2 renamable $d8_d9x2, renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  renamable $d4_d5x2 = VADDDx2 killed renamable $d8_d9x2, killed renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  CMPri killed renamable $r0, 4, 14, $noreg, implicit-def $cpsr
+  Bcc %bb.2, 11, killed $cpsr
+
+bb.1.select.false:
+; predecessors: %bb.0
+  successors: %bb.2(0x80000000); %bb.2(100.00%)
+  liveins: $r3, $d6_d7x2
+  $d4_d5x2 = VMOVD killed $d6_d7x2, 14, $noreg, implicit $fpscr
+
+bb.2.select.end:
+; predecessors: %bb.0, %bb.1
+  liveins: $r3, $d4_d5x2
+  VSTRD renamable $d4, renamable $r3, 0, 14, $noreg :: (store 8 into %ir.pc)
+  VSTRD renamable $d5, killed renamable $r3, 2, 14, $noreg, implicit killed $d4_d5x2 :: (store 8 into %ir.pc + 8)
+  dead renamable $r0, dead renamable $r1 = VFPSETLENi 0, implicit-def $fpscr
+  $sp = frame-destroy VLDMDIA_UPD $sp(tied-def 0), 14, $noreg, def $d8, def $d9
+  BX_RET 14, $noreg
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>The optimisation pass identifies the unnecessary change so we can reuse the existing
+vector length. Now line 22 is the only instruction required to do the copy.</p>
+
+<p>A later existing pass of the ARM backend identifies this pattern and adds the
+predicate to <code class="language-plaintext highlighter-rouge">vmov</code> (which becomes <code class="language-plaintext highlighter-rouge">vmovge</code>).</p>
+
+<p style="padding: 0.7em; background-color: bisque;">
+A bit of reflection with the current approach.  We have gone through register
+allocation with instructions that we have later removed. This means that
+potentially those instructions may have increased the register pressure to the
+rest of the code.  Unfortunately the expansion currently happens after register
+allocation (though there are a couple of target-specific hooks that might be
+worth looking into) so there is not much we can do for now.
+</p>
+
+<p>Now I think we can move onto enabling vectorization :)</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/07/31/raspberry-vectors-part-7/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 7</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,4 +1,731 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-07-31T09:18:21+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 7</title><link href="https://thinkingeek.com/2021/07/31/raspberry-vectors-part-7/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 7" /><published>2021-07-31T08:59:00+00:00</published><updated>2021-07-31T08:59:00+00:00</updated><id>https://thinkingeek.com/2021/07/31/raspberry-vectors-part-7</id><content type="html" xml:base="https://thinkingeek.com/2021/07/31/raspberry-vectors-part-7/">&lt;p&gt;We finished the last installment of this series mentioning that the compiler
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-15T10:19:57+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 8</title><link href="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 8" /><published>2021-08-15T08:16:00+00:00</published><updated>2021-08-15T08:16:00+00:00</updated><id>https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8</id><content type="html" xml:base="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/">&lt;p&gt;In the last installment I mentioned we could start looking at enabling
+the vectoriser in the compiler. However when I did that I realised some
+benchmarks were giving weird results. I had made a mistake with copies,
+so let’s remediate this.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2&gt;Source of the problem: copies and vector length&lt;/h2&gt;
+
+&lt;p&gt;In the first installment of this series we discussed about instructions that
+used the vector length. Unfortunately I missed an important one: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmov&lt;/code&gt;, used
+to copy vector registers.  Contrarily as I incorrectly assumed, this
+instruction does use the vector length so we do not have to copy every single
+element of the vector. Instead, we need to make sure the vector length is
+correctly set.&lt;/p&gt;
+
+&lt;p&gt;The error I saw is that the compiler intended to copy two scalar floating point
+registers but because the vector length was different to 1, we were overwriting
+more registers than expected (the registers happened to be in banks other than
+the first one). That was an interesting bug to find!&lt;/p&gt;
+
+&lt;p&gt;However this creates a bit of a complication here: if we need to change
+the vector length to implement a vector copy between registers, we are actually
+modifying its value. This means that to be safe we need to preserve the current
+vector length, set it to the correct one, do the copy and restore the
+original vector length.&lt;/p&gt;
+
+&lt;p&gt;My initial implementation did this, but turns out the code obtained is not very
+smart. It may happen that we are already in the right vector length to emit the
+copy, so we do not have to do all the preserve-copy-restore dance.&lt;/p&gt;
+
+&lt;p&gt;How to do this in a way that still allows us the option to remove unnecessary
+changes to the set vector length?&lt;/p&gt;
+
+&lt;h2&gt;New design&lt;/h2&gt;
+
+&lt;p&gt;Currently we only have a single &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; pseudo instruction that we are able
+to optimise before register allocation.&lt;/p&gt;
+
+&lt;p&gt;Copies are introduced as part of the process that leads register allocation,
+when phi instructions are removed. If we want to optimise changes to the vector
+length due to copies, we need to run our pass after register allocation.&lt;/p&gt;
+
+&lt;p style=&quot;padding: 0.7em; background-color: bisque;&quot;&gt;
+In fact, it would be a good idea to also run it before register allocation, to
+reduce the register pressure implicitly created by the redundant instructions.
+For simplicity we will only run it after register allocation.
+&lt;/p&gt;
+
+&lt;p&gt;So, when emitting copies we will want to know that we are doing the
+preserve-copy-restore dance in a way that it can be optimised.&lt;/p&gt;
+
+&lt;p&gt;So I did the following changes:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; is now &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENi&lt;/code&gt;. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;i&lt;/code&gt; designates it receives an immediate for the vector length.&lt;/li&gt;
+  &lt;li&gt;A new &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt; pseudo instruction that sets the length as preserved in a GPR register (the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;r&lt;/code&gt; means register).&lt;/li&gt;
+  &lt;li&gt;A new &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt; pseudo insruction that returns the vector length in a GPR.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMInstrVFP.td&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -2927,7 +2927,8 @@&lt;/span&gt; let Uses = [FPSCR] in {
+   }
+ }
+ 
+&lt;span class=&quot;gd&quot;&gt;-// Set LEN field in FPSCR
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+// Set LEN field in FPSCR using an immediate. This is the main way used
++// to change the vector length.
+&lt;/span&gt; let Defs = [FPSCR],
+     hasNoSchedulingInfo = 1,
+     mayLoad = 0,
+&lt;span class=&quot;p&quot;&gt;@@ -2935,11 +2936,38 @@&lt;/span&gt; let Defs = [FPSCR],
+     hasSideEffects = 0,
+     hasPostISelHook = 1,
+     Size = 20 in
+&lt;span class=&quot;gd&quot;&gt;-def VFPSETLEN : PseudoInst&amp;lt;(outs GPR:$scratch1, GPRnopc:$scratch2),
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+def VFPSETLENi : PseudoInst&amp;lt;(outs GPR:$scratch1, GPRnopc:$scratch2),
+&lt;/span&gt;                            (ins imm0_7:$len),
+                            IIC_fpSTAT, []&amp;gt;,
+                           Requires&amp;lt;[HasVFP2]&amp;gt;;
+ 
+&lt;span class=&quot;gi&quot;&gt;+// This is a semantic version of VMSR which is used to signal
++// a change only to the vector length field. This is not used
++// during ISel.
++let Defs = [FPSCR],
++    hasNoSchedulingInfo = 1,
++    mayLoad = 0,
++    mayStore = 0,
++    hasSideEffects = 0,
++    Size = 4 in
++def VFPSETLENr : PseudoInst&amp;lt;(outs),
++                            (ins GPRnopc:$len),
++                            IIC_fpSTAT, []&amp;gt;,
++                           Requires&amp;lt;[HasVFP2]&amp;gt;;
++
++// This is a semantic version of VMRS which is used to signal
++// we read the vector length. This is not used during ISel.
++let Uses = [FPSCR],
++    hasNoSchedulingInfo = 1,
++    mayLoad = 0,
++    mayStore = 0,
++    hasSideEffects = 0,
++    Size = 4 in
++def VFPGETLENr : PseudoInst&amp;lt;(outs GPRnopc:$len),
++                            (ins),
++                            IIC_fpSTAT, []&amp;gt;,
++                           Requires&amp;lt;[HasVFP2]&amp;gt;;
++
+&lt;/span&gt; // Spill and reload helpers.
+ let AM = AddrMode4 in {
+ let hasNoSchedulingInfo = 1,
+&lt;span class=&quot;p&quot;&gt;@@ -3242,4 +3270,4 @@&lt;/span&gt; def : Pat&amp;lt;(fsub_mlx (fmul_su SPRx4:$a, SPRx4:$b), SPRx4:$dstin),
+           Requires&amp;lt;[HasVFP2,DontUseNEONForFP,UseFPVMLx]&amp;gt;;
+ 
+ // Set length pattern.
+&lt;span class=&quot;gd&quot;&gt;-def : Pat&amp;lt;(arm_vfpsetlenzero), (VFPSETLEN 0)&amp;gt;;
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+def : Pat&amp;lt;(arm_vfpsetlenzero), (VFPSETLENi 0)&amp;gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p style=&quot;padding: 0.7em; background-color: bisque;&quot;&gt;
+For simplicity &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt; will overwrite the whole &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;
+register, but the only change we will ever do is to the vector length so this
+should be reasonable. Technically we are changing more bits than the ones we
+claim to do, but ARMv6 is not rich enough to do this in an efficient way, hence
+the coarser approach.
+&lt;/p&gt;
+
+&lt;p&gt;When emitting a copy we will first emit a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt; to keep the current
+vector length in a GPR (say &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rn&lt;/code&gt;). Then we will emit a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENi&lt;/code&gt; to set the
+right length of the floating data type (1 for scalars, 2 or 4 for vectors).
+Then the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmov&lt;/code&gt;. Finally we will emit a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt; using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rn&lt;/code&gt; to restore
+everything as it was before the copy.&lt;/p&gt;
+
+&lt;p&gt;Because those are pseudo instructions, we need to expand them at some point:
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt; will be expanded to a regular &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmrs&lt;/code&gt; instruction, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt; will
+be expanded to the dual &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmsr&lt;/code&gt;. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENi&lt;/code&gt; is expanded as usual.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMExpandPseudoInsts.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -2991,7 +2991,7 @@&lt;/span&gt; bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &amp;amp;MBB,
+       MI.eraseFromParent();
+       return true;
+     }
+&lt;span class=&quot;gd&quot;&gt;-    case ARM::VFPSETLEN: {
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    case ARM::VFPSETLENi: {
+&lt;/span&gt;       Register Scratch1 = MI.getOperand(0).getReg();
+       Register Scratch2 = MI.getOperand(1).getReg();
+       DebugLoc dl = MI.getDebugLoc();
+&lt;span class=&quot;p&quot;&gt;@@ -3026,6 +3026,27 @@&lt;/span&gt; bool ARMExpandPseudo::ExpandMI(MachineBasicBlock &amp;amp;MBB,
+       MI.eraseFromParent();
+       return true;
+     }
+&lt;span class=&quot;gi&quot;&gt;+    case ARM::VFPSETLENr: {
++      // This is a semantic version of VMSR intended only
++      // when changing the vector length.
++      DebugLoc dl = MI.getDebugLoc();
++      Register Length = MI.getOperand(0).getReg();
++      BuildMI(MBB, MBBI, dl, TII-&amp;gt;get(ARM::VMSR))
++          .addUse(Length)
++          .add(predOps(ARMCC::AL));
++      MI.eraseFromParent();
++      return true;
++    }
++    case ARM::VFPGETLENr: {
++      // This is a semantic version of VMRS intended only
++      // when reading the vector length.
++      DebugLoc dl = MI.getDebugLoc();
++      Register Length = MI.getOperand(0).getReg();
++      BuildMI(MBB, MBBI, dl, TII-&amp;gt;get(ARM::VMRS), Length)
++          .add(predOps(ARMCC::AL));
++      MI.eraseFromParent();
++      return true;
++    }
+&lt;/span&gt;     case ARM::VFPSPILLDx2: {
+       Register Src = MI.getOperand(0).getReg();
+       const MachineOperand &amp;amp;Addr = MI.getOperand(1);&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Using pseudo instructions that have trivial expansions is totally intentional:
+we are only using these instructions for copies so we can optimise them.&lt;/p&gt;
+
+&lt;h3&gt;Copies&lt;/h3&gt;
+
+&lt;p&gt;Let’s overhaul copies to be correct.&lt;/p&gt;
+
+&lt;p&gt;There is a bit of complication, that we will not fully address here. In order
+to preserve the vector length (via the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;) we need extra registers around.
+Because the copy expansion happens after register allocation, we cannot enjoy
+virtual registers here. So we need to resort to a class called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegScavenger&lt;/code&gt;
+(the register scavenger) which will try to get us registers for us.&lt;/p&gt;
+
+&lt;p&gt;However, the register scavenger may not be able to find free registers. In that
+case we would have to pick victim registers, spill them manually onto the stack
+and then use those registers, to finally reload them. A more complete
+implementation will have to do this though, or it risks itself to not being
+able to compile some codes with high register pressure.&lt;/p&gt;
+
+&lt;p&gt;Another important detail is that not all the copies of floating-point values
+need changing the set vector length. If the destination register of the copy
+is found in the first bank, the operation is always scalar. This helps with
+cases where we are copying scalars (vectors will never be register allocated
+in the first bank).&lt;/p&gt;
+
+&lt;p&gt;First let’s remove the wrong code.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMBaseInstrInfo.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -979,16 +1068,6 @@&lt;/span&gt; void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &amp;amp;MBB,
+     Opc = ARM::VMOVS;
+     BeginIdx = ARM::ssub_0;
+     SubRegs = 2;
+&lt;span class=&quot;gd&quot;&gt;-  } else if (ARM::DPRx2RegClass.contains(DestReg, SrcReg) &amp;amp;&amp;amp;
+-             Subtarget.hasVFP2Base()) {
+-    Opc = ARM::VMOVD;
+-    BeginIdx = ARM::dsub_len2_0;
+-    SubRegs = 2;
+-  } else if (ARM::SPRx4RegClass.contains(DestReg, SrcReg) &amp;amp;&amp;amp;
+-             Subtarget.hasVFP2Base()) {
+-    Opc = ARM::VMOVS;
+-    BeginIdx = ARM::ssub_len4_0;
+-    SubRegs = 4;
+&lt;/span&gt;   } else if (SrcReg == ARM::CPSR) {
+     copyFromCPSR(MBB, I, DestReg, KillSrc, Subtarget);
+     return;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now let’s extend the part that deals originally with scalar copies of floating
+point values (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SPR&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DPR&lt;/code&gt; register classes). We will add cases for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SPRx4&lt;/code&gt;
+and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DPRx4&lt;/code&gt;. Also we will note the vector length required for each of the
+copies.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMBaseInstrInfo.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;gi&quot;&gt;+  unsigned VectorLength = 0;
+&lt;/span&gt;   unsigned Opc = 0;
+   if (SPRDest &amp;amp;&amp;amp; SPRSrc)
+     Opc = ARM::VMOVS;
+&lt;span class=&quot;p&quot;&gt;@@ -913,10 +991,19 @@&lt;/span&gt; void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &amp;amp;MBB,
+     Opc = ARM::VMOVSR;
+   else if (ARM::DPRRegClass.contains(DestReg, SrcReg) &amp;amp;&amp;amp; Subtarget.hasFP64())
+     Opc = ARM::VMOVD;
+&lt;span class=&quot;gd&quot;&gt;-  else if (ARM::QPRRegClass.contains(DestReg, SrcReg))
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+  else if (ARM::DPRx2RegClass.contains(DestReg, SrcReg) &amp;amp;&amp;amp;
++             Subtarget.hasVFP2Base()) {
++    Opc = ARM::VMOVD;
++    VectorLength = 1;
++  } else if (ARM::SPRx4RegClass.contains(DestReg, SrcReg) &amp;amp;&amp;amp;
++             Subtarget.hasVFP2Base()) {
++    Opc = ARM::VMOVS;
++    VectorLength = 3;
++  } else if (ARM::QPRRegClass.contains(DestReg, SrcReg))
+&lt;/span&gt;     Opc = Subtarget.hasNEON() ? ARM::VORRq : ARM::MVE_VORR;
+ 
+   if (Opc) {
+&lt;span class=&quot;gi&quot;&gt;+    RAIISetVLEN SetVLEN(Subtarget, this, MBB, I, DestReg, SrcReg, VectorLength);
+&lt;/span&gt;     MachineInstrBuilder MIB = BuildMI(MBB, I, DL, get(Opc), DestReg);
+     MIB.addReg(SrcReg, getKillRegState(KillSrc));
+     if (Opc == ARM::VORRq || Opc == ARM::MVE_VORR)
+&lt;span class=&quot;p&quot;&gt;@@ -925,6 +1012,8 @@&lt;/span&gt; void ARMBaseInstrInfo::copyPhysReg(MachineBasicBlock &amp;amp;MBB,
+       addUnpredicatedMveVpredROp(MIB, DestReg);
+     else
+       MIB.add(predOps(ARMCC::AL));
+&lt;span class=&quot;gi&quot;&gt;+    if (SetVLEN.isPreserved() &amp;amp;&amp;amp; (Opc == ARM::VMOVD || Opc == ARM::VMOVS))
++      MIB.addReg(ARM::FPSCR, RegState::Implicit);
+&lt;/span&gt;     return;
+   }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;To help us here, we use a new class &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RAIISetVLEN&lt;/code&gt; which given the registers
+being copied and the required &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VectorLength&lt;/code&gt; will emit the proper &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt;,
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENi&lt;/code&gt; sequence. We use a RAII pattern because we may have to restore the
+vector length using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt;. If this class tells us &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; is being
+preserved, we add an explicit usage of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; to the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmov&lt;/code&gt; instruction.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMBaseInstrInfo.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;RAIISetVLEN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MustPreserveFPSCR&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMBaseInstrInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SaveFPCSR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;nl&quot;&gt;public:&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;RAIISetVLEN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMSubtarget&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Subtarget&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARMBaseInstrInfo&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+               &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MachineBasicBlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterator&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+               &lt;span class=&quot;n&quot;&gt;MCRegister&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;DestReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MCRegister&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SrcReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;unsigned&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;VectorLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Subtarget&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hasVFP2Base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;())&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isFPReg&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MCRegister&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SPRRegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;contains&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DPRRegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;contains&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;inVectorBank&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MCRegister&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;D4&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;D15&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt;
+             &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S8&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;S31&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;auto&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isVectorReg&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MCRegister&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SPRx4RegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;contains&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DPRx2RegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;contains&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// If this is a scalar register copy, and the destination register happens&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// to be in a register bank other than the first, we must preserve fpscr.&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isFPReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DestReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isFPReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SrcReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isVectorBank&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DestReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;MustPreserveFPSCR&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// Vector copies always must preserve fpscr.&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isVectorReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DestReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isVectorReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SrcReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;MustPreserveFPSCR&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MustPreserveFPSCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;// We have to set FPSCR to length zero for safety.&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RegScavenger&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;enterBasicBlock&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;forward&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;SaveFPCSR&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FindUnusedReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GPRnopcRegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SaveFPCSR&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NoRegister&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;report_fatal_error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;When emitting a floating point register copy, failed &quot;&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;to find a free register&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setRegUsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SaveFPCSR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FindUnusedReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GPRRegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NoRegister&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;report_fatal_error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;When emitting a floating point register copy, failed &quot;&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;to find a free register&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setRegUsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Register&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FindUnusedReg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GPRnopcRegClass&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NoRegister&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;report_fatal_error&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;When emitting a floating point register copy, failed &quot;&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;to find a free register&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;RS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setRegUsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getDebugLoc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPGETLENr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;SaveFPCSR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getDebugLoc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPSETLENi&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addDef&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RegState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Dead&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addDef&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Scratch2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RegState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Dead&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addImm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VectorLength&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RAIISetVLEN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MustPreserveFPSCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// Restore FPCSR&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;BuildMI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MBB&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;I&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getDebugLoc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TII&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ARM&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;VFPSETLENr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;addUse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SaveFPCSR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RegState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Kill&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isPreserved&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MustPreserveFPSCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Note the condition cases where the register scavenger would fail to find
+a register. A more complete implementation must handle those cases.&lt;/p&gt;
+
+&lt;h3&gt;Optimising&lt;/h3&gt;
+
+&lt;p&gt;As we mentioned above, we want the optimisation pass to run after register
+allocation.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMTargetMachine.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -513,13 +513,13 @@&lt;/span&gt; void ARMPassConfig::addPreRegAlloc() {
+ 
+     if (!DisableA15SDOptimization)
+       addPass(createA15SDOptimizerPass());
+&lt;span class=&quot;gd&quot;&gt;-
+-    addPass(createARMOptimizeVFP2Len());
+&lt;/span&gt;   }
+ }
+ 
+ void ARMPassConfig::addPreSched2() {
+   if (getOptLevel() != CodeGenOpt::None) {
+&lt;span class=&quot;gi&quot;&gt;+    addPass(createARMOptimizeVFP2Len());
++
+&lt;/span&gt;     if (EnableARMLoadStoreOpt)
+       addPass(createARMLoadStoreOptimizationPass());&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;To optimise these new instructions, we have to extend our existing pass. When a
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt; is seen, we will remember what register is keeping the current
+length. If the register is preserved until a further &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt; we know we
+are restoring the same length as before.&lt;/p&gt;
+
+&lt;p&gt;We can use this knowledge when analysing a single basic block, so we do not
+lose track of the length value during a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMOptimizeVFP2Len.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -81,6 +81,12 @@&lt;/span&gt; struct BlockData {
+   bool InQueue = false;
+ };
+ 
+&lt;span class=&quot;gi&quot;&gt;+struct KeptVFPInfo {
++  Register Reg = ARM::NoRegister;
++  Length Len;
++  MachineInstr *MI = nullptr;
++};
++
+&lt;/span&gt; class ARMOptimizeVFP2Len : public MachineFunctionPass {
+ private:
+   std::vector&amp;lt;BlockData&amp;gt; BlockInfo;
+&lt;span class=&quot;p&quot;&gt;@@ -124,27 +124,43 @@&lt;/span&gt; void ARMOptimizeVFP2Len::computeLocalBlockInfo(const MachineBasicBlock &amp;amp;MBB) {
+   if (MBB.isEntryBlock())
+     LI.InLen.setValue(0);
+ 
+&lt;span class=&quot;gi&quot;&gt;+  KeptVFPInfo KeptVFP;
++
+&lt;/span&gt;   LI.OutLen = LI.InLen;
+   for (auto &amp;amp;MI : MBB) {
+&lt;span class=&quot;gd&quot;&gt;-    if (MI.getOpcode() == ARM::VFPSETLEN) {
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    if (MI.getOpcode() == ARM::VFPSETLENi) {
+&lt;/span&gt;       LI.OutLen.setValue(MI.getOperand(2).getImm());
+       LI.LastChange = &amp;amp;MI;
+&lt;span class=&quot;gd&quot;&gt;-      continue;
+-    }
+-
+-    // If the FPSCR is modified outside of our control, assume
+-    // that it is variable.
+-    if (MI.modifiesRegister(ARM::FPSCR) || MI.isInlineAsm()) {
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    } else if (MI.getOpcode() == ARM::VFPGETLENr) {
++      // This instruction does not change the vector length, but we will note
++      // the register being written because these are usually paired with
++      // VFPSETLENr.
++      KeptVFP.Reg = MI.getOperand(0).getReg();
++      KeptVFP.Len = LI.OutLen;
++    } else if (MI.getOpcode() == ARM::VFPSETLENr) {
++      // If we are restoring a previously kept vector length, we can also
++      // restore the known vector length.
++      if (KeptVFP.Reg == MI.getOperand(0).getReg()) {
++        LI.OutLen = KeptVFP.Len;
++      } else {
++        LI.OutLen.setVariable();
++      }
++      LI.LastChange = &amp;amp;MI;
++    } else if (MI.modifiesRegister(ARM::FPSCR) || MI.isInlineAsm()) {
++      // If the FPSCR is modified outside of our control, assume
++      // that it is variable.
+&lt;/span&gt;       LI.OutLen.setVariable();
+       LI.LastChange = &amp;amp;MI;
+&lt;span class=&quot;gd&quot;&gt;-      continue;
+-    }
+-
+-    if (MI.isCall()) {
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    } else if (MI.isCall()) {
+&lt;/span&gt;       // On exit, functions restore vector length == 1.
+       LI.OutLen.setValue(0);
+       LI.LastChange = &amp;amp;MI;
+&lt;span class=&quot;gd&quot;&gt;-      continue;
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    }
++
++    if (MI.getOpcode() != ARM::VFPGETLENr &amp;amp;&amp;amp; KeptVFP.Reg != ARM::NoRegister &amp;amp;&amp;amp;
++        MI.modifiesRegister(KeptVFP.Reg)) {
++      // If this instruction modifies the GPR holding a vector length, reset it.
++      KeptVFP.Reg = ARM::NoRegister;
+&lt;/span&gt;     }
+   }
+ }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And then use this in the removal as well.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMOptimizeVFP2Len.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -225,25 +241,61 @@&lt;/span&gt; bool ARMOptimizeVFP2Len::removeRedundantVPFSETLEN(MachineBasicBlock &amp;amp;MBB) {
+ 
+   bool Changed = false;
+   MachineBasicBlock::iterator MBBI = MBB.begin(), E = MBB.end();
+&lt;span class=&quot;gi&quot;&gt;+
++  KeptVFPInfo KeptVFP;
++
+&lt;/span&gt;   while (MBBI != E) {
+     MachineBasicBlock::iterator NMBBI = std::next(MBBI);
+     MachineInstr &amp;amp;MI = *MBBI;
+ 
+&lt;span class=&quot;gd&quot;&gt;-    if (MI.getOpcode() == ARM::VFPSETLEN) {
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    bool Remove = false;
++
++    if (MI.getOpcode() == ARM::VFPSETLENi) {
+&lt;/span&gt;       unsigned Length = MI.getOperand(2).getImm();
+       if (CurrentLength.hasValue() &amp;amp;&amp;amp; CurrentLength.getValue() == Length) {
+         LLVM_DEBUG(dbgs() &amp;lt;&amp;lt; &quot;Removing redundant: &quot; &amp;lt;&amp;lt; MI);
+         // We can remove this one.
+&lt;span class=&quot;gd&quot;&gt;-        MI.removeFromParent();
+-        Changed = true;
+&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+        Remove = true;
+&lt;/span&gt;       }
+       CurrentLength.setValue(Length);
+&lt;span class=&quot;gi&quot;&gt;+    } else if (MI.getOpcode() == ARM::VFPSETLENr) {
++      if (KeptVFP.Reg == MI.getOperand(0).getReg()) {
++        if (CurrentLength.hasValue() &amp;amp;&amp;amp; KeptVFP.Len.hasValue() &amp;amp;&amp;amp;
++            CurrentLength == KeptVFP.Len) {
++          // This is restoring to the same length we kept in an earlier
++          // VFPGETLENr, so we can remove this instruction.
++          Remove = true;
++          // If the register is killed here, also remove its last generator
++          // which we know it is a VFPGETLENi).
++          assert(KeptVFP.MI &amp;amp;&amp;amp; KeptVFP.MI-&amp;gt;getOpcode() == ARM::VFPGETLENr);
++          if (MI.getOperand(0).isKill()) {
++            KeptVFP.MI-&amp;gt;removeFromParent();
++          }
++        }
++        CurrentLength = KeptVFP.Len;
++      } else {
++        CurrentLength.setVariable();
++      }
++    } else if (MI.getOpcode() == ARM::VFPGETLENr) {
++      KeptVFP.Reg = MI.getOperand(0).getReg();
++      KeptVFP.Len = CurrentLength;
++      KeptVFP.MI = &amp;amp;MI;
+&lt;/span&gt;     } else if (MI.modifiesRegister(ARM::FPSCR) || MI.isInlineAsm()) {
+       CurrentLength.setVariable();
+     } else if (MI.isCall()) {
+       CurrentLength.setValue(0);
+     }
+ 
+&lt;span class=&quot;gi&quot;&gt;+    if (Remove) {
++      MI.removeFromParent();
++      Changed = true;
++    } else if (MI.getOpcode() != ARM::VFPGETLENr &amp;amp;&amp;amp;
++               KeptVFP.Reg != ARM::NoRegister &amp;amp;&amp;amp;
++               MI.modifiesRegister(KeptVFP.Reg)) {
++      // If this instruction modifies the GPR holding a vector length, reset it.
++      KeptVFP.Reg = ARM::NoRegister;
++    }
++
+&lt;/span&gt;     MBBI = NMBBI;
+   }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2&gt;Results&lt;/h2&gt;
+
+&lt;p&gt;With all the changes above in place, we can retake the example of copies from
+the last chapter and see the code we emit now.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;t_doubles_phi.ll&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%dis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                      &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%m&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;icmp&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;slt&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%dis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;4&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;br&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;i1&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%m&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;label&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%block1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;label&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%block2&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;block1:&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%x&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;br&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;label&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%block3&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;block2:&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%y&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fmul&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;br&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;label&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%block3&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;block3:&lt;/span&gt;
+  &lt;span class=&quot;nv&quot;&gt;%p&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;phi&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%block1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%block2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%p&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2  &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - t_doubles_phi.ll&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;test_vec:
+	.fnstart
+@ %bb.0:                                @ %block3
+	vpush	{d8, d9}
+	vldmia	r1, {d8, d9}
+	mov	r1, #65536
+	cmp	r0, #4
+	vldmia	r2, {d4, d5}
+	vmrs	r2, fpscr
+	bic	r2, r2, #458752
+	orr	r2, r2, r1
+	vmsr	fpscr, r2
+	vmul.f64	d6, d8, d4
+	vadd.f64	d4, d8, d4
+	vmovge.f64	d4, d6
+	vstmia	r3, {d4, d5}
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
+	vmsr	fpscr, r1
+	vpop	{d8, d9}
+	bx	lr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This is really good as the branch is now gone.&lt;/p&gt;
+
+&lt;p&gt;We have to look at the MIR to understand what happened. First let’s see the MIR
+right before the optimisation pass.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2  &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - t_doubles_phi.ll &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;-print-before&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm-optimize-vfp2-len&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;bb.0.block3:
+  successors: %bb.2(0x40000000), %bb.1(0x40000000); %bb.2(50.00%), %bb.1(50.00%)
+  liveins: $r0, $r1, $r2, $r3, $d8, $d9
+  $sp = frame-setup VSTMDDB_UPD $sp(tied-def 0), 14, $noreg, killed $d8, killed $d9
+  frame-setup CFI_INSTRUCTION def_cfa_offset 16
+  frame-setup CFI_INSTRUCTION offset $d9, -8
+  frame-setup CFI_INSTRUCTION offset $d8, -16
+  renamable $d4 = VLDRD renamable $r2, 0, 14, $noreg, implicit-def $d4_d5x2 :: (load 8 from %ir.pb)
+  renamable $d5 = VLDRD killed renamable $r2, 2, 14, $noreg, implicit killed $d4_d5x2, implicit-def $d4_d5x2 :: (load 8 from %ir.pb + 8)
+  renamable $d8 = VLDRD renamable $r1, 0, 14, $noreg, implicit-def $d8_d9x2 :: (load 8 from %ir.pa)
+  renamable $d9 = VLDRD killed renamable $r1, 2, 14, $noreg, implicit killed $d8_d9x2, implicit-def $d8_d9x2 :: (load 8 from %ir.pa + 8)
+  dead renamable $r1, dead renamable $r2 = VFPSETLENi 1, implicit-def $fpscr
+  renamable $d6_d7x2 = VMULDx2 renamable $d8_d9x2, renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  renamable $d4_d5x2 = VADDDx2 killed renamable $d8_d9x2, killed renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  CMPri killed renamable $r0, 4, 14, $noreg, implicit-def $cpsr
+  Bcc %bb.2, 11, killed $cpsr
+
+bb.1.select.false:
+; predecessors: %bb.0
+  successors: %bb.2(0x80000000); %bb.2(100.00%)
+  liveins: $r3, $d6_d7x2
+  $r0 = VFPGETLENr implicit $fpscr
+  dead $r1, dead $r2 = VFPSETLENi 1, implicit-def $fpscr
+  $d4_d5x2 = VMOVD killed $d6_d7x2, 14, $noreg, implicit $fpscr
+  VFPSETLENr killed $r0, implicit-def $fpscr
+
+bb.2.select.end:
+; predecessors: %bb.0, %bb.1
+  liveins: $r3, $d4_d5x2
+  VSTRD renamable $d4, renamable $r3, 0, 14, $noreg :: (store 8 into %ir.pc)
+  VSTRD renamable $d5, killed renamable $r3, 2, 14, $noreg, implicit killed $d4_d5x2 :: (store 8 into %ir.pc + 8)
+  dead renamable $r0, dead renamable $r1 = VFPSETLENi 0, implicit-def $fpscr
+  $sp = frame-destroy VLDMDIA_UPD $sp(tied-def 0), 14, $noreg, def $d8, def $d9
+  BX_RET 14, $noreg
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Before the optimisation, our MIR looks like this. In lines 22 to 25 above, we
+see all the dance of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPGETLENr&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENi&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENr&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Note in line 12 above we have already set the vector length to 2 (like we do in
+line 23), so we should be able to reuse this.&lt;/p&gt;
+
+&lt;p&gt;Let’s look now at the MIR after the optimiation pas.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2  &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - t_doubles_phi.ll &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;-print-after&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm-optimize-vfp2-len&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;bb.0.block3:
+  successors: %bb.2(0x40000000), %bb.1(0x40000000); %bb.2(50.00%), %bb.1(50.00%)
+  liveins: $r0, $r1, $r2, $r3, $d8, $d9
+  $sp = frame-setup VSTMDDB_UPD $sp(tied-def 0), 14, $noreg, killed $d8, killed $d9
+  frame-setup CFI_INSTRUCTION def_cfa_offset 16
+  frame-setup CFI_INSTRUCTION offset $d9, -8
+  frame-setup CFI_INSTRUCTION offset $d8, -16
+  renamable $d4 = VLDRD renamable $r2, 0, 14, $noreg, implicit-def $d4_d5x2 :: (load 8 from %ir.pb)
+  renamable $d5 = VLDRD killed renamable $r2, 2, 14, $noreg, implicit killed $d4_d5x2, implicit-def $d4_d5x2 :: (load 8 from %ir.pb + 8)
+  renamable $d8 = VLDRD renamable $r1, 0, 14, $noreg, implicit-def $d8_d9x2 :: (load 8 from %ir.pa)
+  renamable $d9 = VLDRD killed renamable $r1, 2, 14, $noreg, implicit killed $d8_d9x2, implicit-def $d8_d9x2 :: (load 8 from %ir.pa + 8)
+  dead renamable $r1, dead renamable $r2 = VFPSETLENi 1, implicit-def $fpscr
+  renamable $d6_d7x2 = VMULDx2 renamable $d8_d9x2, renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  renamable $d4_d5x2 = VADDDx2 killed renamable $d8_d9x2, killed renamable $d4_d5x2, 14, $noreg, implicit $fpscr
+  CMPri killed renamable $r0, 4, 14, $noreg, implicit-def $cpsr
+  Bcc %bb.2, 11, killed $cpsr
+
+bb.1.select.false:
+; predecessors: %bb.0
+  successors: %bb.2(0x80000000); %bb.2(100.00%)
+  liveins: $r3, $d6_d7x2
+  $d4_d5x2 = VMOVD killed $d6_d7x2, 14, $noreg, implicit $fpscr
+
+bb.2.select.end:
+; predecessors: %bb.0, %bb.1
+  liveins: $r3, $d4_d5x2
+  VSTRD renamable $d4, renamable $r3, 0, 14, $noreg :: (store 8 into %ir.pc)
+  VSTRD renamable $d5, killed renamable $r3, 2, 14, $noreg, implicit killed $d4_d5x2 :: (store 8 into %ir.pc + 8)
+  dead renamable $r0, dead renamable $r1 = VFPSETLENi 0, implicit-def $fpscr
+  $sp = frame-destroy VLDMDIA_UPD $sp(tied-def 0), 14, $noreg, def $d8, def $d9
+  BX_RET 14, $noreg
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The optimisation pass identifies the unnecessary change so we can reuse the existing
+vector length. Now line 22 is the only instruction required to do the copy.&lt;/p&gt;
+
+&lt;p&gt;A later existing pass of the ARM backend identifies this pattern and adds the
+predicate to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmov&lt;/code&gt; (which becomes &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmovge&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p style=&quot;padding: 0.7em; background-color: bisque;&quot;&gt;
+A bit of reflection with the current approach.  We have gone through register
+allocation with instructions that we have later removed. This means that
+potentially those instructions may have increased the register pressure to the
+rest of the code.  Unfortunately the expansion currently happens after register
+allocation (though there are a couple of target-specific hooks that might be
+worth looking into) so there is not much we can do for now.
+&lt;/p&gt;
+
+&lt;p&gt;Now I think we can move onto enabling vectorization :)&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the last installment I mentioned we could start looking at enabling the vectoriser in the compiler. However when I did that I realised some benchmarks were giving weird results. I had made a mistake with copies, so let’s remediate this.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 7</title><link href="https://thinkingeek.com/2021/07/31/raspberry-vectors-part-7/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 7" /><published>2021-07-31T08:59:00+00:00</published><updated>2021-07-31T08:59:00+00:00</updated><id>https://thinkingeek.com/2021/07/31/raspberry-vectors-part-7</id><content type="html" xml:base="https://thinkingeek.com/2021/07/31/raspberry-vectors-part-7/">&lt;p&gt;We finished the last installment of this series mentioning that the compiler
 cannot copy, load or store a vector. Today we will address this.&lt;/p&gt;
 
 &lt;!--more--&gt;
@@ -4498,131 +5225,4 @@ one.&lt;/p&gt;
 
 &lt;p&gt;&lt;strong&gt;A final but important note:&lt;/strong&gt; these techniques as presented are not
 appropriate in security sensitive contexts. Any adversarial library can easily
-fake the registration process for nefarious purposes.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I believe this is not a very common scenario, but sometimes one has to develop libraries whose scope is the whole process. In such a situation, we may need to identify if a process has already loaded another copy of the library.</summary></entry><entry><title type="html">Logging Sidekiq job arguments in Sidekiq 6</title><link href="https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments/" rel="alternate" type="text/html" title="Logging Sidekiq job arguments in Sidekiq 6" /><published>2020-07-15T00:00:00+00:00</published><updated>2020-07-15T00:00:00+00:00</updated><id>https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments</id><content type="html" xml:base="https://thinkingeek.com/2020/07/15/logging-sidekiq-job-arguments/">&lt;p&gt;Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library.&lt;/p&gt;
-
-&lt;p&gt;Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;First of all, a word of advise: logging job arguments is most likely a really bad idea. This is a feature that’s been requested a lot and has always been turned down as it’s a really dangerous thing to do. So if you are thinking of doing this, please make sure you understand the consequences of doing so: depending on the nature of your aguments and where these logs end up in, you may get in trouble very quickly. The last thing you need is to be logging sensitive or private information and sending those logs to the wrong place.&lt;/p&gt;
-
-&lt;p&gt;That being said, let’s see how we’d do this in Sidekiq 6.&lt;/p&gt;
-
-&lt;h2&gt;First of all, enable JSON logging&lt;/h2&gt;
-
-&lt;p&gt;This is strictly not required, but I am a big fan of JSON structured logging. When used with the right tools it makes logs so much useful, since you can start doing things like indexing and searching for specific fields in logs, rather than having to manually parse log lines.&lt;/p&gt;
-
-&lt;p&gt;This is now incredibly easy to do in Sidekiq 6. In your Sidekiq server initialiser, just add this line:&lt;/p&gt;
-
-&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;configure_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;log_formatter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Logger&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Formatters&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;And job done. No need to monkey patch and no need to use any third party gems anymore.&lt;/p&gt;
-
-&lt;p&gt;With this, whenever a job gets run, you’ll get the following log line in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;STDOUT&lt;/code&gt;:&lt;/p&gt;
-
-&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2020-07-15T12:02:02.328Z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23197&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;tid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2ert&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;lvl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;INFO&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;msg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;start&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ctx&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ExampleWorker&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;jid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dd3e1c0a1d56a4d31969538b&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;h2&gt;How to log job arguments&lt;/h2&gt;
-
-&lt;p&gt;Let’s now get into how to also get the job arguments in that log line. Let’s imagine our worker looks like this:&lt;/p&gt;
-
-&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ExampleWorker&lt;/span&gt;
-
-  &lt;span class=&quot;kp&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Worker&lt;/span&gt;
-
-  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;perform&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;one_argument&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;another_argument&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;c1&quot;&gt;# write some code that disrupts something&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;One could argue that logging the values of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;one_argument&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;another_argument&lt;/code&gt; is desirable to debug issues.&lt;/p&gt;
-
-&lt;p&gt;Sidekiq has a bunch of new classes in version 6. One of them is the &lt;a href=&quot;https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/logger.rb&quot;&gt;Logger&lt;/a&gt;. You would think this is where to look for to add content to your logs, but that’s not the case. By the time Sidekiq has called the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Logger&lt;/code&gt; class it’s already too late, and in there we have no access at all to the running job or any of its information.&lt;/p&gt;
-
-&lt;p&gt;Sidekiq 6 also introduced another class: &lt;a href=&quot;https://github.com/mperham/sidekiq/blob/master/lib/sidekiq/job_logger.rb&quot;&gt;JobLogger&lt;/a&gt;. This class is responsible for extracting any required information from a running job, and sending the relevant log messages to the logger at different stages of its life cycle (namely when the job starts and when it finishes, either successfully or unsuccessfully). And fortunately for us, Sidekiq 6 has been design with modularity in mind when it comes to logging, so we can actually override the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class in our Sidekiq workers and pass in our own class, which is exactly what we need to do.&lt;/p&gt;
-
-&lt;p&gt;Find below a class that inherits from the default &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class and overrides the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;job_hash_context&lt;/code&gt; method:&lt;/p&gt;
-
-&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SidekiqJobLoggerWithArguments&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JobLogger&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;job_hash_context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;original_hash&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;super&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;begin&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;original_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;merge&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arguments&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;job_arguments&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;rescue&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;original_hash&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-
-  &lt;span class=&quot;kp&quot;&gt;private&lt;/span&gt;
-
-  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;job_arguments&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;key?&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;wrapped&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;args&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;].&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;first&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;arguments&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;job_hash&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;args&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;What we do here is call &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;super&lt;/code&gt; to get the original job context hash, and then we merge that with another hash containing the job arguments, which we can easily get from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;job_hash&lt;/code&gt; attribute. Note that, similarly to what the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class does, we need to check where the actual job arguments are, since jobs run via Rails &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ActiveJob&lt;/code&gt; abstraction layer will have this information in a different place than jobs that include the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Sidekiq::Worker&lt;/code&gt; mixin. I suggest you look at the code for the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobLogger&lt;/code&gt; class to fully understand why we have used inheritance and overridden this method.&lt;/p&gt;
-
-&lt;p&gt;Once you have this class in your Ruby application, you need to tell Sidekiq to use it instead of the default one:&lt;/p&gt;
-
-&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;configure_server&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:job_logger&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;SidekiqJobLoggerWithArguments&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;And that’s all, no monkeypatching required! With this in place, when running the following code:&lt;/p&gt;
-
-&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;no&quot;&gt;ExampleWorker&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;perform_later&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;foo&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;bar&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Instead of getting this log:&lt;/p&gt;
-
-&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2020-07-15T12:02:02.328Z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23197&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;tid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2ert&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;lvl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;INFO&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;msg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;start&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ctx&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ExampleWorker&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;jid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dd3e1c0a1d56a4d31969538b&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;We will get this instead:&lt;/p&gt;
-
-&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ts&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2020-07-15T12:02:02.328Z&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;23197&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;tid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;2ert&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;lvl&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;INFO&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;msg&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;start&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;ctx&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ExampleWorker&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;jid&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;dd3e1c0a1d56a4d31969538b&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;arguments&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;foo&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;bar&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Use at your own risk :-)&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><summary type="html">Sidekiq has recently been updated to major version 6, and it includes a bunch of new and interesting features. One that resonated a lot with me was the ability to log in JSON format by default, which is now possible thanks to the newly refactored set of classes that handle logging in the library. Let’s have a quick look at how to use the new API to do something slightly controversial: logging job arguments.</summary></entry></feed>
+fake the registration process for nefarious purposes.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I believe this is not a very common scenario, but sometimes one has to develop libraries whose scope is the whole process. In such a situation, we may need to identify if a process has already loaded another copy of the library.</summary></entry></feed>

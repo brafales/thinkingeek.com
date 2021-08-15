@@ -67,6 +67,21 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2013/01/12/arm-assembler-raspberry-pi-chapter-4/">ARM assembler in Raspberry Pi – Chapter 4</a></h1>
+
+          <p class="post-meta">
+            Jan 12, 2013• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/raspberry-pi/">Raspberry Pi</a> • <a href="/tags/arm/">arm</a>, <a href="/tags/assembler/">assembler</a>, <a href="/tags/debugger/">debugger</a>, <a href="/tags/gdb/">gdb</a>, <a href="/tags/pi/">pi</a>, <a href="/tags/raspberry/">raspberry</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+As we advance learning the foundations of ARM assembler, our examples will become longer. Since it is easy to make mistakes, I think it is worth learning how to use GNU Debugger <code>gdb</code> to debug assembler. If you develop C/C++ in Linux and never used <code>gdb</code>, shame on you. If you know <code>gdb</code> this small chapter will explain you how to debug assembler directly.
+</p>
+
+        </div><p class="post-continue">
+            <a href="/2013/01/12/arm-assembler-raspberry-pi-chapter-4/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2013/01/11/arm-assembler-raspberry-pi-chapter-3/">ARM assembler in Raspberry Pi – Chapter 3</a></h1>
 
           <p class="post-meta">
@@ -138,33 +153,6 @@ In my opinion, it is much more beneficial learning a high level language than a 
 <p>What this piece of code does is very self explanatory. The first line tells Apache to set up an environment variable called <code>BlockUA</code> if the <code>user agent</code> of the request matches the “<code>ezooms</code>” string. Then you tell Apache the order it has to evaluate the access control to the directory: it first has to evaluate the <code>Allow</code> directive, and then the <code>Deny</code> one. After that you set up both directives. <code>Allow from all</code> basically allows everything in. <code>Deny from env=BlockUA</code> denies all requests in which the environment variable <code>BlockUA</code> has been set. Since that variable is set up when the <code>user agent</code> matches our desired string, the config will basically deny access to the application to all requests with the “<code>ezooms</code>” user agent.</p>
 
 <p>This way you can easily protect yourself from basic bot attacks.</p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2012/12/12/node-js-packages-mountain-lion/">Node.js packages in Mountain Lion</a></h1>
-
-          <p class="post-meta">
-            Dec 12, 2012• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/mac-os-x/">mac os x</a>, <a href="/tags/mountain-lion/">mountain lion</a>, <a href="/tags/node-js/">node.js</a></p>
-        </header>
-
-        <div class="post-content">
-          <p><strong>tl;dr</strong>: make sure you add <code>/usr/local/share/npm/bin</code> to your <code>PATH</code> when installing node.js to be able to access the package binaries.</p>
-
-<p>Developing in Ruby on Rails on a Mountain Lion environment can be a pain. Although it’s a UNIX-like environment, most of the tools created for web development have been made with Linux in mind, and making the switch from a Linux box to Mac OS X is far from harmless.</p>
-
-<p>Anyway, the other day I needed to tweak <a href="http://twitter.github.com/bootstrap/" target="_blank">Bootstrap</a> to make the default grid wider, and instead of using the Bootstrap web site customiser, I decided to download the <a href="https://github.com/twitter/bootstrap" target="_blank">source code from GitHub</a> and build it myself.</p>
-
-<p>In order to do this, you need <a href="http://nodejs.org/" target="_blank">node.js</a> and some of the packages that come with it. I’ve never developed or even played with node.js before, so I needed to install it on the computer. And that was fairly easy thanks to <a href="http://mxcl.github.com/homebrew/" target="_blank">homebrew</a> by simply issuing the command <code>brew install node</code>.</p>
-
-<p>After node has been installed you have access to <code>npm</code>, the node package manager. Following the Bootstrap instructions, I installed the necessary packages:</p>
-
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash">npm <span class="nb">install </span>recess connect uglify-js jshint <span class="nt">-g</span></code></pre></figure>
-
-<p>After that I thought I was ready to build Bootstrap, but the make command complained about not being able to find some of the node.js binaries I’ve just installed a minute ago.</p>
-
-<p>The solution to the problem, though, was rather simple. It turns out the default formula for nodejs on homebrew doesn’t tell you the folder in which the node.js binaries will be installed in. Without adding this folder to the path, obviously the system can’t find the files it’s supposed to execute.</p>
-
-<p>Simply add the folder <code>/usr/local/share/npm/bin</code> to your <code>PATH</code> environment variable and you’ll be good to go.</p>
 
         </div></li></ul>
   <div class="pagination">
