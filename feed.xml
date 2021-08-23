@@ -1,4 +1,268 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-15T10:19:57+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 8</title><link href="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 8" /><published>2021-08-15T08:16:00+00:00</published><updated>2021-08-15T08:16:00+00:00</updated><id>https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8</id><content type="html" xml:base="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/">&lt;p&gt;In the last installment I mentioned we could start looking at enabling
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-23T15:16:26+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
+with the most exciting part of this journey: autovectorisation!&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2&gt;SIMD&lt;/h2&gt;
+
+&lt;h3&gt;Data parallelism&lt;/h3&gt;
+
+&lt;p&gt;If we look at the step of computations required by an algorithm, we may find
+that often the precise order between some of the steps is not relevant. When
+this happens we say that those steps could run concurrently and the algorithm
+would still be correct. We can call &lt;em&gt;concurrency&lt;/em&gt; to the number of operations
+that can be executed concurrently.  When concurrency is somewhat related (or
+directly proportional) to the amount of data being processed by the algorithm
+we can say that it exposes &lt;em&gt;data parallelism&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;The following C program tells us to add elements from two arrays from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt; to
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;N-1&lt;/code&gt; but nothing it it requires that. For instance, we could run from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;N-1&lt;/code&gt; to
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt; and the observable effect would be identical.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;simple_add.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;enum&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;N&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+
+&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;vector_sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We can exploit &lt;em&gt;data parallelism&lt;/em&gt; in many ways: we can distribute parts of the
+computation over different computers in a cluster, over different threads in a
+multicore or, the approach we are interested in, between the different elements
+of a vector of a CPU using SIMD instructions. The important assumption here is
+that all of the mentioned approaches can perform several computations
+simultaneously in time.&lt;/p&gt;
+
+&lt;p&gt;SIMD precisely represents this idea: Single Instruction Multiple Data. With a
+single CPU instruction we can process more than one element of data.  We can
+obtain performane gains from using SIMD instructions if the CPU can execute
+them in a similar amount of time as their scalar counterparts. It all this
+depends on the amount of resources that the CPU has. The ARM1176JZF-S that
+powers the Raspberry Pi 1 does not devote extra resources, so vector
+instructions take proportionally longer, so we will not improve the performance
+a lot. However there are still some small gains here: each instruction executed
+comes with a (small) fixed cost which we are now avoiding.&lt;/p&gt;
+
+&lt;h3&gt;Autovectorisation&lt;/h3&gt;
+
+&lt;p&gt;Compilers may be able to identify in some circumstances that the source code is
+expressing data parallel computation. We will focus on loops though it is
+possible to identify similar cases for straight-line code.&lt;/p&gt;
+
+&lt;p&gt;Once those cases are identified, the compiler may be able to implement the
+scalar computation using vector instructions. This process is called
+&lt;em&gt;vectorisation&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Historically automatic vectorisation has been a bit disappointing. Compilers
+must be very careful not to break the semantics of the program. Some
+programming languages, such as C and C++, require very complex analyses to
+determine the safety of the vectorisation. This process is also time consuming
+and it is not commonly enabled by default in mainstream compilers. So many
+interesting loops which potentially could be vectorised are not vectorised. Or
+worse, the programmer has to adapt the code so it ends being vectorised.&lt;/p&gt;
+
+&lt;h2&gt;Enable vectorisation in LLVM&lt;/h2&gt;
+
+&lt;p&gt;Vectorization is necessarily a target-specific transformation. LLVM IR is not
+platform neutral but its genericity helps reusing code between architectures.
+Sometimes the LLVM IR optimisation passes need information from the
+backend to assess if a transformation is profitable or not.&lt;/p&gt;
+
+&lt;p&gt;The loop vectoriser is not an exception to this, so before we can get it to
+vectorise simple codes, we need to teach the ARM backend about the new vector
+reality.&lt;/p&gt;
+
+&lt;p&gt;A first thing we need to do is to let LLVM know how many vector registers
+are there. We mentioned that in practice is like if there were 6 of them.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMTargetTransformInfo.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;   unsigned getNumberOfRegisters(unsigned ClassID) const {
+     bool Vector = (ClassID == 1);
+     if (Vector) {
+&lt;span class=&quot;gi&quot;&gt;+      if (ST-&amp;gt;hasVFP2Base())
++        return 6;
+&lt;/span&gt;       if (ST-&amp;gt;hasNEON())
+         return 16;
+       if (ST-&amp;gt;hasMVEIntegerOps())
+         return 8;
+       return 0;
+     }
+ 
+     if (ST-&amp;gt;isThumb1Only())
+       return 8;
+     return 13;
+   }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;A second thing we need to let LLVM know is the size of our vectors. Because we
+aim only for vectors that can hold either 4 floats or 2 doubles and both
+cases amount to 128 bit, we will claim that size.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMTargetTransformInfo.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;   TypeSize getRegisterBitWidth(TargetTransformInfo::RegisterKind K) const {
+     switch (K) {
+     case TargetTransformInfo::RGK_Scalar:
+       return TypeSize::getFixed(32);
+     case TargetTransformInfo::RGK_FixedWidthVector:
+&lt;span class=&quot;gi&quot;&gt;+      if (ST-&amp;gt;hasVFP2Base())
++        return TypeSize::getFixed(128);
+&lt;/span&gt;       if (ST-&amp;gt;hasNEON())
+         return TypeSize::getFixed(128);
+       if (ST-&amp;gt;hasMVEIntegerOps())
+         return TypeSize::getFixed(128);
+       return TypeSize::getFixed(0);
+     case TargetTransformInfo::RGK_ScalableVector:
+       return TypeSize::getScalable(0);
+     }
+     llvm_unreachable(&quot;Unsupported register kind&quot;);
+   }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;With all this we can try our loop above.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6-linux-gnueabihf &lt;span class=&quot;nt&quot;&gt;-O2&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o-&lt;/span&gt; simple_add.c&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;vector_sum:
+	.fnstart
+@ %bb.0:
+	.save	{r11, lr}
+	push	{r11, lr}
+	ldr	r12, .LCPI0_0
+	ldr	lr, .LCPI0_1
+	ldr	r3, .LCPI0_2
+	mov	r0, #0
+.LBB0_1:                                @ =&amp;gt;This Inner Loop Header: Depth=1
+	add	r1, r12, r0
+	add	r2, lr, r0
+	vldr	d1, [r1]
+	vldr	d0, [r2]
+	add	r1, r3, r0
+	add	r0, r0, #8
+	cmp	r0, #8192
+	vadd.f64	d0, d1, d0
+	vstr	d0, [r1]
+	bne	.LBB0_1
+@ %bb.2:
+	pop	{r11, pc}
+	.p2align	2&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Uhm, this is not what we wanted, right? The reason is that in general the
+vectoriser will try not to make unsafe transformations. VFP instructions are
+not 100% compliant with IEEE-754 so the vectoriser will not use them by
+default.&lt;/p&gt;
+
+&lt;p&gt;We need to tell the compiler “it is OK, let’s use not 100% precise
+instructions” by using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-O2 -ffast-math&lt;/code&gt; or the shorter form &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-Ofast&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6-linux-gnueabihf &lt;span class=&quot;nt&quot;&gt;-Ofast&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o-&lt;/span&gt; simple_add.c&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;vector_sum:
+	.fnstart
+@ %bb.0:
+	.save	{r4, lr}
+	push	{r4, lr}
+	.vsave	{d8, d9, d10, d11}
+	vpush	{d8, d9, d10, d11}
+	ldr	r12, .LCPI0_0
+	ldr	lr, .LCPI0_1
+	ldr	r3, .LCPI0_2
+	mov	r0, #0
+.LBB0_1:                                @ vector-body
+	add	r1, r12, r0
+	add	r2, lr, r0
+	vldmia	r2, {d4, d5, d6, d7}
+	vldmia	r1, {d8, d9, d10, d11}
+	vmrs	r4, fpscr
+	mov	r2, #65536
+	bic	r4, r4, #458752
+	orr	r4, r4, r2
+	vmsr	fpscr, r4
+	vadd.f64	d4, d8, d4
+	add	r1, r3, r0
+	add	r0, r0, #32
+	cmp	r0, #8192
+	vadd.f64	d6, d10, d6
+	vstmia	r1, {d4, d5, d6, d7}
+	bne	.LBB0_1
+@ %bb.2:
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
+	vmsr	fpscr, r1
+	vpop	{d8, d9, d10, d11}
+	pop	{r4, pc}
+	.p2align	2&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This is more interesting!&lt;/p&gt;
+
+&lt;p&gt;Note however we have some gross inefficiency here: we are changing the vector
+length (setting it to 2) in every iteration of the loop. Later in this post we
+will evaluate if it is worth trying to hoist it out of the loop.&lt;/p&gt;
+
+&lt;h2&gt;A very simple benchmark&lt;/h2&gt;
+
+&lt;p&gt;Let’s use this &lt;a href=&quot;https://gist.github.com/rofirrim/813729ddb7c2f29898f678cc30a0b5e0&quot;&gt;simple
+benchmark&lt;/a&gt;
+that computes a vector addition of floats (similar to the code shown above in
+the post).  It also has a mechanism to validate the scalar version and the
+vector version. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#pragma clang loop&lt;/code&gt; is used to explicitly disable
+vectorisation in the scalar loops that would otherwise be vectorised.&lt;/p&gt;
+
+&lt;p&gt;The benchmark can be adjusted for number of times we run the benchmark and the
+size of the vector. This is useful to run it in different scenarios.&lt;/p&gt;
+
+&lt;p&gt;This benchmark has a low ratio of computation over memory accesses. We do one
+addition and three memory accesses (two loads and one store).  This means that
+the &lt;a href=&quot;https://en.wikipedia.org/wiki/Roofline_model&quot;&gt;&lt;em&gt;arithmetic intensity&lt;/em&gt;&lt;/a&gt; of
+this benchmark is small. We may not be able to observe a lot of improvement
+with vector instructions.&lt;/p&gt;
+
+&lt;p&gt;We can study more favourable situations if we use smaller arrays. In this case,
+when we run the benchmark again, chances are that the vector will be in the
+cache already.  While the arithmetic intensity hasn’t changed, in this
+situation the arithmetic computation has higher weight in the overall
+execution.&lt;/p&gt;
+
+&lt;p&gt;Let’s look at two executions of the benchmark. Both show the ratio of execution
+time of the vector loop respect to the scalar loop (not vectorised at all). The
+plot at the left shows the results when the vectorised loop sets the vector
+length at each iteration. The plot at the right shows the results when the
+vector length is set only once before entering the vector body.&lt;/p&gt;
+
+&lt;figure&gt;
+    &lt;img src=&quot;/assets/images/vadd-results.svg&quot; alt=&quot;Plot with speedup of vector addition results&quot; /&gt;
+    &lt;figcaption&gt;Very simple array addition benchmark&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;In both cases an array of 4 floats does not perform very well because the loop
+has been vectorised using an interleave factor of 2. So each vector loop
+iteration wants to process 8 iterations of the original scalar loop. There is
+some overhead setting up the vector length to 1 in the tail loop (the loop that
+processes the remaining elements that do not complete a vector) hence the bad
+performance. This is less noticeable on the right plot as the vector length is
+only set once before entering the scalar loop (not once per iteration of the
+loop as it happens on the left).&lt;/p&gt;
+
+&lt;p&gt;On the left plot we see that, until 4096 float elements, the improvement over
+scalar is modest: around 2.5X the scalar code. I believe changing the vector
+lenght (which requires reading the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;) introduces some extra cost that
+limits the performance. On the right plot we see it improves up to ~3.4X. This
+means it is a good idea to hoist the set vector length out of the vector loop
+if possible. We will look into it in a later chapter.&lt;/p&gt;
+
+&lt;p&gt;Starting from 4096, both plots show a similar performance degradation. The
+reason is that our &lt;em&gt;working set&lt;/em&gt; is now beyond the &lt;a href=&quot;http://sandsoftwaresound.net/raspberry-pi/raspberry-pi-gen-1/memory-hierarchy/&quot;&gt;16KB of the L1 data
+cache&lt;/a&gt;.
+Note that when using arrays of 2048 float elements each array takes 8KB.  Given
+that the benchmark uses two of them in the loop, our &lt;em&gt;working set&lt;/em&gt; is 16KB.
+Beyond that we overflow the cache (the L2, afaict is not used) and the
+performance drops to ~1.3X. The low arithmetic intensity of this benchmark
+means it quickly becomes a memory-bound problem rather than a CPU-bound
+problem. Vectorisation is unlikely to help under memory-bound problems.&lt;/p&gt;
+
+&lt;p&gt;In the next chapter we will look into trying to hoist the set vector length
+out of the loops that only set it once (which we expect to be the common
+case for vectorised loops).&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I think we have enough pieces of machinery working already that we can start with the most exciting part of this journey: autovectorisation!</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 8</title><link href="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 8" /><published>2021-08-15T08:16:00+00:00</published><updated>2021-08-15T08:16:00+00:00</updated><id>https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8</id><content type="html" xml:base="https://thinkingeek.com/2021/08/15/raspberry-vectors-part-8/">&lt;p&gt;In the last installment I mentioned we could start looking at enabling
 the vectoriser in the compiler. However when I did that I realised some
 benchmarks were giving weird results. I had made a mistake with copies,
 so let’s remediate this.&lt;/p&gt;
@@ -4722,507 +4986,4 @@ matcher. To avoid matching other things like &lt;code class=&quot;language-plain
 expression has type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;std::lock_guard&amp;lt;std::mutex&amp;gt;&lt;/code&gt;, again a fact we stated in
 the matcher.&lt;/p&gt;
 
-&lt;p&gt;Cool right? 😃&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">A colleague of mine spent some time chasing a bug in a C++ library related to concurrency. At the end it all boiled down to a silly declaration that wasn’t one.</summary></entry><entry><title type="html">Process-wide information and Linux key management</title><link href="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/" rel="alternate" type="text/html" title="Process-wide information and Linux key management" /><published>2020-11-22T12:40:00+00:00</published><updated>2020-11-22T12:40:00+00:00</updated><id>https://thinkingeek.com/2020/11/22/process-wide-information-and-keys</id><content type="html" xml:base="https://thinkingeek.com/2020/11/22/process-wide-information-and-keys/">&lt;p&gt;I believe this is not a very common scenario, but sometimes one has to develop
-libraries whose scope is the whole process. In such a situation, we may need to
-identify if a process has already loaded another copy of the library.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;h1&gt;Libraries&lt;/h1&gt;
-
-&lt;p&gt;Consider a library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L&lt;/code&gt; offering some service. Often we do not care much if a
-library has been loaded more than once in the memory of a process. The reason
-is that nowadays most library implementations do not rely on global data. Or if
-they do, it is global data that is tied to some context object.&lt;/p&gt;
-
-&lt;p&gt;There is a number of situations where we may, intentionally or not, load a
-library more than once. It often involves a mixture of static linking and
-dynamic linking. For instance, our executable &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;E&lt;/code&gt; may statically or dynamically
-link &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L&lt;/code&gt; (copy 1) and then dynamically link (or load by means of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dlopen&lt;/code&gt;)
-another library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L2&lt;/code&gt; that has been statically linked with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L&lt;/code&gt; (copy 2).&lt;/p&gt;
-
-&lt;p&gt;As I mentioned above, most of the time, this may not be a problem, because
-most libraries model their services around some context that is used for
-resource management. In our executable above, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;E&lt;/code&gt; will use contexts from
-from copy 1 of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L&lt;/code&gt; while &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L2&lt;/code&gt; will use contexts of copy 2 of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;L&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;However a number of libraries may provide services whose scope is the whole
-process and it may not be desirable (or needs special handling) to have the
-library loaded twice. Examples could include, for instance, a process
-monitoring library or some multi-threaded runtime.&lt;/p&gt;
-
-&lt;p&gt;Of course the obvious answer is &lt;em&gt;don’t do this&lt;/em&gt;, but sometimes it may be
-difficult to avoid doing this and we may like a mechanism to diagnose this.&lt;/p&gt;
-
-&lt;h2&gt;Requirements&lt;/h2&gt;
-
-&lt;p&gt;Ideally we want a mechanism that is able to tell if our library has already
-been loaded in the memory of the process.&lt;/p&gt;
-
-&lt;p&gt;However, want to avoid using files or other global objects (such as IPCs)
-because they come with their own set of problems :we have to create them,
-remove them when done, and we risk leaving stuff behind if we end
-abnormally, etc.&lt;/p&gt;
-
-&lt;p&gt;In the context of Linux we can use two approaches. A first one using
-environment variables and a second one (ab)using the Linux’s own key management
-infrastructure. Once the process ends, these resources go away without trace,
-no matter if the process ended abnormally or not.&lt;/p&gt;
-
-&lt;h1&gt;Setting&lt;/h1&gt;
-
-&lt;p&gt;Let’s prepare an example that showcases a library that should be counting
-something, process-wise. The simplest solution so far is detecting the error at
-runtime. A more sophisticated solution (for instance in which the second copy
-just forwards everything to the first copy) will not be explored in this post.
-I will also assume the two copies are the same (or identical when it comes
-to the part in which they try to detect other copies).&lt;/p&gt;
-
-&lt;h2&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt;&lt;/h2&gt;
-
-&lt;p&gt;Our library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt; will offer a very iminal interface, in which we get
-an increasing number every time we invoke &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_get&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_one.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#ifndef ONLY_H
-#define ONLY_H
-&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;only_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;cp&quot;&gt;#endif // ONLY_H&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_one.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &quot;only_one.h&quot;
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;initialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Global state that we do not want to&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// accidentally replicate in a process.&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;current_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;initialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;c1&quot;&gt;// Not needed. For the sake of the example.&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;current_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-    &lt;span class=&quot;n&quot;&gt;initialized&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;only_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;current_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;I will use &lt;a href=&quot;https://mesonbuild.com/&quot;&gt;meson&lt;/a&gt; because it is rather concise
-when expressing build rules. For simplicity we will generate a static library.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;meson.build&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;project&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'only-library'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'c'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'1.0.0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;lib_only_one&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;static_library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'only_one'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-                 &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'lib/only_one.h'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-                  &lt;span class=&quot;s&quot;&gt;'lib/only_one.c'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h2&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt;&lt;/h2&gt;
-
-&lt;p&gt;Now let’s model the issue of having the library used by another one,
-this time a shared library. This shared library is called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt; has a very minimal interface as well.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_two.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#ifndef ONLY_TWO_H
-#define ONLY_TWO_H
-&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;only_two_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-&lt;span class=&quot;cp&quot;&gt;#endif // ONLY_TWO_H&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;And its implementation only forwards to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt;. This models the idea that
-library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt; uses &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt;. A more realistic library would bring more
-value than just forwarding the call.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_two.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &quot;only_two.h&quot;
-#include &quot;only_one.h&quot;
-&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;only_two_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;When writing dynamic libraries one has to be very careful about symbol
-visibility. In particular the defaults of ELF, used in Linux, are often too
-lax. We can restrict that using a &lt;em&gt;version script&lt;/em&gt;. In this example we only
-make one symbol visible for version 1.0. Everything else will be not exported.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_two.map&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;LIBONLY_TWO_1.0 {
-  global:
-    only_two_get;
-
-  local:
-    *;
-};
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Below are the rules for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt;. Version scripts are not fully integrated
-in meson yet so we need to manually build the proper linker flag option.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;meson.build&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;6
-7
-8
-9
-10
-11
-12
-13
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;only_two_version_script_flag&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; \
-  &lt;span class=&quot;s&quot;&gt;'-Wl,--version-script,@0@/lib/@1@'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;meson&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;current_source_dir&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(),&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'only_two.map'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;lib_only_two&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;shared_library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'only_two'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-                        &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'lib/only_two.h'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-                         &lt;span class=&quot;s&quot;&gt;'lib/only_two.c'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
-                 &lt;span class=&quot;n&quot;&gt;link_with&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lib_only_one&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
-                 &lt;span class=&quot;n&quot;&gt;link_args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;only_two_version_script_flag&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
-                 &lt;span class=&quot;n&quot;&gt;version&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'1.0.0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;May not be obvious at this point, but we’re embedding &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt; inside
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt; (technically only the functions that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_two&lt;/code&gt; uses from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt;
-but if those functions use global data that will be embedded too).&lt;/p&gt;
-
-&lt;h2&gt;Driver&lt;/h2&gt;
-
-&lt;p&gt;Ok let’s write a small example using the two libraries.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;tools/use_only.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &quot;only_one.h&quot;
-#include &quot;only_two.h&quot;
-#include &amp;lt;stdio.h&amp;gt;
-&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;argc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;argv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[])&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;get 0 -&amp;gt; %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;get 1 -&amp;gt; %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;get 2 -&amp;gt; %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[TWO] get 3 -&amp;gt; %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_two_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[TWO] get 4 -&amp;gt; %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_two_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[TWO] get 5 -&amp;gt; %d&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;only_two_get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;And its meson build rules&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;meson.build&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;15
-16
-17
-18
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;executable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'use_only'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'tools/use_only.c'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;include_directories&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'lib'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;link_with&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lib_only_one&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lib_only_two&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If we execute this program we will obtain this&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;$ ./use_only
-get 0 -&amp;gt; 0
-get 1 -&amp;gt; 1
-get 2 -&amp;gt; 2
-[TWO] get 3 -&amp;gt; 0
-[TWO] get 4 -&amp;gt; 1
-[TWO] get 5 -&amp;gt; 2&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This is wrong if we intend to use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_get&lt;/code&gt; to be a global counter for the
-process. As I mentioned above, the goal today is not to fix this but instead
-error at runtime.&lt;/p&gt;
-
-&lt;h1&gt;Environment variables&lt;/h1&gt;
-
-&lt;p&gt;Our first approach to detect that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;only_one&lt;/code&gt; has already been loaded will
-be based on using environment variables.&lt;/p&gt;
-
-&lt;p&gt;The main idea is to set an environment variable when the library initializes.
-If the environment variable was already there we know the library was around.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_one.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &quot;only_one.h&quot;
-&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Very simple error reporting mechanism.&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;msg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;fprintf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stderr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;%s&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;msg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;raise&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SIGABRT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// A key reserved for this library.&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ONLY_INSTANCE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;__ONLY_INSTANCE&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;set_sigle_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;setenv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ONLY_INSTANCE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;cm&quot;&gt;/* overwrite */&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;check_single_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;only_instance&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;getenv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ONLY_INSTANCE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;only_instance&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;env_set_single_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;another copy of the library loaded!&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;initialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Global state that we do not want to&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// accidentally replicate in a process.&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;current_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;initialized&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;check_single_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-
-    &lt;span class=&quot;n&quot;&gt;current_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;initialized&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now we can detect this:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;$ ./use_only
-get 0 -&amp;gt; 0
-get 1 -&amp;gt; 1
-get 2 -&amp;gt; 2
-another copy of the library loaded!
-Aborted (core dumped)&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This approach works but has a minor problem: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;setenv&lt;/code&gt; is not thread-safe. If
-our program uses more than one thread then we risk that some other library in
-some other thread uses &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getenv&lt;/code&gt; and crashes due to the concurrent access (I
-assume it is not realistic to protect all the uses of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getenv&lt;/code&gt; with a
-mutex/lock).&lt;/p&gt;
-
-&lt;h1&gt;Linux key management&lt;/h1&gt;
-
-&lt;p&gt;Linux has a key management mechanism that is pretty cool. Basically one can
-register keys. A kind of key is called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&quot;user&quot;&lt;/code&gt; key and allows a small payload
-to be stored.  Keys are kept in keyrings. Linux provides a number of predefined
-keyrings with different scopes. One of them is a process-wide keychain called
-the &lt;em&gt;process keyring&lt;/em&gt;.&lt;/p&gt;
-
-&lt;p&gt;The downside is that the system calls used for key management are not wrapped
-by the GNU C library. Instead a library called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkeyutils&lt;/code&gt; must be used.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lib/only_one.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;cp&quot;&gt;#include &quot;only_one.h&quot;
-#include &amp;lt;errno.h&amp;gt;
-#include &amp;lt;keyutils.h&amp;gt;
-#include &amp;lt;sys/types.h&amp;gt;
-&lt;/span&gt;
-&lt;span class=&quot;c1&quot;&gt;// Very simple error reporting mechanism.&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;msg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;fprintf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;stderr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;%s&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;msg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;raise&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SIGABRT&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;c1&quot;&gt;// A key reserved for this library.&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ONLY_INSTANCE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;__ONLY_INSTANCE&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;set_single_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;const&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;key_serial_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;k&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;add_key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;user&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ONLY_INSTANCE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;sizeof&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
-                           &lt;span class=&quot;n&quot;&gt;KEY_SPEC_PROCESS_KEYRING&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;add_key failed&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;check_single_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;key_serial_t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;k&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;request_key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;user&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ONLY_INSTANCE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;KEY_SPEC_PROCESS_KEYRING&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;errno&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ENOKEY&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;key_set_single_instance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;n&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;request_key failed&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;die&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;another copy of the library loaded!&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now the concern about multi-thread gets a bit different. Because these library
-calls are backed by the kernel, they should do the right thing already. So in
-principle, if we care about multi-threading it should suffice to protect the
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;check_single_instance&lt;/code&gt; with a mutex, so only one thread can see that the key
-has not been added. However, getting that mutex process-wise is not obvious so
-we haven’t quite solved the problem here.&lt;/p&gt;
-
-&lt;p&gt;We still need to update our meson build rules. Library &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libkeyutils&lt;/code&gt; provides
-a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pkg-config&lt;/code&gt; file, so it is not difficult for meson to find it.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;meson.build&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;project&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'only-library'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'c'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;'1.0.0'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;libkeyutils_deps&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dependency&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'libkeyutils'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;lib_only_one&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;static_library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'only_one'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-                 &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;'lib/only_one.h'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-                  &lt;span class=&quot;s&quot;&gt;'lib/only_one.c'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
-                 &lt;span class=&quot;n&quot;&gt;dependencies&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;libkeyutils_deps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h1&gt;Where to go from here&lt;/h1&gt;
-
-&lt;p&gt;It is possible to implement more sophisticated mechanisms on top of these
-techniques.&lt;/p&gt;
-
-&lt;p&gt;For instance, some libraries may be loaded more than once but only one of them
-may be in a running state. We can keep in the payload of the key (or
-environment variable) the address of a variable we can use to know if the
-library is running.&lt;/p&gt;
-
-&lt;p&gt;Another option, is to design our library around a single “root” (or top level
-context) variable. Similarly, we can keep the address of the root in the
-payload of the key or the environment variable. The second copy can avoid
-allocating the resources for the top level context and just use the previous
-one.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;A final but important note:&lt;/strong&gt; these techniques as presented are not
-appropriate in security sensitive contexts. Any adversarial library can easily
-fake the registration process for nefarious purposes.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I believe this is not a very common scenario, but sometimes one has to develop libraries whose scope is the whole process. In such a situation, we may need to identify if a process has already loaded another copy of the library.</summary></entry></feed>
+&lt;p&gt;Cool right? 😃&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">A colleague of mine spent some time chasing a bug in a C++ library related to concurrency. At the end it all boiled down to a silly declaration that wasn’t one.</summary></entry></feed>

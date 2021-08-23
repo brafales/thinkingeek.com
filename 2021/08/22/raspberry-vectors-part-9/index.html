@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Fun with vectors in the Raspberry Pi 1 - Part 9</title>
+  <meta name="description" content="I think we have enough pieces of machinery working already that we can start with the most exciting part of this journey: autovectorisation!">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Fun with vectors in the Raspberry Pi 1 - Part 9">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">
+  <meta property="og:description" content="I think we have enough pieces of machinery working already that we can start with the most exciting part of this journey: autovectorisation!">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Fun with vectors in the Raspberry Pi 1 - Part 9">
+  <meta name="twitter:description" content="I think we have enough pieces of machinery working already that we can start with the most exciting part of this journey: autovectorisation!">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Fun with vectors in the Raspberry Pi 1 - Part 9</h1>
+    
+    <p class="post-meta"><time datetime="2021-08-22T09:48:00+00:00" itemprop="datePublished">Aug 22, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>I think we have enough pieces of machinery working already that we can start
+with the most exciting part of this journey: autovectorisation!</p>
+
+<!--more-->
+
+<h2>SIMD</h2>
+
+<h3>Data parallelism</h3>
+
+<p>If we look at the step of computations required by an algorithm, we may find
+that often the precise order between some of the steps is not relevant. When
+this happens we say that those steps could run concurrently and the algorithm
+would still be correct. We can call <em>concurrency</em> to the number of operations
+that can be executed concurrently.  When concurrency is somewhat related (or
+directly proportional) to the amount of data being processed by the algorithm
+we can say that it exposes <em>data parallelism</em>.</p>
+
+<p>The following C program tells us to add elements from two arrays from <code class="language-plaintext highlighter-rouge">0</code> to
+<code class="language-plaintext highlighter-rouge">N-1</code> but nothing it it requires that. For instance, we could run from <code class="language-plaintext highlighter-rouge">N-1</code> to
+<code class="language-plaintext highlighter-rouge">0</code> and the observable effect would be identical.</p>
+
+<figure class="highlight"><figcaption>simple_add.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><span class="k">enum</span> <span class="p">{</span> <span class="n">N</span> <span class="o">=</span> <span class="mi">1024</span> <span class="p">};</span>
+
+<span class="kt">float</span> <span class="n">a</span><span class="p">[</span><span class="n">N</span><span class="p">];</span>
+<span class="kt">float</span> <span class="n">b</span><span class="p">[</span><span class="n">N</span><span class="p">];</span>
+<span class="kt">float</span> <span class="n">c</span><span class="p">[</span><span class="n">N</span><span class="p">];</span>
+
+<span class="kt">void</span> <span class="nf">vector_sum</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We can exploit <em>data parallelism</em> in many ways: we can distribute parts of the
+computation over different computers in a cluster, over different threads in a
+multicore or, the approach we are interested in, between the different elements
+of a vector of a CPU using SIMD instructions. The important assumption here is
+that all of the mentioned approaches can perform several computations
+simultaneously in time.</p>
+
+<p>SIMD precisely represents this idea: Single Instruction Multiple Data. With a
+single CPU instruction we can process more than one element of data.  We can
+obtain performane gains from using SIMD instructions if the CPU can execute
+them in a similar amount of time as their scalar counterparts. It all this
+depends on the amount of resources that the CPU has. The ARM1176JZF-S that
+powers the Raspberry Pi 1 does not devote extra resources, so vector
+instructions take proportionally longer, so we will not improve the performance
+a lot. However there are still some small gains here: each instruction executed
+comes with a (small) fixed cost which we are now avoiding.</p>
+
+<h3>Autovectorisation</h3>
+
+<p>Compilers may be able to identify in some circumstances that the source code is
+expressing data parallel computation. We will focus on loops though it is
+possible to identify similar cases for straight-line code.</p>
+
+<p>Once those cases are identified, the compiler may be able to implement the
+scalar computation using vector instructions. This process is called
+<em>vectorisation</em>.</p>
+
+<p>Historically automatic vectorisation has been a bit disappointing. Compilers
+must be very careful not to break the semantics of the program. Some
+programming languages, such as C and C++, require very complex analyses to
+determine the safety of the vectorisation. This process is also time consuming
+and it is not commonly enabled by default in mainstream compilers. So many
+interesting loops which potentially could be vectorised are not vectorised. Or
+worse, the programmer has to adapt the code so it ends being vectorised.</p>
+
+<h2>Enable vectorisation in LLVM</h2>
+
+<p>Vectorization is necessarily a target-specific transformation. LLVM IR is not
+platform neutral but its genericity helps reusing code between architectures.
+Sometimes the LLVM IR optimisation passes need information from the
+backend to assess if a transformation is profitable or not.</p>
+
+<p>The loop vectoriser is not an exception to this, so before we can get it to
+vectorise simple codes, we need to teach the ARM backend about the new vector
+reality.</p>
+
+<p>A first thing we need to do is to let LLVM know how many vector registers
+are there. We mentioned that in practice is like if there were 6 of them.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMTargetTransformInfo.h</figcaption><pre><code class="language-diff" data-lang="diff">   unsigned getNumberOfRegisters(unsigned ClassID) const {
+     bool Vector = (ClassID == 1);
+     if (Vector) {
+<span class="gi">+      if (ST-&gt;hasVFP2Base())
++        return 6;
+</span>       if (ST-&gt;hasNEON())
+         return 16;
+       if (ST-&gt;hasMVEIntegerOps())
+         return 8;
+       return 0;
+     }
+ 
+     if (ST-&gt;isThumb1Only())
+       return 8;
+     return 13;
+   }</code></pre></figure>
+
+<p>A second thing we need to let LLVM know is the size of our vectors. Because we
+aim only for vectors that can hold either 4 floats or 2 doubles and both
+cases amount to 128 bit, we will claim that size.</p>
+
+<figure class="highlight"><figcaption>llvm/lib/Target/ARM/ARMTargetTransformInfo.h</figcaption><pre><code class="language-diff" data-lang="diff">   TypeSize getRegisterBitWidth(TargetTransformInfo::RegisterKind K) const {
+     switch (K) {
+     case TargetTransformInfo::RGK_Scalar:
+       return TypeSize::getFixed(32);
+     case TargetTransformInfo::RGK_FixedWidthVector:
+<span class="gi">+      if (ST-&gt;hasVFP2Base())
++        return TypeSize::getFixed(128);
+</span>       if (ST-&gt;hasNEON())
+         return TypeSize::getFixed(128);
+       if (ST-&gt;hasMVEIntegerOps())
+         return TypeSize::getFixed(128);
+       return TypeSize::getFixed(0);
+     case TargetTransformInfo::RGK_ScalableVector:
+       return TypeSize::getScalable(0);
+     }
+     llvm_unreachable("Unsupported register kind");
+   }</code></pre></figure>
+
+<p>With all this we can try our loop above.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>clang <span class="nt">--target</span><span class="o">=</span>armv6-linux-gnueabihf <span class="nt">-O2</span> <span class="nt">-S</span> <span class="nt">-o-</span> simple_add.c</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vector_sum:
+	.fnstart
+@ %bb.0:
+	.save	{r11, lr}
+	push	{r11, lr}
+	ldr	r12, .LCPI0_0
+	ldr	lr, .LCPI0_1
+	ldr	r3, .LCPI0_2
+	mov	r0, #0
+.LBB0_1:                                @ =&gt;This Inner Loop Header: Depth=1
+	add	r1, r12, r0
+	add	r2, lr, r0
+	vldr	d1, [r1]
+	vldr	d0, [r2]
+	add	r1, r3, r0
+	add	r0, r0, #8
+	cmp	r0, #8192
+	vadd.f64	d0, d1, d0
+	vstr	d0, [r1]
+	bne	.LBB0_1
+@ %bb.2:
+	pop	{r11, pc}
+	.p2align	2</code></pre></figure>
+
+<p>Uhm, this is not what we wanted, right? The reason is that in general the
+vectoriser will try not to make unsafe transformations. VFP instructions are
+not 100% compliant with IEEE-754 so the vectoriser will not use them by
+default.</p>
+
+<p>We need to tell the compiler “it is OK, let’s use not 100% precise
+instructions” by using <code class="language-plaintext highlighter-rouge">-O2 -ffast-math</code> or the shorter form <code class="language-plaintext highlighter-rouge">-Ofast</code>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>clang <span class="nt">--target</span><span class="o">=</span>armv6-linux-gnueabihf <span class="nt">-Ofast</span> <span class="nt">-S</span> <span class="nt">-o-</span> simple_add.c</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">vector_sum:
+	.fnstart
+@ %bb.0:
+	.save	{r4, lr}
+	push	{r4, lr}
+	.vsave	{d8, d9, d10, d11}
+	vpush	{d8, d9, d10, d11}
+	ldr	r12, .LCPI0_0
+	ldr	lr, .LCPI0_1
+	ldr	r3, .LCPI0_2
+	mov	r0, #0
+.LBB0_1:                                @ vector-body
+	add	r1, r12, r0
+	add	r2, lr, r0
+	vldmia	r2, {d4, d5, d6, d7}
+	vldmia	r1, {d8, d9, d10, d11}
+	vmrs	r4, fpscr
+	mov	r2, #65536
+	bic	r4, r4, #458752
+	orr	r4, r4, r2
+	vmsr	fpscr, r4
+	vadd.f64	d4, d8, d4
+	add	r1, r3, r0
+	add	r0, r0, #32
+	cmp	r0, #8192
+	vadd.f64	d6, d10, d6
+	vstmia	r1, {d4, d5, d6, d7}
+	bne	.LBB0_1
+@ %bb.2:
+	vmrs	r1, fpscr
+	bic	r1, r1, #458752
+	vmsr	fpscr, r1
+	vpop	{d8, d9, d10, d11}
+	pop	{r4, pc}
+	.p2align	2</code></pre></figure>
+
+<p>This is more interesting!</p>
+
+<p>Note however we have some gross inefficiency here: we are changing the vector
+length (setting it to 2) in every iteration of the loop. Later in this post we
+will evaluate if it is worth trying to hoist it out of the loop.</p>
+
+<h2>A very simple benchmark</h2>
+
+<p>Let’s use this <a href="https://gist.github.com/rofirrim/813729ddb7c2f29898f678cc30a0b5e0">simple
+benchmark</a>
+that computes a vector addition of floats (similar to the code shown above in
+the post).  It also has a mechanism to validate the scalar version and the
+vector version. <code class="language-plaintext highlighter-rouge">#pragma clang loop</code> is used to explicitly disable
+vectorisation in the scalar loops that would otherwise be vectorised.</p>
+
+<p>The benchmark can be adjusted for number of times we run the benchmark and the
+size of the vector. This is useful to run it in different scenarios.</p>
+
+<p>This benchmark has a low ratio of computation over memory accesses. We do one
+addition and three memory accesses (two loads and one store).  This means that
+the <a href="https://en.wikipedia.org/wiki/Roofline_model"><em>arithmetic intensity</em></a> of
+this benchmark is small. We may not be able to observe a lot of improvement
+with vector instructions.</p>
+
+<p>We can study more favourable situations if we use smaller arrays. In this case,
+when we run the benchmark again, chances are that the vector will be in the
+cache already.  While the arithmetic intensity hasn’t changed, in this
+situation the arithmetic computation has higher weight in the overall
+execution.</p>
+
+<p>Let’s look at two executions of the benchmark. Both show the ratio of execution
+time of the vector loop respect to the scalar loop (not vectorised at all). The
+plot at the left shows the results when the vectorised loop sets the vector
+length at each iteration. The plot at the right shows the results when the
+vector length is set only once before entering the vector body.</p>
+
+<figure>
+    <img src="/assets/images/vadd-results.svg" alt="Plot with speedup of vector addition results" />
+    <figcaption>Very simple array addition benchmark</figcaption>
+</figure>
+
+<p>In both cases an array of 4 floats does not perform very well because the loop
+has been vectorised using an interleave factor of 2. So each vector loop
+iteration wants to process 8 iterations of the original scalar loop. There is
+some overhead setting up the vector length to 1 in the tail loop (the loop that
+processes the remaining elements that do not complete a vector) hence the bad
+performance. This is less noticeable on the right plot as the vector length is
+only set once before entering the scalar loop (not once per iteration of the
+loop as it happens on the left).</p>
+
+<p>On the left plot we see that, until 4096 float elements, the improvement over
+scalar is modest: around 2.5X the scalar code. I believe changing the vector
+lenght (which requires reading the <code class="language-plaintext highlighter-rouge">fpscr</code>) introduces some extra cost that
+limits the performance. On the right plot we see it improves up to ~3.4X. This
+means it is a good idea to hoist the set vector length out of the vector loop
+if possible. We will look into it in a later chapter.</p>
+
+<p>Starting from 4096, both plots show a similar performance degradation. The
+reason is that our <em>working set</em> is now beyond the <a href="http://sandsoftwaresound.net/raspberry-pi/raspberry-pi-gen-1/memory-hierarchy/">16KB of the L1 data
+cache</a>.
+Note that when using arrays of 2048 float elements each array takes 8KB.  Given
+that the benchmark uses two of them in the loop, our <em>working set</em> is 16KB.
+Beyond that we overflow the cache (the L2, afaict is not used) and the
+performance drops to ~1.3X. The low arithmetic intensity of this benchmark
+means it quickly becomes a memory-bound problem rather than a CPU-bound
+problem. Vectorisation is unlikely to help under memory-bound problems.</p>
+
+<p>In the next chapter we will look into trying to hoist the set vector length
+out of the loops that only set it once (which we expect to be the common
+case for vectorised loops).</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/08/15/raspberry-vectors-part-8/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 8</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
