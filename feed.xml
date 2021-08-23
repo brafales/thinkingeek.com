@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-23T15:16:26+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-23T19:36:34+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
 with the most exciting part of this journey: autovectorisation!&lt;/p&gt;
 
 &lt;!--more--&gt;
@@ -135,13 +135,13 @@ cases amount to 128 bit, we will claim that size.&lt;/p&gt;
 .LBB0_1:                                @ =&amp;gt;This Inner Loop Header: Depth=1
 	add	r1, r12, r0
 	add	r2, lr, r0
-	vldr	d1, [r1]
-	vldr	d0, [r2]
+	vldr	s2, [r1]
+	vldr	s0, [r2]
 	add	r1, r3, r0
-	add	r0, r0, #8
-	cmp	r0, #8192
-	vadd.f64	d0, d1, d0
-	vstr	d0, [r1]
+	add	r0, r0, #4
+	cmp	r0, #4096
+	vadd.f32	s0, s2, s0
+	vstr	s0, [r1]
 	bne	.LBB0_1
 @ %bb.2:
 	pop	{r11, pc}
@@ -168,22 +168,24 @@ instructions” by using &lt;code class=&quot;language-plaintext highlighter-rou
 	ldr	lr, .LCPI0_1
 	ldr	r3, .LCPI0_2
 	mov	r0, #0
-.LBB0_1:                                @ vector-body
+.LBB0_1:                                @ =&amp;gt;This Inner Loop Header: Depth=1
 	add	r1, r12, r0
 	add	r2, lr, r0
-	vldmia	r2, {d4, d5, d6, d7}
-	vldmia	r1, {d8, d9, d10, d11}
-	vmrs	r4, fpscr
-	mov	r2, #65536
-	bic	r4, r4, #458752
-	orr	r4, r4, r2
-	vmsr	fpscr, r4
-	vadd.f64	d4, d8, d4
+	vldmia	r1, {s16, s17, s18, s19, s20, s21, s22, s23}
+	vldmia	r2, {s8, s9, s10, s11, s12, s13, s14, s15}
+	vmrs	r2, fpscr
+	mov	r1, #196608
+	bic	r2, r2, #458752
+	orr	r2, r2, r1
+	vmsr	fpscr, r2
+	vadd.f32	s12, s20, s12
+	vadd.f32	s8, s16, s8
 	add	r1, r3, r0
 	add	r0, r0, #32
-	cmp	r0, #8192
-	vadd.f64	d6, d10, d6
-	vstmia	r1, {d4, d5, d6, d7}
+	add	r2, r1, #20
+	cmp	r0, #4096
+	vstmia	r2, {s13, s14, s15}
+	vstmia	r1, {s8, s9, s10, s11, s12}
 	bne	.LBB0_1
 @ %bb.2:
 	vmrs	r1, fpscr
@@ -223,15 +225,23 @@ cache already.  While the arithmetic intensity hasn’t changed, in this
 situation the arithmetic computation has higher weight in the overall
 execution.&lt;/p&gt;
 
-&lt;p&gt;Let’s look at two executions of the benchmark. Both show the ratio of execution
-time of the vector loop respect to the scalar loop (not vectorised at all). The
-plot at the left shows the results when the vectorised loop sets the vector
-length at each iteration. The plot at the right shows the results when the
-vector length is set only once before entering the vector body.&lt;/p&gt;
-
+&lt;p&gt;Let’s look at two executions of the benchmark. The figure below show the ratio
+of execution time of the vector loop respect to the scalar loop (not vectorised
+at all). The plot at the left shows the results when the vectorised loop sets
+the vector length at each iteration, as it is emitted by the compiler. The
+plot at the right shows the results when the vector length change is hoisted
+out of the loop: this is, it is set only once before entering the vector body.
+I did this transformation by editing the assembly output.&lt;/p&gt;
 &lt;figure&gt;
     &lt;img src=&quot;/assets/images/vadd-results.svg&quot; alt=&quot;Plot with speedup of vector addition results&quot; /&gt;
-    &lt;figcaption&gt;Very simple array addition benchmark&lt;/figcaption&gt;
+    &lt;figcaption&gt;Very simple array addition benchmark. The plot at the left
+contains the results for the program as it is emitted by the compiler with
+vectorisation enabled. It sets the vector length at each iteration of the
+vectorised loop. The plot at the right contains the result for a manually
+modified assembly output so it sets the vector length right before entering the
+vectorised loop. The benchmark runs 256 times and it was run it 50 times for
+each array length (from 4 to 131072).
+&lt;/figcaption&gt;
 &lt;/figure&gt;
 
 &lt;p&gt;In both cases an array of 4 floats does not perform very well because the loop
