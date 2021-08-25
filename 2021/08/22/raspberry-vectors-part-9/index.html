@@ -345,6 +345,29 @@ performance drops to ~1.3X. The low arithmetic intensity of this benchmark
 means it quickly becomes a memory-bound problem rather than a CPU-bound
 problem. Vectorisation is unlikely to help under memory-bound problems.</p>
 
+<h3>Too good to be true?</h3>
+
+<p>After thinking a bit more about the results, a doubt came to mind. In practice,
+this is like if we had unrolled the loop but using hardware instructions. This
+is because the vector mode of the VFP does not bring any performance benefit:
+the latency of the instructions is scaled by the vector length.</p>
+
+<p>So I extended the benchmark to include an unrolled version of the vector
+addition, without vectorisation. I think the results speak for themselves.</p>
+
+<figure>
+    <img src="/assets/images/vadd-results-plus-unroll.svg" alt="Plot with speedup of vector addition results including an unrolled version" />
+    <figcaption>
+Unrolling is almost as competitive in performance as vectorising in the naive
+way. We can get a bit of an edge if we hoist the set vector length, but this
+advantage quickly fades away.
+</figcaption>
+</figure>
+
+<p>So as I already hypothesised at the first chapter of this series, the only
+benefit we may obtain from using vector instructions is code size
+improvement.</p>
+
 <p>In the next chapter we will look into trying to hoist the set vector length
 out of the loops that only set it once (which we expect to be the common
 case for vectorised loops).</p>

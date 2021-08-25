@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-23T21:34:10+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-08-25T15:09:27+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
 with the most exciting part of this journey: autovectorisation!&lt;/p&gt;
 
 &lt;!--more--&gt;
@@ -269,6 +269,29 @@ Beyond that we overflow the cache (the L2, afaict is not used) and the
 performance drops to ~1.3X. The low arithmetic intensity of this benchmark
 means it quickly becomes a memory-bound problem rather than a CPU-bound
 problem. Vectorisation is unlikely to help under memory-bound problems.&lt;/p&gt;
+
+&lt;h3&gt;Too good to be true?&lt;/h3&gt;
+
+&lt;p&gt;After thinking a bit more about the results, a doubt came to mind. In practice,
+this is like if we had unrolled the loop but using hardware instructions. This
+is because the vector mode of the VFP does not bring any performance benefit:
+the latency of the instructions is scaled by the vector length.&lt;/p&gt;
+
+&lt;p&gt;So I extended the benchmark to include an unrolled version of the vector
+addition, without vectorisation. I think the results speak for themselves.&lt;/p&gt;
+
+&lt;figure&gt;
+    &lt;img src=&quot;/assets/images/vadd-results-plus-unroll.svg&quot; alt=&quot;Plot with speedup of vector addition results including an unrolled version&quot; /&gt;
+    &lt;figcaption&gt;
+Unrolling is almost as competitive in performance as vectorising in the naive
+way. We can get a bit of an edge if we hoist the set vector length, but this
+advantage quickly fades away.
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;So as I already hypothesised at the first chapter of this series, the only
+benefit we may obtain from using vector instructions is code size
+improvement.&lt;/p&gt;
 
 &lt;p&gt;In the next chapter we will look into trying to hoist the set vector length
 out of the loops that only set it once (which we expect to be the common
