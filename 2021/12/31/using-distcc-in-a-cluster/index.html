@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Distributed compilation in a cluster</title>
+  <meta name="description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Distributed compilation in a cluster">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">
+  <meta property="og:description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Distributed compilation in a cluster">
+  <meta name="twitter:description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation tak...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Distributed compilation in a cluster</h1>
+    
+    <p class="post-meta"><time datetime="2021-12-31T16:20:00+00:00" itemprop="datePublished">Dec 31, 2021</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/tags/distributed/">distributed</a>, <a href="/tags/compilation/">compilation</a>, <a href="/tags/cluster/">cluster</a>, <a href="/tags/hpc/">HPC</a>, <a href="/tags/scientific/">scientific</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In software development there is an unavoidable trend in which applications
+become larger and more complex. For compiled programming languages, one of
+the consequences is that their compilation takes longer.</p>
+
+<p>Today I want to talk about using <a href="https://distcc.github.io/">distcc</a> to speed
+C/C++ compilation using different nodes in a scientific cluster.</p>
+
+<!--more-->
+
+<h1>Distributed compilation</h1>
+
+<p>Some programming languages, like C++, are slow to compile. Ideally the root
+causes of the slowness would be attacked and we would call it a day. However
+the real causes of the slowness are many and they are not trivial to solve. So
+as an alternative, for now, we can try to throw more resources at compiling C++.</p>
+
+<p><a href="https://distcc.github.io/">distcc</a> is a tool that helps us doing so by
+distributing a C/C++ compilation accross several nodes accessible via a
+network. Distcc has relatively low expectations about the nodes: ideally you only
+need the same compiler installed everywhere. This is because the default operation
+mode of distcc is based on distributing the preprocessed files. This works
+but we can do a bit better if we are able to also preprocess distributedly, distcc
+calls this the <code class="language-plaintext highlighter-rouge">pump</code> mode.</p>
+
+<h2>Scientific clusters</h2>
+
+<p>Scientific clusters are designed to execute applications that need lots of
+computational resources. As such they are usually structured as one or more
+login nodes and a set of computational nodes. Users can connect to login nodes
+but can only access computational nodes after they have allocated the
+resources. The allocation is requested from the login node. A common resource
+manager to do that is Slurm.</p>
+
+<h1>Example: compiling LLVM on 4 nodes</h1>
+
+<h2>Install distcc</h2>
+
+<p>I’ll assume <code class="language-plaintext highlighter-rouge">distcc</code> is already installed in <code class="language-plaintext highlighter-rouge">&lt;install-distcc&gt;</code>. It is not
+difficult to install from source. Make sure the installation directory is in
+the <code class="language-plaintext highlighter-rouge">PATH</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>&lt;install-distcc&gt;/bin:<span class="nv">$PATH</span>
+</code></pre></div></div>
+
+<h2>Set up distcc</h2>
+
+<p>In general, using login nodes for anything other than allocating computational
+resources is frowned upon. So we will request 5 nodes. One of them, the main,
+will be used to orchestrate the compilation, and the other 4 will be used for
+the compilation itself.</p>
+
+<p>For this example I’m going to use Slurm. Even if your cluster is using Slurm
+too, its site-configuration may be different and there may be small operational
+differences. Check your site documentation.</p>
+
+<p>First of all, let’s request the resources using <code class="language-plaintext highlighter-rouge">salloc</code> command from Slurm.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>salloc <span class="nt">--qos</span><span class="o">=</span>debug <span class="nt">--time</span><span class="o">=</span>01:00:00 <span class="nt">-N</span> 5
+salloc: Pending job allocation 12345678
+salloc: job 12345678 queued and waiting <span class="k">for </span>resources
+salloc: job 12345678 has been allocated resources
+salloc: Granted job allocation 12345678
+salloc: Waiting <span class="k">for </span>resource configuration
+salloc: Nodes z04r1b64,z05r2b[38-39],z09r2b56,z13r1b01 are ready <span class="k">for </span>job
+</code></pre></div></div>
+
+<p>In the cluster I’m using, <code class="language-plaintext highlighter-rouge">debug</code> is a special partition meant to do debugging
+or compiling applications. I’m requesting 5 nodes for 1 hour.</p>
+
+<p>The allocation is often fulfilled quickly (but this depends on the level
+of utilisation of the cluster, which often correlates with deadlines!)</p>
+
+<p>This cluster automatically logins you to the first allocated node (<code class="language-plaintext highlighter-rouge">z04r1b64</code>).
+Some other clusters may require you to do <code class="language-plaintext highlighter-rouge">ssh</code> first.</p>
+
+<p>Now we need to make sure distcc will allow us to use the compiler we plan to use.
+So edit the file <code class="language-plaintext highlighter-rouge">&lt;install-distcc&gt;/etc/distcc/commands.allow.sh</code> and add
+the full path to the compiler you want to use. In my case I will be using <code class="language-plaintext highlighter-rouge">clang</code>
+installed in a non-default path.</p>
+
+<figure class="highlight"><figcaption>&lt;install-distcc&gt;/etc/distcc/commands.allow.sh</figcaption><pre><code class="language-bash" data-lang="bash"><span class="nv">allowed_compilers</span><span class="o">=</span><span class="s2">"
+  /usr/bin/cc
+  /usr/bin/c++
+  /usr/bin/c89
+  /usr/bin/c99
+  /usr/bin/gcc
+  /usr/bin/g++
+  /usr/bin/*gcc-*
+  /usr/bin/*g++-*
+  /apps/LLVM/12.0.1/GCC/bin/clang
+  /apps/LLVM/12.0.1/GCC/bin/clang++
+"</span></code></pre></figure>
+
+<p>Now we are going to use
+<a href="https://clustershell.readthedocs.io/en/latest/tools/clush.html"><code class="language-plaintext highlighter-rouge">clush</code></a> to
+start the distcc daemon on the other nodes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>clush <span class="nt">-w</span> <span class="s2">"z05r2b[38-39],z09r2b56,z13r1b01"</span> <span class="se">\</span>
+        &lt;install-distcc&gt;/bin/distccd <span class="nt">--daemon</span> <span class="nt">--allow</span> 10.0.0.0/8 <span class="nt">--enable-tcp-insecure</span>
+</code></pre></div></div>
+
+<p>Luckily <code class="language-plaintext highlighter-rouge">clush</code> understands Slurm’s nodeset notation, so we can just use it
+directly (but make sure you do not pass the main node). We request it to be a
+daemon <code class="language-plaintext highlighter-rouge">--daemon</code> and allow all the nodes of the private LAN used by the
+cluster. The flag <code class="language-plaintext highlighter-rouge">--enable-tcp-insecure</code> is required because for simplicity we
+will not use the <em>masquerade</em> feature of distcc.  This is a safety issue that
+should be considered later.</p>
+
+<p>Now we setup the <code class="language-plaintext highlighter-rouge">DISTCC_HOSTS</code> environment variable. Unfortunately <code class="language-plaintext highlighter-rouge">distcc</code>
+cannot use Slurm’s nodeset notation. Tool <code class="language-plaintext highlighter-rouge">nodeset</code> (from <code class="language-plaintext highlighter-rouge">clush</code> itself) will
+come handy here.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nodeset <span class="nt">-e</span> z04r1b64,z05r2b[38-39],z09r2b56,s13r1b01
+z05r2b38 z05r2b39 z04r1b64 z09r2b56 s13r1b01
+</code></pre></div></div>
+
+<p>Now the variable <code class="language-plaintext highlighter-rouge">DISTCC_HOSTS</code> has the following syntax for each host:
+<code class="language-plaintext highlighter-rouge">host/limit,options</code>. We are going to use as options <code class="language-plaintext highlighter-rouge">lzo,cpp</code>. <code class="language-plaintext highlighter-rouge">lzo</code> means
+compressing the files during network transfers and <code class="language-plaintext highlighter-rouge">cpp</code> will allow us to
+enable the pump mode. Each of our nodes has 48 cores, so let’s use that as a limit.
+Also let’s not forget to remove the main node. We can use the following script.</p>
+
+<figure class="highlight"><figcaption>setup_distcc.sh</figcaption><pre><code class="language-bash" data-lang="bash"><span class="c">#!/usr/bin/env bash</span>
+
+<span class="nv">CURRENT</span><span class="o">=</span><span class="si">$(</span><span class="nb">hostname</span><span class="si">)</span>
+<span class="nv">DISTCC_HOSTS</span><span class="o">=</span><span class="s2">""</span>
+<span class="nv">NODES</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span>nodeset <span class="nt">-e</span> <span class="k">${</span><span class="nv">SLURM_NODELIST</span><span class="k">}</span><span class="si">)</span><span class="s2">"</span>
+
+<span class="k">for </span>i <span class="k">in</span> <span class="k">${</span><span class="nv">NODES</span><span class="k">}</span>
+<span class="k">do</span>
+  <span class="c"># Ignore current host.</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$i</span><span class="s2">"</span> <span class="o">=</span> <span class="s2">"</span><span class="k">${</span><span class="nv">CURRENT</span><span class="k">}</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span>
+  <span class="k">then
+   continue</span><span class="p">;</span>
+  <span class="k">fi</span><span class="p">;</span>
+  <span class="k">if</span> <span class="o">[</span> <span class="nt">-n</span> <span class="s2">"</span><span class="k">${</span><span class="nv">DISTCC_HOSTS</span><span class="k">}</span><span class="s2">"</span> <span class="o">]</span><span class="p">;</span>
+  <span class="k">then</span>
+    <span class="c"># Add separator.</span>
+    DISTCC_HOSTS+<span class="o">=</span><span class="s2">" "</span>
+  <span class="k">fi
+  </span>DISTCC_HOSTS+<span class="o">=</span><span class="s2">"</span><span class="nv">$i</span><span class="s2">/48,lzo,cpp"</span>
+<span class="k">done
+
+</span><span class="nb">export </span>DISTCC_HOSTS</code></pre></figure>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">source </span>set_distcc_hosts.sh
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$DISTCC_HOSTS</span>
+z05r2b3/48,lzo,cpp z04r1b6/48,lzo,cpp z09r2b5/48,lzo,cpp s13r1b0/48,lzo,cpp
+</code></pre></div></div>
+
+<p>Now we are ready to build.</p>
+
+<h2>LLVM’s cmake</h2>
+
+<p>In a separate build directory, invoke cmake as usual. Make sure you specify
+the compiler you want to use. The easiest way to do this is setting <code class="language-plaintext highlighter-rouge">CC</code> and <code class="language-plaintext highlighter-rouge">CXX</code>.</p>
+
+<p>We will compile only <code class="language-plaintext highlighter-rouge">clang</code> in this example.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Source of llvm is in ./llvm-src</span>
+<span class="nv">$ </span><span class="nb">mkdir </span>llvm-build
+<span class="nv">$ </span><span class="nb">cd </span>llvm-build
+<span class="nv">$ CC</span><span class="o">=</span><span class="s2">"/apps/LLVM/12.0.1/GCC/bin/clang"</span> <span class="nv">CXX</span><span class="o">=</span><span class="s2">"/apps/LLVM/12.0.1/GCC/bin/clang++"</span> <span class="se">\</span>
+  cmake <span class="nt">-G</span> Ninja ../llvm-src/llvm <span class="se">\</span>
+  <span class="nt">-DCMAKE_BUILD_TYPE</span><span class="o">=</span>Release <span class="s2">"-DLLVM_ENABLE_PROJECTS=clang"</span> <span class="se">\</span>
+  <span class="nt">-DLLVM_ENABLE_LLD</span><span class="o">=</span>ON <span class="nt">-DCMAKE_RANLIB</span><span class="o">=</span><span class="si">$(</span>which llvm-ranlib<span class="si">)</span>
+  <span class="nt">-DCMAKE_AR</span><span class="o">=</span><span class="si">$(</span>which llvm-ar<span class="si">)</span> <span class="nt">-DLLVM_PARALLEL_LINK_JOBS</span><span class="o">=</span>48 <span class="se">\</span>
+  <span class="nt">-DCMAKE_C_COMPILER_LAUNCHER</span><span class="o">=</span>distcc <span class="nt">-DCMAKE_CXX_COMPILER_LAUNCHER</span><span class="o">=</span>distcc
+</code></pre></div></div>
+
+<p>The important flags here are <code class="language-plaintext highlighter-rouge">-DCMAKE_C_COMPILER_LAUNCHER=distcc</code> and
+<code class="language-plaintext highlighter-rouge">-DCMAKE_CXX_COMPILER_LAUNCHER=distcc</code>. The build system will use these when
+building (but not during configuration, which is convenient). The other flags
+are just to ensure a release build and force the build system to use <code class="language-plaintext highlighter-rouge">lld</code>, not
+to run (locally) more than 48 link jobs, <code class="language-plaintext highlighter-rouge">llvm-ranlib</code> and <code class="language-plaintext highlighter-rouge">llvm-ar</code> from LLVM
+which are faster than the usual GNU counterparts.</p>
+
+<p>Now make sure the variables <code class="language-plaintext highlighter-rouge">CPATH</code>, <code class="language-plaintext highlighter-rouge">C_INCLUDE_PATH</code> and <code class="language-plaintext highlighter-rouge">CPLUS_INCLUDE_PATH</code>
+are not set, otherwise the pump mode will refuse to work.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">unset </span>CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH
+</code></pre></div></div>
+
+<p>The cmake invocation should complete successfully. Now we can invoke <code class="language-plaintext highlighter-rouge">ninja</code> but
+telling it that it uses 192 (= 48 × 4) concurrent jobs.</p>
+
+<p>Now we can run <code class="language-plaintext highlighter-rouge">ninja</code> under <code class="language-plaintext highlighter-rouge">pump</code> (required for the pump mode).</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">time </span>pump ninja <span class="nt">-j</span><span class="k">$((</span><span class="m">48</span> <span class="o">*</span> <span class="m">4</span><span class="k">))</span>
+__________Using distcc-pump from &lt;install-distcc&gt;/bin
+__________Using 4 distcc servers <span class="k">in </span>pump mode
+<span class="o">[</span>4382/4382] Linking CXX executable bin/c-index-test
+__________Shutting down distcc-pump include server
+
+real	3m0.985s
+user	4m42.380s
+sys	2m56.167s
+
+</code></pre></div></div>
+
+<p>3 minutes to compile whole LLVM in Release mode is not bad 😀</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/08/22/raspberry-vectors-part-9/">&laquo; Fun with vectors in the Raspberry Pi 1 - Part 9</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
