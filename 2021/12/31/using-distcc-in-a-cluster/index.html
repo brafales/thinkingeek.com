@@ -10,7 +10,7 @@
   
   
   <title>Distributed compilation in a cluster</title>
-  <meta name="description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.">
+  <meta name="description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.">
   
 
   <link rel="stylesheet" href="/assets/main.css">
@@ -25,13 +25,13 @@
   <meta property="og:title" content="Distributed compilation in a cluster">
   <meta property="og:site_name" content="Think In Geek">
   <meta property="og:url" content="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">
-  <meta property="og:description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.">
+  <meta property="og:description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.">
   
   
   <meta name="twitter:card" content="summary">
   
   <meta name="twitter:title" content="Distributed compilation in a cluster">
-  <meta name="twitter:description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation tak...">
+  <meta name="twitter:description" content="In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages one of the consequences is that their compilation take...">
   
   
 
@@ -74,7 +74,7 @@
 
   <div class="post-content" itemprop="articleBody">
     <p>In software development there is an unavoidable trend in which applications
-become larger and more complex. For compiled programming languages, one of
+become larger and more complex. For compiled programming languages one of
 the consequences is that their compilation takes longer.</p>
 
 <p>Today I want to talk about using <a href="https://distcc.github.io/">distcc</a> to speed
@@ -143,12 +143,12 @@ salloc: Nodes z04r1b64,z05r2b[38-39],z09r2b56,z13r1b01 are ready <span class="k"
 or compiling applications. I’m requesting 5 nodes for 1 hour.</p>
 
 <p>The allocation is often fulfilled quickly (but this depends on the level
-of utilisation of the cluster, which often correlates with deadlines!)</p>
+of utilisation of the cluster, which often correlates with deadlines!).</p>
 
-<p>This cluster automatically logins you to the first allocated node (<code class="language-plaintext highlighter-rouge">z04r1b64</code>).
-Some other clusters may require you to do <code class="language-plaintext highlighter-rouge">ssh</code> first.</p>
+<p>The cluster I’m using automatically logins you to the first allocated node
+(<code class="language-plaintext highlighter-rouge">z04r1b64</code>).  Some other clusters may require you to do <code class="language-plaintext highlighter-rouge">ssh</code> first.</p>
 
-<p>Now we need to make sure distcc will allow us to use the compiler we plan to use.
+<p>We need to make sure distcc will allow us to use the compiler we plan to use.
 So edit the file <code class="language-plaintext highlighter-rouge">&lt;install-distcc&gt;/etc/distcc/commands.allow.sh</code> and add
 the full path to the compiler you want to use. In my case I will be using <code class="language-plaintext highlighter-rouge">clang</code>
 installed in a non-default path.</p>
@@ -177,23 +177,24 @@ start the distcc daemon on the other nodes.</p>
 <p>Luckily <code class="language-plaintext highlighter-rouge">clush</code> understands Slurm’s nodeset notation, so we can just use it
 directly (but make sure you do not pass the main node). We request it to be a
 daemon <code class="language-plaintext highlighter-rouge">--daemon</code> and allow all the nodes of the private LAN used by the
-cluster. The flag <code class="language-plaintext highlighter-rouge">--enable-tcp-insecure</code> is required because for simplicity we
-will not use the <em>masquerade</em> feature of distcc.  This is a safety issue that
-should be considered later.</p>
+cluster. The flag <code class="language-plaintext highlighter-rouge">--enable-tcp-insecure</code> is required because, for simplicity,
+we will not use the <em>masquerade</em> feature of distcc. This is a safety feature
+that should be considered later.</p>
 
-<p>Now we setup the <code class="language-plaintext highlighter-rouge">DISTCC_HOSTS</code> environment variable. Unfortunately <code class="language-plaintext highlighter-rouge">distcc</code>
-cannot use Slurm’s nodeset notation. Tool <code class="language-plaintext highlighter-rouge">nodeset</code> (from <code class="language-plaintext highlighter-rouge">clush</code> itself) will
-come handy here.</p>
+<p>At this point we must setup the <code class="language-plaintext highlighter-rouge">DISTCC_HOSTS</code> environment variable.
+Unfortunately <code class="language-plaintext highlighter-rouge">distcc</code> cannot use Slurm’s nodeset notation. A tool called
+<code class="language-plaintext highlighter-rouge">nodeset</code> (from <code class="language-plaintext highlighter-rouge">clush</code> itself) will come handy here.</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nodeset <span class="nt">-e</span> z04r1b64,z05r2b[38-39],z09r2b56,s13r1b01
 z05r2b38 z05r2b39 z04r1b64 z09r2b56 s13r1b01
 </code></pre></div></div>
 
-<p>Now the variable <code class="language-plaintext highlighter-rouge">DISTCC_HOSTS</code> has the following syntax for each host:
+<p>The variable <code class="language-plaintext highlighter-rouge">DISTCC_HOSTS</code> has the following syntax for each host:
 <code class="language-plaintext highlighter-rouge">host/limit,options</code>. We are going to use as options <code class="language-plaintext highlighter-rouge">lzo,cpp</code>. <code class="language-plaintext highlighter-rouge">lzo</code> means
 compressing the files during network transfers and <code class="language-plaintext highlighter-rouge">cpp</code> will allow us to
-enable the pump mode. Each of our nodes has 48 cores, so let’s use that as a limit.
-Also let’s not forget to remove the main node. We can use the following script.</p>
+enable the pump mode. Each of our nodes has 48 cores, so let’s use that as a
+limit (distcc’s default is 4 concurrent jobs). Also let’s not forget to remove
+the main node. We can use the following script.</p>
 
 <figure class="highlight"><figcaption>setup_distcc.sh</figcaption><pre><code class="language-bash" data-lang="bash"><span class="c">#!/usr/bin/env bash</span>
 
@@ -250,16 +251,16 @@ are just to ensure a release build and force the build system to use <code class
 to run (locally) more than 48 link jobs, <code class="language-plaintext highlighter-rouge">llvm-ranlib</code> and <code class="language-plaintext highlighter-rouge">llvm-ar</code> from LLVM
 which are faster than the usual GNU counterparts.</p>
 
-<p>Now make sure the variables <code class="language-plaintext highlighter-rouge">CPATH</code>, <code class="language-plaintext highlighter-rouge">C_INCLUDE_PATH</code> and <code class="language-plaintext highlighter-rouge">CPLUS_INCLUDE_PATH</code>
-are not set, otherwise the pump mode will refuse to work.</p>
+<p>The cmake invocation should complete successfully.</p>
+
+<p>Before we continue, we must make sure the variables <code class="language-plaintext highlighter-rouge">CPATH</code>, <code class="language-plaintext highlighter-rouge">C_INCLUDE_PATH</code>
+and <code class="language-plaintext highlighter-rouge">CPLUS_INCLUDE_PATH</code> are not set, otherwise the pump mode will refuse to
+work.</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">unset </span>CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH
 </code></pre></div></div>
-
-<p>The cmake invocation should complete successfully. Now we can invoke <code class="language-plaintext highlighter-rouge">ninja</code> but
-telling it that it uses 192 (= 48 × 4) concurrent jobs.</p>
-
-<p>Now we can run <code class="language-plaintext highlighter-rouge">ninja</code> under <code class="language-plaintext highlighter-rouge">pump</code> (required for the pump mode).</p>
+<p>Now we can invoke <code class="language-plaintext highlighter-rouge">ninja</code> but telling it that it uses 192 (= 48 × 4)
+concurrent jobs.  We have to use <code class="language-plaintext highlighter-rouge">pump</code> to enable distcc’s pump mode.</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">time </span>pump ninja <span class="nt">-j</span><span class="k">$((</span><span class="m">48</span> <span class="o">*</span> <span class="m">4</span><span class="k">))</span>
 __________Using distcc-pump from &lt;install-distcc&gt;/bin

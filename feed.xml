@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-12-31T16:52:37+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Distributed compilation in a cluster</title><link href="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/" rel="alternate" type="text/html" title="Distributed compilation in a cluster" /><published>2021-12-31T16:20:00+00:00</published><updated>2021-12-31T16:20:00+00:00</updated><id>https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster</id><content type="html" xml:base="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">&lt;p&gt;In software development there is an unavoidable trend in which applications
-become larger and more complex. For compiled programming languages, one of
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-12-31T21:48:54+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Distributed compilation in a cluster</title><link href="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/" rel="alternate" type="text/html" title="Distributed compilation in a cluster" /><published>2021-12-31T16:20:00+00:00</published><updated>2021-12-31T16:20:00+00:00</updated><id>https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster</id><content type="html" xml:base="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">&lt;p&gt;In software development there is an unavoidable trend in which applications
+become larger and more complex. For compiled programming languages one of
 the consequences is that their compilation takes longer.&lt;/p&gt;
 
 &lt;p&gt;Today I want to talk about using &lt;a href=&quot;https://distcc.github.io/&quot;&gt;distcc&lt;/a&gt; to speed
@@ -68,12 +68,12 @@ salloc: Nodes z04r1b64,z05r2b[38-39],z09r2b56,z13r1b01 are ready &lt;span class=
 or compiling applications. I’m requesting 5 nodes for 1 hour.&lt;/p&gt;
 
 &lt;p&gt;The allocation is often fulfilled quickly (but this depends on the level
-of utilisation of the cluster, which often correlates with deadlines!)&lt;/p&gt;
+of utilisation of the cluster, which often correlates with deadlines!).&lt;/p&gt;
 
-&lt;p&gt;This cluster automatically logins you to the first allocated node (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;z04r1b64&lt;/code&gt;).
-Some other clusters may require you to do &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; first.&lt;/p&gt;
+&lt;p&gt;The cluster I’m using automatically logins you to the first allocated node
+(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;z04r1b64&lt;/code&gt;).  Some other clusters may require you to do &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; first.&lt;/p&gt;
 
-&lt;p&gt;Now we need to make sure distcc will allow us to use the compiler we plan to use.
+&lt;p&gt;We need to make sure distcc will allow us to use the compiler we plan to use.
 So edit the file &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;install-distcc&amp;gt;/etc/distcc/commands.allow.sh&lt;/code&gt; and add
 the full path to the compiler you want to use. In my case I will be using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clang&lt;/code&gt;
 installed in a non-default path.&lt;/p&gt;
@@ -102,23 +102,24 @@ start the distcc daemon on the other nodes.&lt;/p&gt;
 &lt;p&gt;Luckily &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clush&lt;/code&gt; understands Slurm’s nodeset notation, so we can just use it
 directly (but make sure you do not pass the main node). We request it to be a
 daemon &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--daemon&lt;/code&gt; and allow all the nodes of the private LAN used by the
-cluster. The flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--enable-tcp-insecure&lt;/code&gt; is required because for simplicity we
-will not use the &lt;em&gt;masquerade&lt;/em&gt; feature of distcc.  This is a safety issue that
-should be considered later.&lt;/p&gt;
+cluster. The flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--enable-tcp-insecure&lt;/code&gt; is required because, for simplicity,
+we will not use the &lt;em&gt;masquerade&lt;/em&gt; feature of distcc. This is a safety feature
+that should be considered later.&lt;/p&gt;
 
-&lt;p&gt;Now we setup the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DISTCC_HOSTS&lt;/code&gt; environment variable. Unfortunately &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;distcc&lt;/code&gt;
-cannot use Slurm’s nodeset notation. Tool &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nodeset&lt;/code&gt; (from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clush&lt;/code&gt; itself) will
-come handy here.&lt;/p&gt;
+&lt;p&gt;At this point we must setup the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DISTCC_HOSTS&lt;/code&gt; environment variable.
+Unfortunately &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;distcc&lt;/code&gt; cannot use Slurm’s nodeset notation. A tool called
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nodeset&lt;/code&gt; (from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clush&lt;/code&gt; itself) will come handy here.&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;nodeset &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; z04r1b64,z05r2b[38-39],z09r2b56,s13r1b01
 z05r2b38 z05r2b39 z04r1b64 z09r2b56 s13r1b01
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;Now the variable &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DISTCC_HOSTS&lt;/code&gt; has the following syntax for each host:
+&lt;p&gt;The variable &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DISTCC_HOSTS&lt;/code&gt; has the following syntax for each host:
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host/limit,options&lt;/code&gt;. We are going to use as options &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lzo,cpp&lt;/code&gt;. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lzo&lt;/code&gt; means
 compressing the files during network transfers and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cpp&lt;/code&gt; will allow us to
-enable the pump mode. Each of our nodes has 48 cores, so let’s use that as a limit.
-Also let’s not forget to remove the main node. We can use the following script.&lt;/p&gt;
+enable the pump mode. Each of our nodes has 48 cores, so let’s use that as a
+limit (distcc’s default is 4 concurrent jobs). Also let’s not forget to remove
+the main node. We can use the following script.&lt;/p&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;setup_distcc.sh&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#!/usr/bin/env bash&lt;/span&gt;
 
@@ -175,16 +176,16 @@ are just to ensure a release build and force the build system to use &lt;code cl
 to run (locally) more than 48 link jobs, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm-ranlib&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm-ar&lt;/code&gt; from LLVM
 which are faster than the usual GNU counterparts.&lt;/p&gt;
 
-&lt;p&gt;Now make sure the variables &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CPATH&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;C_INCLUDE_PATH&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CPLUS_INCLUDE_PATH&lt;/code&gt;
-are not set, otherwise the pump mode will refuse to work.&lt;/p&gt;
+&lt;p&gt;The cmake invocation should complete successfully.&lt;/p&gt;
+
+&lt;p&gt;Before we continue, we must make sure the variables &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CPATH&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;C_INCLUDE_PATH&lt;/code&gt;
+and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CPLUS_INCLUDE_PATH&lt;/code&gt; are not set, otherwise the pump mode will refuse to
+work.&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;unset &lt;/span&gt;CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;The cmake invocation should complete successfully. Now we can invoke &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ninja&lt;/code&gt; but
-telling it that it uses 192 (= 48 × 4) concurrent jobs.&lt;/p&gt;
-
-&lt;p&gt;Now we can run &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ninja&lt;/code&gt; under &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pump&lt;/code&gt; (required for the pump mode).&lt;/p&gt;
+&lt;p&gt;Now we can invoke &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ninja&lt;/code&gt; but telling it that it uses 192 (= 48 × 4)
+concurrent jobs.  We have to use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pump&lt;/code&gt; to enable distcc’s pump mode.&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;time &lt;/span&gt;pump ninja &lt;span class=&quot;nt&quot;&gt;-j&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;$((&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;48&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;))&lt;/span&gt;
 __________Using distcc-pump from &amp;lt;install-distcc&amp;gt;/bin
@@ -198,7 +199,7 @@ sys	2m56.167s
 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;3 minutes to compile clang+LLVM in Release mode is not bad 😀&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><category term="distributed" /><category term="compilation" /><category term="cluster" /><category term="HPC" /><category term="scientific" /><summary type="html">In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages, one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
+&lt;p&gt;3 minutes to compile clang+LLVM in Release mode is not bad 😀&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><category term="distributed" /><category term="compilation" /><category term="cluster" /><category term="HPC" /><category term="scientific" /><summary type="html">In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
 with the most exciting part of this journey: autovectorisation!&lt;/p&gt;
 
 &lt;!--more--&gt;
