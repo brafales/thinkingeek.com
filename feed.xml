@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-03T22:16:13+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-03T22:20:50+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
 technical reasons, access to the internet (i.e. they cannot make outbound
 connections).  Depending on the policies, we may be able to open reverse SSH
 tunnels, so things are not so bad.&lt;/p&gt;
@@ -36,8 +36,8 @@ also use a SOCKS proxy so this is a handy option to consider.&lt;/p&gt;
 
 &lt;p&gt;If we try to install &lt;a href=&quot;https://www.rust-lang.org/learn/get-started&quot;&gt;Rust&lt;/a&gt; on a
 machine that does not allow outbound connections, this is what happens. (Let’s
-ignore the question whether piping a downloaded to the shell is a reasonable
-thing to do).&lt;/p&gt;
+ignore the question whether piping a download directly to the shell is a
+reasonable thing to do).&lt;/p&gt;
 
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;curl &lt;span class=&quot;nt&quot;&gt;--proto&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'=https'&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--tlsv1&lt;/span&gt;.2 &lt;span class=&quot;nt&quot;&gt;-sSf&lt;/span&gt; https://sh.rustup.rs | sh
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;

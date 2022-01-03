@@ -111,8 +111,8 @@ also use a SOCKS proxy so this is a handy option to consider.</p>
 
 <p>If we try to install <a href="https://www.rust-lang.org/learn/get-started">Rust</a> on a
 machine that does not allow outbound connections, this is what happens. (Let’s
-ignore the question whether piping a downloaded to the shell is a reasonable
-thing to do).</p>
+ignore the question whether piping a download directly to the shell is a
+reasonable thing to do).</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>curl <span class="nt">--proto</span> <span class="s1">'=https'</span> <span class="nt">--tlsv1</span>.2 <span class="nt">-sSf</span> https://sh.rustup.rs | sh
 </code></pre></div></div>
