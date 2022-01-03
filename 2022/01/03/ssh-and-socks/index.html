@@ -266,8 +266,9 @@ Collecting yapf
 ERROR: Could not <span class="nb">install </span>packages due to an EnvironmentError: Missing dependencies <span class="k">for </span>SOCKS support.
 </code></pre></div></div>
 
-<p>So you need to install first <code class="language-plaintext highlighter-rouge">pysocks</code>. Now we have a chicken-and-egg situation
-that we need to solve: we cannot download pysocks on the <code class="language-plaintext highlighter-rouge">no-internet</code> machine!
+<p>Based on <a href="https://stackoverflow.com/a/68745571">this answer from Stack Overflow</a>
+we need to first install <code class="language-plaintext highlighter-rouge">pysocks</code>. Now we have a chicken-and-egg situation
+that we need to solve: we cannot download <code class="language-plaintext highlighter-rouge">pysocks</code> on the <code class="language-plaintext highlighter-rouge">no-internet</code> machine!
 To solve it, download <code class="language-plaintext highlighter-rouge">pysocks</code> locally:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>python3 <span class="nt">-m</span> pip download pysocks
