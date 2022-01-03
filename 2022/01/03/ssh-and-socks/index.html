@@ -150,6 +150,11 @@ to the port 12345 bound to the interface <code class="language-plaintext highlig
 syntax of -R is <code class="language-plaintext highlighter-rouge">-R remote-interface:remote-port:local-interface:local-port</code>.
 Keep this command running.</p>
 
+<p><strong>Note:</strong> Because we are using an unprivileged port on <code class="language-plaintext highlighter-rouge">no-internet</code> and the
+<code class="language-plaintext highlighter-rouge">-D</code> option does not allow setting authentication, anyone in <code class="language-plaintext highlighter-rouge">no-internet</code>
+could proxy connections through <code class="language-plaintext highlighter-rouge">with-internet</code>. Do this only on a
+<code class="language-plaintext highlighter-rouge">no-internet</code> host you trust.</p>
+
 <h3>Proxy configuration</h3>
 
 <p>Now we can setup <code class="language-plaintext highlighter-rouge">curl</code> to use a socks proxy. We do this with the

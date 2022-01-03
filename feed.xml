@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-03T22:25:31+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-03T22:34:00+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
 technical reasons, access to the internet (i.e. they cannot make outbound
 connections).  Depending on the policies, we may be able to open reverse SSH
 tunnels, so things are not so bad.&lt;/p&gt;
@@ -74,6 +74,11 @@ to the port 12345 bound to the interface &lt;code class=&quot;language-plaintext
 (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;with-internet&lt;/code&gt;). Again this will not run any command (due to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-N&lt;/code&gt;) and the
 syntax of -R is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-R remote-interface:remote-port:local-interface:local-port&lt;/code&gt;.
 Keep this command running.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; Because we are using an unprivileged port on &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt; and the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-D&lt;/code&gt; option does not allow setting authentication, anyone in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt;
+could proxy connections through &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;with-internet&lt;/code&gt;. Do this only on a
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt; host you trust.&lt;/p&gt;
 
 &lt;h3&gt;Proxy configuration&lt;/h3&gt;
 
