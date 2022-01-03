@@ -1,4 +1,241 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2021-12-31T21:48:54+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Distributed compilation in a cluster</title><link href="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/" rel="alternate" type="text/html" title="Distributed compilation in a cluster" /><published>2021-12-31T16:20:00+00:00</published><updated>2021-12-31T16:20:00+00:00</updated><id>https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster</id><content type="html" xml:base="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">&lt;p&gt;In software development there is an unavoidable trend in which applications
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-03T22:16:13+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
+technical reasons, access to the internet (i.e. they cannot make outbound
+connections).  Depending on the policies, we may be able to open reverse SSH
+tunnels, so things are not so bad.&lt;/p&gt;
+
+&lt;p&gt;Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated.
+This is probably a well known feature of OpenSSH but I thought it was
+interesting to share how it can be used.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2&gt;SOCKS&lt;/h2&gt;
+
+&lt;p&gt;Nowadays, access to the Internet is ubiquitous and most of the time assumed as
+a fact. However, in some circumstances, direct access to the internet is not
+available or not desirable. In those cases we can resort on proxy servers that
+act as intermediaries between the Internet and the node without direct access.&lt;/p&gt;
+
+&lt;p&gt;Many tools used commonly assume one is connected to the Internet: package
+managers such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pip&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cargo&lt;/code&gt; can automatically download the files
+required to install a package. If no outbound connection is possible,
+software deployment and installation becomes complicated.&lt;/p&gt;
+
+&lt;p&gt;However, most of the time those tools only HTTP/HTTPS support is required. So
+a proxy that only forwards HTTP and HTTPS requests is enough. Examples
+of these kind of proxies are &lt;a href=&quot;http://tinyproxy.github.io/&quot;&gt;tinyproxy&lt;/a&gt; and
+&lt;a href=&quot;http://www.squid-cache.org/&quot;&gt;squid&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/SOCKS&quot;&gt;SOCKS&lt;/a&gt;, is a general proxy protocol that
+can be used for any TCP connection, not only those for HTTP/HTTPS. An
+interesting thing is that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; comes with an integrated SOCKS proxy which is
+relatively easy to use. Often most tools that can use a HTTP/HTTPS proxy can
+also use a SOCKS proxy so this is a handy option to consider.&lt;/p&gt;
+
+&lt;h2&gt;Example: Installing Rust through a proxy&lt;/h2&gt;
+
+&lt;p&gt;If we try to install &lt;a href=&quot;https://www.rust-lang.org/learn/get-started&quot;&gt;Rust&lt;/a&gt; on a
+machine that does not allow outbound connections, this is what happens. (Let’s
+ignore the question whether piping a downloaded to the shell is a reasonable
+thing to do).&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;curl &lt;span class=&quot;nt&quot;&gt;--proto&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'=https'&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--tlsv1&lt;/span&gt;.2 &lt;span class=&quot;nt&quot;&gt;-sSf&lt;/span&gt; https://sh.rustup.rs | sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This command will likely time out after a long time because outbound
+connections are silently dropped and the installation will fail.&lt;/p&gt;
+
+&lt;h3&gt;Set up proxy server&lt;/h3&gt;
+
+&lt;p&gt;To address this, let’s first open a SOCKS proxy using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; on our local machine
+(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;with-internet&lt;/code&gt;). This machine &lt;strong&gt;must&lt;/strong&gt; have internet access (change &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user&lt;/code&gt; to
+your username). &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; will request you to authenticate (via password or ssh
+key).&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@with-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh &lt;span class=&quot;nt&quot;&gt;-N&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-D&lt;/span&gt; 127.0.0.1:12345 user@localhost
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-N&lt;/code&gt; means not to execute a command and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-D interface:port&lt;/code&gt; means to
+open the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;port&lt;/code&gt; bound to the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;interface&lt;/code&gt;. This is the SOCKS proxy. In this
+example we are opening port 12345 and binding it to the 127.0.0.1 (localhost)
+interface. We are using the same machine as the proxy, hence &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;user@localhost&lt;/code&gt;
+(it is possible to use another node, but we don’t have to given that
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;with-internet&lt;/code&gt; already can connect to the internet). This must stay running so
+you will have to open another terminal and set up the reverse tunnel.&lt;/p&gt;
+
+&lt;p&gt;To set up the reverse tunnel do the following.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@with-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;ssh &lt;span class=&quot;nt&quot;&gt;-R&lt;/span&gt; 127.0.0.1:9999:127.0.0.1:12345 &lt;span class=&quot;nt&quot;&gt;-N&lt;/span&gt; user@no-internet
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This opens the port 9999 in the host without internet (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt;) and binds
+it to its localhost (i.e. the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;localhost&lt;/code&gt; of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt;) then it tunnels it
+to the port 12345 bound to the interface &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;127.0.0.1&lt;/code&gt; of our local node
+(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;with-internet&lt;/code&gt;). Again this will not run any command (due to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-N&lt;/code&gt;) and the
+syntax of -R is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-R remote-interface:remote-port:local-interface:local-port&lt;/code&gt;.
+Keep this command running.&lt;/p&gt;
+
+&lt;h3&gt;Proxy configuration&lt;/h3&gt;
+
+&lt;p&gt;Now we can setup &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;curl&lt;/code&gt; to use a socks proxy. We do this with the
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--proxy-option&lt;/code&gt;. For convenience we will first download the installation
+script into a file.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;curl &lt;span class=&quot;nt&quot;&gt;--proto&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'=https'&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--tlsv1&lt;/span&gt;.2 &lt;span class=&quot;nt&quot;&gt;-sSf&lt;/span&gt; https://sh.rustup.rs &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+                       &lt;span class=&quot;nt&quot;&gt;--proxy&lt;/span&gt; socks5://localhost:9999 &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt;  install-rust.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;We can do a quick check that it contains what we expect&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;head &lt;/span&gt;install-rust.sh 
+&lt;span class=&quot;c&quot;&gt;#!/bin/sh&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# shellcheck shell=dash&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# This is just a little script that can be downloaded from the internet to&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# install rustup. It just does platform detection, downloads the installer&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# and runs it.&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# It runs on Unix shells like {a,ba,da,k,z}sh. It uses the common `local`&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;# extension. Note: Most shells limit `local` to 1 var per line, contra bash.&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3&gt;Install Rust&lt;/h3&gt;
+
+&lt;p&gt;We can set up &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;https_proxy&lt;/code&gt; environment variable to point to the SOCKS
+server so it is used by the installation script.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;https_proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;socks5://localhost:9999
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Now we are read to install Rust using the script we downloaded.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;bash install-rust.sh 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;info: downloading installer
+
+Welcome to Rust!
+
+This will download and install the official compiler for the Rust
+programming language, and its package manager, Cargo.
+
+Rustup metadata and toolchains will be installed into the Rustup
+home directory, located at:
+
+  /home/user/.rustup
+
+This can be modified with the RUSTUP_HOME environment variable.
+
+The Cargo home directory located at:
+
+  /home/user/.cargo
+
+This can be modified with the CARGO_HOME environment variable.
+
+The cargo, rustc, rustup and other commands will be added to
+Cargo's bin directory, located at:
+
+  /home/user/.cargo/bin
+
+This path will then be added to your PATH environment variable by
+modifying the profile files located at:
+
+  /home/user/.profile
+  /home/user/.zshenv
+
+You can uninstall at any time with rustup self uninstall and
+these changes will be reverted.
+
+Current installation options:
+
+
+   default host triple: x86_64-unknown-linux-gnu
+     default toolchain: stable (default)
+               profile: default
+  modify PATH variable: yes
+
+1) Proceed with installation (default)
+2) Customize installation
+3) Cancel installation
+&amp;gt;1
+
+info: profile set to 'default'
+info: default host triple is x86_64-unknown-linux-gnu
+info: syncing channel updates for 'stable-x86_64-unknown-linux-gnu'
+info: latest update on 2021-12-02, rust version 1.57.0 (f1edd0429 2021-11-29)
+info: downloading component 'cargo'
+info: downloading component 'clippy'
+info: downloading component 'rust-docs'
+info: downloading component 'rust-std'
+ 24.9 MiB /  24.9 MiB (100 %)  19.9 MiB/s in  1s ETA:  0s
+info: downloading component 'rustc'
+ 53.9 MiB /  53.9 MiB (100 %)  20.1 MiB/s in  2s ETA:  0s
+info: downloading component 'rustfmt'
+info: installing component 'cargo'
+info: installing component 'clippy'
+info: installing component 'rust-docs'
+  5.3 MiB /  17.9 MiB ( 29 %)   1.7 MiB/s in  6s ETA:  7s
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Once Rust is installed, &lt;a href=&quot;https://doc.rust-lang.org/cargo/reference/config.html#httpproxy&quot;&gt;you can setup &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cargo&lt;/code&gt; so it always uses this
+proxy&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2&gt;Example: Using pip using SOCKS&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pip&lt;/code&gt; is used to install Python packages. Unfortunately &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pip&lt;/code&gt; does not support
+SOCKS by default. If you try to install &lt;a href=&quot;https://github.com/google/yapf&quot;&gt;yapf&lt;/a&gt;
+using the configuration above this happens:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;socks5://localhost:9999 yapf
+Collecting yapf
+ERROR: Could not &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;packages due to an EnvironmentError: Missing dependencies &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;SOCKS support.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;So you need to install first &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pysocks&lt;/code&gt;. Now we have a chicken-and-egg situation
+that we need to solve: we cannot download pysocks on the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt; machine!
+To solve it, download &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;pysocks&lt;/code&gt; locally:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@with-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;python3 &lt;span class=&quot;nt&quot;&gt;-m&lt;/span&gt; pip download pysocks
+Collecting pysocks
+  Downloading PySocks-1.7.1-py3-none-any.whl &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;16 kB&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+Saved ./PySocks-1.7.1-py3-none-any.whl
+Successfully downloaded pysocks
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Copy this &lt;a href=&quot;https://pythonwheels.com/&quot;&gt;python wheels&lt;/a&gt; file to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;no-internet&lt;/code&gt;, for
+instance using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scp&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@with-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;scp PySocks-1.7.1-py3-none-any.whl user@no-internet
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And install it manually there. I’m installing it in the user environment
+(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--user&lt;/code&gt; flag) because in this machine I don’t have enough permissions, but
+your mileage may vary here.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--user&lt;/span&gt; PySocks-1.7.1-py3-none-any.whl 
+Processing ./PySocks-1.7.1-py3-none-any.whl
+Installing collected packages: PySocks
+Successfully installed PySocks-1.7.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;If we use pip and SOCKS, now we succeed.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;user@no-internet&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--user&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--proxy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;socks5://localhost:9999 yapf
+Collecting yapf
+  Downloading https://files.pythonhosted.org/packages/47/88/843c2e68f18a5879b4fbf37cb99fbabe1ffc4343b2e63191c8462235c008/yapf-0.32.0-py2.py3-none-any.whl &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;190kB&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+     |████████████████████████████████| 194kB 933kB/s 
+Installing collected packages: yapf
+Successfully installed yapf-0.32.0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Yay!&lt;/p&gt;
+
+&lt;h3&gt;Cleanup&lt;/h3&gt;
+
+&lt;p&gt;Recall we have two connections opened: one is the SOCKS proxy (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-D&lt;/code&gt;) and the
+other the reverse tunnel (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-R&lt;/code&gt;). Just end them both with Ctrl-C and you are
+done. I’m sure this can be scripted somehow but given that the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; commands
+may require password input, this is not a trivial thing to do.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><category term="SOCKS" /><category term="proxy" /><category term="ssh" /><summary type="html">Sometimes we are given access via ssh to nodes that do not have, for policy or technical reasons, access to the internet (i.e. they cannot make outbound connections). Depending on the policies, we may be able to open reverse SSH tunnels, so things are not so bad. Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated. This is probably a well known feature of OpenSSH but I thought it was interesting to share how it can be used.</summary></entry><entry><title type="html">Distributed compilation in a cluster</title><link href="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/" rel="alternate" type="text/html" title="Distributed compilation in a cluster" /><published>2021-12-31T16:20:00+00:00</published><updated>2021-12-31T16:20:00+00:00</updated><id>https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster</id><content type="html" xml:base="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">&lt;p&gt;In software development there is an unavoidable trend in which applications
 become larger and more complex. For compiled programming languages one of
 the consequences is that their compilation takes longer.&lt;/p&gt;
 
@@ -4496,311 +4733,4 @@ foreach base = [8, 16, 24] in {
 def SPRx4 : RegisterClass&amp;lt;&quot;ARM&quot;, [v4f32], 32, (add SPRx4Regs)&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;In the next chapter we will talk about what changes we have to do to be able
-to track &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; so we can change the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field with confidence.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the previous installment we discussed a bit how to generate code using the vector feature of the CPU of the Raspberry Pi 1. Let’s start hacking LLVM.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 1</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-1/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 1" /><published>2021-06-25T12:32:00+00:00</published><updated>2021-06-25T12:32:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-1</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-1/">&lt;p&gt;&lt;a href=&quot;/2013/05/12/arm-assembler-raspberry-pi-chapter-13/&quot;&gt;
-Long ago, we saw that the Raspberry Pi 1 has vector computation
-capabilities&lt;/a&gt;. However to the best of my knowledge no compiler attempted to
-exploit the vector capability in general.&lt;/p&gt;
-
-&lt;p&gt;I think we are going to have some fun in trying to fix this.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;h1&gt;A bit of a reminder&lt;/h1&gt;
-
-&lt;p&gt;The Raspberry Pi 1 comes with a BCM2835 SoC that includes a ARM1176JZF-S core.
-This core implements the ARMv6 architecture and includes support for floating
-point operations via an extension of ARMv6 that was commercially called
-VFP. VFP had several versions but the one included in the ARM1176JZF-S core
-is VFPv2.&lt;/p&gt;
-
-&lt;p&gt;VFP provides 32 registers of single precison which can be grouped in pairs to
-provide 16 registers of double precision.&lt;/p&gt;
-
-&lt;p&gt;However the registers are grouped in banks, a first scalar bank and three
-vector banks.&lt;/p&gt;
-
-&lt;figure&gt;
-  &lt;img src=&quot;/wp-content/uploads/2013/04/vfp-registers.png&quot; alt=&quot;VFP registers&quot; /&gt;
-  &lt;figcaption&gt;Vector registers of VFP&lt;/figcaption&gt;
-&lt;/figure&gt;
-
-&lt;p&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; register has a field called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; that encodes the vector length.&lt;/p&gt;
-
-&lt;figure&gt;
-  &lt;img src=&quot;/assets/images/fpscr-description.png&quot; alt=&quot;fpscr description&quot; /&gt;
-  &lt;figcaption&gt;Description of the &lt;code&gt;fpscr&lt;/code&gt; register.
-  Image from &lt;a href=&quot;https://developer.arm.com/documentation/qrc0007/e/&quot;&gt;Vector Floating Point Instruction Set Quick Reference Card&lt;/a&gt;.&lt;/figcaption&gt;
-&lt;/figure&gt;
-
-&lt;p&gt;By default the vector length is set to 1 (encoded as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0b000&lt;/code&gt; in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field
-of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;) and so all the operations with all the registers are regular scalar
-floating point operations, regardless of the bank they are found in.&lt;/p&gt;
-
-&lt;p&gt;However if we set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to a value larger than 1, typically 2 or 4 but it is
-possible to use any value from 2 to 8, the behaviour changes for a few
-instructions. If the operands only involve registers in the &lt;em&gt;scalar bank&lt;/em&gt;,
-then they will continue computing scalar values.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;# vector length is 3
-vfadd.f32 s2, s4, s5
-# s2  ← s4 + s5&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If the operands involve registers in the vector banks, the computation will be
-extended to the next &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; registers, wrapping around inside the bank if
-needed.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;# vector length is 3
-vfadd.f32 s9, s17 s30
-# s9  ← s17 + s30
-# s10 ← s18 + s31
-# s11 ← s19 + s24&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Finally there is a mixed mode where one source register is in the scalar bank
-and the other one in a vector bank, the value of the scalar bank will be reused
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; times as operand of each vec&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;# vector length is 3
-vfadd.f32 s9, s4 s30
-# s9  ← s4 + s30
-# s10 ← s4 + s31
-# s11 ← s4 + s24&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Finally note that not all the instructions honour &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;. Only the following
-instructions do:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Instruction&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Meaning&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Notes&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vadd.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← b + c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vsub.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← b - c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmul.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← b * c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vnmul.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← -(b * c)&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vdiv.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← b / c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmla.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← a + (b * c)&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Different rounding to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmul&lt;/code&gt; followed by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vadd&lt;/code&gt;&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmls.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← a - (b * c)&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Ditto.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vnmla.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← -a - (b * c)&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Ditto.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vnmls.&amp;lt;ty&amp;gt; a, b, c&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← -a + (b * c)&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Ditto.&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vneg.&amp;lt;ty&amp;gt; a, b&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← -b&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vabs.&amp;lt;ty&amp;gt; a, b&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← |b|&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vsqrt.&amp;lt;ty&amp;gt; a, b&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a ← √b&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt; &lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h1&gt;Modelling in LLVM&lt;/h1&gt;
-
-&lt;p&gt;Before we can even try to generate code, we need to think a bit how to model the
-vector computation in the LLVM infrastructure.&lt;/p&gt;
-
-&lt;h2&gt;Types&lt;/h2&gt;
-
-&lt;p&gt;LLVM IR supports vector types of the form &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;k x ty&amp;gt;&lt;/code&gt; where &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;k&lt;/code&gt; is a constant
-and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ty&lt;/code&gt; is the base type of the vector. In our case &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ty&lt;/code&gt; is either going to be
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;double&lt;/code&gt; (called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f64&lt;/code&gt; in the code generator of LLVM) and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;float&lt;/code&gt; (called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;f32&lt;/code&gt;
-in the code generator).&lt;/p&gt;
-
-&lt;p&gt;Technically speaking we could support a range of vector types, specially
-for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;float&lt;/code&gt; from 2 to 8, as in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x float&amp;gt;&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;3 x float&amp;gt;&lt;/code&gt;, etc. However
-non-power of 2 vector lengths are a bit unusual. In fact the vectorizer of
-LLVM currently only considers powers of two. To avoid complicating ourselves
-a lot, we will consider only &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x double&amp;gt;&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;4 x float&amp;gt;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Technically speaking, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;4 x double&amp;gt;&lt;/code&gt; is something we could consider too.
-However if you look at the register banks above you will see that in practice
-we can only represent 3 of those vectors at a time. A few algorithms can live
-with this but it will be often too limiting.&lt;/p&gt;
-
-&lt;h2&gt;Registers&lt;/h2&gt;
-
-&lt;p&gt;Now the next step is thinking what storage we are going to use to
-represent those vectors.&lt;/p&gt;
-
-&lt;p&gt;If you look closely at the table above and given the behaviour of VFP, any
-consecutive pair of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;&lt;/code&gt; registers within the same bank can be used for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x
-double&amp;gt;&lt;/code&gt;. This means that &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d4, d5)&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d5, d6)&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d6, d7)&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d7,d4)&lt;/code&gt; are
-four options available in the first bank. Note that the pair &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d5, d6)&lt;/code&gt; may
-feel a bit suboptimal but we still can use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d7, d4)&lt;/code&gt; if needed. LLVM knows when
-two groups of registers overlap, so in principle we can give all the options
-and let LLVM generate correct code.&lt;/p&gt;
-
-&lt;p&gt;We will see later than some other parts of VFP will lead us to prefer pairs
-whose first component is an even numbered &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;&lt;/code&gt; register. It is also possible
-to suggest LLVM to prefer some specific order for registers.&lt;/p&gt;
-
-&lt;p&gt;A similar rationale applies for &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;4 x float&amp;gt;&lt;/code&gt; but this time it will be groups
-of 4 consecutive (including the wrap-around within the bank) &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;s&amp;lt;n&amp;gt;&lt;/code&gt; registers.
-So for instance &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(s8, s9, s10, 11)&lt;/code&gt; but also &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(s14, s15, s8, s9)&lt;/code&gt;. Similarly
-groups whose first &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;s&amp;lt;n&amp;gt;&lt;/code&gt; register is a multiple of four will be preferable.&lt;/p&gt;
-
-&lt;p&gt;Effectively, not counting overlaps, VFPv2 provides us with the following
-resources:&lt;/p&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Type&lt;/th&gt;
-      &lt;th style=&quot;text-align: right&quot;&gt;Number of registers&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x double&amp;gt;&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;6&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;4 x float&amp;gt;&lt;/code&gt;&lt;/td&gt;
-      &lt;td style=&quot;text-align: right&quot;&gt;12&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h2&gt;Operations&lt;/h2&gt;
-
-&lt;p&gt;LLVM IR does not have explicit operations for all the instructions above but it
-will be relatively easy to pattern match them when possible. For instance if we
-are happy with floating-point contraction (i.e. we don’t care about all the
-roundings that IEEE 754 might require) a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;vmla.&amp;lt;ty&amp;gt;&lt;/code&gt; instruction can be used
-when the program wants to compute &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;a + (b * c)&lt;/code&gt;&lt;/p&gt;
-
-&lt;p&gt;The contentious part, however, is that we need to make sure the field &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; of
-the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; register is correctly set.&lt;/p&gt;
-
-&lt;p&gt;The following LLVM IR means add two vectors of type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x double&amp;gt;&lt;/code&gt;. The
-operands of this operation are represented by values &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%va&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%vb&lt;/code&gt;. The
-result of the operation is represented by &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;%vc&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;nv&quot;&gt;%vc&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%va&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%vb&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Note however that VFP also supports scalar operations and LLVM lowers them
-to those instructions. So a piece of IR like the following one&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;may be lowered into the following instruction&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;vadd.f64 d2, d3, d8&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This is correct because the state of the program is assumed to be such that
-the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field is always 0.&lt;/p&gt;
-
-&lt;p&gt;However, because we want to use vectors, we are about to break this assumption.
-This means that our program will need to ensure that the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field has the
-right value before executing the corresponding instruction: scalar or vector.&lt;/p&gt;
-
-&lt;p style=&quot;padding: 0.7em; background-color: bisque;&quot;&gt;
-We will see that maintaining this invariant when generating code is going to
-give us some headaches. These sort of designs actually complicate compilers.
-Now a compiler needs to introduce computation that sets
-the CPU state (in our case the &lt;code&gt;len&lt;/code&gt; field) as needed but at the same time
-we want it to do it in the most efficient way possible (i.e. avoiding resetting
-the CPU state more than it is needed).
-&lt;/p&gt;
-
-&lt;p&gt;VFP will help us a bit because not all the operations will care about the
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field so we will have a bit of leeway here.&lt;/p&gt;
-
-&lt;h1&gt;Goal&lt;/h1&gt;
-
-&lt;p&gt;Our first goal is to add enough functionality to LLVM so the
-following &lt;em&gt;hello world&lt;/em&gt; of vectorization:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;vadd_f32&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;restrict&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;restrict&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;restrict&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;is emitted like this:&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;    &lt;span class=&quot;err&quot;&gt;⋮&lt;/span&gt;
-&lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bb&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;.2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;                                &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vector&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ph&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;vmrs&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;r4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fpscr&lt;/span&gt;                   &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; \
-    &lt;span class=&quot;n&quot;&gt;mvn&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;458752&lt;/span&gt;                     &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r7&lt;/span&gt;                      &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;mov&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r7&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;196608&lt;/span&gt;                     &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Sets&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;the&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;vector&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;length&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;orr&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r7&lt;/span&gt;                      &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;vmsr&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;fpscr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r4&lt;/span&gt;                   &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LBB0_3&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;                                &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;%&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vector&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;body&lt;/span&gt;
-                                        &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;This&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Inner&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Loop&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Header&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Depth&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;vldmia&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;r6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s9&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s11&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;      &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Loads&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;vldmia&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;r5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s13&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s14&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s15&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;    &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Loads&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; 
-    &lt;span class=&quot;n&quot;&gt;vadd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;f32&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;s8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s12&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s8&lt;/span&gt;             &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Computes&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;subs&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;lr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;lr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;add&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;add&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;#&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;vstmia&lt;/span&gt;  &lt;span class=&quot;n&quot;&gt;r8&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s8&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s9&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s11&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;     &lt;span class=&quot;err&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Stores&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;bne&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;LBB0_3&lt;/span&gt;
-    &lt;span class=&quot;err&quot;&gt;⋮&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h2&gt;Is any of this useful?&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/ARM_architecture#Floating-point_(VFP)&quot;&gt;According to the Wikipedia:&lt;/a&gt;&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;The VFP architecture was intended to support execution of short “vector mode”
-instructions but these operated on each vector element sequentially and thus
-did not offer the performance of true single instruction, multiple data
-(SIMD) vector parallelism. This vector mode was therefore removed shortly
-after its introduction, to be replaced with the much more powerful Advanced
-SIMD, also known as Neon.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;I don’t expect any performance improvement when using vector operations in the
-Raspberry Pi 1. In fact the only metric we may possibly improve is code size.
-It is going to be fun anyways.&lt;/p&gt;
-
-&lt;p&gt;And that should be it for today. The rest of the chapters will be more deep
-down how we can hammer LLVM so it emits vector code for the Raspberry Pi 1.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Long ago, we saw that the Raspberry Pi 1 has vector computation capabilities. However to the best of my knowledge no compiler attempted to exploit the vector capability in general. I think we are going to have some fun in trying to fix this.</summary></entry></feed>
+to track &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; so we can change the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field with confidence.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the previous installment we discussed a bit how to generate code using the vector feature of the CPU of the Raspberry Pi 1. Let’s start hacking LLVM.</summary></entry></feed>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>OpenSSH as a SOCKS server</title>
+  <meta name="description" content="Sometimes we are given access via ssh to nodes that do not have, for policy or technical reasons, access to the internet (i.e. they cannot make outbound connections). Depending on the policies, we may be able to open reverse SSH tunnels, so things are not so bad. Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated. This is probably a well known feature of OpenSSH but I thought it was interesting to share how it can be used.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2022/01/03/ssh-and-socks/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="OpenSSH as a SOCKS server">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2022/01/03/ssh-and-socks/">
+  <meta property="og:description" content="Sometimes we are given access via ssh to nodes that do not have, for policy or technical reasons, access to the internet (i.e. they cannot make outbound connections). Depending on the policies, we may be able to open reverse SSH tunnels, so things are not so bad. Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated. This is probably a well known feature of OpenSSH but I thought it was interesting to share how it can be used.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="OpenSSH as a SOCKS server">
+  <meta name="twitter:description" content="Sometimes we are given access via ssh to nodes that do not have, for policy or technical reasons, access to the internet (i.e. they cannot make outbound connections). Depending on the policies, we ...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">OpenSSH as a SOCKS server</h1>
+    
+    <p class="post-meta"><time datetime="2022-01-03T22:03:00+00:00" itemprop="datePublished">Jan 3, 2022</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/tags/socks/">SOCKS</a>, <a href="/tags/proxy/">proxy</a>, <a href="/tags/ssh/">ssh</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Sometimes we are given access via ssh to nodes that do not have, for policy or
+technical reasons, access to the internet (i.e. they cannot make outbound
+connections).  Depending on the policies, we may be able to open reverse SSH
+tunnels, so things are not so bad.</p>
+
+<p>Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated.
+This is probably a well known feature of OpenSSH but I thought it was
+interesting to share how it can be used.</p>
+
+<!--more-->
+
+<h2>SOCKS</h2>
+
+<p>Nowadays, access to the Internet is ubiquitous and most of the time assumed as
+a fact. However, in some circumstances, direct access to the internet is not
+available or not desirable. In those cases we can resort on proxy servers that
+act as intermediaries between the Internet and the node without direct access.</p>
+
+<p>Many tools used commonly assume one is connected to the Internet: package
+managers such as <code class="language-plaintext highlighter-rouge">pip</code> and <code class="language-plaintext highlighter-rouge">cargo</code> can automatically download the files
+required to install a package. If no outbound connection is possible,
+software deployment and installation becomes complicated.</p>
+
+<p>However, most of the time those tools only HTTP/HTTPS support is required. So
+a proxy that only forwards HTTP and HTTPS requests is enough. Examples
+of these kind of proxies are <a href="http://tinyproxy.github.io/">tinyproxy</a> and
+<a href="http://www.squid-cache.org/">squid</a>.</p>
+
+<p><a href="https://en.wikipedia.org/wiki/SOCKS">SOCKS</a>, is a general proxy protocol that
+can be used for any TCP connection, not only those for HTTP/HTTPS. An
+interesting thing is that <code class="language-plaintext highlighter-rouge">ssh</code> comes with an integrated SOCKS proxy which is
+relatively easy to use. Often most tools that can use a HTTP/HTTPS proxy can
+also use a SOCKS proxy so this is a handy option to consider.</p>
+
+<h2>Example: Installing Rust through a proxy</h2>
+
+<p>If we try to install <a href="https://www.rust-lang.org/learn/get-started">Rust</a> on a
+machine that does not allow outbound connections, this is what happens. (Let’s
+ignore the question whether piping a downloaded to the shell is a reasonable
+thing to do).</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>curl <span class="nt">--proto</span> <span class="s1">'=https'</span> <span class="nt">--tlsv1</span>.2 <span class="nt">-sSf</span> https://sh.rustup.rs | sh
+</code></pre></div></div>
+
+<p>This command will likely time out after a long time because outbound
+connections are silently dropped and the installation will fail.</p>
+
+<h3>Set up proxy server</h3>
+
+<p>To address this, let’s first open a SOCKS proxy using <code class="language-plaintext highlighter-rouge">ssh</code> on our local machine
+(<code class="language-plaintext highlighter-rouge">with-internet</code>). This machine <strong>must</strong> have internet access (change <code class="language-plaintext highlighter-rouge">user</code> to
+your username). <code class="language-plaintext highlighter-rouge">ssh</code> will request you to authenticate (via password or ssh
+key).</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>ssh <span class="nt">-N</span> <span class="nt">-D</span> 127.0.0.1:12345 user@localhost
+</code></pre></div></div>
+
+<p>The flag <code class="language-plaintext highlighter-rouge">-N</code> means not to execute a command and <code class="language-plaintext highlighter-rouge">-D interface:port</code> means to
+open the <code class="language-plaintext highlighter-rouge">port</code> bound to the <code class="language-plaintext highlighter-rouge">interface</code>. This is the SOCKS proxy. In this
+example we are opening port 12345 and binding it to the 127.0.0.1 (localhost)
+interface. We are using the same machine as the proxy, hence <code class="language-plaintext highlighter-rouge">user@localhost</code>
+(it is possible to use another node, but we don’t have to given that
+<code class="language-plaintext highlighter-rouge">with-internet</code> already can connect to the internet). This must stay running so
+you will have to open another terminal and set up the reverse tunnel.</p>
+
+<p>To set up the reverse tunnel do the following.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>ssh <span class="nt">-R</span> 127.0.0.1:9999:127.0.0.1:12345 <span class="nt">-N</span> user@no-internet
+</code></pre></div></div>
+
+<p>This opens the port 9999 in the host without internet (<code class="language-plaintext highlighter-rouge">no-internet</code>) and binds
+it to its localhost (i.e. the <code class="language-plaintext highlighter-rouge">localhost</code> of <code class="language-plaintext highlighter-rouge">no-internet</code>) then it tunnels it
+to the port 12345 bound to the interface <code class="language-plaintext highlighter-rouge">127.0.0.1</code> of our local node
+(<code class="language-plaintext highlighter-rouge">with-internet</code>). Again this will not run any command (due to <code class="language-plaintext highlighter-rouge">-N</code>) and the
+syntax of -R is <code class="language-plaintext highlighter-rouge">-R remote-interface:remote-port:local-interface:local-port</code>.
+Keep this command running.</p>
+
+<h3>Proxy configuration</h3>
+
+<p>Now we can setup <code class="language-plaintext highlighter-rouge">curl</code> to use a socks proxy. We do this with the
+<code class="language-plaintext highlighter-rouge">--proxy-option</code>. For convenience we will first download the installation
+script into a file.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>curl <span class="nt">--proto</span> <span class="s1">'=https'</span> <span class="nt">--tlsv1</span>.2 <span class="nt">-sSf</span> https://sh.rustup.rs <span class="se">\</span>
+                       <span class="nt">--proxy</span> socks5://localhost:9999 <span class="nt">-o</span>  install-rust.sh
+</code></pre></div></div>
+
+<p>We can do a quick check that it contains what we expect</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span><span class="nb">head </span>install-rust.sh 
+<span class="c">#!/bin/sh</span>
+<span class="c"># shellcheck shell=dash</span>
+
+<span class="c"># This is just a little script that can be downloaded from the internet to</span>
+<span class="c"># install rustup. It just does platform detection, downloads the installer</span>
+<span class="c"># and runs it.</span>
+
+<span class="c"># It runs on Unix shells like {a,ba,da,k,z}sh. It uses the common `local`</span>
+<span class="c"># extension. Note: Most shells limit `local` to 1 var per line, contra bash.</span>
+</code></pre></div></div>
+
+<h3>Install Rust</h3>
+
+<p>We can set up <code class="language-plaintext highlighter-rouge">https_proxy</code> environment variable to point to the SOCKS
+server so it is used by the installation script.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span><span class="nb">export </span><span class="nv">https_proxy</span><span class="o">=</span>socks5://localhost:9999
+</code></pre></div></div>
+
+<p>Now we are read to install Rust using the script we downloaded.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet <span class="nv">$ </span>bash install-rust.sh 
+</code></pre></div></div>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>info: downloading installer
+
+Welcome to Rust!
+
+This will download and install the official compiler for the Rust
+programming language, and its package manager, Cargo.
+
+Rustup metadata and toolchains will be installed into the Rustup
+home directory, located at:
+
+  /home/user/.rustup
+
+This can be modified with the RUSTUP_HOME environment variable.
+
+The Cargo home directory located at:
+
+  /home/user/.cargo
+
+This can be modified with the CARGO_HOME environment variable.
+
+The cargo, rustc, rustup and other commands will be added to
+Cargo's bin directory, located at:
+
+  /home/user/.cargo/bin
+
+This path will then be added to your PATH environment variable by
+modifying the profile files located at:
+
+  /home/user/.profile
+  /home/user/.zshenv
+
+You can uninstall at any time with rustup self uninstall and
+these changes will be reverted.
+
+Current installation options:
+
+
+   default host triple: x86_64-unknown-linux-gnu
+     default toolchain: stable (default)
+               profile: default
+  modify PATH variable: yes
+
+1) Proceed with installation (default)
+2) Customize installation
+3) Cancel installation
+&gt;1
+
+info: profile set to 'default'
+info: default host triple is x86_64-unknown-linux-gnu
+info: syncing channel updates for 'stable-x86_64-unknown-linux-gnu'
+info: latest update on 2021-12-02, rust version 1.57.0 (f1edd0429 2021-11-29)
+info: downloading component 'cargo'
+info: downloading component 'clippy'
+info: downloading component 'rust-docs'
+info: downloading component 'rust-std'
+ 24.9 MiB /  24.9 MiB (100 %)  19.9 MiB/s in  1s ETA:  0s
+info: downloading component 'rustc'
+ 53.9 MiB /  53.9 MiB (100 %)  20.1 MiB/s in  2s ETA:  0s
+info: downloading component 'rustfmt'
+info: installing component 'cargo'
+info: installing component 'clippy'
+info: installing component 'rust-docs'
+  5.3 MiB /  17.9 MiB ( 29 %)   1.7 MiB/s in  6s ETA:  7s
+...
+</code></pre></div></div>
+
+<p>Once Rust is installed, <a href="https://doc.rust-lang.org/cargo/reference/config.html#httpproxy">you can setup <code class="language-plaintext highlighter-rouge">cargo</code> so it always uses this
+proxy</a>.</p>
+
+<h2>Example: Using pip using SOCKS</h2>
+
+<p><code class="language-plaintext highlighter-rouge">pip</code> is used to install Python packages. Unfortunately <code class="language-plaintext highlighter-rouge">pip</code> does not support
+SOCKS by default. If you try to install <a href="https://github.com/google/yapf">yapf</a>
+using the configuration above this happens:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>pip <span class="nb">install</span> <span class="nt">--proxy</span><span class="o">=</span>socks5://localhost:9999 yapf
+Collecting yapf
+ERROR: Could not <span class="nb">install </span>packages due to an EnvironmentError: Missing dependencies <span class="k">for </span>SOCKS support.
+</code></pre></div></div>
+
+<p>So you need to install first <code class="language-plaintext highlighter-rouge">pysocks</code>. Now we have a chicken-and-egg situation
+that we need to solve: we cannot download pysocks on the <code class="language-plaintext highlighter-rouge">no-internet</code> machine!
+To solve it, download <code class="language-plaintext highlighter-rouge">pysocks</code> locally:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>python3 <span class="nt">-m</span> pip download pysocks
+Collecting pysocks
+  Downloading PySocks-1.7.1-py3-none-any.whl <span class="o">(</span>16 kB<span class="o">)</span>
+Saved ./PySocks-1.7.1-py3-none-any.whl
+Successfully downloaded pysocks
+</code></pre></div></div>
+
+<p>Copy this <a href="https://pythonwheels.com/">python wheels</a> file to <code class="language-plaintext highlighter-rouge">no-internet</code>, for
+instance using <code class="language-plaintext highlighter-rouge">scp</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>scp PySocks-1.7.1-py3-none-any.whl user@no-internet
+</code></pre></div></div>
+
+<p>And install it manually there. I’m installing it in the user environment
+(<code class="language-plaintext highlighter-rouge">--user</code> flag) because in this machine I don’t have enough permissions, but
+your mileage may vary here.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>pip <span class="nb">install</span> <span class="nt">--user</span> PySocks-1.7.1-py3-none-any.whl 
+Processing ./PySocks-1.7.1-py3-none-any.whl
+Installing collected packages: PySocks
+Successfully installed PySocks-1.7.1
+</code></pre></div></div>
+
+<p>If we use pip and SOCKS, now we succeed.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>pip <span class="nb">install</span> <span class="nt">--user</span> <span class="nt">--proxy</span><span class="o">=</span>socks5://localhost:9999 yapf
+Collecting yapf
+  Downloading https://files.pythonhosted.org/packages/47/88/843c2e68f18a5879b4fbf37cb99fbabe1ffc4343b2e63191c8462235c008/yapf-0.32.0-py2.py3-none-any.whl <span class="o">(</span>190kB<span class="o">)</span>
+     |████████████████████████████████| 194kB 933kB/s 
+Installing collected packages: yapf
+Successfully installed yapf-0.32.0
+</code></pre></div></div>
+
+<p>Yay!</p>
+
+<h3>Cleanup</h3>
+
+<p>Recall we have two connections opened: one is the SOCKS proxy (<code class="language-plaintext highlighter-rouge">-D</code>) and the
+other the reverse tunnel (<code class="language-plaintext highlighter-rouge">-R</code>). Just end them both with Ctrl-C and you are
+done. I’m sure this can be scripted somehow but given that the <code class="language-plaintext highlighter-rouge">ssh</code> commands
+may require password input, this is not a trivial thing to do.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2021/12/31/using-distcc-in-a-cluster/">&laquo; Distributed compilation in a cluster</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

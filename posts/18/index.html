@@ -67,6 +67,23 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2013/07/10/acts_as_list-gem-single-table-inheritance-rails/">acts_as_list gem and single table inheritance in Rails</a></h1>
+
+          <p class="post-meta">
+            Jul 10, 2013• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/gems/">gems</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a>, <a href="/tags/single-table-inheritance/">single table inheritance</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>If you ever need to use the <a href="http://rubygems.org/gems/acts_as_list" target="_blank">acts_as_list</a> gem in Rails on a model that uses single table inheritance, here’s the snippet you need to use for the list methods to work if you want the setup done on the base model:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">acts_as_list</span> <span class="ss">:scope</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:type</span><span class="p">]</span></code></pre></figure>
+
+<p>You’ll need to use the array syntax as neither the string nor the symbol versions will work. The symbol one assumes the column ending in <code>_id</code>, while the string one will simply not allow you to evaluate the current object’s type.</p>
+
+<p>It’d be nice to have a <code>lambda</code> syntax in future versions of the gem so you can inject code into the conditions.</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2013/06/08/check_mk-software-updates-mount-options-alarms/">Check_MK, software updates and mount options alarms</a></h1>
 
           <p class="post-meta">
@@ -189,22 +206,7 @@ So far, all examples have dealt with integer values. But processors would be rat
 
 <p>There are probably better and more elegant ways to get around this. Maybe place a code to re-trigger your original visit if it detects you are still on the PayPal page, etc. Feel free to use the comments to suggest possible solutions to that particular problem.</p>
 
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2013/03/28/arm-assembler-raspberry-pi-chapter-12/">ARM assembler in Raspberry Pi – Chapter 12</a></h1>
-
-          <p class="post-meta">
-            Mar 28, 2013• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/raspberry-pi/">Raspberry Pi</a> • <a href="/tags/arm/">arm</a>, <a href="/tags/assembler/">assembler</a>, <a href="/tags/pi/">pi</a>, <a href="/tags/raspberry/">raspberry</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-We saw in chapter 6 some simple schemes to implement usual structured programming constructs like if-then-else and loops. In this chapter we will revisit these constructs and exploit a feature of the ARM instruction set that we have not learnt yet.
-</p>
-
-        </div><p class="post-continue">
-            <a href="/2013/03/28/arm-assembler-raspberry-pi-chapter-12/">Read on &rarr;</a>
-          </p></li></ul>
+        </div></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/19/">&laquo; Older</a>

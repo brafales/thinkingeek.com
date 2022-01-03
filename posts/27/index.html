@@ -67,6 +67,37 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2010/11/16/creating-and-consuming-json-data-in-mvc-2/">Creating and consuming JSON data in MVC 2</a></h1>
+
+          <p class="post-meta">
+            Nov 16, 2010• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/c/">c#</a>, <a href="/tags/jquery/">jquery</a>, <a href="/tags/json/">json</a>, <a href="/tags/mvc/">MVC</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>Recently I started working in a project using MVC 2. I found out a very useful feature to retrieve JSON data from the server using an Action in a Controller.</p>
+<p>This feature is in the base <b>Controller</b> class, which we inherit when we create a new controller. If you take a look into the different methods this class has you'll find those ones:</p>
+
+<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="c1">//</span>
+<span class="c1">// Summary:</span>
+<span class="c1">//     Creates a System.Web.Mvc.JsonResult object that serializes the specified</span>
+<span class="c1">//     object to JavaScript Object Notation (JSON).</span>
+<span class="c1">//</span>
+<span class="c1">// Parameters:</span>
+<span class="c1">//   data:</span>
+<span class="c1">//     The JavaScript object graph to serialize.</span>
+<span class="c1">//</span>
+<span class="c1">// Returns:</span>
+<span class="c1">//     The JSON result object that serializes the specified object to JSON format.</span>
+<span class="c1">//     The result object that is prepared by this method is written to the response</span>
+<span class="c1">//     by the MVC framework when the object is executed.</span>
+<span class="k">protected</span> <span class="k">internal</span> <span class="n">JsonResult</span> <span class="nf">Json</span><span class="p">(</span><span class="kt">object</span> <span class="n">data</span><span class="p">);</span></code></pre></figure>
+
+<p>Along with this method, there are some overloads that allow more parameters, you can see them all in here: <a href="http://msdn.microsoft.com/en-us/library/system.web.mvc.controller.json.aspx">Controller.Json Method</a>. In this example I'll use the first one, which is the simplest.</p>
+
+        </div><p class="post-continue">
+            <a href="/2010/11/16/creating-and-consuming-json-data-in-mvc-2/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2009/10/12/c-the-and-operators-and-lazy-evaluation/">C#, the &quot;and&quot; operators and lazy evaluation</a></h1>
 
           <p class="post-meta">
@@ -218,75 +249,6 @@ The usual way to proceed in those cases is to provide the user of some local var
 <p>
 Usage of this class is pretty simple. You have to provide the object the script you want to execute and the input variables the script will have available as local variables. Once this is done, you have to call the Execute method, and this method will either return the output variables of the execution of the resulting script, or throw an exception.
 </p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2008/11/18/full-view-of-combobox-drop-down-list-components-in-c-30/">Full view of ComboBox drop-down list components in C# 3.0</a></h1>
-
-          <p class="post-meta">
-            Nov 18, 2008• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Aleix López</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/net/">.net</a>, <a href="/tags/c/">c#</a>, <a href="/tags/programming-tips/">programming tips</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>By default in C# 3.0 ComboBox controls don’t provide support for showing drop-down list items if they exceed the width of their parent ComboBox, like this one:
-</p>
-<p><a href="/wp-content/uploads/2008/11/image001.png"><img src="/wp-content/uploads/2008/11/image001.png" alt="Cropped ComboBox" title="Cropped ComboBox" width="236" height="123" class="size-medium wp-image-89" /></a></p>
-<p>
-This is annoying because users cannot read properly the information. To solve that problem, all we have to do is derive the ComboBox class and override the DropDown event as follows:
-</p>
-
-<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="k">public</span> <span class="k">class</span> <span class="nc">ComboBoxEx</span> <span class="p">:</span> <span class="n">ComboBox</span>
-<span class="p">{</span>
-	<span class="k">public</span> <span class="nf">ComboBoxEx</span><span class="p">()</span>
-		<span class="p">:</span> <span class="k">base</span><span class="p">()</span>
-	<span class="p">{</span>
-		<span class="n">DropDown</span> <span class="p">+=</span> <span class="k">new</span> <span class="nf">EventHandler</span><span class="p">(</span><span class="n">event_DropDown</span><span class="p">);</span>
-	<span class="p">}</span>
-
-	<span class="k">void</span> <span class="nf">event_DropDown</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
-	<span class="p">{</span>
-		<span class="k">try</span>
-		<span class="p">{</span>
-			<span class="n">ComboBox</span> <span class="n">comboBox</span> <span class="p">=</span> <span class="p">(</span><span class="n">ComboBox</span><span class="p">)</span><span class="n">sender</span><span class="p">;</span> <span class="c1">// Catch the combo firing this event</span>
-			<span class="kt">int</span> <span class="n">width</span> <span class="p">=</span> <span class="n">comboBox</span><span class="p">.</span><span class="n">Width</span><span class="p">;</span> <span class="c1">// Current width for ComboBox</span>
-			<span class="n">Graphics</span> <span class="n">g</span> <span class="p">=</span> <span class="n">comboBox</span><span class="p">.</span><span class="nf">CreateGraphics</span><span class="p">();</span> <span class="c1">// Get graphics for ComboBox</span>
-			<span class="n">Font</span> <span class="n">font</span> <span class="p">=</span> <span class="n">comboBox</span><span class="p">.</span><span class="n">Font</span><span class="p">;</span> <span class="c1">// Doesn't change original font</span>
-
-			<span class="c1">//checks if a scrollbar will be displayed.</span>
-			<span class="kt">int</span> <span class="n">vertScrollBarWidth</span><span class="p">;</span>
-			<span class="k">if</span> <span class="p">(</span><span class="n">comboBox</span><span class="p">.</span><span class="n">Items</span><span class="p">.</span><span class="n">Count</span> <span class="p">&gt;</span> <span class="n">comboBox</span><span class="p">.</span><span class="n">MaxDropDownItems</span><span class="p">)</span>
-			<span class="p">}</span>
-				<span class="c1">//If yes, then get its width to adjust the size of the drop down list.</span>
-				<span class="n">vertScrollBarWidth</span> <span class="p">=</span> <span class="n">SystemInformation</span><span class="p">.</span><span class="n">VerticalScrollBarWidth</span><span class="p">;</span>
-			<span class="p">}</span>
-			<span class="k">else</span>
-			<span class="p">{</span>
-				<span class="c1">//Otherwise set to 0</span>
-				<span class="n">vertScrollBarWidth</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-			<span class="p">}</span>
-			<span class="c1">//Loop through list items and check size of each items.</span>
-			<span class="c1">//set the width of the drop down list to the width of the largest item.</span>
-			<span class="kt">int</span> <span class="n">newWidth</span><span class="p">;</span>
-			<span class="k">foreach</span> <span class="p">(</span><span class="kt">string</span> <span class="n">s</span> <span class="k">in</span> <span class="n">comboBox</span><span class="p">.</span><span class="n">Items</span><span class="p">)</span>
-			<span class="p">{</span>
-				<span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
-				<span class="p">{</span>
-					<span class="n">newWidth</span> <span class="p">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">g</span><span class="p">.</span><span class="nf">MeasureString</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="nf">Trim</span><span class="p">(),</span> <span class="n">font</span><span class="p">).</span><span class="n">Width</span> <span class="p">+</span> <span class="n">vertScrollBarWidth</span><span class="p">;</span>
-					<span class="k">if</span> <span class="p">(</span><span class="n">width</span> <span class="p">&lt;</span> <span class="n">newWidth</span><span class="p">)</span>
-						<span class="n">width</span> <span class="p">=</span> <span class="n">newWidth</span><span class="p">;</span>
-				<span class="p">}</span>
-			<span class="p">}</span>
-			<span class="c1">// Finally, adjust the new width</span>
-			<span class="n">comboBox</span><span class="p">.</span><span class="n">DropDownWidth</span> <span class="p">=</span> <span class="n">width</span><span class="p">;</span>
-		<span class="p">}</span>
-		<span class="k">catch</span> <span class="p">{</span>  <span class="p">}</span>
-	<span class="p">}</span>   
-<span class="p">}</span></code></pre></figure>
-
-<p>
-The following picture shows the results of using the above control instead of the default one:
-</p>
-<p><a href="/wp-content/uploads/2008/11/image003.png"><img src="/wp-content/uploads/2008/11/image003.png" alt="Non Cropped ComboBox" title="Non Cropped ComboBox" width="236" height="123" class="size-medium wp-image-90" /></a></p>
 
         </div></li></ul>
   <div class="pagination">

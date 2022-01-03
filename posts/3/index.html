@@ -67,6 +67,25 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2021/06/25/raspberry-vectors-part-1/">Fun with vectors in the Raspberry Pi 1 - Part 1</a></h1>
+
+          <p class="post-meta">
+            Jun 25, 2021• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+        </header>
+
+        <div class="post-content">
+          <p><a href="/2013/05/12/arm-assembler-raspberry-pi-chapter-13/">
+Long ago, we saw that the Raspberry Pi 1 has vector computation
+capabilities</a>. However to the best of my knowledge no compiler attempted to
+exploit the vector capability in general.</p>
+
+<p>I think we are going to have some fun in trying to fix this.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2021/06/25/raspberry-vectors-part-1/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2021/03/01/raii-locks-clang-tidy/">RAII, locks and clang-tidy</a></h1>
 
           <p class="post-meta">
@@ -133,38 +152,6 @@ during the process.</p>
 
         </div><p class="post-continue">
             <a href="/2020/06/20/forgotten-memories-2/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2020/06/20/forgotten-memories-1/">Forgotten memories (1)</a></h1>
-
-          <p class="post-meta">
-            Jun 20, 2020• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/risc-v/">risc-v</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>Most compiler infrastructures that target register machines do it by using the
-concept of <em>virtual registers</em>. In their intermediate representations instructions
-use virtual registers to represent their operands.</p>
-
-<p>Because hardware is finite, these virtual registers must be mapped to physical
-registers at some point. The compiler does this in a process called <a href="https://en.wikipedia.org/wiki/Register_allocation"><em>register
-allocation</em></a>.</p>
-
-<p>Being physical registers finite, it may happen that not all the virtual
-registers used by the program can be held in physical registers at the same
-time. When this happens, the compiler must emit <em>spill code</em>. Spill code stores
-a value in a memory (<em>spill</em>) and loads it later, often close to the point of
-use (<em>reload</em>).</p>
-
-<p>The memory used for spill code is commonly the <em>function stack</em>. However
-nothing prevents us from using other kinds of “memories” as long as we can
-guarantee that nobody is going to use them. This is exactly the kind of
-experiment we will do today: we’re going to spill general-purpose registers
-into floating-point registers.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2020/06/20/forgotten-memories-1/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     
