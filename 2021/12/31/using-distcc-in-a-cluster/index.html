@@ -84,8 +84,8 @@ C/C++ compilation using different nodes in a scientific cluster.</p>
 
 <h1>Distributed compilation</h1>
 
-<p>Some programming languages, like C++, are slow to compile. Ideally the root
-causes of the slowness would be attacked and we would call it a day. However
+<p>Some programming languages, like C++, are slow to compile. Ideally, the root
+causes of the slowness would be attacked and we would call it a day. However,
 the real causes of the slowness are many and they are not trivial to solve. So
 as an alternative, for now, we can try to throw more resources at compiling C++.</p>
 
@@ -174,7 +174,7 @@ start the distcc daemon on the other nodes.</p>
         &lt;install-distcc&gt;/bin/distccd <span class="nt">--daemon</span> <span class="nt">--allow</span> 10.0.0.0/8 <span class="nt">--enable-tcp-insecure</span>
 </code></pre></div></div>
 
-<p>Luckily <code class="language-plaintext highlighter-rouge">clush</code> understands Slurm’s nodeset notation, so we can just use it
+<p>Luckily, <code class="language-plaintext highlighter-rouge">clush</code> understands Slurm’s nodeset notation, so we can just use it
 directly (but make sure you do not pass the main node). We request it to be a
 daemon <code class="language-plaintext highlighter-rouge">--daemon</code> and allow all the nodes of the private LAN used by the
 cluster. The flag <code class="language-plaintext highlighter-rouge">--enable-tcp-insecure</code> is required because, for simplicity,

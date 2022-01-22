@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-03T22:34:00+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-22T08:13:27+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
 technical reasons, access to the internet (i.e. they cannot make outbound
 connections).  Depending on the policies, we may be able to open reverse SSH
 tunnels, so things are not so bad.&lt;/p&gt;
@@ -21,7 +21,7 @@ managers such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;
 required to install a package. If no outbound connection is possible,
 software deployment and installation becomes complicated.&lt;/p&gt;
 
-&lt;p&gt;However, most of the time those tools only HTTP/HTTPS support is required. So
+&lt;p&gt;However, most of the time, those tools only require HTTP/HTTPS support. So
 a proxy that only forwards HTTP and HTTPS requests is enough. Examples
 of these kind of proxies are &lt;a href=&quot;http://tinyproxy.github.io/&quot;&gt;tinyproxy&lt;/a&gt; and
 &lt;a href=&quot;http://www.squid-cache.org/&quot;&gt;squid&lt;/a&gt;.&lt;/p&gt;
@@ -238,8 +238,8 @@ Successfully installed yapf-0.32.0
 
 &lt;h3&gt;Cleanup&lt;/h3&gt;
 
-&lt;p&gt;Recall we have two connections opened: one is the SOCKS proxy (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-D&lt;/code&gt;) and the
-other the reverse tunnel (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-R&lt;/code&gt;). Just end them both with Ctrl-C and you are
+&lt;p&gt;Recall that we have two connections opened: one is the SOCKS proxy (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-D&lt;/code&gt;) and
+the other the reverse tunnel (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-R&lt;/code&gt;). Just end them both with Ctrl-C and you are
 done. I’m sure this can be scripted somehow but given that the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; commands
 may require password input, this is not a trivial thing to do.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><category term="SOCKS" /><category term="proxy" /><category term="ssh" /><summary type="html">Sometimes we are given access via ssh to nodes that do not have, for policy or technical reasons, access to the internet (i.e. they cannot make outbound connections). Depending on the policies, we may be able to open reverse SSH tunnels, so things are not so bad. Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated. This is probably a well known feature of OpenSSH but I thought it was interesting to share how it can be used.</summary></entry><entry><title type="html">Distributed compilation in a cluster</title><link href="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/" rel="alternate" type="text/html" title="Distributed compilation in a cluster" /><published>2021-12-31T16:20:00+00:00</published><updated>2021-12-31T16:20:00+00:00</updated><id>https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster</id><content type="html" xml:base="https://thinkingeek.com/2021/12/31/using-distcc-in-a-cluster/">&lt;p&gt;In software development there is an unavoidable trend in which applications
 become larger and more complex. For compiled programming languages one of
@@ -252,8 +252,8 @@ C/C++ compilation using different nodes in a scientific cluster.&lt;/p&gt;
 
 &lt;h1&gt;Distributed compilation&lt;/h1&gt;
 
-&lt;p&gt;Some programming languages, like C++, are slow to compile. Ideally the root
-causes of the slowness would be attacked and we would call it a day. However
+&lt;p&gt;Some programming languages, like C++, are slow to compile. Ideally, the root
+causes of the slowness would be attacked and we would call it a day. However,
 the real causes of the slowness are many and they are not trivial to solve. So
 as an alternative, for now, we can try to throw more resources at compiling C++.&lt;/p&gt;
 
@@ -342,7 +342,7 @@ start the distcc daemon on the other nodes.&lt;/p&gt;
         &amp;lt;install-distcc&amp;gt;/bin/distccd &lt;span class=&quot;nt&quot;&gt;--daemon&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--allow&lt;/span&gt; 10.0.0.0/8 &lt;span class=&quot;nt&quot;&gt;--enable-tcp-insecure&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;Luckily &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clush&lt;/code&gt; understands Slurm’s nodeset notation, so we can just use it
+&lt;p&gt;Luckily, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;clush&lt;/code&gt; understands Slurm’s nodeset notation, so we can just use it
 directly (but make sure you do not pass the main node). We request it to be a
 daemon &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--daemon&lt;/code&gt; and allow all the nodes of the private LAN used by the
 cluster. The flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--enable-tcp-insecure&lt;/code&gt; is required because, for simplicity,

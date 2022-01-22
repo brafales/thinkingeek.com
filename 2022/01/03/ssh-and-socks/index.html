@@ -96,7 +96,7 @@ managers such as <code class="language-plaintext highlighter-rouge">pip</code> a
 required to install a package. If no outbound connection is possible,
 software deployment and installation becomes complicated.</p>
 
-<p>However, most of the time those tools only HTTP/HTTPS support is required. So
+<p>However, most of the time, those tools only require HTTP/HTTPS support. So
 a proxy that only forwards HTTP and HTTPS requests is enough. Examples
 of these kind of proxies are <a href="http://tinyproxy.github.io/">tinyproxy</a> and
 <a href="http://www.squid-cache.org/">squid</a>.</p>
@@ -313,8 +313,8 @@ Successfully installed yapf-0.32.0
 
 <h3>Cleanup</h3>
 
-<p>Recall we have two connections opened: one is the SOCKS proxy (<code class="language-plaintext highlighter-rouge">-D</code>) and the
-other the reverse tunnel (<code class="language-plaintext highlighter-rouge">-R</code>). Just end them both with Ctrl-C and you are
+<p>Recall that we have two connections opened: one is the SOCKS proxy (<code class="language-plaintext highlighter-rouge">-D</code>) and
+the other the reverse tunnel (<code class="language-plaintext highlighter-rouge">-R</code>). Just end them both with Ctrl-C and you are
 done. I’m sure this can be scripted somehow but given that the <code class="language-plaintext highlighter-rouge">ssh</code> commands
 may require password input, this is not a trivial thing to do.</p>
 
