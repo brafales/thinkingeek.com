@@ -1,4 +1,376 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-01-22T08:13:27+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-08-04T15:23:42+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Bisecting flaky tests with rspec and GitHub Actions</title><link href="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/" rel="alternate" type="text/html" title="Bisecting flaky tests with rspec and GitHub Actions" /><published>2022-08-04T00:00:00+00:00</published><updated>2022-08-04T00:00:00+00:00</updated><id>https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions</id><content type="html" xml:base="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/">&lt;p&gt;Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2&gt;Order dependant test failures&lt;/h2&gt;
+
+&lt;p&gt;An order dependant test failure is one that happens when:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;There is more than one test being run as part of the suite.&lt;/li&gt;
+  &lt;li&gt;One of the test fails only when the suite is run in a specific order.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Let’s simplify things and assume you have a very small test suite consisting of two tests: Test A and Test B. This post will assume we’re using ruby as our language of choice, and rspec as our testing framework, however the fundamentals apply to any other language and good testing framework. In this case, we might be dealing with a situation like this:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;When we run Test A, it passes.&lt;/li&gt;
+  &lt;li&gt;When we run Test B, it passes.&lt;/li&gt;
+  &lt;li&gt;When we run Test A and Test B, they both pass.&lt;/li&gt;
+  &lt;li&gt;When we run Test B and Test A, Test B passes but Test A fails.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/bisect-1.png&quot; alt=&quot;Test scenario 1&quot; title=&quot;Test scenario 1. Green/Solid node represents a passing test, red/dotted note represents a failing test&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/bisect-2.png&quot; alt=&quot;Test scenario 2&quot; title=&quot;Test scenario 2. Green/Solid node represents a passing test, red/dotted note represents a failing test&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/bisect-3.png&quot; alt=&quot;Test scenario 3&quot; title=&quot;Test scenario 3. Green/Solid node represents a passing test, red/dotted note represents a failing test&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/bisect-4.png&quot; alt=&quot;Test scenario 4&quot; title=&quot;Test scenario 4. Green/Solid node represents a passing test, red/dotted note represents a failing test&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;If using rspec in its default configuration, you are probably running your test suite in a random order. This makes rspec generate a random seed and use that seed to determine in which order tests should be run. When running the above test suite using rspec in a random order, you can expect your suite to break roughly 50% of the times.&lt;/p&gt;
+
+&lt;p&gt;However, order dependant test failures can be very pernicious because they are introduced silently, they can make your test suite fail only occasionally, which leads to developers being lazy and use the &lt;em&gt;retry the tests until they pass&lt;/em&gt; technique. The bogus test doesn’t get dealt with until it’s too late: the test suite now fails &lt;em&gt;often&lt;/em&gt;, causing delays in releases, frustration, or even panic situations when the need for a quick release arises: there’s nothing worse than having to hotfix a production issue quickly and not being able to because your test suite keeps failing.&lt;/p&gt;
+
+&lt;h2&gt;Bisect to the rescue&lt;/h2&gt;
+
+&lt;p&gt;One of the features of rspec is the ability to run a &lt;a href=&quot;https://relishapp.com/rspec/rspec-core/docs/command-line/bisect&quot;&gt;bisect&lt;/a&gt;. Once you discover an order dependant failure and can consistently reproduce it with a fixed seed, it can still be difficult to determine which test is causing the issue. In our example we only have 2 tests, but in bigger test suites the failing test might be executed after other hundreds of tests, making it hard to determine which one of them is the bad apple. Bisect solves that problem by consistently running all your tests to try and determine &lt;em&gt;the minimal set of examples that reproduce the same failures&lt;/em&gt;.  The way rou run bisect is by providing rspec with the exact same options and seed that caused the order dependant failure, and adding the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--bisect&lt;/code&gt;flag to the CLI. Interally &lt;a href=&quot;https://en.wikipedia.org/wiki/Bisection_method&quot;&gt;bisect&lt;/a&gt; will split tests into two chunks, run those tests, discard the chunk that does not fail, and carry on recursively until the smallest failing number of tests is found.&lt;/p&gt;
+
+&lt;h2&gt;Our example&lt;/h2&gt;
+
+&lt;p&gt;I have created a proof of concept gem with a test suite that has an order dependant failure. The repository can be checked at &lt;a href=&quot;https://github.com/brafales/flaky_specs_poc&quot;&gt;brafales/flaky_specs_poc&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;If you’re not interested in the nitty gritty of why this particular test suite is problematic and are only interested in the GitHub Actions Workflow file, please skip this section.&lt;/p&gt;
+
+&lt;p&gt;The problematic spec in this gem is &lt;a href=&quot;https://github.com/brafales/flaky_specs_poc/blob/main/spec/flaky_specs_poc/job_two_spec.rb&quot;&gt;spec/flaky_specs_poc/job_two_spec.rb&lt;/a&gt;. This proof of concept uses Sidekiq to show a common testing issue with this popular background job processing framework.&lt;/p&gt;
+
+&lt;p&gt;Sidekiq works on the basis of jobs, which get pushed into a queue, and then picked up by a worker process. Sidekiq will use a backend to store jobs, for example a redis instance; however, when running your tests you might not want to have to mess around with having a redis instance available for use. For this reason, Sidekiq in test mode uses a virtual backend which will queue jobs in memory, and doesn’t process them by default.&lt;/p&gt;
+
+&lt;p&gt;If you want to test a bit of code that queues a Sidekiq job, you do it like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;# frozen_string_literal: true&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sidekiq/testing&quot;&lt;/span&gt;
+
+&lt;span class=&quot;no&quot;&gt;RSpec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;describe&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;FlakySpecsPoc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JobOne&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;queues an HttpJob&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;expect&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;subject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;perform&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;change&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;FlakySpecsPoc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;HttpJob&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;jobs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;:size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;by&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This is a good way to check that your code did the right thing (queue a job) without having to worry about the specifics about what that job does. It’s essentially the same as mocking a third party HTTP request.&lt;/p&gt;
+
+&lt;p&gt;However, sometimes you &lt;em&gt;might&lt;/em&gt; want to know not only that a job was queued, but also  that a certain side effect of that job having run took place. One might argue that this is a bad test since we should not be testing for side effects, but the reality is these kind of tests (especially feature or end to end tests) are ubiquitous. For this, Sidekiq provides a &lt;a href=&quot;https://github.com/mperham/sidekiq/wiki/Testing&quot;&gt;special method&lt;/a&gt; that allows you to run jobs that get queued immediately, in an in-line fashion. This method can be used in two ways:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;With a block, where inline test mode will be enabled for the code that runs inside the block, and disabled once the code in the block has been executed.&lt;/li&gt;
+  &lt;li&gt;Without a block, which enables inline testing &lt;em&gt;globally&lt;/em&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And it’s very easy to do something like this in a spec where you want your Sidekiq jobs to run inline:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;# frozen_string_literal: true&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sidekiq/testing&quot;&lt;/span&gt;
+
+&lt;span class=&quot;no&quot;&gt;RSpec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;describe&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;FlakySpecsPoc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JobOne&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;before&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Testing&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;inline!&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;checks something done by the HttpJob&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;no&quot;&gt;VCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;use_cassette&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;job_one&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;subject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;perform&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;expect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;eq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What the code above will do when run is to enable Sidekiq inline testing and &lt;em&gt;leaving it on for the rest of the test suite execution&lt;/em&gt;. The problem with this is that if another test after this runs and queues a Sidekiq job, that job will be run inline instead of being queued in memory. If that test does not expect that, it’ll fail &lt;em&gt;only if run after the first test&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;I’ve recreated this scenario in my gem by having a spec that tests that a job is queued, then having a spec that mistakenly enables inline testing for Sidekiq globally, and finally by having the Sidekiq job that gets queued make an HTTP request. I’m using VCR to record and then mock external HTTP calls.&lt;/p&gt;
+
+&lt;p&gt;So what happens is the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;If the test that checks if a job is queued runs first, it passes, because no external HTTP calls are made, since the Sidekiq job simply gets queued in memory, but never executed inline.&lt;/li&gt;
+  &lt;li&gt;If the test that sets inline testing runs first, then when the other test runs after it, the Sidekiq job &lt;em&gt;will run, make an HTTP call and cause a failure since VCR does not expect that external call to be made&lt;/em&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For reference, this is what a correct way to write this spec is:&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;# frozen_string_literal: true&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;sidekiq/testing&quot;&lt;/span&gt;
+
+&lt;span class=&quot;no&quot;&gt;RSpec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;describe&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;FlakySpecsPoc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;JobOne&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;around&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;spec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;|&lt;/span&gt;
+    &lt;span class=&quot;no&quot;&gt;Sidekiq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Testing&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;inline!&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;spec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;call&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+  &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;checks something done by the HttpJob&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+    &lt;span class=&quot;no&quot;&gt;VCR&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;use_cassette&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;job_one&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;subject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;perform&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;expect&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;to&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;eq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kp&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;You can easily recreate this by running the following command on the gem source code:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bundle &lt;span class=&quot;nb&quot;&gt;exec &lt;/span&gt;rspec &lt;span class=&quot;nt&quot;&gt;--order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;rand &lt;span class=&quot;nt&quot;&gt;--seed&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;55702
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Which should give you this output:&lt;/p&gt;
+
+&lt;div class=&quot;language-text highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+Randomized with seed 55702
+
+FlakySpecsPoc::JobOne
+  checks something done by the HttpJob
+
+FlakySpecsPoc::HttpJob
+  gets a response from a server
+
+FlakySpecsPoc::JobOne
+  queues an HttpJob (FAILED - 1)
+
+Failures:
+
+  1) FlakySpecsPoc::JobOne queues an HttpJob
+     Failure/Error: res = Net::HTTP.get_response(uri)
+
+     VCR::Errors::UnhandledHTTPRequestError:
+
+
+       ================================================================================
+       An HTTP request has been made that VCR does not know how to handle:
+         GET https://reqbin.com/echo/get/json
+
+       There is currently no cassette in use. There are a few ways
+       you can configure VCR to handle this request:
+
+         * If you're surprised VCR is raising this error
+           and want insight about how VCR attempted to handle the request,
+           you can use the debug_logger configuration option to log more details [1].
+         * If you want VCR to record this request and play it back during future test
+           runs, you should wrap your test (or this portion of your test) in a
+           `VCR.use_cassette` block [2].
+         * If you only want VCR to handle requests made while a cassette is in use,
+           configure `allow_http_connections_when_no_cassette = true`. VCR will
+           ignore this request since it is made when there is no cassette [3].
+         * If you want VCR to ignore this request (and others like it), you can
+           set an `ignore_request` callback [4].
+
+       [1] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/debug-logging
+       [2] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/getting-started
+       [3] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/allow-http-connections-when-no-cassette
+       [4] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/ignore-request
+       ================================================================================
+     # ./lib/flaky_specs_poc/http_job.rb:13:in `perform'
+     # ./lib/flaky_specs_poc/job_one.rb:10:in `perform'
+     # ./spec/flaky_specs_poc/job_one_spec.rb:8:in `block (3 levels) in &amp;lt;top (required)&amp;gt;'
+     # ./spec/flaky_specs_poc/job_one_spec.rb:7:in `block (2 levels) in &amp;lt;top (required)&amp;gt;'
+
+Finished in 0.03305 seconds (files took 0.85052 seconds to load)
+3 examples, 1 failure
+
+Failed examples:
+
+rspec ./spec/flaky_specs_poc/job_one_spec.rb:6 # FlakySpecsPoc::JobOne queues an HttpJob
+
+Randomized with seed 55702
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Run the same test suite with a different seed though:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bundle &lt;span class=&quot;nb&quot;&gt;exec &lt;/span&gt;rspec &lt;span class=&quot;nt&quot;&gt;--order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;rand &lt;span class=&quot;nt&quot;&gt;--seed&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;3164
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And everything’s good:&lt;/p&gt;
+
+&lt;div class=&quot;language-text highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Randomized with seed 3164
+
+FlakySpecsPoc::HttpJob
+  gets a response from a server
+
+FlakySpecsPoc::JobOne
+  queues an HttpJob
+
+FlakySpecsPoc::JobOne
+  checks something done by the HttpJob
+
+Finished in 0.02717 seconds (files took 0.39785 seconds to load)
+3 examples, 0 failures
+
+Randomized with seed 3164
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In this case, given we have very little tests, this could be relatively easy to debug manually, but with a bigger test suite we can use rspect bisect:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;bundle &lt;span class=&quot;nb&quot;&gt;exec &lt;/span&gt;rspec &lt;span class=&quot;nt&quot;&gt;--order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;rand &lt;span class=&quot;nt&quot;&gt;--seed&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;55702 &lt;span class=&quot;nt&quot;&gt;--bisect&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Which will give us the following:&lt;/p&gt;
+
+&lt;div class=&quot;language-text highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Bisect started using options: &quot;--order=rand --seed=55702&quot;
+Running suite to find failures... (0.10595 seconds)
+Starting bisect with 1 failing example and 2 non-failing examples.
+Checking that failure(s) are order-dependent... failure appears to be order-dependent
+
+Round 1: bisecting over non-failing examples 1-2 .. ignoring example 2 (0.19095 seconds)
+Bisect complete! Reduced necessary non-failing examples from 2 to 1 in 0.25318 seconds.
+
+The minimal reproduction command is:
+  rspec './spec/flaky_specs_poc/job_one_spec.rb[1:1]' './spec/flaky_specs_poc/job_two_spec.rb[1:1]' --order=rand --seed=55702
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;And now we know how to consistently reproduce the error with the minimum number of tests, which will make pinpointing the sneaky bogus test easier.&lt;/p&gt;
+
+&lt;h2&gt;Automating bisects&lt;/h2&gt;
+
+&lt;p&gt;The next step is clear: automate it! I’m going to show you a GitHub Actions Workflow that will automatically run a bisect on a failing test suite.&lt;/p&gt;
+
+&lt;p&gt;First of all a couple of disclaimers:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;This has not been productionised, so as usual, use at your own risk ;)&lt;/li&gt;
+  &lt;li&gt;This flow does a bisect on failing test suites. This will make your test pipeline slower, since a bunch of failing tests will be run twice, &lt;em&gt;including failures which are not caused by flaky tests!&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Here’s the complete flow:&lt;/p&gt;
+
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Ruby&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;on&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;push&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;branches&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;main&lt;/span&gt;
+
+  &lt;span class=&quot;na&quot;&gt;pull_request&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;jobs&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;RunTests&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;runs-on&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;ubuntu-latest&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;steps&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;uses&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;actions/checkout@v2&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Set up Ruby&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;uses&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;ruby/setup-ruby@v1&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;with&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;bundler-cache&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Run the tests&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;tests&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;continue-on-error&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bundle exec rspec --order=rand -f j -o tmp/rspec_results.json&lt;/span&gt;
+    &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Bisect flaky specs&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;steps.tests.outcome != 'success'&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bundle exec rspec --order=rand --seed $(cat tmp/rspec_results.json | jq '.seed') --bisect&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;The first bit of the flow is a pretty standard way of doing things. The bits that interest us are the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Run the tests&lt;/code&gt;and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Bisect flaky specs&lt;/code&gt; steps.&lt;/p&gt;
+
+&lt;p&gt;This step will run our tests:&lt;/p&gt;
+
+&lt;div class=&quot;language-yaml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Run the tests&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;tests&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;continue-on-error&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bundle exec rspec --order=rand -f j -o tmp/rspec_results.json&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--order=rand&lt;/code&gt; will ensure the suite is run in random order.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-f j&lt;/code&gt; will make sure the output of the tests is in JSON format. This is important since we need to be able to parse the test results easily.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-o tmp/rspec_results.json&lt;/code&gt; sends the results into a file instead of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;STDOUT&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;We also use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;continue-on-error: true&lt;/code&gt; to tell GitHub Actions that when the tests fail, the rest of the steps will still be executed, otherwise on a test failure the flow would immediately end.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And this is the step that will run a bisect:&lt;/p&gt;
+
+&lt;div class=&quot;language-yml highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Bisect flaky specs&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;steps.tests.outcome != 'success'&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;bundle exec rspec --order=rand --seed $(cat tmp/rspec_results.json | jq '.seed') --bisect&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;A few noteworthy bits:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if: steps.tests.outcome != 'success'&lt;/code&gt; will ensure this step is only run if the original test suite failed.&lt;/li&gt;
+  &lt;li&gt;We use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cat tmp/rspec_results.json | jq '.seed'&lt;/code&gt; to get the seed that was originally used to run the tests, so we can pass it to the bisect.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For reference, this is what an rspec result in JSON format looks like:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;version&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;3.11.0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;seed&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;55702&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;examples&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;./spec/flaky_specs_poc/job_two_spec.rb[1:1]&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;description&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;checks something done by the HttpJob&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;full_description&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;FlakySpecsPoc::JobOne checks something done by the HttpJob&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;status&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;passed&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;file_path&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;./spec/flaky_specs_poc/job_two_spec.rb&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;line_number&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;16&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;run_time&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.009731&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pending_message&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;./spec/flaky_specs_poc/http_job_spec.rb[1:1]&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;description&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;gets a response from a server&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;full_description&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;FlakySpecsPoc::HttpJob gets a response from a server&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;status&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;passed&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;file_path&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;./spec/flaky_specs_poc/http_job_spec.rb&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;line_number&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;run_time&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.003383&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pending_message&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;./spec/flaky_specs_poc/job_one_spec.rb[1:1]&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;description&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;queues an HttpJob&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;full_description&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;FlakySpecsPoc::JobOne queues an HttpJob&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;status&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;failed&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;file_path&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;./spec/flaky_specs_poc/job_one_spec.rb&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;line_number&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;run_time&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.021981&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pending_message&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;exception&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;class&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;VCR::Errors::UnhandledHTTPRequestError&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;message&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;================================================================================&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;An HTTP request has been made that VCR does not know how to handle:&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;  GET https://reqbin.com/echo/get/json&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;There is currently no cassette in use. There are a few ways&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;you can configure VCR to handle this request:&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;  * If you're surprised VCR is raising this error&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    and want insight about how VCR attempted to handle the request,&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    you can use the debug_logger configuration option to log more details [1].&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;  * If you want VCR to record this request and play it back during future test&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    runs, you should wrap your test (or this portion of your test) in a&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    `VCR.use_cassette` block [2].&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;  * If you only want VCR to handle requests made while a cassette is in use,&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    configure `allow_http_connections_when_no_cassette = true`. VCR will&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    ignore this request since it is made when there is no cassette [3].&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;  * If you want VCR to ignore this request (and others like it), you can&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;    set an `ignore_request` callback [4].&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;[1] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/debug-logging&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;[2] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/getting-started&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;[3] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/allow-http-connections-when-no-cassette&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;[4] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/ignore-request&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;================================================================================&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;backtrace&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                    &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;REDACTED FOR LEGIBILITY&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;summary&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;duration&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;0.037856&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;example_count&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;failure_count&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;pending_count&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;errors_outside_of_examples_count&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;summary_line&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;3 examples, 1 failure&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What we do with this file is send it to the &lt;a href=&quot;https://stedolan.github.io/jq/&quot;&gt;jq&lt;/a&gt; tool for parsing, and telling it to get us the value for top level key &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;seed&lt;/code&gt;. jq is a really useful and powerful tool so I suggest you check it out if you’re unfamiliar with it.&lt;/p&gt;
+
+&lt;p&gt;Below you can see a screenshot of this flow successfully bisecting our example test suite.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/github-actions-bisect.png&quot; alt=&quot;GitHub Actions Workflow&quot; title=&quot;GitHub Actions Workflow&quot; /&gt;&lt;/p&gt;
+
+&lt;h2&gt;Conclusions&lt;/h2&gt;
+
+&lt;p&gt;In this post we have learned about a specific, pernicious test failure that manifests itself when a test suite is run in a specific order. We have then seen how a technique called bisecting can help determine what test of potentially many is causing te failure. Last but not least, we have shown a GitHub Actions Workflow that will automatically run the bisect task when a test suite fails to execute.&lt;/p&gt;
+
+&lt;p&gt;This is a very small, toy example of how to make this work. Your real life test suites are probably a lot more complex, bigger, and so this example might not work for you, but the fundamentals should be the same.&lt;/p&gt;</content><author><name>Bernat Ràfales</name></author><summary type="html">Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.</summary></entry><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/">&lt;p&gt;Sometimes we are given access via ssh to nodes that do not have, for policy or
 technical reasons, access to the internet (i.e. they cannot make outbound
 connections).  Depending on the policies, we may be able to open reverse SSH
 tunnels, so things are not so bad.&lt;/p&gt;
@@ -4532,211 +4904,4 @@ it.&lt;/p&gt;
 generation for VFPv2.&lt;/p&gt;
 
 &lt;p&gt;In the next installment we will continue adding the missing bits in the
-instruction selection and lowering of operations for vector types.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the last chapter we modelled the storage in form of pairs and quadruples of registers that we will use for vectors of double and single precision, respectively. But before we can do anything we need to deal with fpscr.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 2</title><link href="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 2" /><published>2021-06-25T12:36:00+00:00</published><updated>2021-06-25T12:36:00+00:00</updated><id>https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2</id><content type="html" xml:base="https://thinkingeek.com/2021/06/25/raspberry-vectors-part-2/">&lt;p&gt;In the &lt;a href=&quot;/2021/06/25/raspberry-vectors-part-1/&quot;&gt;previous installment&lt;/a&gt;
-we discussed a bit how to generate code using the vector feature of the CPU of
-the Raspberry Pi 1.&lt;/p&gt;
-
-&lt;p&gt;Let’s start hacking LLVM.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;h1&gt;Registers&lt;/h1&gt;
-
-&lt;p&gt;One way to understand registers in LLVM is a set of storage resources that we
-can group in register classes. Those register classes can then be mentioned as
-register operands of instructions.&lt;/p&gt;
-
-&lt;p&gt;The register information for the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARM&lt;/code&gt; backend (the one used for 32-bit Arm
-CPUs, currently known as the AArch32 execution state of the Arm architecture)
-is found in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;llvm/lib/Target/ARM/ARMRegisterInfo.td&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;This is a &lt;a href=&quot;https://llvm.org/docs/TableGen/&quot;&gt;tablegen&lt;/a&gt; file. Tablegen is a
-domain specific language to generate records called &lt;em&gt;definitions&lt;/em&gt;. Each
-definition is an instance of a &lt;em&gt;class&lt;/em&gt; and classes define the attributes
-that a definition will contain. A tablegen file is then processed by one
-or more &lt;em&gt;backends&lt;/em&gt; commonly to generate C++ code. This tablegen-generated C++
-code is compiled along with the rest of the C++ code that makes up LLVM. This way
-it is relatively quick to update parts of the compiler without having to express
-them directly in C++.&lt;/p&gt;
-
-&lt;p&gt;Registers in LLVM are specified using definitions of class &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Register&lt;/code&gt;. Most
-backends have to specialise this class, so the Arm backend uses a class called
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMFReg&lt;/code&gt; for floating point registers&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;class ARMFReg&amp;lt;bits&amp;lt;16&amp;gt; Enc, string n&amp;gt; : Register&amp;lt;n&amp;gt; {
-  let HWEncoding = Enc;
-  let Namespace = &quot;ARM&quot;;
-}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The single precision floating point registers (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;s&amp;lt;n&amp;gt;&lt;/code&gt;) are defined like this.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;def S0  : ARMFReg&amp;lt; 0, &quot;s0&quot;&amp;gt;;  def S1  : ARMFReg&amp;lt; 1, &quot;s1&quot;&amp;gt;;
-def S2  : ARMFReg&amp;lt; 2, &quot;s2&quot;&amp;gt;;  def S3  : ARMFReg&amp;lt; 3, &quot;s3&quot;&amp;gt;;
-def S4  : ARMFReg&amp;lt; 4, &quot;s4&quot;&amp;gt;;  def S5  : ARMFReg&amp;lt; 5, &quot;s5&quot;&amp;gt;;
-def S6  : ARMFReg&amp;lt; 6, &quot;s6&quot;&amp;gt;;  def S7  : ARMFReg&amp;lt; 7, &quot;s7&quot;&amp;gt;;
-def S8  : ARMFReg&amp;lt; 8, &quot;s8&quot;&amp;gt;;  def S9  : ARMFReg&amp;lt; 9, &quot;s9&quot;&amp;gt;;
-def S10 : ARMFReg&amp;lt;10, &quot;s10&quot;&amp;gt;; def S11 : ARMFReg&amp;lt;11, &quot;s11&quot;&amp;gt;;
-def S12 : ARMFReg&amp;lt;12, &quot;s12&quot;&amp;gt;; def S13 : ARMFReg&amp;lt;13, &quot;s13&quot;&amp;gt;;
-def S14 : ARMFReg&amp;lt;14, &quot;s14&quot;&amp;gt;; def S15 : ARMFReg&amp;lt;15, &quot;s15&quot;&amp;gt;;
-def S16 : ARMFReg&amp;lt;16, &quot;s16&quot;&amp;gt;; def S17 : ARMFReg&amp;lt;17, &quot;s17&quot;&amp;gt;;
-def S18 : ARMFReg&amp;lt;18, &quot;s18&quot;&amp;gt;; def S19 : ARMFReg&amp;lt;19, &quot;s19&quot;&amp;gt;;
-def S20 : ARMFReg&amp;lt;20, &quot;s20&quot;&amp;gt;; def S21 : ARMFReg&amp;lt;21, &quot;s21&quot;&amp;gt;;
-def S22 : ARMFReg&amp;lt;22, &quot;s22&quot;&amp;gt;; def S23 : ARMFReg&amp;lt;23, &quot;s23&quot;&amp;gt;;
-def S24 : ARMFReg&amp;lt;24, &quot;s24&quot;&amp;gt;; def S25 : ARMFReg&amp;lt;25, &quot;s25&quot;&amp;gt;;
-def S26 : ARMFReg&amp;lt;26, &quot;s26&quot;&amp;gt;; def S27 : ARMFReg&amp;lt;27, &quot;s27&quot;&amp;gt;;
-def S28 : ARMFReg&amp;lt;28, &quot;s28&quot;&amp;gt;; def S29 : ARMFReg&amp;lt;29, &quot;s29&quot;&amp;gt;;
-def S30 : ARMFReg&amp;lt;30, &quot;s30&quot;&amp;gt;; def S31 : ARMFReg&amp;lt;31, &quot;s31&quot;&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The double precision registers (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;&lt;/code&gt;) are defined as registers
-that include two single precision registers in it. This is achieved by
-first declaring what is called a subregister index.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;def ssub_0  : SubRegIndex&amp;lt;32&amp;gt;;
-def ssub_1  : SubRegIndex&amp;lt;32, 32&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now the registers can be defined by telling LLVM that they have two subregister
-indices and then linking each subregister index to the corresponding &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;s&amp;lt;n&amp;gt;&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;s&amp;lt;n+1&amp;gt;&lt;/code&gt;
-registers.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;// Aliases of the F* registers used to hold 64-bit fp values (doubles)
-let SubRegIndices = [ssub_0, ssub_1] in {
-def D0  : ARMReg&amp;lt; 0,  &quot;d0&quot;, [S0,   S1]&amp;gt;, DwarfRegNum&amp;lt;[256]&amp;gt;;
-def D1  : ARMReg&amp;lt; 1,  &quot;d1&quot;, [S2,   S3]&amp;gt;, DwarfRegNum&amp;lt;[257]&amp;gt;;
-def D2  : ARMReg&amp;lt; 2,  &quot;d2&quot;, [S4,   S5]&amp;gt;, DwarfRegNum&amp;lt;[258]&amp;gt;;
-def D3  : ARMReg&amp;lt; 3,  &quot;d3&quot;, [S6,   S7]&amp;gt;, DwarfRegNum&amp;lt;[259]&amp;gt;;
-def D4  : ARMReg&amp;lt; 4,  &quot;d4&quot;, [S8,   S9]&amp;gt;, DwarfRegNum&amp;lt;[260]&amp;gt;;
-def D5  : ARMReg&amp;lt; 5,  &quot;d5&quot;, [S10, S11]&amp;gt;, DwarfRegNum&amp;lt;[261]&amp;gt;;
-def D6  : ARMReg&amp;lt; 6,  &quot;d6&quot;, [S12, S13]&amp;gt;, DwarfRegNum&amp;lt;[262]&amp;gt;;
-def D7  : ARMReg&amp;lt; 7,  &quot;d7&quot;, [S14, S15]&amp;gt;, DwarfRegNum&amp;lt;[263]&amp;gt;;
-def D8  : ARMReg&amp;lt; 8,  &quot;d8&quot;, [S16, S17]&amp;gt;, DwarfRegNum&amp;lt;[264]&amp;gt;;
-def D9  : ARMReg&amp;lt; 9,  &quot;d9&quot;, [S18, S19]&amp;gt;, DwarfRegNum&amp;lt;[265]&amp;gt;;
-def D10 : ARMReg&amp;lt;10, &quot;d10&quot;, [S20, S21]&amp;gt;, DwarfRegNum&amp;lt;[266]&amp;gt;;
-def D11 : ARMReg&amp;lt;11, &quot;d11&quot;, [S22, S23]&amp;gt;, DwarfRegNum&amp;lt;[267]&amp;gt;;
-def D12 : ARMReg&amp;lt;12, &quot;d12&quot;, [S24, S25]&amp;gt;, DwarfRegNum&amp;lt;[268]&amp;gt;;
-def D13 : ARMReg&amp;lt;13, &quot;d13&quot;, [S26, S27]&amp;gt;, DwarfRegNum&amp;lt;[269]&amp;gt;;
-def D14 : ARMReg&amp;lt;14, &quot;d14&quot;, [S28, S29]&amp;gt;, DwarfRegNum&amp;lt;[270]&amp;gt;;
-def D15 : ARMReg&amp;lt;15, &quot;d15&quot;, [S30, S31]&amp;gt;, DwarfRegNum&amp;lt;[271]&amp;gt;;
-}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Ok so we can use a similar strategy for our vector registers. Let’s define
-first a couple of new subregister indices. For now let’s focus on double
-precision.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;def dsub_len2_0: SubRegIndex&amp;lt;64, -1&amp;gt;;
-def dsub_len2_1: SubRegIndex&amp;lt;64, -1&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The first argument to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SubRegIndex&lt;/code&gt; is the size of the register. Because we are
-defining vectors of double precision, this will be 64 bit. The second operand
-represents the offset within the register. In contrast to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;&lt;/code&gt; registers that
-do include two consecutive registers, VFP vectors may include non-consecutive
-registers due to the wraparound within a vector bank (recall &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;(d7, d4)&lt;/code&gt;). So we
-specify &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-1&lt;/code&gt; to represent that this is not a physical subregister but a
-logical one.&lt;/p&gt;
-
-&lt;p&gt;Now we can use tablegen looping features to define the pairs of registers.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;// Double precision pairs
-defset list&amp;lt;Register&amp;gt; DPRx2Regs = {
-foreach base = [4, 8, 12] in {
-    foreach offset = [0, 1, 2, 3] in {
-        defvar m = !add(base, offset);
-        defvar mnext = !add(base, !and(!add(offset, 1), 0x3));
-        let SubRegIndices = [dsub_len2_0, dsub_len2_1] in {
-            def &quot;D&quot; # m # &quot;_D&quot; # mnext # &quot;x2&quot; :
-                VFPRegistersWithSubregs&amp;lt;
-                    !cast&amp;lt;Register&amp;gt;(&quot;D&quot; # m),
-                    &quot;d&quot; # m # &quot;x2&quot;,
-                    [!cast&amp;lt;Register&amp;gt;(&quot;D&quot; # m), !cast&amp;lt;Register&amp;gt;(&quot;D&quot; # mnext)],
-                    [&quot;d&quot; # m # &quot;x2&quot;]&amp;gt;;
-        }
-    }
-}
-}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This is a bit difficult to read. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;base&lt;/code&gt; represents the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;&lt;/code&gt; that begins a
-vector bank: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d4&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d8&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d12&lt;/code&gt;. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;offset&lt;/code&gt; represents how many elements there
-are within each bank. These two loops execute and will be generating definitions.
-Because of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;defset&lt;/code&gt; directive enclosing everything, those definitions will
-also be referenced in a list called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DPRx2Regs&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;So we compute first &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;base + offset&lt;/code&gt; and we name this &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;m&lt;/code&gt;.
-Then we compute &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mnext&lt;/code&gt; as the logical next one but making sure we wrap around
-(we achieve this using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;!and(..., 0x3)&lt;/code&gt; as we have to compute mod 4).&lt;/p&gt;
-
-&lt;p&gt;Now that we have &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;m&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mnext&lt;/code&gt; we can define the pair itself. The definition
-will be named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D&amp;lt;m&amp;gt;_D&amp;lt;mnext&amp;gt;x2&lt;/code&gt; (e.g. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D4_D5x2&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D5_D6x2&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D6_D7x2&lt;/code&gt;,
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D7_D4x2&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;D8_D9x2&lt;/code&gt;, …) this name is arbitrary but should be a valid C++
-identifier because one of the tablegen backends will define enumerators for
-those registers.&lt;/p&gt;
-
-&lt;p&gt;In order to generate the register we use a specialised class called
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPRegistersWithSubregs&lt;/code&gt; which is just a convenience for this task.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;class VFPRegistersWithSubregs&amp;lt;Register EncReg, string n, list&amp;lt;Register&amp;gt; subregs,
-                          list&amp;lt;string&amp;gt; alt = []&amp;gt;
-      : RegisterWithSubRegs&amp;lt;n, subregs&amp;gt; {
-  let HWEncoding = EncReg.HWEncoding;
-  let AltNames = alt;
-  let Namespace = &quot;ARM&quot;;
-}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If you check above how we use this class, the first argument is the encoding
-register. We will always use the first register of the group for the encoding
-(however you will see that eventually we won’t be using this). We are naming
-those registers &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;n&amp;gt;x2&lt;/code&gt; in the assembly. We will not use them and in fact we
-should forbid those names in the assembler that LLVM will generate for the ARM
-backend, but for simplicity we will ignore this. Finally see how we link
-the current definition to each &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;m&amp;gt;&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;d&amp;lt;mnext&amp;gt;&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Now we have the registers defined. Those are the resources. Those resources
-can be used in instructions via register classes, which are the sets of useable
-registers in instructions. Due to the way we have designed the registers
-all of them will be usable in a register class for vectors of doubles. We can
-simply use the list &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DPRx2Regs&lt;/code&gt; that we built using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;defset&lt;/code&gt; above.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;def DPRx2 : RegisterClass&amp;lt;&quot;ARM&quot;, [v2f64], 64, (add DPRx2Regs)&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;The second operand is the list of &lt;em&gt;machine&lt;/em&gt; types that we can represent with
-this register. In this case &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v2f64&lt;/code&gt; is equivalent to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&amp;lt;2 x double&amp;gt;&lt;/code&gt; in LLVM IR.
-Machine types are fixed set of types that backends can use (i.e. LLVM IR has
-types that machine types do not represent) and are somehow associated to the
-physical types of CPUs. The third operand is the alignment, in bits, used
-when loading or storing a register from memory. Due to the way we are going
-to load them, they can be aligned to 8 bytes (64 bit).&lt;/p&gt;
-
-&lt;p&gt;And that’s it. We can do the same for single precision. This time sizes
-are 32 and each register will contain 4 subregisters. The type of the
-registers will be &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;v4f32&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-tablegen&quot; data-lang=&quot;tablegen&quot;&gt;def ssub_len4_0: SubRegIndex&amp;lt;32, -1&amp;gt;;
-def ssub_len4_1: SubRegIndex&amp;lt;32, -1&amp;gt;;
-def ssub_len4_2: SubRegIndex&amp;lt;32, -1&amp;gt;;
-def ssub_len4_3: SubRegIndex&amp;lt;32, -1&amp;gt;;
-
-// Single precision quads
-defset list&amp;lt;Register&amp;gt; SPRx4Regs = {
-foreach base = [8, 16, 24] in {
-    foreach offset = [0, 1, 2, 3, 4, 5, 6, 7] in {
-        defvar m = !add(base, offset);
-        defvar mnext1 = !add(base, !and(!add(offset, 1), 0x7));
-        defvar mnext2 = !add(base, !and(!add(offset, 2), 0x7));
-        defvar mnext3 = !add(base, !and(!add(offset, 3), 0x7));
-        let SubRegIndices = [ssub_len4_0, ssub_len4_1, ssub_len4_2, ssub_len4_3]
-        in {
-            def &quot;S&quot; # m # &quot;_S&quot; # mnext1 # &quot;_S&quot; # mnext2 # &quot;_S&quot; # mnext3 # &quot;x4&quot; :
-                VFPRegistersWithSubregs&amp;lt;
-                    !cast&amp;lt;Register&amp;gt;(&quot;S&quot; # m),
-                    &quot;s&quot; # m # &quot;x4&quot;,
-                    [!cast&amp;lt;Register&amp;gt;(&quot;S&quot; # m),
-                     !cast&amp;lt;Register&amp;gt;(&quot;S&quot; # mnext1),
-                     !cast&amp;lt;Register&amp;gt;(&quot;S&quot; # mnext2),
-                     !cast&amp;lt;Register&amp;gt;(&quot;S&quot; # mnext3)],
-                    [&quot;s&quot; # m # &quot;x4&quot;]&amp;gt;;
-        }
-    }
-}
-}
-def SPRx4 : RegisterClass&amp;lt;&quot;ARM&quot;, [v4f32], 32, (add SPRx4Regs)&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;In the next chapter we will talk about what changes we have to do to be able
-to track &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt; so we can change the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field with confidence.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the previous installment we discussed a bit how to generate code using the vector feature of the CPU of the Raspberry Pi 1. Let’s start hacking LLVM.</summary></entry></feed>
+instruction selection and lowering of operations for vector types.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">In the last chapter we modelled the storage in form of pairs and quadruples of registers that we will use for vectors of double and single precision, respectively. But before we can do anything we need to deal with fpscr.</summary></entry></feed>

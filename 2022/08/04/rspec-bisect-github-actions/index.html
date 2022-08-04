@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Bisecting flaky tests with rspec and GitHub Actions</title>
+  <meta name="description" content="Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Bisecting flaky tests with rspec and GitHub Actions">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/">
+  <meta property="og:description" content="Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Bisecting flaky tests with rspec and GitHub Actions">
+  <meta name="twitter:description" content="Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot h...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Bisecting flaky tests with rspec and GitHub Actions</h1>
+    
+    <p class="post-meta"><time datetime="2022-08-04T00:00:00+00:00" itemprop="datePublished">Aug 4, 2022</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/ruby/">ruby</a>, <a href="/categories/testing/">testing</a>, <a href="/categories/github-actions/">github-actions</a>, <a href="/categories/rspec/">rspec</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.</p>
+
+<!--more-->
+
+<h2>Order dependant test failures</h2>
+
+<p>An order dependant test failure is one that happens when:</p>
+
+<ul>
+  <li>There is more than one test being run as part of the suite.</li>
+  <li>One of the test fails only when the suite is run in a specific order.</li>
+</ul>
+
+<p>Let’s simplify things and assume you have a very small test suite consisting of two tests: Test A and Test B. This post will assume we’re using ruby as our language of choice, and rspec as our testing framework, however the fundamentals apply to any other language and good testing framework. In this case, we might be dealing with a situation like this:</p>
+
+<ol>
+  <li>When we run Test A, it passes.</li>
+  <li>When we run Test B, it passes.</li>
+  <li>When we run Test A and Test B, they both pass.</li>
+  <li>When we run Test B and Test A, Test B passes but Test A fails.</li>
+</ol>
+
+<p><img src="/assets/images/bisect-1.png" alt="Test scenario 1" title="Test scenario 1. Green/Solid node represents a passing test, red/dotted note represents a failing test" /></p>
+
+<p><img src="/assets/images/bisect-2.png" alt="Test scenario 2" title="Test scenario 2. Green/Solid node represents a passing test, red/dotted note represents a failing test" /></p>
+
+<p><img src="/assets/images/bisect-3.png" alt="Test scenario 3" title="Test scenario 3. Green/Solid node represents a passing test, red/dotted note represents a failing test" /></p>
+
+<p><img src="/assets/images/bisect-4.png" alt="Test scenario 4" title="Test scenario 4. Green/Solid node represents a passing test, red/dotted note represents a failing test" /></p>
+
+<p>If using rspec in its default configuration, you are probably running your test suite in a random order. This makes rspec generate a random seed and use that seed to determine in which order tests should be run. When running the above test suite using rspec in a random order, you can expect your suite to break roughly 50% of the times.</p>
+
+<p>However, order dependant test failures can be very pernicious because they are introduced silently, they can make your test suite fail only occasionally, which leads to developers being lazy and use the <em>retry the tests until they pass</em> technique. The bogus test doesn’t get dealt with until it’s too late: the test suite now fails <em>often</em>, causing delays in releases, frustration, or even panic situations when the need for a quick release arises: there’s nothing worse than having to hotfix a production issue quickly and not being able to because your test suite keeps failing.</p>
+
+<h2>Bisect to the rescue</h2>
+
+<p>One of the features of rspec is the ability to run a <a href="https://relishapp.com/rspec/rspec-core/docs/command-line/bisect">bisect</a>. Once you discover an order dependant failure and can consistently reproduce it with a fixed seed, it can still be difficult to determine which test is causing the issue. In our example we only have 2 tests, but in bigger test suites the failing test might be executed after other hundreds of tests, making it hard to determine which one of them is the bad apple. Bisect solves that problem by consistently running all your tests to try and determine <em>the minimal set of examples that reproduce the same failures</em>.  The way rou run bisect is by providing rspec with the exact same options and seed that caused the order dependant failure, and adding the <code class="language-plaintext highlighter-rouge">--bisect</code>flag to the CLI. Interally <a href="https://en.wikipedia.org/wiki/Bisection_method">bisect</a> will split tests into two chunks, run those tests, discard the chunk that does not fail, and carry on recursively until the smallest failing number of tests is found.</p>
+
+<h2>Our example</h2>
+
+<p>I have created a proof of concept gem with a test suite that has an order dependant failure. The repository can be checked at <a href="https://github.com/brafales/flaky_specs_poc">brafales/flaky_specs_poc</a>.</p>
+
+<p>If you’re not interested in the nitty gritty of why this particular test suite is problematic and are only interested in the GitHub Actions Workflow file, please skip this section.</p>
+
+<p>The problematic spec in this gem is <a href="https://github.com/brafales/flaky_specs_poc/blob/main/spec/flaky_specs_poc/job_two_spec.rb">spec/flaky_specs_poc/job_two_spec.rb</a>. This proof of concept uses Sidekiq to show a common testing issue with this popular background job processing framework.</p>
+
+<p>Sidekiq works on the basis of jobs, which get pushed into a queue, and then picked up by a worker process. Sidekiq will use a backend to store jobs, for example a redis instance; however, when running your tests you might not want to have to mess around with having a redis instance available for use. For this reason, Sidekiq in test mode uses a virtual backend which will queue jobs in memory, and doesn’t process them by default.</p>
+
+<p>If you want to test a bit of code that queues a Sidekiq job, you do it like this:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># frozen_string_literal: true</span>
+
+<span class="nb">require</span> <span class="s2">"sidekiq/testing"</span>
+
+<span class="no">RSpec</span><span class="p">.</span><span class="nf">describe</span> <span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">JobOne</span> <span class="k">do</span>
+  <span class="n">it</span> <span class="s2">"queues an HttpJob"</span> <span class="k">do</span>
+    <span class="n">expect</span> <span class="k">do</span>
+      <span class="n">subject</span><span class="p">.</span><span class="nf">perform</span>
+    <span class="k">end</span><span class="p">.</span><span class="nf">to</span> <span class="n">change</span><span class="p">(</span><span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">HttpJob</span><span class="p">.</span><span class="nf">jobs</span><span class="p">,</span> <span class="ss">:size</span><span class="p">).</span><span class="nf">by</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>This is a good way to check that your code did the right thing (queue a job) without having to worry about the specifics about what that job does. It’s essentially the same as mocking a third party HTTP request.</p>
+
+<p>However, sometimes you <em>might</em> want to know not only that a job was queued, but also  that a certain side effect of that job having run took place. One might argue that this is a bad test since we should not be testing for side effects, but the reality is these kind of tests (especially feature or end to end tests) are ubiquitous. For this, Sidekiq provides a <a href="https://github.com/mperham/sidekiq/wiki/Testing">special method</a> that allows you to run jobs that get queued immediately, in an in-line fashion. This method can be used in two ways:</p>
+
+<ul>
+  <li>With a block, where inline test mode will be enabled for the code that runs inside the block, and disabled once the code in the block has been executed.</li>
+  <li>Without a block, which enables inline testing <em>globally</em>.</li>
+</ul>
+
+<p>And it’s very easy to do something like this in a spec where you want your Sidekiq jobs to run inline:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># frozen_string_literal: true</span>
+
+<span class="nb">require</span> <span class="s2">"sidekiq/testing"</span>
+
+<span class="no">RSpec</span><span class="p">.</span><span class="nf">describe</span> <span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">JobOne</span> <span class="k">do</span>
+  <span class="n">before</span> <span class="k">do</span>
+    <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Testing</span><span class="p">.</span><span class="nf">inline!</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"checks something done by the HttpJob"</span> <span class="k">do</span>
+    <span class="no">VCR</span><span class="p">.</span><span class="nf">use_cassette</span><span class="p">(</span><span class="s2">"job_one"</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">subject</span><span class="p">.</span><span class="nf">perform</span>
+    <span class="k">end</span>
+    <span class="n">expect</span><span class="p">(</span><span class="kp">true</span><span class="p">).</span><span class="nf">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>What the code above will do when run is to enable Sidekiq inline testing and <em>leaving it on for the rest of the test suite execution</em>. The problem with this is that if another test after this runs and queues a Sidekiq job, that job will be run inline instead of being queued in memory. If that test does not expect that, it’ll fail <em>only if run after the first test</em>.</p>
+
+<p>I’ve recreated this scenario in my gem by having a spec that tests that a job is queued, then having a spec that mistakenly enables inline testing for Sidekiq globally, and finally by having the Sidekiq job that gets queued make an HTTP request. I’m using VCR to record and then mock external HTTP calls.</p>
+
+<p>So what happens is the following:</p>
+
+<ul>
+  <li>If the test that checks if a job is queued runs first, it passes, because no external HTTP calls are made, since the Sidekiq job simply gets queued in memory, but never executed inline.</li>
+  <li>If the test that sets inline testing runs first, then when the other test runs after it, the Sidekiq job <em>will run, make an HTTP call and cause a failure since VCR does not expect that external call to be made</em>.</li>
+</ul>
+
+<p>For reference, this is what a correct way to write this spec is:</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># frozen_string_literal: true</span>
+
+<span class="nb">require</span> <span class="s2">"sidekiq/testing"</span>
+
+<span class="no">RSpec</span><span class="p">.</span><span class="nf">describe</span> <span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">JobOne</span> <span class="k">do</span>
+  <span class="n">around</span> <span class="k">do</span> <span class="o">|</span><span class="n">spec</span><span class="o">|</span>
+    <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Testing</span><span class="p">.</span><span class="nf">inline!</span> <span class="k">do</span>
+      <span class="n">spec</span><span class="p">.</span><span class="nf">call</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"checks something done by the HttpJob"</span> <span class="k">do</span>
+    <span class="no">VCR</span><span class="p">.</span><span class="nf">use_cassette</span><span class="p">(</span><span class="s2">"job_one"</span><span class="p">)</span> <span class="k">do</span>
+      <span class="n">subject</span><span class="p">.</span><span class="nf">perform</span>
+    <span class="k">end</span>
+    <span class="n">expect</span><span class="p">(</span><span class="kp">true</span><span class="p">).</span><span class="nf">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>You can easily recreate this by running the following command on the gem source code:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>rspec <span class="nt">--order</span><span class="o">=</span>rand <span class="nt">--seed</span><span class="o">=</span>55702
+</code></pre></div></div>
+
+<p>Which should give you this output:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+Randomized with seed 55702
+
+FlakySpecsPoc::JobOne
+  checks something done by the HttpJob
+
+FlakySpecsPoc::HttpJob
+  gets a response from a server
+
+FlakySpecsPoc::JobOne
+  queues an HttpJob (FAILED - 1)
+
+Failures:
+
+  1) FlakySpecsPoc::JobOne queues an HttpJob
+     Failure/Error: res = Net::HTTP.get_response(uri)
+
+     VCR::Errors::UnhandledHTTPRequestError:
+
+
+       ================================================================================
+       An HTTP request has been made that VCR does not know how to handle:
+         GET https://reqbin.com/echo/get/json
+
+       There is currently no cassette in use. There are a few ways
+       you can configure VCR to handle this request:
+
+         * If you're surprised VCR is raising this error
+           and want insight about how VCR attempted to handle the request,
+           you can use the debug_logger configuration option to log more details [1].
+         * If you want VCR to record this request and play it back during future test
+           runs, you should wrap your test (or this portion of your test) in a
+           `VCR.use_cassette` block [2].
+         * If you only want VCR to handle requests made while a cassette is in use,
+           configure `allow_http_connections_when_no_cassette = true`. VCR will
+           ignore this request since it is made when there is no cassette [3].
+         * If you want VCR to ignore this request (and others like it), you can
+           set an `ignore_request` callback [4].
+
+       [1] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/debug-logging
+       [2] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/getting-started
+       [3] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/allow-http-connections-when-no-cassette
+       [4] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/ignore-request
+       ================================================================================
+     # ./lib/flaky_specs_poc/http_job.rb:13:in `perform'
+     # ./lib/flaky_specs_poc/job_one.rb:10:in `perform'
+     # ./spec/flaky_specs_poc/job_one_spec.rb:8:in `block (3 levels) in &lt;top (required)&gt;'
+     # ./spec/flaky_specs_poc/job_one_spec.rb:7:in `block (2 levels) in &lt;top (required)&gt;'
+
+Finished in 0.03305 seconds (files took 0.85052 seconds to load)
+3 examples, 1 failure
+
+Failed examples:
+
+rspec ./spec/flaky_specs_poc/job_one_spec.rb:6 # FlakySpecsPoc::JobOne queues an HttpJob
+
+Randomized with seed 55702
+</code></pre></div></div>
+
+<p>Run the same test suite with a different seed though:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>rspec <span class="nt">--order</span><span class="o">=</span>rand <span class="nt">--seed</span><span class="o">=</span>3164
+</code></pre></div></div>
+
+<p>And everything’s good:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Randomized with seed 3164
+
+FlakySpecsPoc::HttpJob
+  gets a response from a server
+
+FlakySpecsPoc::JobOne
+  queues an HttpJob
+
+FlakySpecsPoc::JobOne
+  checks something done by the HttpJob
+
+Finished in 0.02717 seconds (files took 0.39785 seconds to load)
+3 examples, 0 failures
+
+Randomized with seed 3164
+</code></pre></div></div>
+
+<p>In this case, given we have very little tests, this could be relatively easy to debug manually, but with a bigger test suite we can use rspect bisect:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>rspec <span class="nt">--order</span><span class="o">=</span>rand <span class="nt">--seed</span><span class="o">=</span>55702 <span class="nt">--bisect</span>
+</code></pre></div></div>
+
+<p>Which will give us the following:</p>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Bisect started using options: "--order=rand --seed=55702"
+Running suite to find failures... (0.10595 seconds)
+Starting bisect with 1 failing example and 2 non-failing examples.
+Checking that failure(s) are order-dependent... failure appears to be order-dependent
+
+Round 1: bisecting over non-failing examples 1-2 .. ignoring example 2 (0.19095 seconds)
+Bisect complete! Reduced necessary non-failing examples from 2 to 1 in 0.25318 seconds.
+
+The minimal reproduction command is:
+  rspec './spec/flaky_specs_poc/job_one_spec.rb[1:1]' './spec/flaky_specs_poc/job_two_spec.rb[1:1]' --order=rand --seed=55702
+</code></pre></div></div>
+
+<p>And now we know how to consistently reproduce the error with the minimum number of tests, which will make pinpointing the sneaky bogus test easier.</p>
+
+<h2>Automating bisects</h2>
+
+<p>The next step is clear: automate it! I’m going to show you a GitHub Actions Workflow that will automatically run a bisect on a failing test suite.</p>
+
+<p>First of all a couple of disclaimers:</p>
+
+<ul>
+  <li>This has not been productionised, so as usual, use at your own risk ;)</li>
+  <li>This flow does a bisect on failing test suites. This will make your test pipeline slower, since a bunch of failing tests will be run twice, <em>including failures which are not caused by flaky tests!</em></li>
+</ul>
+
+<p>Here’s the complete flow:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">name</span><span class="pi">:</span> <span class="s">Ruby</span>
+
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">main</span>
+
+  <span class="na">pull_request</span><span class="pi">:</span>
+
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">RunTests</span><span class="pi">:</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v2</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Set up Ruby</span>
+      <span class="na">uses</span><span class="pi">:</span> <span class="s">ruby/setup-ruby@v1</span>
+      <span class="na">with</span><span class="pi">:</span>
+        <span class="na">bundler-cache</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Run the tests</span>
+      <span class="na">id</span><span class="pi">:</span> <span class="s">tests</span>
+      <span class="na">continue-on-error</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand -f j -o tmp/rspec_results.json</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Bisect flaky specs</span>
+      <span class="na">if</span><span class="pi">:</span> <span class="s">steps.tests.outcome != 'success'</span>
+      <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand --seed $(cat tmp/rspec_results.json | jq '.seed') --bisect</span>
+</code></pre></div></div>
+
+<p>The first bit of the flow is a pretty standard way of doing things. The bits that interest us are the <code class="language-plaintext highlighter-rouge">Run the tests</code>and <code class="language-plaintext highlighter-rouge">Bisect flaky specs</code> steps.</p>
+
+<p>This step will run our tests:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Run the tests</span>
+  <span class="na">id</span><span class="pi">:</span> <span class="s">tests</span>
+  <span class="na">continue-on-error</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand -f j -o tmp/rspec_results.json</span>
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">--order=rand</code> will ensure the suite is run in random order.</li>
+  <li><code class="language-plaintext highlighter-rouge">-f j</code> will make sure the output of the tests is in JSON format. This is important since we need to be able to parse the test results easily.</li>
+  <li><code class="language-plaintext highlighter-rouge">-o tmp/rspec_results.json</code> sends the results into a file instead of <code class="language-plaintext highlighter-rouge">STDOUT</code>.</li>
+  <li>We also use <code class="language-plaintext highlighter-rouge">continue-on-error: true</code> to tell GitHub Actions that when the tests fail, the rest of the steps will still be executed, otherwise on a test failure the flow would immediately end.</li>
+</ul>
+
+<p>And this is the step that will run a bisect:</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Bisect flaky specs</span>
+  <span class="na">if</span><span class="pi">:</span> <span class="s">steps.tests.outcome != 'success'</span>
+  <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand --seed $(cat tmp/rspec_results.json | jq '.seed') --bisect</span>
+</code></pre></div></div>
+
+<p>A few noteworthy bits:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">if: steps.tests.outcome != 'success'</code> will ensure this step is only run if the original test suite failed.</li>
+  <li>We use <code class="language-plaintext highlighter-rouge">cat tmp/rspec_results.json | jq '.seed'</code> to get the seed that was originally used to run the tests, so we can pass it to the bisect.</li>
+</ul>
+
+<p>For reference, this is what an rspec result in JSON format looks like:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3.11.0"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"seed"</span><span class="p">:</span><span class="w"> </span><span class="mi">55702</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"examples"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_two_spec.rb[1:1]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checks something done by the HttpJob"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"full_description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FlakySpecsPoc::JobOne checks something done by the HttpJob"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"file_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_two_spec.rb"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"line_number"</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"run_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.009731</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pending_message"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/http_job_spec.rb[1:1]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gets a response from a server"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"full_description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FlakySpecsPoc::HttpJob gets a response from a server"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"file_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/http_job_spec.rb"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"line_number"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"run_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.003383</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pending_message"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_one_spec.rb[1:1]"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"queues an HttpJob"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"full_description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FlakySpecsPoc::JobOne queues an HttpJob"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"failed"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"file_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_one_spec.rb"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"line_number"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"run_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.021981</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"pending_message"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"exception"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+                </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"VCR::Errors::UnhandledHTTPRequestError"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">================================================================================</span><span class="se">\n</span><span class="s2">An HTTP request has been made that VCR does not know how to handle:</span><span class="se">\n</span><span class="s2">  GET https://reqbin.com/echo/get/json</span><span class="se">\n\n</span><span class="s2">There is currently no cassette in use. There are a few ways</span><span class="se">\n</span><span class="s2">you can configure VCR to handle this request:</span><span class="se">\n\n</span><span class="s2">  * If you're surprised VCR is raising this error</span><span class="se">\n</span><span class="s2">    and want insight about how VCR attempted to handle the request,</span><span class="se">\n</span><span class="s2">    you can use the debug_logger configuration option to log more details [1].</span><span class="se">\n</span><span class="s2">  * If you want VCR to record this request and play it back during future test</span><span class="se">\n</span><span class="s2">    runs, you should wrap your test (or this portion of your test) in a</span><span class="se">\n</span><span class="s2">    `VCR.use_cassette` block [2].</span><span class="se">\n</span><span class="s2">  * If you only want VCR to handle requests made while a cassette is in use,</span><span class="se">\n</span><span class="s2">    configure `allow_http_connections_when_no_cassette = true`. VCR will</span><span class="se">\n</span><span class="s2">    ignore this request since it is made when there is no cassette [3].</span><span class="se">\n</span><span class="s2">  * If you want VCR to ignore this request (and others like it), you can</span><span class="se">\n</span><span class="s2">    set an `ignore_request` callback [4].</span><span class="se">\n\n</span><span class="s2">[1] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/debug-logging</span><span class="se">\n</span><span class="s2">[2] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/getting-started</span><span class="se">\n</span><span class="s2">[3] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/allow-http-connections-when-no-cassette</span><span class="se">\n</span><span class="s2">[4] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/ignore-request</span><span class="se">\n</span><span class="s2">================================================================================</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">,</span><span class="w">
+                </span><span class="nl">"backtrace"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+                    </span><span class="s2">"REDACTED FOR LEGIBILITY"</span><span class="w">
+                </span><span class="p">]</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nl">"summary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"duration"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.037856</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"example_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"failure_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"pending_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"errors_outside_of_examples_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"summary_line"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3 examples, 1 failure"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>What we do with this file is send it to the <a href="https://stedolan.github.io/jq/">jq</a> tool for parsing, and telling it to get us the value for top level key <code class="language-plaintext highlighter-rouge">seed</code>. jq is a really useful and powerful tool so I suggest you check it out if you’re unfamiliar with it.</p>
+
+<p>Below you can see a screenshot of this flow successfully bisecting our example test suite.</p>
+
+<p><img src="/assets/images/github-actions-bisect.png" alt="GitHub Actions Workflow" title="GitHub Actions Workflow" /></p>
+
+<h2>Conclusions</h2>
+
+<p>In this post we have learned about a specific, pernicious test failure that manifests itself when a test suite is run in a specific order. We have then seen how a technique called bisecting can help determine what test of potentially many is causing te failure. Last but not least, we have shown a GitHub Actions Workflow that will automatically run the bisect task when a test suite fails to execute.</p>
+
+<p>This is a very small, toy example of how to make this work. Your real life test suites are probably a lot more complex, bigger, and so this example might not work for you, but the fundamentals should be the same.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2022/01/03/ssh-and-socks/">&laquo; OpenSSH as a SOCKS server</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
