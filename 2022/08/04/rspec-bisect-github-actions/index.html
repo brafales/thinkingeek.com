@@ -95,7 +95,7 @@
   <li>When we run Test B and Test A, Test B passes but Test A fails.</li>
 </ol>
 
-<p><img src="/assets/images/bisect-small.png" alt="Test scenarios" title="Test scenarios. Green/Solid node represents a passing test, red/dotted note represents a failing test" /></p>
+<p><img src="/assets/images/bisect-small.png" alt="Test scenarios" title="Test scenarios. Green/Solid node represents a passing test, red/dotted note represents a failing test" class="centered" /></p>
 
 <p>If using rspec in its default configuration, you are probably running your test suite in a random order. This makes rspec generate a random seed and use that seed to determine in which order tests should be run. When running the above test suite using rspec in a random order, you can expect your suite to break roughly 50% of the times.</p>
 
@@ -433,7 +433,7 @@ The minimal reproduction command is:
 
 <p>Below you can see a screenshot of this flow successfully bisecting our example test suite.</p>
 
-<p><img src="/assets/images/github-actions-bisect.png" alt="GitHub Actions Workflow" title="GitHub Actions Workflow" /></p>
+<p><img src="/assets/images/github-actions-bisect.png" alt="GitHub Actions Workflow" title="GitHub Actions Workflow" class="centered" /></p>
 
 <h2>Conclusions</h2>
 

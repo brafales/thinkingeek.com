@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-08-04T16:01:28+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Bisecting flaky tests with rspec and GitHub Actions</title><link href="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/" rel="alternate" type="text/html" title="Bisecting flaky tests with rspec and GitHub Actions" /><published>2022-08-04T00:00:00+00:00</published><updated>2022-08-04T00:00:00+00:00</updated><id>https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions</id><content type="html" xml:base="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/">&lt;p&gt;Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.1.0">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2022-08-06T10:46:56+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Bisecting flaky tests with rspec and GitHub Actions</title><link href="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/" rel="alternate" type="text/html" title="Bisecting flaky tests with rspec and GitHub Actions" /><published>2022-08-04T00:00:00+00:00</published><updated>2022-08-04T00:00:00+00:00</updated><id>https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions</id><content type="html" xml:base="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/">&lt;p&gt;Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.&lt;/p&gt;
 
 &lt;!--more--&gt;
 
@@ -20,7 +20,7 @@
   &lt;li&gt;When we run Test B and Test A, Test B passes but Test A fails.&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;&lt;img src=&quot;/assets/images/bisect-small.png&quot; alt=&quot;Test scenarios&quot; title=&quot;Test scenarios. Green/Solid node represents a passing test, red/dotted note represents a failing test&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/bisect-small.png&quot; alt=&quot;Test scenarios&quot; title=&quot;Test scenarios. Green/Solid node represents a passing test, red/dotted note represents a failing test&quot; class=&quot;centered&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;If using rspec in its default configuration, you are probably running your test suite in a random order. This makes rspec generate a random seed and use that seed to determine in which order tests should be run. When running the above test suite using rspec in a random order, you can expect your suite to break roughly 50% of the times.&lt;/p&gt;
 
@@ -358,7 +358,7 @@ The minimal reproduction command is:
 
 &lt;p&gt;Below you can see a screenshot of this flow successfully bisecting our example test suite.&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;/assets/images/github-actions-bisect.png&quot; alt=&quot;GitHub Actions Workflow&quot; title=&quot;GitHub Actions Workflow&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;/assets/images/github-actions-bisect.png&quot; alt=&quot;GitHub Actions Workflow&quot; title=&quot;GitHub Actions Workflow&quot; class=&quot;centered&quot; /&gt;&lt;/p&gt;
 
 &lt;h2&gt;Conclusions&lt;/h2&gt;
 
