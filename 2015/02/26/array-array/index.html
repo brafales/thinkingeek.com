@@ -350,8 +350,8 @@ The funny thing with that is that pointers to arrays are not arrays, so they do 
 Note that in the example above, the arguments <code>&amp;a</code> and <code>a</code> have different types (<code>int (*)[10]</code> vs <code>int*</code>) but their value, would phyisically be the same. This is, the following assertion holds.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;stdint.h&gt;
-#include &lt;assert.h&gt;
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;assert.h&gt;</span><span class="cp">
 </span><span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
 <span class="p">{</span>
    <span class="kt">int</span> <span class="n">a</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>

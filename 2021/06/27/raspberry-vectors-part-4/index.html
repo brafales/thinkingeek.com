@@ -106,7 +106,7 @@ two scratch output registers as outputs of <code class="language-plaintext highl
                                <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">MBBI</span><span class="p">,</span>
                                <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="o">&amp;</span><span class="n">NextMBBI</span><span class="p">)</span> <span class="p">{</span>
     <span class="c1">// ...</span>
-    <span class="k">case</span> <span class="n">ARM</span><span class="p">:</span><span class="o">:</span><span class="n">VFPSETLEN</span><span class="o">:</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLEN</span><span class="p">:</span> <span class="p">{</span>
       <span class="n">Register</span> <span class="n">Scratch1</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
       <span class="n">Register</span> <span class="n">Scratch2</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
       <span class="n">DebugLoc</span> <span class="n">dl</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getDebugLoc</span><span class="p">();</span>
@@ -145,7 +145,7 @@ two scratch output registers as outputs of <code class="language-plaintext highl
       <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
     <span class="p">}</span>
   <span class="p">}</span>
-<span class="err">}</span></code></pre></figure>
+<span class="p">}</span></code></pre></figure>
 
 <p>The code may look long but it should be relatively straightforward to follow.
 There are two unobvious elements due to the AArch32 Arm ISA itself. Most
@@ -169,7 +169,7 @@ emitted instructions like below.</p>
                                <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="n">MBBI</span><span class="p">,</span>
                                <span class="n">MachineBasicBlock</span><span class="o">::</span><span class="n">iterator</span> <span class="o">&amp;</span><span class="n">NextMBBI</span><span class="p">)</span> <span class="p">{</span>
     <span class="c1">// ...</span>
-    <span class="k">case</span> <span class="n">ARM</span><span class="p">:</span><span class="o">:</span><span class="n">VFPSETLEN</span><span class="o">:</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="n">ARM</span><span class="o">::</span><span class="n">VFPSETLEN</span><span class="p">:</span> <span class="p">{</span>
       <span class="n">Register</span> <span class="n">Scratch1</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
       <span class="n">Register</span> <span class="n">Scratch2</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getOperand</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">getReg</span><span class="p">();</span>
       <span class="n">DebugLoc</span> <span class="n">dl</span> <span class="o">=</span> <span class="n">MI</span><span class="p">.</span><span class="n">getDebugLoc</span><span class="p">();</span>
@@ -205,7 +205,7 @@ emitted instructions like below.</p>
       <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
     <span class="p">}</span>
   <span class="p">}</span>
-<span class="err">}</span></code></pre></figure>
+<span class="p">}</span></code></pre></figure>
 
 <p style="padding: 0.7em; background-color: honeydew;">
 There is an instruction <code class="language-plaintext highlighter-rouge">bfi</code> in a special variant of Armv6, called Armv6T2,
@@ -355,7 +355,7 @@ longer to write). First the vector load.</p>
   <span class="k">switch</span> <span class="p">(</span><span class="n">MemVT</span><span class="p">.</span><span class="n">getSimpleVT</span><span class="p">().</span><span class="n">SimpleTy</span><span class="p">)</span> <span class="p">{</span>
   <span class="nl">default:</span>
     <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Unexpected type"</span><span class="p">);</span>
-  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v2f64</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="o">::</span><span class="n">v2f64</span><span class="p">:</span> <span class="p">{</span>
     <span class="c1">// This is fundamentally the same that SplitVecRes_LOAD does but assembling</span>
     <span class="c1">// a vector at the end.</span>
     <span class="n">SDLoc</span> <span class="n">dl</span><span class="p">(</span><span class="n">LD</span><span class="p">);</span>
@@ -391,7 +391,7 @@ longer to write). First the vector load.</p>
     <span class="k">return</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getMergeValues</span><span class="p">({</span><span class="n">Vec</span><span class="p">,</span> <span class="n">NewCh</span><span class="p">},</span> <span class="n">dl</span><span class="p">);</span>
     <span class="k">break</span><span class="p">;</span>
   <span class="p">}</span>
-  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v4f32</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="o">::</span><span class="n">v4f32</span><span class="p">:</span> <span class="p">{</span>
     <span class="c1">// ...</span>
   <span class="p">}</span>
   <span class="p">}</span>
@@ -449,7 +449,7 @@ represents this <em>parallel join</em> of other chains is called <code class="la
   <span class="k">switch</span> <span class="p">(</span><span class="n">MemoryVT</span><span class="p">.</span><span class="n">getSimpleVT</span><span class="p">().</span><span class="n">SimpleTy</span><span class="p">)</span> <span class="p">{</span>
   <span class="nl">default:</span>
     <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Unexpected type"</span><span class="p">);</span>
-  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v2f64</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="o">::</span><span class="n">v2f64</span><span class="p">:</span> <span class="p">{</span>
     <span class="c1">// This is basically SplitVecOp_STORE but sourcing it from</span>
     <span class="c1">// a vector.</span>
     <span class="n">assert</span><span class="p">(</span><span class="o">!</span><span class="n">ST</span><span class="o">-&gt;</span><span class="n">isTruncatingStore</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="s">"Truncating stores not supported"</span><span class="p">);</span>
@@ -474,7 +474,7 @@ represents this <em>parallel join</em> of other chains is called <code class="la
 
     <span class="k">return</span> <span class="n">DAG</span><span class="p">.</span><span class="n">getNode</span><span class="p">(</span><span class="n">ISD</span><span class="o">::</span><span class="n">TokenFactor</span><span class="p">,</span> <span class="n">dl</span><span class="p">,</span> <span class="n">MVT</span><span class="o">::</span><span class="n">Other</span><span class="p">,</span> <span class="n">First</span><span class="p">,</span> <span class="n">Second</span><span class="p">);</span>
   <span class="p">}</span>
-  <span class="k">case</span> <span class="n">MVT</span><span class="p">:</span><span class="o">:</span><span class="n">v4f32</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">MVT</span><span class="o">::</span><span class="n">v4f32</span><span class="p">:</span> <span class="p">{</span>
     <span class="c1">// ...</span>
   <span class="p">}</span>
   <span class="p">}</span>

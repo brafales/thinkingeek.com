@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">Whose is this optimization?</h1>
     
-    <p class="post-meta"><time datetime="2017-04-02T10:39:10+00:00" itemprop="datePublished">Apr 2, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a></p>
+    <p class="post-meta"><time datetime="2017-04-02T10:39:10+00:00" itemprop="datePublished">Apr 2, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -140,7 +140,7 @@ It is obvious that in C++11/C++14 inside a constant expression context, function
   <span class="k">return</span> <span class="n">fib1</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 <span class="p">}</span>
 
-<span class="kt">int</span> <span class="nf">test2</span><span class="p">()</span>
+<span class="kt">int</span> <span class="n">test2</span><span class="p">()</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">fib2</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 <span class="p">}</span></code></pre></figure>
@@ -318,12 +318,12 @@ Constructors and a special members like constructors can be <code>constexpr</cod
   <span class="kt">int</span> <span class="n">x</span><span class="p">;</span>
   <span class="k">constexpr</span> <span class="n">A</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">)</span> <span class="o">:</span> <span class="n">x</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
 <span class="p">};</span>
-<span class="kt">int</span> <span class="nf">foo1</span><span class="p">()</span>
+<span class="kt">int</span> <span class="n">foo1</span><span class="p">()</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">A</span><span class="p">(</span><span class="mi">3</span><span class="p">).</span><span class="n">x</span><span class="p">;</span>
 <span class="p">}</span>
 
-<span class="kt">int</span> <span class="nf">foo2</span><span class="p">()</span>
+<span class="kt">int</span> <span class="n">foo2</span><span class="p">()</span>
 <span class="p">{</span>
   <span class="k">constexpr</span> <span class="n">A</span> <span class="n">a</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
   <span class="k">return</span> <span class="n">a</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>

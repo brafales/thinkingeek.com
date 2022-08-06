@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 3</h1>
     
-    <p class="post-meta"><time datetime="2016-01-08T16:13:01+00:00" itemprop="datePublished">Jan 8, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
+    <p class="post-meta"><time datetime="2016-01-08T16:13:01+00:00" itemprop="datePublished">Jan 8, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -121,7 +121,7 @@ Before we do anything let's modify our parse hook in <code>gcc-src/gcc/tiny/tiny
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="kt">void</span>
-<span class="nf">tiny_parse_files</span> <span class="p">(</span><span class="kt">int</span> <span class="n">num_files</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">files</span><span class="p">)</span>
+<span class="n">tiny_parse_files</span> <span class="p">(</span><span class="kt">int</span> <span class="n">num_files</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">files</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num_files</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
     <span class="p">{</span>
@@ -130,7 +130,7 @@ Before we do anything let's modify our parse hook in <code>gcc-src/gcc/tiny/tiny
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="kt">void</span>
-<span class="nf">tiny_langhook_parse_file</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="n">tiny_langhook_parse_file</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">tiny_parse_files</span> <span class="p">(</span><span class="n">num_in_fnames</span><span class="p">,</span> <span class="n">in_fnames</span><span class="p">);</span>
 <span class="p">}</span></code></pre></figure>
@@ -420,7 +420,7 @@ Since we do not want to create tokens directly using the constructors we will cr
 These factories return smart pointers to <code>Token</code> because the lifetime of a token is not obvious and we want to clean up them anyway when they are not used anymore.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;tr1/memory&gt;
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include</span> <span class="cpf">&lt;tr1/memory&gt;</span><span class="cp">
 </span>
 <span class="k">struct</span> <span class="nc">Token</span><span class="p">;</span>
 <span class="k">typedef</span> <span class="n">std</span><span class="o">::</span><span class="n">tr1</span><span class="o">::</span><span class="n">shared_ptr</span><span class="o">&lt;</span><span class="n">Token</span><span class="o">&gt;</span> <span class="n">TokenPtr</span><span class="p">;</span>

@@ -167,7 +167,7 @@ an increasing number every time we invoke <code class="language-plaintext highli
 17
 18
 19
-</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">"only_one.h"</span><span class="cp">
 </span><span class="k">static</span> <span class="kt">char</span> <span class="n">initialized</span><span class="p">;</span>
 <span class="c1">// Global state that we do not want to</span>
 <span class="c1">// accidentally replicate in a process.</span>
@@ -182,7 +182,7 @@ an increasing number every time we invoke <code class="language-plaintext highli
   <span class="p">}</span>
 <span class="p">}</span>
 
-<span class="kt">int</span> <span class="nf">only_get</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+<span class="kt">int</span> <span class="n">only_get</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
   <span class="n">initialize</span><span class="p">();</span>
   <span class="k">return</span> <span class="o">++</span><span class="n">current_id</span><span class="p">;</span>
 <span class="p">}</span>
@@ -234,8 +234,8 @@ value than just forwarding the call.</p>
 4
 5
 6
-</pre></td><td class="code"><pre><span class="cp">#include "only_two.h"
-#include "only_one.h"
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">"only_two.h"</span><span class="cp">
+#include</span> <span class="cpf">"only_one.h"</span><span class="cp">
 </span>
 <span class="kt">int</span> <span class="nf">only_two_get</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">only_get</span><span class="p">();</span>
@@ -305,9 +305,9 @@ but if those functions use global data that will be embedded too).</p>
 11
 12
 13
-</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
-#include "only_two.h"
-#include &lt;stdio.h&gt;
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">"only_one.h"</span><span class="cp">
+#include</span> <span class="cpf">"only_two.h"</span><span class="cp">
+#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp">
 </span>
 <span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
   <span class="n">printf</span><span class="p">(</span><span class="s">"get 0 -&gt; %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">only_get</span><span class="p">());</span>
@@ -390,7 +390,7 @@ If the environment variable was already there we know the library was around.</p
 34
 35
 36
-</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">"only_one.h"</span><span class="cp">
 </span>
 <span class="c1">// Very simple error reporting mechanism.</span>
 <span class="k">static</span> <span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span> <span class="p">{</span>
@@ -401,10 +401,10 @@ If the environment variable was already there we know the library was around.</p
 <span class="c1">// A key reserved for this library.</span>
 <span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="n">ONLY_INSTANCE</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"__ONLY_INSTANCE"</span><span class="p">;</span>
 
-<span class="k">static</span> <span class="kt">void</span> <span class="nf">set_sigle_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="n">set_sigle_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
   <span class="n">setenv</span><span class="p">(</span><span class="n">ONLY_INSTANCE</span><span class="p">,</span> <span class="s">"1"</span><span class="p">,</span> <span class="cm">/* overwrite */</span> <span class="mi">1</span><span class="p">);</span>
 <span class="p">}</span>
-<span class="k">static</span> <span class="kt">void</span> <span class="nf">check_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="n">check_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">only_instance</span> <span class="o">=</span> <span class="n">getenv</span><span class="p">(</span><span class="n">ONLY_INSTANCE</span><span class="p">);</span>
   <span class="k">if</span> <span class="p">(</span><span class="n">only_instance</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
     <span class="n">env_set_single_instance</span><span class="p">();</span>
@@ -418,7 +418,7 @@ If the environment variable was already there we know the library was around.</p
 <span class="c1">// accidentally replicate in a process.</span>
 <span class="k">static</span> <span class="kt">int</span> <span class="n">current_id</span><span class="p">;</span>
 
-<span class="k">static</span> <span class="kt">void</span> <span class="nf">initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="n">initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">initialized</span><span class="p">)</span> <span class="p">{</span>
     <span class="n">check_single_instance</span><span class="p">();</span>
 
@@ -491,10 +491,10 @@ by the GNU C library. Instead a library called <code class="language-plaintext h
 35
 36
 37
-</pre></td><td class="code"><pre><span class="cp">#include "only_one.h"
-#include &lt;errno.h&gt;
-#include &lt;keyutils.h&gt;
-#include &lt;sys/types.h&gt;
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">"only_one.h"</span><span class="cp">
+#include</span> <span class="cpf">&lt;errno.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;keyutils.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/types.h&gt;</span><span class="cp">
 </span>
 <span class="c1">// Very simple error reporting mechanism.</span>
 <span class="k">static</span> <span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span> <span class="p">{</span>
@@ -505,7 +505,7 @@ by the GNU C library. Instead a library called <code class="language-plaintext h
 <span class="c1">// A key reserved for this library.</span>
 <span class="k">static</span> <span class="k">const</span> <span class="kt">char</span> <span class="n">ONLY_INSTANCE</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"__ONLY_INSTANCE"</span><span class="p">;</span>
 
-<span class="k">static</span> <span class="kt">void</span> <span class="nf">set_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="n">set_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
   <span class="k">const</span> <span class="kt">char</span> <span class="n">payload</span><span class="p">[]</span> <span class="o">=</span> <span class="s">"1"</span><span class="p">;</span>
   <span class="n">key_serial_t</span> <span class="n">k</span> <span class="o">=</span> <span class="n">add_key</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="n">ONLY_INSTANCE</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">payload</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span>
                            <span class="n">KEY_SPEC_PROCESS_KEYRING</span><span class="p">);</span>
@@ -514,7 +514,7 @@ by the GNU C library. Instead a library called <code class="language-plaintext h
   <span class="p">}</span>
 <span class="p">}</span>
 
-<span class="k">static</span> <span class="kt">void</span> <span class="nf">check_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="n">check_single_instance</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
   <span class="n">key_serial_t</span> <span class="n">k</span> <span class="o">=</span>
       <span class="n">request_key</span><span class="p">(</span><span class="s">"user"</span><span class="p">,</span> <span class="n">ONLY_INSTANCE</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">KEY_SPEC_PROCESS_KEYRING</span><span class="p">);</span>
 

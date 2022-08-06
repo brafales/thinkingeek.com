@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A simple plugin for GCC – Part 2</h1>
     
-    <p class="post-meta"><time datetime="2015-08-16T20:07:37+00:00" itemprop="datePublished">Aug 16, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a></p>
+    <p class="post-meta"><time datetime="2015-08-16T20:07:37+00:00" itemprop="datePublished">Aug 16, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -465,8 +465,8 @@ The pass class still needs another method, but we will give it a bogus implement
     <span class="c1">// We do not clone ourselves</span>
     <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
   <span class="p">}</span>
-<span class="err">}</span><span class="p">;</span>
-<span class="err">}</span>
+<span class="p">};</span>
+<span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
 
@@ -491,16 +491,16 @@ Finally, to complete the code, there are some required headers and declarations 
 14
 15
 16
-</pre></td><td class="code"><pre><span class="cp">#include &lt;iostream&gt;
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
 </span>
 <span class="c1">// This is the first gcc header to be included</span>
-<span class="cp">#include "gcc-plugin.h"
-#include "plugin-version.h"
+<span class="cp">#include</span> <span class="cpf">"gcc-plugin.h"</span><span class="cp">
+#include</span> <span class="cpf">"plugin-version.h"</span><span class="cp">
 </span>
-<span class="cp">#include "tree-pass.h"
-#include "context.h"
-#include "basic-block.h"
-#include "gimple-pretty-print.h"
+<span class="cp">#include</span> <span class="cpf">"tree-pass.h"</span><span class="cp">
+#include</span> <span class="cpf">"context.h"</span><span class="cp">
+#include</span> <span class="cpf">"basic-block.h"</span><span class="cp">
+#include</span> <span class="cpf">"gimple-pretty-print.h"</span><span class="cp">
 </span>
 <span class="c1">// We must assert that this plugin is GPL compatible</span>
 <span class="kt">int</span> <span class="n">plugin_is_GPL_compatible</span><span class="p">;</span>

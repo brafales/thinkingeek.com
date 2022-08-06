@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">How (not) to write a C++ front end – Part 3</h1>
     
-    <p class="post-meta"><time datetime="2016-12-03T14:33:34+00:00" itemprop="datePublished">Dec 3, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a></p>
+    <p class="post-meta"><time datetime="2016-12-03T14:33:34+00:00" itemprop="datePublished">Dec 3, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -156,7 +156,7 @@ This tool is used to generate the lexers of C and C++ out of a single unified le
 As a first step, the input is tokenized. Fortunately C++ is relatively easy to tokenize. That said there are a few special things we want to support correctly. One of them is the &gt; token. Historically, in C++03, the following did not compile.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;vector&gt;
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include</span> <span class="cpf">&lt;vector&gt;</span><span class="cp">
 </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&gt;</span> <span class="n">a</span><span class="p">;</span></code></pre></figure>
 
 <p>

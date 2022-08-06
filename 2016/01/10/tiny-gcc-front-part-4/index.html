@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 4</h1>
     
-    <p class="post-meta"><time datetime="2016-01-10T17:00:10+00:00" itemprop="datePublished">Jan 10, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
+    <p class="post-meta"><time datetime="2016-01-10T17:00:10+00:00" itemprop="datePublished">Jan 10, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -253,25 +253,25 @@ Now we have one of those alternatives. Fortunately tiny is so simple that is eas
   <span class="n">const_TokenPtr</span> <span class="n">t</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
   <span class="k">switch</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
     <span class="p">{</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">VAR</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">VAR</span><span class="p">:</span>
       <span class="n">parse_variable_declaration</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IF</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">IF</span><span class="p">:</span>
       <span class="n">parse_if_statement</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">WHILE</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">WHILE</span><span class="p">:</span>
       <span class="n">parse_while_statement</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">FOR</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">FOR</span><span class="p">:</span>
       <span class="n">parse_for_statement</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">READ</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">READ</span><span class="p">:</span>
       <span class="n">parse_read_statement</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">WRITE</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">WRITE</span><span class="p">:</span>
       <span class="n">parse_write_statement</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IDENTIFIER</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span><span class="p">:</span>
       <span class="n">parse_assignment_statement</span> <span class="p">();</span>
       <span class="k">break</span><span class="p">;</span>
     <span class="nl">default:</span>
@@ -433,10 +433,10 @@ Its associated parsing function is rather obvious too.
 
   <span class="k">switch</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
     <span class="p">{</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">INT</span><span class="p">:</span>
       <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
       <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">FLOAT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">FLOAT</span><span class="p">:</span>
       <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
       <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
     <span class="nl">default:</span>
@@ -746,31 +746,31 @@ First let's see the null denotations. They represent the action that we have to 
 <span class="p">{</span>
   <span class="k">switch</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
     <span class="p">{</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IDENTIFIER</span><span class="o">:</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INTEGER_LITERAL</span><span class="o">:</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">REAL_LITERAL</span><span class="o">:</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">STRING_LITERAL</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span><span class="p">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">INTEGER_LITERAL</span><span class="p">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">REAL_LITERAL</span><span class="p">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">STRING_LITERAL</span><span class="p">:</span>
       <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LEFT_PAREN</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">LEFT_PAREN</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">())</span>
            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
 	<span class="n">tok</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
 	<span class="k">return</span> <span class="n">skip_token</span><span class="p">(</span><span class="n">Tiny</span><span class="o">::</span><span class="n">RIGHT_PAREN</span><span class="p">);</span>
       <span class="p">}</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PLUS</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">PLUS</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_PLUS</span><span class="p">))</span>
            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
         <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
       <span class="p">}</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">MINUS</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">MINUS</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_MINUS</span><span class="p">))</span>
            <span class="k">return</span> <span class="nb">false</span>
         <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
       <span class="p">}</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">NOT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">NOT</span><span class="p">:</span>
       <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_LOGICAL_NOT</span><span class="p">))</span>
            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
@@ -931,36 +931,36 @@ Finally we are only missing to define the left binding power of our tokens: reca
   <span class="k">switch</span> <span class="p">(</span><span class="n">token</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
     <span class="p">{</span>
     <span class="c1">//</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">ASTERISK</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">ASTERISK</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_MUL</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">SLASH</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">SLASH</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_DIV</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PERCENT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">PERCENT</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_MOD</span><span class="p">;</span>
     <span class="c1">//</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PLUS</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">PLUS</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_PLUS</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">MINUS</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">MINUS</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_MINUS</span><span class="p">;</span>
     <span class="c1">//</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">EQUAL</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">EQUAL</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_EQUAL</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">DIFFERENT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">DIFFERENT</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_DIFFERENT</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">GREATER</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">GREATER</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_GREATER_THAN</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">GREATER_OR_EQUAL</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">GREATER_OR_EQUAL</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_GREATER_EQUAL</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LOWER</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">LOWER</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_LOWER_THAN</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LOWER_OR_EQUAL</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">LOWER_OR_EQUAL</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_LOWER_EQUAL</span><span class="p">;</span>
     <span class="c1">//</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">OR</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">OR</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_LOGICAL_OR</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">AND</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">AND</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_LOGICAL_AND</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">NOT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">NOT</span><span class="p">:</span>
       <span class="k">return</span> <span class="n">LBP_LOGICAL_NOT</span><span class="p">;</span>
     <span class="c1">// Anything that cannot appear in an infix position</span>
     <span class="c1">// is given the lowest priority</span>

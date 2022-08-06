@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A simple plugin for GCC – Part 3</h1>
     
-    <p class="post-meta"><time datetime="2015-08-17T23:41:24+00:00" itemprop="datePublished">Aug 17, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a></p>
+    <p class="post-meta"><time datetime="2015-08-17T23:41:24+00:00" itemprop="datePublished">Aug 17, 2015</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -131,9 +131,9 @@ Let's take again our phase from the previous chapter to draw the associated grap
     <span class="kt">int</span> <span class="o">*</span><span class="n">addr</span><span class="p">;</span>
 <span class="p">};</span>
  
-<span class="n">A</span> <span class="nf">build_A</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="n">A</span> <span class="n">build_A</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
  
-<span class="kt">void</span> <span class="nf">g</span><span class="p">()</span>
+<span class="kt">void</span> <span class="n">g</span><span class="p">()</span>
 <span class="p">{</span>
     <span class="n">build_A</span><span class="p">();</span>
 <span class="p">}</span>
@@ -653,12 +653,12 @@ Our <code>test.cc</code> will have the following code.
     <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
 <span class="p">};</span>
 
-<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span> <span class="n">A</span> <span class="nf">foo</span><span class="p">();</span>
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span> <span class="n">A</span> <span class="n">foo</span><span class="p">();</span>
 
-<span class="kt">void</span> <span class="nf">h</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span><span class="p">);</span>
-<span class="kt">void</span> <span class="nf">m</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+<span class="kt">void</span> <span class="n">h</span><span class="p">(</span><span class="k">const</span> <span class="n">A</span><span class="o">&amp;</span><span class="p">);</span>
+<span class="kt">void</span> <span class="n">m</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
 
-<span class="kt">void</span> <span class="nf">test_foo</span><span class="p">()</span>
+<span class="kt">void</span> <span class="n">test_foo</span><span class="p">()</span>
 <span class="p">{</span>
     <span class="n">foo</span><span class="p">();</span> <span class="c1">// must be diagnosed</span>
 
@@ -676,9 +676,9 @@ Our <code>test.cc</code> will have the following code.
     <span class="o">~</span><span class="n">B</span><span class="p">();</span>
 <span class="p">};</span>
 
-<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span> <span class="n">B</span> <span class="nf">bar</span><span class="p">();</span>
+<span class="n">__attribute__</span><span class="p">((</span><span class="n">warn_unused_result</span><span class="p">))</span> <span class="n">B</span> <span class="n">bar</span><span class="p">();</span>
 
-<span class="kt">void</span> <span class="nf">test_bar</span><span class="p">()</span>
+<span class="kt">void</span> <span class="n">test_bar</span><span class="p">()</span>
 <span class="p">{</span>
     <span class="n">bar</span><span class="p">();</span> <span class="c1">// do not diagnose</span>
 <span class="p">}</span></code></pre></figure>
@@ -766,12 +766,12 @@ This happens because we are not handling <code>GIMPLE_RETURN</code> in <code>gat
             <span class="c1">// do nothing</span>
             <span class="k">break</span><span class="p">;</span>
         <span class="p">}</span>
-      <span class="err">}</span>
-    <span class="err">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
 
     <span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">tree</span><span class="o">&gt;</span> <span class="n">unused_lhs</span><span class="p">(</span> <span class="n">potential_unused_lhs</span><span class="p">);</span>
     <span class="k">return</span> <span class="n">unused_lhs</span><span class="p">;</span>
-  <span class="err">}</span>
+  <span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
 

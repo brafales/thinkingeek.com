@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 2</h1>
     
-    <p class="post-meta"><time datetime="2016-01-06T09:13:34+00:00" itemprop="datePublished">Jan 6, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
+    <p class="post-meta"><time datetime="2016-01-06T09:13:34+00:00" itemprop="datePublished">Jan 6, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -449,7 +449,7 @@ Great, we are half way. Now we need some code. Our current <code>Make-lang.in</c
 
 <span class="cm">/* Called before linking.  Returns 0 on success and -1 on failure.  */</span>
 <span class="kt">int</span>
-<span class="nf">lang_specific_pre_link</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="n">lang_specific_pre_link</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="cm">/* Not used for Tiny.  */</span>
   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
@@ -659,22 +659,22 @@ Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not
 191
 192
 193
-</pre></td><td class="code"><pre><span class="cp">#include "config.h"
-#include "system.h"
-#include "coretypes.h"
-#include "target.h"
-#include "tree.h"
-#include "gimple-expr.h"
-#include "diagnostic.h"
-#include "opts.h"
-#include "fold-const.h"
-#include "gimplify.h"
-#include "stor-layout.h"
-#include "debug.h"
-#include "convert.h"
-#include "langhooks.h"
-#include "langhooks-def.h"
-#include "common/common-target.h"
+</pre></td><td class="code"><pre><span class="cp">#include</span> <span class="cpf">"config.h"</span><span class="cp">
+#include</span> <span class="cpf">"system.h"</span><span class="cp">
+#include</span> <span class="cpf">"coretypes.h"</span><span class="cp">
+#include</span> <span class="cpf">"target.h"</span><span class="cp">
+#include</span> <span class="cpf">"tree.h"</span><span class="cp">
+#include</span> <span class="cpf">"gimple-expr.h"</span><span class="cp">
+#include</span> <span class="cpf">"diagnostic.h"</span><span class="cp">
+#include</span> <span class="cpf">"opts.h"</span><span class="cp">
+#include</span> <span class="cpf">"fold-const.h"</span><span class="cp">
+#include</span> <span class="cpf">"gimplify.h"</span><span class="cp">
+#include</span> <span class="cpf">"stor-layout.h"</span><span class="cp">
+#include</span> <span class="cpf">"debug.h"</span><span class="cp">
+#include</span> <span class="cpf">"convert.h"</span><span class="cp">
+#include</span> <span class="cpf">"langhooks.h"</span><span class="cp">
+#include</span> <span class="cpf">"langhooks-def.h"</span><span class="cp">
+#include</span> <span class="cpf">"common/common-target.h"</span><span class="cp">
 </span>
 <span class="cm">/* Language-dependent contents of a type.  */</span>
 
@@ -719,7 +719,7 @@ Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not
 <span class="cm">/* Language hooks.  */</span>
 
 <span class="k">static</span> <span class="kt">bool</span>
-<span class="nf">tiny_langhook_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="n">tiny_langhook_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="cm">/* NOTE: Newer versions of GCC use only:
            build_common_tree_nodes (false);
@@ -735,13 +735,13 @@ Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="kt">void</span>
-<span class="nf">tiny_langhook_parse_file</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="n">tiny_langhook_parse_file</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">"Hello gcctiny!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="n">tree</span>
-<span class="nf">tiny_langhook_type_for_mode</span> <span class="p">(</span><span class="k">enum</span> <span class="n">machine_mode</span> <span class="n">mode</span><span class="p">,</span> <span class="kt">int</span> <span class="n">unsignedp</span><span class="p">)</span>
+<span class="n">tiny_langhook_type_for_mode</span> <span class="p">(</span><span class="k">enum</span> <span class="n">machine_mode</span> <span class="n">mode</span><span class="p">,</span> <span class="kt">int</span> <span class="n">unsignedp</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="n">TYPE_MODE</span> <span class="p">(</span><span class="n">float_type_node</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">float_type_node</span><span class="p">;</span>
@@ -787,7 +787,7 @@ Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="n">tree</span>
-<span class="nf">tiny_langhook_type_for_size</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">bits</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">,</span>
+<span class="n">tiny_langhook_type_for_size</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">bits</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">,</span>
 			     <span class="kt">int</span> <span class="n">unsignedp</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">gcc_unreachable</span> <span class="p">();</span>
@@ -797,26 +797,26 @@ Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not
 <span class="cm">/* Record a builtin function.  We just ignore builtin functions.  */</span>
 
 <span class="k">static</span> <span class="n">tree</span>
-<span class="nf">tiny_langhook_builtin_function</span> <span class="p">(</span><span class="n">tree</span> <span class="n">decl</span><span class="p">)</span>
+<span class="n">tiny_langhook_builtin_function</span> <span class="p">(</span><span class="n">tree</span> <span class="n">decl</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">decl</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="kt">bool</span>
-<span class="nf">tiny_langhook_global_bindings_p</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="n">tiny_langhook_global_bindings_p</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">gcc_unreachable</span> <span class="p">();</span>
   <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="n">tree</span>
-<span class="nf">tiny_langhook_pushdecl</span> <span class="p">(</span><span class="n">tree</span> <span class="n">decl</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">)</span>
+<span class="n">tiny_langhook_pushdecl</span> <span class="p">(</span><span class="n">tree</span> <span class="n">decl</span> <span class="n">ATTRIBUTE_UNUSED</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="n">gcc_unreachable</span> <span class="p">();</span>
 <span class="p">}</span>
 
 <span class="k">static</span> <span class="n">tree</span>
-<span class="nf">tiny_langhook_getdecls</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="n">tiny_langhook_getdecls</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
 <span class="p">}</span>
@@ -850,8 +850,8 @@ Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not
 </span>
 <span class="k">struct</span> <span class="nc">lang_hooks</span> <span class="n">lang_hooks</span> <span class="o">=</span> <span class="n">LANG_HOOKS_INITIALIZER</span><span class="p">;</span>
 
-<span class="cp">#include "gt-tiny-tiny1.h"
-#include "gtype-tiny.h"</span>
+<span class="cp">#include</span> <span class="cpf">"gt-tiny-tiny1.h"</span><span class="cp">
+#include</span> <span class="cpf">"gtype-tiny.h"</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <p>

@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">Walk-through flang – Part 2</h1>
     
-    <p class="post-meta"><time datetime="2017-06-17T23:41:50+00:00" itemprop="datePublished">Jun 17, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a>, <a href="/categories/fortran/">Fortran</a></p>
+    <p class="post-meta"><time datetime="2017-06-17T23:41:50+00:00" itemprop="datePublished">Jun 17, 2017</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/fortran/">Fortran</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -587,32 +587,32 @@ Each action, except the <code>InputAction</code> that receives the input argumen
                                      <span class="n">phases</span><span class="o">::</span><span class="n">ID</span> <span class="n">Phase</span><span class="p">,</span> <span class="n">Action</span> <span class="o">*</span><span class="n">Input</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
 
   <span class="c1">// (.. omitted ..)</span>
-  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Preprocess</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="o">::</span><span class="n">Preprocess</span><span class="p">:</span> <span class="p">{</span>
     <span class="n">types</span><span class="o">::</span><span class="n">ID</span> <span class="n">OutputTy</span><span class="p">;</span>
     <span class="c1">// (.. omitted ..)</span>
         <span class="n">OutputTy</span> <span class="o">=</span> <span class="n">types</span><span class="o">::</span><span class="n">getPreprocessedType</span><span class="p">(</span><span class="n">OutputTy</span><span class="p">);</span>
       <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">PreprocessJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">OutputTy</span><span class="p">);</span>
   <span class="p">}</span>
-  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">FortranFrontend</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="o">::</span><span class="n">FortranFrontend</span><span class="p">:</span> <span class="p">{</span>
     <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">FortranFrontendJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span>
                                                <span class="n">types</span><span class="o">::</span><span class="n">TY_LLVM_IR</span><span class="p">);</span>
   <span class="p">}</span>
-  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Compile</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="o">::</span><span class="n">Compile</span><span class="p">:</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">Args</span><span class="p">.</span><span class="n">hasArg</span><span class="p">(</span><span class="n">options</span><span class="o">::</span><span class="n">OPT_fsyntax_only</span><span class="p">))</span>
       <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">CompileJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_Nothing</span><span class="p">);</span>
     <span class="c1">// (.. omitted ..)</span>
     <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">CompileJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_LLVM_BC</span><span class="p">);</span>
   <span class="p">}</span>
   <span class="c1">// (.. omitted ..)</span>
-  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Backend</span><span class="o">:</span> <span class="p">{</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="o">::</span><span class="n">Backend</span><span class="p">:</span> <span class="p">{</span>
     <span class="c1">// (.. omitted ..)</span>
     <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">BackendJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_PP_Asm</span><span class="p">);</span>
   <span class="p">}</span>
-  <span class="k">case</span> <span class="n">phases</span><span class="p">:</span><span class="o">:</span><span class="n">Assemble</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">phases</span><span class="o">::</span><span class="n">Assemble</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">C</span><span class="p">.</span><span class="n">MakeAction</span><span class="o">&lt;</span><span class="n">AssembleJobAction</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">Input</span><span class="p">),</span> <span class="n">types</span><span class="o">::</span><span class="n">TY_Object</span><span class="p">);</span>
   <span class="p">}</span>
   <span class="c1">// (.. omitted ..)</span>
-<span class="err">}</span></code></pre></figure>
+<span class="p">}</span></code></pre></figure>
 
 <p>
 If we recall the set of phases for C/C++ we have that first they are Preprocess (<code>.c</code> → <code>.i</code> or for C++ <code>.cpp</code> → <code>.ii</code>), then, Compile (<code>.i</code>/<code>.ii</code> → <code>.bc</code>), then Backend (<code>.bc</code> → <code>.s</code>) and then Assemble (<code>.s</code> → <code>.o</code>). A <code>.bc</code> file is a LLVM bitcode file which is a binary representation of the LLVM IR (represented in the code above as <code>types::TY_LLVM_BC)</code>. But as we saw above, a Fortran file follows a slightly different process: FortranFrontend (<code>.f</code>/<code>.F</code> → <code>.llvm</code>), Compile (<code>.llvm</code> → <code>.bc</code>), Backend (<code>.bc</code> → <code>.s</code>) and Assemble (<code>.s</code> → <code>.o</code>). A .llvm file is the textual representation of the LLVM IR and can represent exactly the same as a .bc file (but note that the backend step only consumes <code>.bc</code> files). These actions are defined in <code>llvm/tools/clang/include/clang/Action.h</code> and in general they are very thin classes that inherit from the <code>Action</code> class.
@@ -823,34 +823,34 @@ The base <code>ToolChain</code> class provides the following <code>getTool</code
 289
 </pre></td><td class="code"><pre><span class="n">Tool</span> <span class="o">*</span><span class="n">ToolChain</span><span class="o">::</span><span class="n">getTool</span><span class="p">(</span><span class="n">Action</span><span class="o">::</span><span class="n">ActionClass</span> <span class="n">AC</span><span class="p">)</span> <span class="k">const</span> <span class="p">{</span>
   <span class="k">switch</span> <span class="p">(</span><span class="n">AC</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">AssembleJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">AssembleJobClass</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">getAssemble</span><span class="p">();</span>
 
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">LinkJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">LinkJobClass</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">getLink</span><span class="p">();</span>
 
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">InputClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">BindArchClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">OffloadClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">LipoJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">DsymutilJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">VerifyDebugInfoJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">InputClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">BindArchClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">OffloadClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">LipoJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">DsymutilJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">VerifyDebugInfoJobClass</span><span class="p">:</span>
     <span class="n">llvm_unreachable</span><span class="p">(</span><span class="s">"Invalid tool kind."</span><span class="p">);</span>
 
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">CompileJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">PrecompileJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">PreprocessJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">AnalyzeJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">MigrateJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">VerifyPCHJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">BackendJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">CompileJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">PrecompileJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">PreprocessJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">AnalyzeJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">MigrateJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">VerifyPCHJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">BackendJobClass</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">getClang</span><span class="p">();</span>
 
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">OffloadBundlingJobClass</span><span class="o">:</span>
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">OffloadUnbundlingJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">OffloadBundlingJobClass</span><span class="p">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">OffloadUnbundlingJobClass</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">getOffloadBundler</span><span class="p">();</span>
 
-  <span class="k">case</span> <span class="n">Action</span><span class="p">:</span><span class="o">:</span><span class="n">FortranFrontendJobClass</span><span class="o">:</span>
+  <span class="k">case</span> <span class="n">Action</span><span class="o">::</span><span class="n">FortranFrontendJobClass</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">getFlangFrontend</span><span class="p">();</span>
   <span class="p">}</span>
 

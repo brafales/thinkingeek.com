@@ -177,7 +177,7 @@ be unavoidable.</p>
 9
 </pre></td><td class="code"><pre><span class="k">enum</span> <span class="p">{</span> <span class="n">N</span> <span class="o">=</span> <span class="mi">64</span> <span class="p">};</span>
 
-<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)[</span><span class="n">N</span><span class="p">],</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">b</span><span class="p">)[</span><span class="n">N</span><span class="p">],</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">)[</span><span class="n">N</span><span class="p">])</span> <span class="p">{</span>
+<span class="kt">void</span> <span class="n">f</span><span class="p">(</span><span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)[</span><span class="n">N</span><span class="p">],</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">b</span><span class="p">)[</span><span class="n">N</span><span class="p">],</span> <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="p">)[</span><span class="n">N</span><span class="p">])</span> <span class="p">{</span>
   <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
 <span class="cp">#pragma clang loop unroll_count(16)
 </span>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
@@ -528,10 +528,10 @@ can continue.</p>
 <span class="c1">//</span>
 <span class="c1">//===----------------------------------------------------------------------===//</span>
 
-<span class="cp">#include "RISCV.h"
-#include "RISCVTargetMachine.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/ADT/DenseMap.h"
+<span class="cp">#include</span> <span class="cpf">"RISCV.h"</span><span class="cp">
+#include</span> <span class="cpf">"RISCVTargetMachine.h"</span><span class="cp">
+#include</span> <span class="cpf">"llvm/Support/Debug.h"</span><span class="cp">
+#include</span> <span class="cpf">"llvm/ADT/DenseMap.h"</span><span class="cp">
 </span><span class="k">using</span> <span class="k">namespace</span> <span class="n">llvm</span><span class="p">;</span>
 
 <span class="cp">#define DEBUG_TYPE "riscv-soften-spills"
@@ -571,7 +571,7 @@ effective.</p>
 </pre></td><td class="code"><pre><span class="c1">// FIXME - Move this to a better place.</span>
 <span class="kt">bool</span> <span class="nf">RISCVSoftenXSpillsReload</span><span class="p">(</span><span class="n">MachineFunction</span> <span class="o">*</span><span class="n">MF</span><span class="p">);</span>
 
-<span class="err">}</span> <span class="c1">// namespace llvm</span>
+<span class="p">}</span> <span class="c1">// namespace llvm</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <p>Also we need to let know cmake about this new file.</p>
@@ -841,13 +841,13 @@ instructions of the target.</p>
     <span class="k">switch</span> <span class="p">(</span><span class="n">MI</span><span class="p">.</span><span class="n">getOpcode</span><span class="p">())</span> <span class="p">{</span>
     <span class="nl">default:</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">RISCV</span><span class="p">:</span><span class="o">:</span><span class="n">LD</span><span class="o">:</span>
-    <span class="k">case</span> <span class="n">RISCV</span><span class="p">:</span><span class="o">:</span><span class="n">LW</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">RISCV</span><span class="o">::</span><span class="n">LD</span><span class="p">:</span>
+    <span class="k">case</span> <span class="n">RISCV</span><span class="o">::</span><span class="n">LW</span><span class="p">:</span>
       <span class="k">if</span> <span class="p">(</span><span class="n">TII</span><span class="o">-&gt;</span><span class="n">isLoadFromStackSlot</span><span class="p">(</span><span class="n">MI</span><span class="p">,</span> <span class="n">FI</span><span class="p">))</span>
         <span class="n">Result</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">RISCV</span><span class="p">:</span><span class="o">:</span><span class="n">SD</span><span class="o">:</span>
-    <span class="k">case</span> <span class="n">RISCV</span><span class="p">:</span><span class="o">:</span><span class="n">SW</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">RISCV</span><span class="o">::</span><span class="n">SD</span><span class="p">:</span>
+    <span class="k">case</span> <span class="n">RISCV</span><span class="o">::</span><span class="n">SW</span><span class="p">:</span>
       <span class="k">if</span> <span class="p">(</span><span class="n">TII</span><span class="o">-&gt;</span><span class="n">isStoreToStackSlot</span><span class="p">(</span><span class="n">MI</span><span class="p">,</span> <span class="n">FI</span><span class="p">))</span> <span class="p">{</span>
         <span class="n">Result</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
         <span class="n">IsSpill</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
@@ -1106,11 +1106,11 @@ for spills and <code class="language-plaintext highlighter-rouge">fmv.x.d</code>
 
       <span class="n">MI</span><span class="p">.</span><span class="n">eraseFromParent</span><span class="p">();</span>
       <span class="n">Changed</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
-    <span class="err">}</span>
-  <span class="err">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
 
   <span class="k">return</span> <span class="n">Changed</span><span class="p">;</span>
-<span class="err">}</span>
+<span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <p>In line 186 (or line 196 for reloads) we create a new instruction using the

@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 5</h1>
     
-    <p class="post-meta"><time datetime="2016-01-16T14:49:32+00:00" itemprop="datePublished">Jan 16, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
+    <p class="post-meta"><time datetime="2016-01-16T14:49:32+00:00" itemprop="datePublished">Jan 16, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -134,7 +134,7 @@ Tiny is so simple that we can use GENERIC trees almost directly. Almost, because
 In order to ease using GENERIC trees, we will use a <code>Tree</code> class (mind the uppercase) that will be a very thin wrapper to <code>tree</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include "tree.h"
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include</span> <span class="cpf">"tree.h"</span><span class="cp">
 </span>
 <span class="k">namespace</span> <span class="n">Tiny</span>
 <span class="p">{</span>
@@ -223,20 +223,20 @@ For convenience we will also wrap the creation of <code>Tree</code>s into a set 
 <span class="p">}</span>
 
 <span class="kr">inline</span> <span class="n">Tree</span>
-<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">)</span>
+<span class="n">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">build2_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
 <span class="p">}</span>
 
 <span class="kr">inline</span> <span class="n">Tree</span>
-<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">)</span>
+<span class="n">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">build3_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
 		     <span class="n">t3</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">());</span>
 <span class="p">}</span>
 
 <span class="kr">inline</span> <span class="n">Tree</span>
-<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">,</span>
+<span class="n">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">,</span>
 	    <span class="n">Tree</span> <span class="n">t4</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">build4_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>
@@ -244,7 +244,7 @@ For convenience we will also wrap the creation of <code>Tree</code>s into a set 
 <span class="p">}</span>
 
 <span class="kr">inline</span> <span class="n">Tree</span>
-<span class="nf">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">,</span>
+<span class="n">build_tree</span> <span class="p">(</span><span class="n">tree_code</span> <span class="n">tc</span><span class="p">,</span> <span class="n">location_t</span> <span class="n">loc</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">type</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t1</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t2</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t3</span><span class="p">,</span>
 	    <span class="n">Tree</span> <span class="n">t4</span><span class="p">,</span> <span class="n">Tree</span> <span class="n">t5</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="k">return</span> <span class="n">build5_loc</span> <span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">tc</span><span class="p">,</span> <span class="n">type</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t1</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span> <span class="n">t2</span><span class="p">.</span><span class="n">get_tree</span> <span class="p">(),</span>

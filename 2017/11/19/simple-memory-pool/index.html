@@ -120,17 +120,17 @@
 <figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">  <span class="nl">public:</span>
     <span class="c1">// Methods for the list of free items.</span>
     <span class="n">minipool_item</span> <span class="o">*</span><span class="n">get_next_item</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">next</span><span class="p">;</span> <span class="p">}</span>
-    <span class="kt">void</span> <span class="nf">set_next_item</span><span class="p">(</span><span class="n">minipool_item</span> <span class="o">*</span><span class="n">n</span><span class="p">)</span> <span class="p">{</span> <span class="n">next</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span> <span class="p">}</span>
+    <span class="kt">void</span> <span class="n">set_next_item</span><span class="p">(</span><span class="n">minipool_item</span> <span class="o">*</span><span class="n">n</span><span class="p">)</span> <span class="p">{</span> <span class="n">next</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span> <span class="p">}</span>
 
     <span class="c1">// Methods for the storage of the item.</span>
-    <span class="n">T</span> <span class="o">*</span><span class="nf">get_storage</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">T</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">datum</span><span class="p">);</span> <span class="p">}</span>
+    <span class="n">T</span> <span class="o">*</span><span class="n">get_storage</span><span class="p">()</span> <span class="p">{</span> <span class="k">return</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">T</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">datum</span><span class="p">);</span> <span class="p">}</span>
 
     <span class="c1">// Given a T* cast it to a minipool_item*</span>
-    <span class="k">static</span> <span class="n">minipool_item</span> <span class="o">*</span><span class="nf">storage_to_item</span><span class="p">(</span><span class="n">T</span> <span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">static</span> <span class="n">minipool_item</span> <span class="o">*</span><span class="n">storage_to_item</span><span class="p">(</span><span class="n">T</span> <span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="p">{</span>
       <span class="n">minipool_item</span> <span class="o">*</span><span class="n">current_item</span> <span class="o">=</span> <span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">minipool_item</span> <span class="o">*&gt;</span><span class="p">(</span><span class="n">t</span><span class="p">);</span>
       <span class="k">return</span> <span class="n">current_item</span><span class="p">;</span>
     <span class="p">}</span>
-  <span class="err">}</span><span class="p">;</span> <span class="c1">// minipool_item</span></code></pre></figure>
+  <span class="p">};</span> <span class="c1">// minipool_item</span></code></pre></figure>
 
 <h3>Arenas</h3>
 
@@ -160,7 +160,7 @@
 <figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="c1">// Returns a pointer to the array of items. This is used by the arena</span>
     <span class="c1">// itself. This is only used to update free_list during initialization</span>
     <span class="c1">// or when creating a new arena when the current one is full.</span>
-    <span class="n">minipool_item</span> <span class="o">*</span><span class="nf">get_storage</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">storage</span><span class="p">.</span><span class="n">get</span><span class="p">();</span> <span class="err">}</span></code></pre></figure>
+    <span class="n">minipool_item</span> <span class="o">*</span><span class="nf">get_storage</span><span class="p">()</span> <span class="k">const</span> <span class="p">{</span> <span class="k">return</span> <span class="n">storage</span><span class="p">.</span><span class="n">get</span><span class="p">();</span> <span class="p">}</span></code></pre></figure>
 
 <p>Finally, when creating a new arena because the current one is full, we need to link the new one to the current one, so the arenas are linked.</p>
 
@@ -171,7 +171,7 @@
 
       <span class="n">next</span><span class="p">.</span><span class="n">reset</span><span class="p">(</span><span class="n">n</span><span class="p">.</span><span class="n">release</span><span class="p">());</span>
     <span class="p">}</span>
-  <span class="err">}</span><span class="p">;</span> <span class="c1">// minipool_arena</span></code></pre></figure>
+  <span class="p">};</span> <span class="c1">// minipool_arena</span></code></pre></figure>
 
 <h3>Data members of the pool</h3>
 
@@ -245,14 +245,14 @@
     <span class="n">current_item</span><span class="o">-&gt;</span><span class="n">set_next_item</span><span class="p">(</span><span class="n">free_list</span><span class="p">);</span>
     <span class="n">free_list</span> <span class="o">=</span> <span class="n">current_item</span><span class="p">;</span>
   <span class="p">}</span>
-<span class="err">}</span><span class="p">;</span> <span class="c1">// minipool&lt;T&gt;</span></code></pre></figure>
+<span class="p">};</span> <span class="c1">// minipool&lt;T&gt;</span></code></pre></figure>
 
 <p>And that’s it. Really simple.</p>
 
 <h2>Example</h2>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include "minipool.h"
-#include &lt;iostream&gt;
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include</span> <span class="cpf">"minipool.h"</span><span class="cp">
+#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp">
 </span>
 <span class="cp">#define TRACE_METHOD() std::cout &lt;&lt; this &lt;&lt; " " &lt;&lt; __PRETTY_FUNCTION__ &lt;&lt; "\n";
 </span>
@@ -263,7 +263,7 @@
   <span class="o">~</span><span class="n">Foo</span><span class="p">()</span> <span class="p">{</span> <span class="n">TRACE_METHOD</span><span class="p">();</span> <span class="p">};</span>
 <span class="p">};</span>
 
-<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
+<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span> <span class="p">{</span>
   <span class="n">minipool</span><span class="o">&lt;</span><span class="n">Foo</span><span class="o">&gt;</span> <span class="n">mp</span><span class="p">(</span><span class="mi">256</span><span class="p">);</span>
 
   <span class="n">Foo</span> <span class="o">*</span><span class="n">p1</span> <span class="o">=</span> <span class="n">mp</span><span class="p">.</span><span class="n">alloc</span><span class="p">();</span>

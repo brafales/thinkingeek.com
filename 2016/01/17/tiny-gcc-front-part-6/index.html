@@ -69,7 +69,7 @@
     
       <h1 class="post-title" itemprop="name headline">A tiny GCC front end – Part 6</h1>
     
-    <p class="post-meta"><time datetime="2016-01-17T22:43:09+00:00" itemprop="datePublished">Jan 17, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">Compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
+    <p class="post-meta"><time datetime="2016-01-17T22:43:09+00:00" itemprop="datePublished">Jan 17, 2016</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/gcc/">GCC</a> • <a href="/tags/gcc/">gcc</a>, <a href="/tags/tiny/">tiny</a></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
@@ -259,11 +259,11 @@ Our <code>parse_type</code> will return either <code>integer_type_node</code> or
 
   <span class="k">switch</span> <span class="p">(</span><span class="n">t</span><span class="o">-&gt;</span><span class="n">get_id</span> <span class="p">())</span>
     <span class="p">{</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">INT</span><span class="p">:</span>
       <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
       <span class="k">return</span> <span class="n">integer_type_node</span><span class="p">;</span>
       <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">FLOAT</span><span class="o">:</span>
+    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">FLOAT</span><span class="p">:</span>
       <span class="n">lexer</span><span class="p">.</span><span class="n">skip_token</span> <span class="p">();</span>
       <span class="k">return</span> <span class="n">float_type_node</span><span class="p">;</span>
       <span class="k">break</span><span class="p">;</span>
@@ -453,7 +453,7 @@ When we encounter an identifier, we have to look it up in the scope (this was de
 15
 16
 17
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">IDENTIFIER</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">IDENTIFIER</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">SymbolPtr</span> <span class="n">s</span> <span class="o">=</span> <span class="n">scope</span><span class="p">.</span><span class="n">lookup</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">());</span>
 	<span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
@@ -481,7 +481,7 @@ For literals, the literal itself encodes the value. So the text of the token wil
 21
 22
 23
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">INTEGER_LITERAL</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">INTEGER_LITERAL</span><span class="p">:</span>
       <span class="c1">// We should check the range. See note below</span>
       <span class="k">return</span> <span class="nf">Tree</span> <span class="p">(</span><span class="n">build_int_cst_type</span> <span class="p">(</span><span class="n">integer_type_node</span><span class="p">,</span>
 				       <span class="n">atoi</span> <span class="p">(</span><span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">())),</span>
@@ -506,7 +506,7 @@ Real literals are similar.
 30
 31
 32
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">REAL_LITERAL</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">REAL_LITERAL</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">REAL_VALUE_TYPE</span> <span class="n">real_value</span><span class="p">;</span>
 	<span class="n">real_from_string3</span> <span class="p">(</span><span class="o">&amp;</span><span class="n">real_value</span><span class="p">,</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">().</span><span class="n">c_str</span> <span class="p">(),</span>
@@ -532,7 +532,7 @@ Likewise with string literals.
 37
 38
 39
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">STRING_LITERAL</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">STRING_LITERAL</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">std</span><span class="o">::</span><span class="n">string</span> <span class="n">str</span> <span class="o">=</span> <span class="n">tok</span><span class="o">-&gt;</span><span class="n">get_str</span> <span class="p">();</span>
 	<span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">c_str</span> <span class="o">=</span> <span class="n">str</span><span class="p">.</span><span class="n">c_str</span> <span class="p">();</span>
@@ -577,7 +577,7 @@ Back to the nullary denotation: a parenthesized expression like <code><strong>(<
 48
 49
 50
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">LEFT_PAREN</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">LEFT_PAREN</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">();</span>
 	<span class="n">tok</span> <span class="o">=</span> <span class="n">lexer</span><span class="p">.</span><span class="n">peek_token</span> <span class="p">();</span>
@@ -609,7 +609,7 @@ Unary plus operator actually does nothing in tiny but it can only be applied to 
 63
 64
 65
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">PLUS</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">PLUS</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_PLUS</span><span class="p">);</span>
 	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
@@ -657,7 +657,7 @@ Note that <code>print_type</code> uses the <code>is_string_type</code> function 
 Unary minus operator is similar to the plus operator but it negates its operand.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">MINUS</span><span class="o">:</span>
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp">    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">MINUS</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_UNARY_MINUS</span><span class="p">);</span>
 	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
@@ -704,7 +704,7 @@ Unary not operator computes the logical negation of its boolean argument.
 81
 82
 83
-</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="p">:</span><span class="o">:</span><span class="n">NOT</span><span class="o">:</span>
+</pre></td><td class="code"><pre>    <span class="k">case</span> <span class="n">Tiny</span><span class="o">::</span><span class="n">NOT</span><span class="p">:</span>
       <span class="p">{</span>
 	<span class="n">Tree</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">parse_expression</span> <span class="p">(</span><span class="n">LBP_LOGICAL_NOT</span><span class="p">);</span>
 	<span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">.</span><span class="n">is_error</span> <span class="p">())</span>
@@ -740,8 +740,8 @@ Finally, any other token is a syntax error, so diagnose them as usual. This comp
 </pre></td><td class="code"><pre>    <span class="nl">default:</span>
       <span class="n">unexpected_token</span> <span class="p">(</span><span class="n">tok</span><span class="p">);</span>
       <span class="k">return</span> <span class="n">Tree</span><span class="o">::</span><span class="n">error</span> <span class="p">();</span>
-    <span class="err">}</span>
-<span class="err">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
 <h3>Left denotations</h3>
@@ -1178,7 +1178,7 @@ Having handled all valid types, this completes our write statement.
     <span class="p">}</span>
 
   <span class="n">gcc_unreachable</span> <span class="p">();</span>
-<span class="err">}</span></code></pre></figure>
+<span class="p">}</span></code></pre></figure>
 
 <h2>Blocks</h2>
 

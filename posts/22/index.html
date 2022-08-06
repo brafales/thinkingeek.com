@@ -241,7 +241,7 @@ Declaring something in C++ means bringing the entity into existence in the progr
 <span class="p">};</span>
 
 <span class="c1">// Defines  function'f(int)'</span>
-<span class="kt">void</span> <span class="nf">f</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span>
+<span class="kt">void</span> <span class="n">f</span><span class="p">(</span><span class="kt">int</span><span class="p">)</span>
 <span class="p">{</span>
  <span class="c1">// Code</span>
 <span class="p">}</span>
@@ -458,7 +458,7 @@ Virtual member functions are, in C++ parlance, polymorphic methods of other prog
     <span class="c1">// Code</span>
 <span class="p">}</span>
 
-<span class="kt">void</span> <span class="nf">g</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">pa</span><span class="p">,</span> <span class="kt">float</span> <span class="o">*</span><span class="n">pfl</span><span class="p">)</span>
+<span class="kt">void</span> <span class="n">g</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">pa</span><span class="p">,</span> <span class="kt">float</span> <span class="o">*</span><span class="n">pfl</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="c1">// Dynamic dispatch </span>
   <span class="c1">// we don't really know if A::vmf or B::vmf will be called</span>
@@ -529,13 +529,13 @@ But, what if you forget to define all virtual functions? This may look contrived
     <span class="k">virtual</span> <span class="kt">void</span> <span class="n">foo</span><span class="p">();</span>
 <span class="p">};</span>
 
-<span class="kt">void</span> <span class="nf">quux</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+<span class="kt">void</span> <span class="n">quux</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">a</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="c1">// Dynamic dispatch</span>
     <span class="n">a</span><span class="o">-&gt;</span><span class="n">foo</span><span class="p">();</span>
 <span class="p">}</span>
 
-<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
+<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
 <span class="p">{</span>
     <span class="n">A</span> <span class="n">a</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
     <span class="n">quux</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a</span><span class="p">);</span>
@@ -629,12 +629,12 @@ Consider this example
     <span class="p">}</span>
 <span class="p">};</span>
 
-<span class="kt">void</span> <span class="nf">quux</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+<span class="kt">void</span> <span class="n">quux</span><span class="p">(</span><span class="n">A</span><span class="o">*</span> <span class="n">a</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="n">a</span><span class="o">-&gt;</span><span class="n">foo</span><span class="p">();</span>
 <span class="p">}</span>
 
-<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
+<span class="kt">int</span> <span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span> <span class="n">argv</span><span class="p">[])</span>
 <span class="p">{</span>
     <span class="n">B</span> <span class="n">b</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
     <span class="n">quux</span><span class="p">(</span><span class="o">&amp;</span><span class="n">b</span><span class="p">);</span>
