@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Wrapping GObjects in C++</title>
+  <meta name="description" content="GObject is the foundational dynamic type system implemented on top of the C language that is used by many other libraries like GLib, GTK and many other components, most of them part of the GNOME desktop environment stack. I’ve been lately wrapping a C library that uses GObject for C++ and I learned about some of the challenges.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2023/01/15/wrapping-gobjects-in-cpp/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Wrapping GObjects in C++">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2023/01/15/wrapping-gobjects-in-cpp/">
+  <meta property="og:description" content="GObject is the foundational dynamic type system implemented on top of the C language that is used by many other libraries like GLib, GTK and many other components, most of them part of the GNOME desktop environment stack. I’ve been lately wrapping a C library that uses GObject for C++ and I learned about some of the challenges.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Wrapping GObjects in C++">
+  <meta name="twitter:description" content="GObject is the foundational dynamic type system implemented on top of the C language that is used by many other libraries like GLib, GTK and many other components, most of them part of the GNOME de...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Wrapping GObjects in C++</h1>
+    
+    <p class="post-meta"><time datetime="2023-01-15T06:55:00+00:00" itemprop="datePublished">Jan 15, 2023</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/gtk/">gtk</a>, <a href="/categories/gobject/">gobject</a>, <a href="/categories/gnome/">gnome</a>, <a href="/categories/cpp/">cpp</a>, <a href="/categories/cplusplus/">cplusplus</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="https://docs.gtk.org/gobject/">GObject</a> is the foundational dynamic type
+system implemented on top of the C language that is used by many other
+libraries like GLib, GTK and many other components, most of them part of the
+<a href="https://www.gnome.org/">GNOME desktop</a> environment stack.</p>
+
+<p><a href="https://github.com/rofirrim/libadwaitamm">I’ve been lately wrapping</a> a <a href="https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.2/">C
+library</a> that uses
+GObject for C++ and I learned about some of the challenges.</p>
+
+<!--more-->
+
+<h1>GObject</h1>
+
+<p>Any general programming language can be used under the Object Oriented
+Programming (OOP) paradigm, and the difference between them is whether the
+language offers built-in support for that or not. So, when we say that Java is
+OOP we basically mean that the language has concepts which are meant to support
+this paradigm out of the box.</p>
+
+<p>C is not one of those languages.</p>
+
+<p>For reasons lost in the mist of time, related to the origins of the <a href="https://www.gimp.org/about/ancient_history.html">GNU Image
+Manipulation Program</a>, the
+<a href="https://www.gtk.org/">GTK toolkit</a>, a GUI toolkit, was written in C. And its
+foundations are built on top of a library called GLib. GLib provides GObject: a
+library based OOP type system built on top of C. GTK and other libraries, part
+of the GNOME Desktop software stack, are built on top of GObject.</p>
+
+<p>Now, GObject is powerful (<a href="https://docs.gtk.org/gobject/concepts.html">just read about
+it</a> but it also acknowledges the
+fact that there are more programming languages than just C, even if C serves as
+the common denominator here.</p>
+
+<p>This is also the current reality: C these days can be seen as an interoperable
+layer between programming languages. Most foreign-function interfaces (foreign
+as in “written in another programming language”) target C as the interoperable
+layer. There are technical reasons for that fact, which are out of scope of
+this blog.</p>
+
+<p>C++ is not, strictly, a superset of C but it can interoperate with C very, very
+easily (the C heritage in C++ enables this and also fuels many pain points
+of C++ itself). And C++, even if it has been dubbed as “multi paradigm”, has
+reasonable support for OOP.</p>
+
+<p>So it makes sense to provide a C++ interface to GObject.</p>
+
+<h1>Wrapping on top of glibmm</h1>
+
+<p>GLib is the library that contains GObject and there already exists a C++ version
+of it called <a href="https://gitlab.gnome.org/GNOME/glibmm">glibmm</a>.</p>
+
+<p>glibmm, along with another component called mm-common, allows systematically
+wrapping GObject-based C libraries in a consistent and coherent way. This is
+achieved using a tool called <code class="language-plaintext highlighter-rouge">gmmproc</code>. I used this approach for <a href="https://github.com/rofirrim/libadwaitamm">my wrap of
+libadwaitamm</a>.</p>
+
+<p>There are some design decisions made by glibmm that permeate and impact
+the wrappers.</p>
+
+<h2>Classes and objects</h2>
+
+<p>Because GObject is actually a library and implements an OOP type system, all
+the concepts of such system must exist as entities of the program. When working
+on a typical OOP language like C++ or Java, the concept of “class” is a concept
+provided and supported by the language itself.</p>
+
+<p>This is not the case in GObject. Classes are entities represented in the memory
+of the program like regular data.</p>
+
+<p>In fact when reading the <a href="https://docs.gtk.org/gobject/tutorial.html">GObject
+tutorial</a> you will identify lots of
+steps required to register (or bring up) a class in GObject. GObject programmers
+identify that some of those steps are annoying and feel like boilerplate. To
+ease the pain they use C macros so the GObject classes can be declared
+and defined in a more convenient way.</p>
+
+<div style="display: flow-root; background-color: #efe; padding: 15px; padding-bottom: 0px; margin-bottom: 15px;">
+  <p>Toshio Sekiya made this excellent
+<a href="https://toshiocp.github.io/Gobject-tutorial">GObject tutorial</a> in C that is worth
+checking.</p>
+</div>
+
+<p>Once a class has been registered in GObject, we can instantiate it.</p>
+
+<p>glibmm tries to make the use of GObject instances as convenient as regular C++
+objects so it combines the class registration in GObject with the instantiation
+of a GObject class.</p>
+
+<p>This works most of the time but complicates the process because classes
+themselves do not have a “constructor” method in C++ (only instances do). These
+“class constructors” are used to register class-level attributes like signals
+and properties.</p>
+
+<p>glibmm solves this problem by using a secondary class, which is automatically
+generated by the wrapping machinery, that represents the class itself. This
+class object is used as a singleton of the application and it is
+initialised upon the creation of the first instance of a GObject class. This
+initialisation can then invoke a function that can register properties,
+signals and interfaces implementations.</p>
+
+<h2>Signals</h2>
+
+<p>Signals in GObject are close to what in other programming languages (like C# or
+Java) are called delegates or listeners. It is possible to connect to a signal
+so a piece of code, as a callback, is executed when something happens. Signals
+can be arbitrarily defined by a GObject class so the GObject instance can emit
+those signals as needed.</p>
+
+<p>glibmm was written in a pre-C++11 world and back then it used the
+<a href="https://libsigcplusplus.github.io/libsigcplusplus/">libsigc++</a> library to
+ensure type-safety in the callbacks (something that C can’t do and it is
+sometimes [ab]used by the C libraries). This library is still very useful these
+days, but in a post-C++11 world some of the heavy lifting can be delegated to
+the C++ standard library itself.</p>
+
+<p>libsigc++ provides two concepts: signals (something that can be emitted) and
+slots (something that can be connected to a signal and will be invoked when the
+signal is emitted). Because libsigc++ is generic and not tied to glibmm (even
+if it is, maybe, one of its biggest users), the glibmm wrapping machinery has
+to translate a signal callback (a C callback) into a proper libsigc++ slot.
+Luckily, almost all callbacks in GObject are closures that receive a <code class="language-plaintext highlighter-rouge">void*</code>
+argument where anything related to the context can be passed to the callback.
+This way, when wrapping a GObject implemented in C, the wrapping machinery
+connects the existing (GObject’s) signals to a callback (a free function,
+typically generated) that unwraps the context pointer into libsigc++’s slots
+for that libsigc++ signal.</p>
+
+<h2>Properties</h2>
+
+<p>Many OOP programming languages (like C# or Object Pascal) have the concept of
+“properties”. They look like object attributes (fields) but can invoke a
+function when reading or writing the attribute.</p>
+
+<p>GObject properties follow this philosophy and introduce a couple of extra
+features: properties have a (GObject) signal associated to them that can be
+used to signal updates to the property and can be generically read and written
+using GObject generic mechanisms. These two features allow properties to be
+bound to other properties and build expressive GUIs with reasonable effort.</p>
+
+<p>For instance, if we have a hypothetical list widget with a property
+<code class="language-plaintext highlighter-rouge">number-of-elements</code>, we can bind this property to the <code class="language-plaintext highlighter-rouge">sensitive</code> property of
+a <a href="https://docs.gtk.org/gtk4/class.Button.html">Gtk.Button</a> intended to clear
+that list widget. This way, we can enable or disable the button based on
+whether the list widget contains items. More complex scenarios are possible
+using <a href="https://docs.gtk.org/gtk4/class.Expression.html">Gtk.Expression</a>.</p>
+
+<p>Properties are implemented in GObject with two callbacks that
+are invoked when a property is read or written, respectively.</p>
+
+<h1>The challenge of subclassing</h1>
+
+<p>Now, if our goal was to only wrap existing GObjects, a scenario that all
+the machinery of glibmm supports very well, we would be done.</p>
+
+<p>Although the GObject type system allows to introduce <a href="https://docs.gtk.org/gobject/concepts.html#non-instantiatable-non-classed-fundamental-types">new fundamental
+types</a>
+(which are mostly meant to represent built-in language types such as <code class="language-plaintext highlighter-rouge">int</code> or
+<code class="language-plaintext highlighter-rouge">double</code>), most of the new types defined by a library or application are
+created by means of subclassing (if indirectly) the
+<a href="https://docs.gtk.org/gobject/class.Object.html">GObject.Object</a> class type
+itself.</p>
+
+<p>Now, subclassing a class in GObject means registering a class and letting the
+registration procedure know the parent class (GObject, like Java or C# but in
+contrast to C++, allows only single base class). This process would be
+burdensome given that the additional class that represents the class is a bit
+of a pain to write. The glibmm mechanism of a separate class that represents
+the class entity in GObject is not super convenient to write manually.</p>
+
+<p>So in that line glibmm devised a convenient mechanism in which by using the
+regular C++ inheritance one could create a new class almost transparently.</p>
+
+<h2>Subclassing is magic</h2>
+
+<p>Consider that you want to subclass <code class="language-plaintext highlighter-rouge">Gtk::Button</code>.</p>
+
+<p>You can just do</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span> <span class="p">{</span>
+ <span class="nl">public:</span>
+  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span> <span class="o">:</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="p">{}</span>
+  <span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>And that’s it. No need for a separate <code class="language-plaintext highlighter-rouge">MyButton_Class</code> or the likes that
+represents the GObject class itself. Cool, but how does this work?</p>
+
+<p><code class="language-plaintext highlighter-rouge">gmmproc</code>-wrapped classes always register a derived class that just clones the
+original wrapped class. In the case of Gtk::Button, the original C class is
+<code class="language-plaintext highlighter-rouge">GtkButton</code>. The wrapped code registers (just once) a <code class="language-plaintext highlighter-rouge">gtkmm__GtkButton</code> class
+in the GObject typesystem and makes it a subclass of <code class="language-plaintext highlighter-rouge">GtkButton</code>. The reason
+why this is done is in order to allow implementing a virtual method mechanism,
+explained below.</p>
+
+<p>Note, however, that no class is registered in GObject for <code class="language-plaintext highlighter-rouge">MyButton</code>. At
+the eyes of GObject any instance of <code class="language-plaintext highlighter-rouge">MyButton</code> is just a
+<code class="language-plaintext highlighter-rouge">gtkmm__GtkButton</code>.</p>
+
+<h2>Virtual methods</h2>
+
+<p>GObject would not be a complete OOP mechanism if it did not support
+polymorphism via virtual table classes. In the C implementation, virtual methods
+are implemented as pointers to functions and those are overriden explicitly
+by subclasses in the “class constructor” by setting them to point to specific
+functions.</p>
+
+<p>Virtual methods are exposed as a convenience in <code class="language-plaintext highlighter-rouge">gmmproc</code>-wrapped classes as
+regular C++ virtual methods. To make this work, however, the class must have
+had to overriden the GObject virtual method so it ultimately calls the C++
+virtual method. This can only happen in the “class constructor”. By subclassing
+with a wrapper that introduces no extra data, gmmproc-wrapped classes can
+override GObject virtual methods at will.</p>
+
+<p>This is exactly what happens with <code class="language-plaintext highlighter-rouge">Gtk.Button.clicked</code> virtual method. When
+initialising the class <code class="language-plaintext highlighter-rouge">gtkmm__GtkButton</code> this virtual method is made to invoke
+a C++ virtual method (generated by <code class="language-plaintext highlighter-rouge">gmmproc</code>) called <code class="language-plaintext highlighter-rouge">on_clicked</code>. If the method
+is not actually overridden in the subclass, gmmproc calls the current virtual
+method implementation (if any).</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span> <span class="p">{</span>
+ <span class="nl">public:</span>
+  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span> <span class="o">:</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="p">{}</span>
+
+  <span class="k">virtual</span> <span class="n">on_clicked</span><span class="p">()</span> <span class="k">override</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<h2>Properties</h2>
+
+<p>But if we did not create a new GObject class to represent <code class="language-plaintext highlighter-rouge">MyButton</code> and
+we’re just using C++ owns mechanism for virtual methods, what about new signals
+or properties we might want to add?</p>
+
+<p>This is where this convenient scheme of inheriting, one that does not require a
+description of the class, starts showing its limits.</p>
+
+<p>First we need to make sure the new class is actually a new one. This can be
+achieved using a different constructor of <code class="language-plaintext highlighter-rouge">Glib::ObjectBase</code>. While the root
+of the hierarchy is <code class="language-plaintext highlighter-rouge">Glib::Object</code> (it wraps <code class="language-plaintext highlighter-rouge">GObject.Object</code>), <code class="language-plaintext highlighter-rouge">Glib::ObjectBase</code>
+is a virtual base of <code class="language-plaintext highlighter-rouge">Glib::Object</code> that is used to change some of the behaviour
+when creating <code class="language-plaintext highlighter-rouge">Glib::Object</code>. <code class="language-plaintext highlighter-rouge">Glib::ObjectBase</code> has a constructor where you can
+specify a class name.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span>
+<span class="p">{</span>
+ <span class="nl">public:</span>
+  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span> <span class="o">:</span>
+    <span class="n">Glib</span><span class="o">::</span><span class="n">ObjectBase</span><span class="p">(</span><span class="s">"MyButton"</span><span class="p">),</span>
+    <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="p">{}</span>
+  <span class="c1">// ...</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>When using this constructor, glibmm will register a new class
+<code class="language-plaintext highlighter-rouge">gtkmm__CustomObject_MyButton</code>. And this allow us to define properties.</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span> <span class="p">{</span>
+ <span class="nl">public:</span>
+  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span>
+      <span class="o">:</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ObjectBase</span><span class="p">(</span><span class="s">"MyButton"</span><span class="p">),</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">str</span><span class="p">)</span> <span class="p">{}</span>
+
+  <span class="n">Glib</span><span class="o">::</span><span class="n">Property</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">my_value</span><span class="p">{</span><span class="o">*</span><span class="k">this</span><span class="p">,</span> <span class="s">"my-value"</span><span class="p">,</span> <span class="mi">0</span><span class="p">};</span>
+<span class="p">};</span>
+</code></pre></div></div>
+
+<p>Now, properties are class-level attributes so ideally those should be
+registered (installed) in the class constructor, which we cannot access.
+However, GObject allows installing properties later and this is what happens
+when executing the constructor of the property <code class="language-plaintext highlighter-rouge">my_value</code> that is run as part
+of the constructor of <code class="language-plaintext highlighter-rouge">MyButton</code>.</p>
+
+<h2>Signals</h2>
+
+<p>What about signals?  Unfortunately, as far as I can tell, there is no
+straightforward way to install new custom GObject signals.</p>
+
+<p>Note that libsigc++ can be used in some signalling scenarios as an alternative
+to GObject signals. This is because, in contrast to properties, GObject signals
+do not seem to be composable between them. So we may only need a thing that
+acts like a wrapped signal even if it is not a proper GObject signal.</p>
+
+<p>If we do want a GObject signal, one thing we can do is using
+<a href="https://gnome.pages.gitlab.gnome.org/glibmm/classGlib_1_1ExtraClassInit.html"><code class="language-plaintext highlighter-rouge">Glib::ExtraClassInit</code></a>
+which allows us to define our own class initialisation function. But note that
+this will be executed the first time we instantiate our class. This fragile (at
+least to me) behaviour is again part the price we pay for not decoupling the
+C++ class that represents instances from the C++ class that represents the
+GObject class itself.</p>
+
+<h1>Why would we want to use C++ to write a GObject?</h1>
+
+<p>If we look at the wrapper libraries as a mean to write C++, one might think
+that we only need the minimal wrapping surface and then be able to use C++,
+outside of GObject, to develop the rest of the functionality.</p>
+
+<p>While I do not think is super essential to be able to write a GObject in C++ so
+it can be called from outside C++ (this would force us to provide a C interface
+anyways), I think it is useful to be able to bring up a GObject in C++ so it
+can be used in some of the convenient machinery that GTK provides: mainly
+<code class="language-plaintext highlighter-rouge">.ui</code> files and <a href="https://docs.gtk.org/gtk4/class.Builder.html">Gtk.Builder</a>.</p>
+
+<p>Now, <code class="language-plaintext highlighter-rouge">.ui</code> files are very powerful and can do lots of things for us in a
+convenient way. But this can only happen if the GTK library sees a full-fledged
+GObject. The class type must have been registered in GObject and its
+properties, signals and interfaces must have been registered during class
+initialisationn (not later, like glibmm allows us to do).</p>
+
+<p>And I would like to use C++ to do that, as much as possible. So in a next
+post I will explore some approaches I have been using in my projects.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2022/08/04/rspec-bisect-github-actions/">&laquo; Bisecting flaky tests with rspec and GitHub Actions</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
