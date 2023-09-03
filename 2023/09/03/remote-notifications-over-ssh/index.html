@@ -153,7 +153,7 @@ desktop computer from a remote system.</p>
 
 <ul>
   <li>Forward the UNIX socket</li>
-  <li>Use a local notification daemon</li>
+  <li>Use a remote notification daemon</li>
 </ul>
 
 <h3>Forward the UNIX socket</h3>
@@ -264,12 +264,12 @@ the following to our <code class="language-plaintext highlighter-rouge">.bashrc<
 <span class="k">fi</span>
 …</code></pre></figure>
 
-<h3>Use a local notification daemon</h3>
+<h3>Use a remote notification daemon</h3>
 
 <p>This approach is a bit more involved but basically relies on forwarding X11,
-running a notification daemon on <code class="language-plaintext highlighter-rouge">remote-machine</code> that we will activate
-using D-Bus itself. The notification daemon will then display the notifications
-using X11 which will apear on our <code class="language-plaintext highlighter-rouge">local-machine</code> as any other X11 forward
+running a notification daemon on <code class="language-plaintext highlighter-rouge">remote-machine</code> that we will activate using
+D-Bus itself. The notification daemon will then display the notifications using
+X11 which will be displayed on our <code class="language-plaintext highlighter-rouge">local-machine</code> as any other X11 forward
 application does.</p>
 
 <p><strong>Note</strong>: this approach assumes the user is not running a graphical session on
