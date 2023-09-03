@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Graphical notifications for long-running tasks</title>
+  <meta name="description" content="In my dayjob I often have to perform long-running tasks that do not require constant attention (e.g. compiling a compiler) on Linux systems. When this happens, it is unavoidable to context switch to other tasks even if experts advice against it. Turns out that compilation scrolls are not always very interesting. I would like to be able to resume working on the original task as soon as possible. So the idea is to receive a notification when the task ends.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Graphical notifications for long-running tasks">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/">
+  <meta property="og:description" content="In my dayjob I often have to perform long-running tasks that do not require constant attention (e.g. compiling a compiler) on Linux systems. When this happens, it is unavoidable to context switch to other tasks even if experts advice against it. Turns out that compilation scrolls are not always very interesting. I would like to be able to resume working on the original task as soon as possible. So the idea is to receive a notification when the task ends.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Graphical notifications for long-running tasks">
+  <meta name="twitter:description" content="In my dayjob I often have to perform long-running tasks that do not require constant attention (e.g. compiling a compiler) on Linux systems. When this happens, it is unavoidable to context switch t...">
+  
+  
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<link href="https://fonts.googleapis.com/css?family=Fira+Mono:400,700" rel="stylesheet">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Graphical notifications for long-running tasks</h1>
+    
+    <p class="post-meta"><time datetime="2023-09-03T21:15:00+00:00" itemprop="datePublished">Sep 3, 2023</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/ssh/">ssh</a>, <a href="/categories/notifications/">notifications</a>, <a href="/categories/dbus/">dbus</a>, <a href="/categories/systemd/">systemd</a>, <a href="/categories/linux/">linux</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In my dayjob I often have to perform long-running tasks that do not require
+constant attention (e.g. compiling a compiler) on Linux systems. When this
+happens, it is unavoidable to context switch to other tasks even if experts
+advice against it.  Turns out that compilation scrolls are not always very
+interesting.</p>
+
+<p>I would like to be able to resume working on the original task as soon as possible.
+So the idea is to receive a notification when the task ends.</p>
+
+<!--more-->
+
+<h2>Local notifications</h2>
+
+<p>If the time-consuming task is being run locally and we are using a graphical
+environment we can use the tool <code class="language-plaintext highlighter-rouge">notify-send</code> to send ourselves a notification
+when the command ends. We can combine this in a convenient script like the one
+below.</p>
+
+<figure class="highlight"><figcaption>runot</figcaption><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre><span class="c">#!/usr/bin/env bash</span>
+
+<span class="nv">$*</span>
+<span class="nv">result</span><span class="o">=</span><span class="s2">"</span><span class="nv">$?</span><span class="s2">"</span>
+
+<span class="k">if</span> <span class="o">[</span> <span class="s2">"</span><span class="nv">$result</span><span class="s2">"</span> <span class="o">!=</span> <span class="s2">"0"</span> <span class="o">]</span><span class="p">;</span>
+<span class="k">then
+  </span><span class="nv">icon</span><span class="o">=</span><span class="s2">"dialog-warning"</span>
+<span class="k">else
+  </span><span class="nv">icon</span><span class="o">=</span><span class="s2">"dialog-information"</span>
+<span class="k">fi
+</span>notify-send <span class="s2">"--icon=</span><span class="nv">$icon</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$*</span><span class="s2">"</span>
+
+<span class="nb">exit</span> <span class="s2">"</span><span class="nv">$result</span><span class="s2">"</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>We execute the command and the we use <code class="language-plaintext highlighter-rouge">notify-send</code> with the executed command
+an appropriate icon based on the execution result.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>runot very slow thing
+&lt; <span class="s2">"veryslow thing"</span> runs <span class="o">&gt;</span>
+&lt; a notification appears <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<h3>How does this work?</h3>
+
+<p>Without entering into too much detail, <code class="language-plaintext highlighter-rouge">notify-send</code> connects to D-Bus and sends
+a notification, as specified in the <a href="https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html">Desktop Notifications
+Specification</a>.
+A daemon configured by your desktop environment is waiting for the
+notifications. Upon receiving one it graphically displays the notification.</p>
+
+<h2>Remote notifications</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/D-Bus">D-Bus</a> is really cool technology that
+allows different applications to interoperate and is specially useful in a
+desktop environment. That said, the typical use case of D-Bus is typically
+scoped by user sessions on the same computer and, while not impossible, the
+message bus is not meant to span over several computers.</p>
+
+<p>This means that if rather than working locally, we work over SSH on a
+<code class="language-plaintext highlighter-rouge">remote-machine</code> we will not be able to send notifications to our
+<code class="language-plaintext highlighter-rouge">local-machine</code> desktop straightforwardly. There are two options here that we
+can use. Neither is perfect but will allow us to deliver notifications to our
+desktop computer from a remote system.</p>
+
+<ul>
+  <li>Forward the UNIX socket</li>
+  <li>Use a local notification daemon</li>
+</ul>
+
+<h3>Forward the UNIX socket</h3>
+
+<p>D-Bus clients know where to find the message bus by reading the environment
+variable <code class="language-plaintext highlighter-rouge">DBUS_SESSION_BUS_ADDRESS</code>. In most systems nowadays it looks like this</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$DBUS_SESSION_BUS_ADDRESS</span>
+unix:path<span class="o">=</span>/run/user/9999/bus
+</code></pre></div></div>
+
+<p>This syntax means the D-Bus server, initiated by some other application upon login,
+can be found at the specified path. In this case the specified path is a UNIX
+socket, so in principle only accessible to processes in the current machine.</p>
+
+<p>We can forward a UNIX socket using <code class="language-plaintext highlighter-rouge">ssh</code>, like we usually do with TCP ports.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>local-machine<span class="o">)</span> <span class="nv">$ </span>ssh <span class="nt">-R</span> /some/well/known/path/dbus.socket:<span class="k">${</span><span class="nv">DBUS_SESSION_BUS_ADDRESS</span><span class="p">/unix</span>:path<span class="p">=/</span><span class="k">}</span> user@remote-machine
+<span class="o">(</span>remote-machine<span class="o">)</span> <span class="nv">$ </span><span class="nb">export </span><span class="nv">DBUS_SESSION_BUS_ADDRESS</span><span class="o">=</span>/some/well/known/path/dbus.socket
+<span class="o">(</span>remote-machine<span class="o">)</span> <span class="nv">$ </span>notify-send <span class="s2">"Hello world"</span>
+&lt; notification appears <span class="k">in </span>the <span class="nb">local </span>machine as <span class="k">if </span>sent locally <span class="o">&gt;</span>
+</code></pre></div></div>
+
+<p>You can use any path for <code class="language-plaintext highlighter-rouge">/some/well/known/path/dbus.socket</code>, including a
+subdirectory of your home directory.</p>
+
+<p><strong>Pros</strong></p>
+
+<ul>
+  <li>The notification is reported as if it had been sent by a local process, so it
+integrates very well with the environment.</li>
+</ul>
+
+<p>From a usability point of view this is the strongest point of this approach.</p>
+
+<p><strong>Cons</strong></p>
+
+<ul>
+  <li>This only works if <code class="language-plaintext highlighter-rouge">local-machine</code> and <code class="language-plaintext highlighter-rouge">remote-machine</code> share the same UID and
+GID. This can be easy to achieve in corporate environments where all systems
+use a unified login system based on LDAP or Active Directory.</li>
+</ul>
+
+<p>For security reasons, the default configuration of D-Bus only allows processes
+of the same user to access the bus. The protocol checks that the <code class="language-plaintext highlighter-rouge">uid</code> and
+<code class="language-plaintext highlighter-rouge">gid</code> of the process connecting to the bus match the <code class="language-plaintext highlighter-rouge">uid</code> and <code class="language-plaintext highlighter-rouge">gid</code> of the
+process that started the D-Bus daemon. This avoids other local processes, not
+belonging to our user, to connect to our D-Bus daemon.</p>
+
+<p>This may be an importation limitations in many systems (e.g. my laptop
+at work is not integrated in the LDAP of other systems or, for security
+reasons, we have different credentials in development vs production systems).</p>
+
+<ul>
+  <li>You need to remove the UNIX socket on the remote machine every time you start a session, but
+not in subsequent <code class="language-plaintext highlighter-rouge">ssh</code> connections.</li>
+</ul>
+
+<p>This can be mitigated by using a distinguished script to connect
+to the remote machine as a way to initiate the “session”. You would run
+this only for the first connection, the other ones would just use a regular
+<code class="language-plaintext highlighter-rouge">ssh</code> command.</p>
+
+<figure class="highlight"><figcaption>ssh-session</figcaption><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="c">#!/usr/bin/env bash</span>
+
+<span class="nv">remote</span><span class="o">=</span><span class="s2">"</span><span class="nv">$1</span><span class="s2">"</span>
+ssh <span class="s2">"</span><span class="nv">$remote</span><span class="s2">"</span> <span class="s2">"rm -f /some/well/known/path/dbus.socket"</span>
+<span class="nb">exec </span>ssh <span class="nt">-R</span> <span class="s2">"/some/well/known/path/dbus.socket:</span><span class="k">${</span><span class="nv">DBUS_SESSION_BUS_ADDRESS</span><span class="p">/unix</span>:path<span class="p">=/</span><span class="k">}</span><span class="s2">"</span> <span class="s2">"</span><span class="nv">$remote</span><span class="s2">"</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>local-machine<span class="o">)</span> <span class="nv">$ </span>ssh-session user@remote-machine
+</code></pre></div></div>
+
+<p>This script is a bit simplistic and assumes you can remotely execute commands
+without having to enter a password (e.g. because you are using a SSH key). I
+have not tried it, but perhaps using
+<a href="https://linux.die.net/man/5/ssh_config"><code class="language-plaintext highlighter-rouge">ProxyCommand</code></a> this initial script
+can be made more convenient without requiring entering the password twice.</p>
+
+<p>Alternatively, if we can configure the SSH server on <code class="language-plaintext highlighter-rouge">remote-machine</code>, we can
+add the option <code class="language-plaintext highlighter-rouge">StreamLocalBindUnlink yes</code> to <code class="language-plaintext highlighter-rouge">/etc/ssh/sshd_config</code>. This will
+remove (unlink) the <code class="language-plaintext highlighter-rouge">/some/well/known/path/dbus.socket</code> upon exiting so we
+don’t have to remove it beforehand.</p>
+
+<p>Note that once you close the ssh connection that forwarded the UNIX socket,
+notifications will stop working. So you probably want to close that one the
+last in case you’re working with several ssh session to <code class="language-plaintext highlighter-rouge">remote-machine</code> at the
+same time.</p>
+
+<ul>
+  <li>You need to set the <code class="language-plaintext highlighter-rouge">DBUS_SESSION_BUS_ADDRESS</code> environment variable first.</li>
+</ul>
+
+<p>This can be addressed as described in <a href="https://nikhilism.com/post/2023/remote-dbus-notifications/">this post by
+Nikhil</a>. We can add
+the following to our <code class="language-plaintext highlighter-rouge">.bashrc</code> file.</p>
+
+<figure class="highlight"><figcaption>.bashrc</figcaption><pre><code class="language-bash" data-lang="bash">…
+<span class="c"># If the shell is running over SSH, override the session DBus socket to point</span>
+<span class="c"># to the one forwarded over SSH.</span>
+<span class="k">if</span>  <span class="o">[</span> <span class="nt">-n</span> <span class="nv">$SSH_CONNECTION</span> <span class="o">]</span><span class="p">;</span> <span class="k">then
+  </span><span class="nb">export </span><span class="nv">DBUS_SESSION_BUS_ADDRESS</span><span class="o">=</span>/some/well/known/path/dbus.socket
+<span class="k">fi</span>
+…</code></pre></figure>
+
+<h3>Use a local notification daemon</h3>
+
+<p>This approach is a bit more involved but basically relies on forwarding X11,
+running a notification daemon on <code class="language-plaintext highlighter-rouge">remote-machine</code> that we will activate
+using D-Bus itself. The notification daemon will then display the notifications
+using X11 which will apear on our <code class="language-plaintext highlighter-rouge">local-machine</code> as any other X11 forward
+application does.</p>
+
+<p><strong>Note</strong>: this approach assumes the user is not running a graphical session on
+<code class="language-plaintext highlighter-rouge">remote-machine</code>. There are chances that this procedure may confuse the
+graphical environment when sending notifications.</p>
+
+<p><strong>Pros</strong></p>
+<ul>
+  <li>Does not need uid/gid synchronisation between <code class="language-plaintext highlighter-rouge">local-machine</code> and <code class="language-plaintext highlighter-rouge">remote-machine</code>.</li>
+</ul>
+
+<p>This was the main limitation with the earlier approach.</p>
+
+<p><strong>Cons</strong></p>
+<ul>
+  <li>Needs X11 forwarding which may not always be available</li>
+</ul>
+
+<p>We need to pass <code class="language-plaintext highlighter-rouge">-X</code> when connecting to <code class="language-plaintext highlighter-rouge">remote-machine</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>local-machine<span class="o">)</span> <span class="nv">$ </span>ssh <span class="nt">-X</span> remote-machine
+</code></pre></div></div>
+
+<p>Alternatively we can add a configuration entry to the <code class="language-plaintext highlighter-rouge">~/.ssh/config</code> of
+<code class="language-plaintext highlighter-rouge">local-machine</code>.</p>
+
+<figure class="highlight"><figcaption>~/.ssh/config</figcaption><pre><code class="language-ssh" data-lang="ssh"><span class="err">…</span>
+<span class="k">Host</span> remote-machine
+  <span class="k">HostName</span> remote-machine.example.com
+  <span class="k">ForwardX11</span> "yes"
+<span class="err">…</span></code></pre></figure>
+
+<ul>
+  <li>Relies on systemd and D-Bus</li>
+</ul>
+
+<p>These two components are present in most distributions these days, so they can
+be assumed.</p>
+
+<p>We also assume that a D-Bus session is running when we connect to
+<code class="language-plaintext highlighter-rouge">remote-machine</code> (i.e. on <code class="language-plaintext highlighter-rouge">remote-machine</code>, the environment variable
+<code class="language-plaintext highlighter-rouge">DBUS_SESSION_BUS_ADDRESS</code> points to some UNIX socket of <code class="language-plaintext highlighter-rouge">remote-machine</code>).
+Again, most distributions these days provide this functionality out of the box.
+Setting this up is out of scope of this post.</p>
+
+<ul>
+  <li>The result is less integrated as we use a notification daemon different to the
+one in the graphical environment of <code class="language-plaintext highlighter-rouge">local-machine</code>.</li>
+</ul>
+
+<p>There is a number of different notification daemons, some of which can be
+configured to suit ones taste. In this example we will use
+<code class="language-plaintext highlighter-rouge">notification-daemon</code> which is a reference implementation of the notification protocol and seems to work
+fine for our needs. The Arch wiki has a <a href="https://wiki.archlinux.org/title/Desktop_notifications#Notification_servers">a list of notification
+daemons</a>.
+Recall that the notification daemon runs on <code class="language-plaintext highlighter-rouge">remote-machine</code>.</p>
+
+<h4>Activation via D-Bus</h4>
+
+<p>This means that every time we invoke <code class="language-plaintext highlighter-rouge">notify-send</code>, if no notification daemon
+is running, one will be started for us.  If one is running already, that one
+will be used by <code class="language-plaintext highlighter-rouge">notify-send</code>.</p>
+
+<p>There are two files that we need to create on <code class="language-plaintext highlighter-rouge">remote-machine</code> to set up
+D-Bus activation.</p>
+
+<p>First <code class="language-plaintext highlighter-rouge">~/.local/share/dbus-1/services/org.Notifications.service</code> to tell D-Bus
+what is the associated systemd unit and daemon.</p>
+
+<figure class="highlight"><figcaption>~/.local/share/dbus-1/services/org.Notifications.service</figcaption><pre><code class="language-ini" data-lang="ini"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="code"><pre><span class="nn">[D-BUS Service]</span>
+<span class="py">Name</span><span class="p">=</span><span class="s">org.freedesktop.Notifications</span>
+<span class="py">Exec</span><span class="p">=</span><span class="s">/usr/lib/notification-daemon/notification-daemon</span>
+<span class="py">SystemdService</span><span class="p">=</span><span class="s">my-notification-daemon.service</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Change the path of <code class="language-plaintext highlighter-rouge">Exec</code> to the proper location of the <code class="language-plaintext highlighter-rouge">notification-daemon</code>
+executable: the one shown corresponds to Ubuntu/Debian systems.</p>
+
+<p>Now we need to create a systemd-unit in <code class="language-plaintext highlighter-rouge">~/.config/systemd/user/my-notification-daemon.service</code></p>
+
+<figure class="highlight"><figcaption>~/.config/systemd/user/my-notification-daemon.service</figcaption><pre><code class="language-ini" data-lang="ini"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="code"><pre><span class="nn">[Unit]</span>
+<span class="py">Description</span><span class="p">=</span><span class="s">My notificatin daemon</span>
+
+<span class="nn">[Service]</span>
+<span class="py">Type</span><span class="p">=</span><span class="s">dbus</span>
+<span class="py">BusName</span><span class="p">=</span><span class="s">org.freedesktop.Notifications</span>
+<span class="py">ExecStart</span><span class="p">=</span><span class="s">/usr/lib/notification-daemon/notification-daemon</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>The path of <code class="language-plaintext highlighter-rouge">ExecStart</code> must be the same as <code class="language-plaintext highlighter-rouge">Exec</code> above.</p>
+
+<p>With all this, <code class="language-plaintext highlighter-rouge">notify-send</code> run on <code class="language-plaintext highlighter-rouge">remote-machine</code> will automatically
+initiate the <code class="language-plaintext highlighter-rouge">notification-daemon</code> if none is running.</p>
+
+<p>However, this will not work yet because the <code class="language-plaintext highlighter-rouge">notification-daemon</code> is a X11 application and needs some
+environment information to proceed. We can do that by running the following command.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>remote-machine<span class="o">)</span> <span class="nv">$ </span>dbus-update-activation-environment <span class="se">\</span>
+  <span class="nt">--systemd</span> DBUS_SESSION_BUS_ADDRESS DISPLAY XAUTHORITY
+</code></pre></div></div>
+
+<p>This command above can be added to the <code class="language-plaintext highlighter-rouge">.bashrc</code> of <code class="language-plaintext highlighter-rouge">remote-machine</code> so it runs
+automatically every time we connect. This must run before we activate the <code class="language-plaintext highlighter-rouge">notification-daemon</code>
+for the first time, otherwise the activation will fail.</p>
+
+<p>With all this in place, it should now be possible to send a test notification.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>remote-machine<span class="o">)</span> <span class="nv">$ </span>notify-send <span class="s2">"Hello world"</span>
+</code></pre></div></div>
+
+<p>We should see how a new popup appears to the top left of our screen (possibly
+with an additional icon to our notification area).</p>
+
+<p>This approach is a bit more involved so you may have to troubleshoot a bit. The following
+command will show us the dbus activations.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">(</span>remote-machine<span class="o">)</span> <span class="nv">$ </span>journalctl <span class="nt">--user</span> <span class="nt">--follow</span> <span class="nt">-g</span> notif
+</code></pre></div></div>
+
+<p>In my experience the most common error is forgetting to run
+<code class="language-plaintext highlighter-rouge">dbus-update-activation-environment</code>, so <code class="language-plaintext highlighter-rouge">notification-daemon</code> fails to
+start and exits immediately.</p>
+
+<p>Hope this useful :)</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2023/02/04/writing-gobjects-in-cpp/">&laquo; Writing GObjects in C++</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

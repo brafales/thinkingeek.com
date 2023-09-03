@@ -67,6 +67,40 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2011/02/18/installing-dropbox-and-dropbox-nautilus-in-archlinux/">Installing dropbox and dropbox-nautilus in ArchLinux</a></h1>
+
+          <p class="post-meta">
+            Feb 18, 2011• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/archlinux/">archlinux</a>, <a href="/tags/dropbox/">dropbox</a>, <a href="/tags/gnome/">gnome</a>, <a href="/tags/linux/">linux</a>, <a href="/tags/nautilus/">nautilus</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+If you've tried to install dropbox-nautilus from the source found in the &lt;a href=http://www.dropbox.com&gt;Dropbox&lt;/a&gt; website, you'll find that you can't successfully complete the ./configure step of the package due to an error of the script not finding pygtk. This is an issue with Archlinux because of the way python binaries are handled in this distribution. However, you can use the <a href="http://aur.archlinux.org">AUR</a> packages to install dropbox and its integration with Nautilus thank to the people that tweaked the scripts to work with Arch.
+</p>
+<p>
+The first step you have to take is download the AUR packages. You'll need to download both <a href="http://aur.archlinux.org/packages.php?ID=23363">dropbox</a> and <a href="http://aur.archlinux.org/packages.php?ID=19615">nautilus-dropbox</a>. Save both .tar.gz files at you preferred location and uncompress them using this command:
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">tar </span>xvfz &lt;filename.tar.gz&gt;</code></pre></figure>
+
+<p>
+Obviously, change <code>&lt;filename.tar.gz&gt;</code> with the filenames you have downloaded. Each tar command will create a folder. Go to the dropbox folder and run this package:
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">makepkg <span class="nt">-s</span></code></pre></figure>
+
+<p>
+This will build a package and install the required dependencies while doing it if needed (it will ask for your root password if you're doing this without being root). If everything went ok, you'll find a file with the extension .xy in the folder you're in. This is what you need to install, using our beloved pacman (use <em>sudo</em> if you're not root):
+</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">pacman <span class="nt">-U</span> &lt;filename.xy&gt;</code></pre></figure>
+
+<p>
+This will install dropbox. After this, do the same for the other package: nautilus-dropbox. <em>makepkg -s</em>, <em>pacman -U &lt;filaneme.xy&gt;</em> and you're done, you have Dropbox integrated with Nautilus. Just start Dropbox from your <em>Applications</em> menu and enjoy the service!
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2010/12/14/routing-a-hiearchical-path-in-asp-net-mvc/">Routing a hiearchical path in ASP.NET MVC</a></h1>
 
           <p class="post-meta">
@@ -158,26 +192,7 @@ If you've ever used the <em>Ajax.BeginForm</em> code to render a form in ASP MVC
 
         </div><p class="post-continue">
             <a href="/2010/11/16/creating-and-consuming-json-data-in-mvc-2/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2009/10/12/c-the-and-operators-and-lazy-evaluation/">C#, the &quot;and&quot; operators and lazy evaluation</a></h1>
-
-          <p class="post-meta">
-            Oct 12, 2009• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/c/">c#</a>, <a href="/tags/programming-tips/">programming tips</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>Today at work we found a bug. My workmate, not used to C#, usually uses the <i>&amp;</i> operator to compare boolean values. However, in C#, the <i>&amp;</i> operator does not use <a href="http://en.wikipedia.org/wiki/Lazy_evaluation">lazy evaluation</a>.</p>
-<p>One curious thing about C# is that it can use two different operators to calculate an <i>and</i> expression: the <a href="http://msdn.microsoft.com/en-us/library/sbf85k1c.aspx">&amp;</a> operator and the <a href="http://msdn.microsoft.com/en-us/library/2a723cdk.aspx">&amp;&amp;</a> operator. The difference between both is that the first one (<i>&amp;</i>) can be used both with integer types and boolean types. When used with integer types it will perform a bitwise comparison between the two, and when used with boolean values it will use the logical <i>and</i> operation between the two boolean values, <b>evaluating all the parts of the expression</b>. This means that using a code like this one:</p>
-
-<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="k">if</span> <span class="p">(</span><span class="n">someObject</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;</span> <span class="n">someObject</span><span class="p">.</span><span class="n">SomeProperty</span> <span class="p">==</span> <span class="n">someValue</span><span class="p">)</span></code></pre></figure>
-
-<p>will throw a runtime error if <i>someObject</i> is null, because it will try to obtain the <i>SomeProperty</i> value.</p>
-<p>However, the <i>&amp;&amp;</i> operator is only available to boolean expressions, and it uses lazy evaluation, this is, if the first condition evaluated is false, it will calculate false without evaluating the rest of the expression, because an <i>and</i> is only true if all the expressions are true.</p>
-<p>Conclusion, be sure to always use <i>&amp;&amp;</i> when evaluating boolean values if you want to avoid run time surprises :).
-</p>
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/28/">&laquo; Older</a>

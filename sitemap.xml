@@ -629,6 +629,10 @@
 <lastmod>2023-02-04T21:46:00+00:00</lastmod>
 </url>
 <url>
+<loc>https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/</loc>
+<lastmod>2023-09-03T21:15:00+00:00</lastmod>
+</url>
+<url>
 <loc>https://thinkingeek.com/archives/</loc>
 </url>
 <url>
@@ -1206,6 +1210,15 @@
 </url>
 <url>
 <loc>https://thinkingeek.com/categories/cplusplus/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/notifications/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/dbus/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/systemd/</loc>
 </url>
 <url>
 <loc>https://thinkingeek.com/posts/2/</loc>

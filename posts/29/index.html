@@ -67,6 +67,33 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2008/11/13/controlling-the-commands-executed-with-xp_cmdshell-on-sql-server-2005/">Controlling the commands executed with xp_cmdshell on SQL Server 2005</a></h1>
+
+          <p class="post-meta">
+            Nov 13, 2008• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/security/">security</a>, <a href="/tags/sql-server/">sql server</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+SQL Server has a special extended stored procedure called <em>xp_cmdshell</em>. This procedure has a lot of power: it allows to execute any command line code on the machine hosting the SQL Server.
+</p>
+<p>
+Imagine you want to list all the files on <em>C:</em> on the SQL Server Windows host: you could write a T-SQL statement like this one:
+</p>
+
+<figure class="highlight"><pre><code class="language-sql" data-lang="sql"><span class="k">EXECUTE</span> <span class="n">master</span><span class="p">..</span><span class="n">xp_cmdshell</span> <span class="s1">'dir c:'</span></code></pre></figure>
+
+<p>
+This stored procedure, however, is a very dangerous one, as it would allow to execute harmful code. This is the reason why it's disabled by default. Even when enabled, only users on the <em>sysadmin</em> role can use it.
+</p>
+<p>
+If you ever need some users the ability to run only some specific commands with xp_cmdshell, you can use the method I'll explain below, making use of the <em>EXECUTE AS</em> modifier of the stored procedure definitions in T-SQL.
+</p>
+
+        </div><p class="post-continue">
+            <a href="/2008/11/13/controlling-the-commands-executed-with-xp_cmdshell-on-sql-server-2005/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2008/07/16/c-and-the-stringbuilder-class/">C# and the StringBuilder class</a></h1>
 
           <p class="post-meta">
@@ -135,19 +162,7 @@ This are a <strong>lot</strong> of windows... And the other day one friends was 
 
         </div><p class="post-continue">
             <a href="/2007/07/29/the-double-check-design-pattern/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2007/07/27/ruby-quiz/">Ruby Quiz</a></h1>
-
-          <p class="post-meta">
-            Jul 27, 2007• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Javier Segura</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/programming-tips/">programming tips</a>, <a href="/tags/ruby/">ruby</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>Maybe one of the best ways to learn a new programming language is playing with it. Nowadays if you don't code in Ruby you aren't cool. I have to recognize that programming in Ruby is funnier than in other language and for the moment I don't have anything bad to say about it.</p>
-<p>Well, I want to introduce <a href="http://www.rubyquiz.com/">Ruby Quiz</a>. It is a collection of minigames prepared to learn Ruby (or to improve your skills). Every week they publish one game, and if you are brave you can send your solution to them and it will be public. I think it's one of the best ways to learn because you can compare solutions and find were you are weak in Ruby and redo your solution doing it smarter.</p>
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/30/">&laquo; Older</a>
