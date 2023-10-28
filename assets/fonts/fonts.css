@@ -1,23 +1,20 @@
 @font-face {
     font-family: 'Fira Mono';
-    src: url('firamono-regular-webfont.woff2') format('woff2'),
-         url('firamono-regular-webfont.woff') format('woff');
+    src: url('FiraMono-Regular.otf');
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Fira Mono';
-    src: url('firamono-bold-webfont.woff2') format('woff2'),
-         url('firamono-bold-webfont.woff') format('woff');
+    src: url('FiraMono-Bold.otf');
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Source Sans Pro';
-    src: url('sourcesanspro-regular-webfont.woff2') format('woff2'),
-         url('sourcesanspro-regular-webfont.woff') format('woff');
+    src: url('SourceSansPro-Regular.otf');
     font-weight: 400;
     font-style: normal;
 
@@ -25,8 +22,7 @@
 
 @font-face {
     font-family: 'Source Sans Pro';
-    src: url('sourcesanspro-it-webfont.woff2') format('woff2'),
-         url('sourcesanspro-it-webfont.woff') format('woff');
+    src: url('SourceSansPro-It.otf') ;
     font-weight: 400;
     font-style: italic;
 
@@ -34,16 +30,14 @@
 
 @font-face {
     font-family: 'Source Sans Pro';
-    src: url('sourcesanspro-bold-webfont.woff2') format('woff2'),
-         url('sourcesanspro-bold-webfont.woff') format('woff');
+    src: url('SourceSansPro-Bold.otf');
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
     font-family: 'Source Sans Pro';
-    src: url('sourcesanspro-boldit-webfont.woff2') format('woff2'),
-         url('sourcesanspro-boldit-webfont.woff') format('woff');
+    src: url('SourceSansPro-BoldIt.otf');
     font-weight: 700;
     font-style: italic;
 }
