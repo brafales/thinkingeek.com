@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Locally testing API Gateway Docker based Lambdas</title>
+  <meta name="description" content="AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as AWS Amplify and the Serverless Framework, which will allow you to define your Lambda, your application code, and will provide tools that will package and provision, and then deploy those Lambdas (using CloudFormation under the hood). They also provide tools to locally run the functions for local testing, which is particularly useful if they are invoked using technologies such as API Gateway. Sometimes, however, especially if your organisation has adopted other Infrastructure as Code tools such as Terraform, you might want to just provision a function with simpler IaC tools, and keep the application deployment steps separate. Let us explore an alternative method to still be able to run and test API Gateway based Lambdas locally without the need to bring in big frameworks such as the ones mentioned earlier.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2023/12/24/testing-api-gateway-docker-lambdas/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Locally testing API Gateway Docker based Lambdas">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2023/12/24/testing-api-gateway-docker-lambdas/">
+  <meta property="og:description" content="AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as AWS Amplify and the Serverless Framework, which will allow you to define your Lambda, your application code, and will provide tools that will package and provision, and then deploy those Lambdas (using CloudFormation under the hood). They also provide tools to locally run the functions for local testing, which is particularly useful if they are invoked using technologies such as API Gateway. Sometimes, however, especially if your organisation has adopted other Infrastructure as Code tools such as Terraform, you might want to just provision a function with simpler IaC tools, and keep the application deployment steps separate. Let us explore an alternative method to still be able to run and test API Gateway based Lambdas locally without the need to bring in big frameworks such as the ones mentioned earlier.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Locally testing API Gateway Docker based Lambdas">
+  <meta name="twitter:description" content="AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Locally testing API Gateway Docker based Lambdas</h1>
+    
+    <p class="post-meta"><time datetime="2023-12-24T00:00:00+00:00" itemprop="datePublished">Dec 24, 2023</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/aws/">aws</a>, <a href="/categories/testing/">testing</a>, <a href="/categories/lambda/">lambda</a>, <a href="/categories/docker/">docker</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as <a href="https://aws.amazon.com/amplify/">AWS Amplify</a> and the <a href="https://www.serverless.com">Serverless Framework</a>, which will allow you to define your Lambda, your application code, and will provide tools that will package and provision, and then deploy those Lambdas (using <a href="https://aws.amazon.com/cloudformation/">CloudFormation</a> under the hood). They also provide tools to locally run the functions for local testing, which is particularly useful if they are invoked using technologies such as <a href="https://aws.amazon.com/api-gateway/">API Gateway</a>. Sometimes, however, especially if your organisation has adopted other Infrastructure as Code tools such as <a href="https://www.terraform.io">Terraform</a>, you might want to just provision a function with simpler IaC tools, and keep the application deployment steps separate. Let us explore an alternative method to still be able to run and test API Gateway based Lambdas locally without the need to bring in big frameworks such as the ones mentioned earlier.</p>
+
+<!--more-->
+
+<p>We will make some assumptions before moving forward:</p>
+
+<ul>
+  <li>Our Lambda will be designed to be invoked by AWS API Gateway, using the <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html">Proxy Integration</a>.</li>
+  <li>Our Lambda will be Docker based.</li>
+  <li>Our Lambda has already been provisioned by another tool, so our only concern here is how to locally build it and run it the same way any other client would do via API Gateway.</li>
+</ul>
+
+<h2>Lambda code and Docker image</h2>
+
+<p>Let us follow the <a href="https://docs.aws.amazon.com/lambda/latest/dg/python-image.html">AWS Documentation</a> and write a very simple function in Python which we can use throughout this project.</p>
+
+<p>The Python code for our handler will be straightforward:</p>
+
+<figure class="highlight"><figcaption>lambda_function.py</figcaption><pre><code class="language-python" data-lang="python"><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">"isBase64Encoded"</span><span class="p">:</span> <span class="bp">False</span><span class="p">,</span>
+        <span class="s">"statusCode"</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>
+        <span class="s">"body"</span><span class="p">:</span> <span class="n">json</span><span class="p">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">event</span><span class="p">),</span>
+        <span class="s">"headers"</span><span class="p">:</span> <span class="p">{</span><span class="s">"content-type"</span><span class="p">:</span> <span class="s">"application/json"</span><span class="p">},</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>This handler will simply return a 200 response code with the Lambda event as its body, in JSON format.</p>
+
+<p>In order to package this function so that the AWS runtime can execute it, we will make use of the provided AWS base Docker image, and add our code to it (at the time of writing this article Python’s latest version was 3.12). The dockerfile below assumes that our code is written on a file named <code class="language-plaintext highlighter-rouge">lambda_function.py</code> and that we have a <code class="language-plaintext highlighter-rouge">requirements.txt</code> file with our dependencies on it (in our case the file can be empty).</p>
+
+<figure class="highlight"><figcaption>dockerfile</figcaption><pre><code class="language-docker" data-lang="docker"><span class="k">FROM</span><span class="s"> public.ecr.aws/lambda/python:3.12</span>
+
+<span class="c"># Copy requirements.txt</span>
+<span class="k">COPY</span><span class="s"> requirements.txt ${LAMBDA_TASK_ROOT}</span>
+
+<span class="c"># Install the specified packages</span>
+<span class="k">RUN </span>pip <span class="nb">install</span> <span class="nt">-r</span> requirements.txt
+
+<span class="c"># Copy function code</span>
+<span class="k">COPY</span><span class="s"> lambda_function.py ${LAMBDA_TASK_ROOT}</span>
+
+<span class="c"># Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)</span>
+<span class="k">CMD</span><span class="s"> [ "lambda_function.handler" ]</span></code></pre></figure>
+
+<h2>Running and testing the Lambda function</h2>
+
+<p>In order to test that this all works as expected, we need to build that Docker image and run it:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">docker build <span class="nt">-t</span> docker-image:test <span class="nb">.</span>
+docker run <span class="nt">-p</span> 9000:8080 docker-image:test</code></pre></figure>
+
+<p>The above commands will do exactly that, and map the container port 8080 to the local port 9000.</p>
+
+<p>As per the documentation, in order to test this function and see an HTTP response, it is not sufficient to just make an HTTP request to <code class="language-plaintext highlighter-rouge">http://localhost:9000</code>. If we were to do this, we would simply get back a 404 response. After all, our function could be triggered in the real world not just by HTTP requests but by many other events, such as a change to an S3 bucket, or a message being pulled from an SQS queue.</p>
+
+<p>Behind the scenes, any invocation of a Lambda function eventually happens via an <a href="https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda/client/invoke.html">API call</a>. When we make an HTTP request that is eventually served by a Lambda function, what is happening is that some other service (for example AWS API Gateway, or an AWS ALB) transforms that HTTP request into an event, then that event is passed to the Lambda <code class="language-plaintext highlighter-rouge">Invoke</code> method as a parameter, and the Lambda response gets mapped back to an HTTP response.</p>
+
+<p>The AWS provided base Docker images already come with something called the <em>Runtime Interface Client</em> which takes care of acting as that proxy for you, allowing the invocation of the function via an HTTP API call.</p>
+
+<p>In order to get our local Lambda to reply with a response, this is what we need to do instead:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="s2">"http://localhost:9000/2015-03-31/functions/function/invocations"</span> <span class="nt">-d</span> <span class="s1">'{}'</span>
+</code></pre></div></div>
+
+<p>This will invoke the Lambda with an empty event. If our Lambda is to be behind AWS API Gateway using a Proxy Integration, the real event it would receive would look like this:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nl">"request_uri"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"request_headers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"user-agent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"curl/8.1.2"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"content-type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"application/json"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"accept"</span><span class="p">:</span><span class="w"> </span><span class="s2">"*/*"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"host"</span><span class="p">:</span><span class="w"> </span><span class="s2">"localhost:8000"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"request_method"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GET"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"request_uri_args"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div></div>
+
+<p>In some cases testing our Lambda locally by carefully crafting curl commands with JSON payloads might be a good option, but sometimes it is necessary to be able to locally hit our Lambda just like we would do if we had the AWS API Gateway Proxy Integration in place. A good example of this might be if we want to test locally how our Lambda would interact with other services we are also running locally, such as a web browser making a GET HTTP request. This is where big footprint frameworks come in handy, since they have those tools built in.</p>
+
+<h2>Kong API Gateway to the rescue</h2>
+
+<p>An alternative way to gain the same behaviour we would get with frameworks such as Amplify or the Serverless Framework when it comes to testing Lambdas locally is to make use of an open source API Gateway tool called <a href="https://konghq.com/products/kong-gateway">Kong</a>. Kong is a big API Gateway product and offers many features, but in a nutshell what it does is take an incoming HTTP Request, optionally transform it, send it to a downstream service, optionally transform the response, and send that back to the client. One of the many downstream services Kong supports out of the box through a plugin are AWS Lambda functions. One could argue that using something like Kong just to test our Lambda is no different than going the Framework route, however, there are a couple of things I find particularly relevant here:</p>
+
+<ul>
+  <li>Kong can be run via Docker, which we already need to package and run our Lambda. This means we do not have to install any new tool in our local setup.</li>
+  <li>This solution allows us to keep our Lambda setup small and simple, and we are not forced to follow any Framework ways of organising our source code.</li>
+</ul>
+
+<p>So our final setup is going to look like this:</p>
+
+<figure>
+    <img src="/assets/images/lambda-kong.png" alt="Life cycle of an HTTP request in our solution" />
+    <figcaption>
+The HTTP request will be sent to Kong, then Kong will transform that request into a Lambda API call, the Lambda will receive that call with an HTTP event, and will respond with a JSON payload, which Kong will transform again and send back to the HTTP client.
+</figcaption>
+</figure>
+
+<p>In order for this to work, we need to configure Kong to proxy HTTP requests to our Lambda. We can do this by using a declarative configuration that uses the <code class="language-plaintext highlighter-rouge">aws-lambda</code> plugin on the <code class="language-plaintext highlighter-rouge">/</code> route.</p>
+
+<p>We can achieve this using this <code class="language-plaintext highlighter-rouge">kong.yml</code> configuration file:</p>
+
+<figure class="highlight"><figcaption>kong.yml</figcaption><pre><code class="language-yaml" data-lang="yaml"><span class="na">_format_version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">3.0"</span>
+<span class="na">_transform</span><span class="pi">:</span> <span class="no">true</span>
+
+<span class="na">routes</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">lambda</span>
+  <span class="na">paths</span><span class="pi">:</span> <span class="pi">[</span> <span class="s2">"</span><span class="s">/"</span> <span class="pi">]</span>
+
+<span class="na">plugins</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">route</span><span class="pi">:</span> <span class="s">lambda</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">aws-lambda</span>
+  <span class="na">config</span><span class="pi">:</span>
+    <span class="na">aws_region</span><span class="pi">:</span> <span class="s">eu-west-1</span>
+    <span class="na">aws_key</span><span class="pi">:</span> <span class="s">DUMMY_KEY</span>
+    <span class="na">aws_secret</span><span class="pi">:</span> <span class="s">DUMMY_SECRET</span>
+    <span class="na">function_name</span><span class="pi">:</span> <span class="s">function</span>
+    <span class="na">host</span><span class="pi">:</span> <span class="s">lambda</span>
+    <span class="na">port</span><span class="pi">:</span> <span class="m">8080</span>
+    <span class="na">disable_https</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">forward_request_body</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">forward_request_headers</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">forward_request_method</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">forward_request_uri</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">is_proxy_integration</span><span class="pi">:</span> <span class="no">true</span></code></pre></figure>
+
+<p>A few things worth mentioning:</p>
+
+<ul>
+  <li>The <code class="language-plaintext highlighter-rouge">aws_key</code> and <code class="language-plaintext highlighter-rouge">aws_secret</code> are mandatory for the plugin to work, however we do not need to put any real secrets in there, since the invocation will happen locally.</li>
+  <li><code class="language-plaintext highlighter-rouge">function_name</code> should stay hardcoded as <code class="language-plaintext highlighter-rouge">function</code>, as this is the name the Runtime Interface Client uses by default.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">host</code> and <code class="language-plaintext highlighter-rouge">port</code> values there should point to your local docker container running the Lambda function. In our case we use <code class="language-plaintext highlighter-rouge">lambda</code> and <code class="language-plaintext highlighter-rouge">8080</code> as we will run all this solution in a single Docker Compose setup where the Lambda runs in a container named <code class="language-plaintext highlighter-rouge">lambda</code>.</li>
+  <li>We need to set <code class="language-plaintext highlighter-rouge">disable_https</code> to <code class="language-plaintext highlighter-rouge">true</code> as our Lambda container is not able to handle SSL.</li>
+  <li>The rest of the configuration options can be tweaked depending on our specific needs. They are all <a href="https://docs.konghq.com/hub/kong-inc/aws-lambda/">documented in the Kong website</a>. The values shown here will work for an AWS Lambda Proxy Integration setup using AWS API Gateway, but the Kong plugin supports other types of integrations.</li>
+</ul>
+
+<h2>Putting it all together</h2>
+
+<p>So far we have built a Docker based Lambda function and we are able to run it locally. We have also seen how to configure Kong API Gateway to proxy HTTP requests to that function. We will now look at what a Docker Compose setup might look like to run it all in a single project and command.</p>
+
+<p>The full source code for this can be found in <a href="https://github.com/brafales/docker-lambda-kong">brafales/docker-lambda-kong</a>. I recommend checking it out to see the whole project structure.</p>
+
+<p>We will assume we have the following folders in our root:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">lambda</code>: here we will store the Lambda function source code and its Dockerfile.</li>
+  <li><code class="language-plaintext highlighter-rouge">kong</code>: here we will store the declarative configuration for Kong which will allow us to set it up as a proxy for our function.</li>
+</ul>
+
+<p>And then in the root we can have our <code class="language-plaintext highlighter-rouge">docker-compose.yml</code> file:</p>
+
+<figure class="highlight"><figcaption>docker-compose.yml</figcaption><pre><code class="language-yaml" data-lang="yaml"><span class="na">services</span><span class="pi">:</span>
+  <span class="na">lambda</span><span class="pi">:</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">lambda</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">lambda</span>
+    <span class="na">networks</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">lambda-example</span>
+  <span class="na">kong</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">kong:latest</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">kong</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8000:8000"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="na">KONG_DATABASE</span><span class="pi">:</span> <span class="s">off</span>
+      <span class="na">KONG_DECLARATIVE_CONFIG</span><span class="pi">:</span> <span class="s">/usr/local/kong/declarative/kong.yml</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./kong:/usr/local/kong/declarative</span>
+    <span class="na">networks</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">lambda-example</span>
+
+<span class="na">networks</span><span class="pi">:</span>
+  <span class="na">lambda-example</span><span class="pi">:</span></code></pre></figure>
+
+<p>This file does the following:</p>
+
+<ul>
+  <li>Creates a docker network called <code class="language-plaintext highlighter-rouge">lambda-example</code>. This is optional since the default network created by compose would work equally well.</li>
+  <li>It defines a Docker container named <code class="language-plaintext highlighter-rouge">lambda</code> and instructs compose to build it using the contents of the <code class="language-plaintext highlighter-rouge">lambda</code> folder.</li>
+  <li>It defines a Docker container named <code class="language-plaintext highlighter-rouge">kong</code>, using the Docker image <code class="language-plaintext highlighter-rouge">kong:latest</code>, and mapping our <code class="language-plaintext highlighter-rouge">kong</code> folder to the container path <code class="language-plaintext highlighter-rouge">/usr/local/kong/declarative</code>. This will allow the container to read our declarative config file, which we set as an environment variable <code class="language-plaintext highlighter-rouge">KONG_DECLARATIVE_CONFIG</code>. We also set <code class="language-plaintext highlighter-rouge">KONG_DATABASE</code> to <code class="language-plaintext highlighter-rouge">off</code> to instruct Kong not to search for a database to read its config from, and finally map the container port <code class="language-plaintext highlighter-rouge">8000</code> to our localhost port <code class="language-plaintext highlighter-rouge">8000</code>.</li>
+</ul>
+
+<p>With all this in place, we can now simply run the following command to spin it all up:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker compose up
+</code></pre></div></div>
+
+<p>Once all is up and running, we can now reach our Lambda function using curl or any other HTTP client like we would normally do if it was deployed to AWS behind an API Gateway:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>➜ curl -s localhost:8000 | jq .
+{
+  "request_method": "GET",
+  "request_body": "",
+  "request_body_args": {},
+  "request_uri": "/",
+  "request_headers": {
+    "user-agent": "curl/8.1.2",
+    "host": "localhost:8000",
+    "accept": "*/*"
+  },
+  "request_body_base64": true,
+  "request_uri_args": {}
+}
+
+➜ curl -s -X POST localhost:8000/ | jq .
+{
+  "request_method": "POST",
+  "request_body": "",
+  "request_body_args": {},
+  "request_uri": "/",
+  "request_headers": {
+    "user-agent": "curl/8.1.2",
+    "host": "localhost:8000",
+    "accept": "*/*"
+  },
+  "request_body_base64": true,
+  "request_uri_args": {}
+}
+
+➜ curl -s  localhost:8000/?foo=bar | jq .
+{
+  "request_method": "GET",
+  "request_body": "",
+  "request_body_args": {},
+  "request_uri": "/?foo=bar",
+  "request_headers": {
+    "user-agent": "curl/8.1.2",
+    "host": "localhost:8000",
+    "accept": "*/*"
+  },
+  "request_body_base64": true,
+  "request_uri_args": {
+    "foo": "bar"
+  }
+}
+</code></pre></div></div>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2023/09/03/remote-notifications-over-ssh/">&laquo; Graphical notifications for long-running tasks</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

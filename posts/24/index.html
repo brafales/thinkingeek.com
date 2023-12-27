@@ -64,6 +64,84 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2012/06/11/ruby-implementation-fizzbuzz-test-enumerator-class/">A Ruby implementation of the FizzBuzz test using the Enumerator class</a></h1>
+
+          <p class="post-meta">
+            Jun 11, 2012 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/enumerator/">enumerator</a>, <a href="/tags/fizzbuzz/">fizzbuzz</a>, <a href="/tags/rspec/">rspec</a>, <a href="/tags/ruby/">ruby</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+Some days ago I learnt about The FizzBuzz Test and did a simple implementation in Ruby. The FizzBuzz test is a simple algorithm that is supposed to do the following:
+</p>
+<p>
+For each number from 1 to 100:
+<ul>
+  <li>If the number is divisible by 3, print "Fizz"</li>
+  <li>If the number is divisible by 5, print "Buzz"</li>
+  <li>If the number is divisible by both 3 and 5, print "FizzBuzz"</li>
+  <li>Otherwise print the number</li>
+</ul>
+</p>
+<p>
+I was just reading about how you can use the <a href="http://www.ruby-doc.org/core-1.9.3/Enumerator.html">Enumerator</a> class to have generators in the <a href="http://pragprog.com/book/ruby3/programming-ruby-1-9">Programming Ruby 1.9</a> book, and thought that a good implementation could be done using just an Enumerator, so here it is, along with a simple RSpect test:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">FizzBuzz</span> <span class="o">=</span> <span class="no">Enumerator</span><span class="p">.</span><span class="nf">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">yielder</span><span class="o">|</span>
+  <span class="n">count</span> <span class="o">=</span> <span class="mi">1</span>
+  <span class="kp">loop</span> <span class="k">do</span>
+    <span class="k">if</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span>
+      <span class="k">if</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">yielder</span><span class="p">.</span><span class="nf">yield</span> <span class="s2">"FizzBuzz"</span>
+      <span class="k">else</span>
+        <span class="n">yielder</span><span class="p">.</span><span class="nf">yield</span> <span class="s2">"Fizz"</span>
+      <span class="k">end</span>
+    <span class="k">elsif</span> <span class="n">count</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span>
+      <span class="n">yielder</span><span class="p">.</span><span class="nf">yield</span> <span class="s2">"Buzz"</span>
+    <span class="k">else</span> 
+      <span class="n">yielder</span><span class="p">.</span><span class="nf">yield</span> <span class="n">count</span>
+    <span class="k">end</span>
+    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require_relative</span> <span class="s1">'fizzbuzz'</span>
+
+<span class="n">describe</span> <span class="no">FizzBuzz</span> <span class="k">do</span>
+  <span class="n">before</span><span class="p">(</span><span class="ss">:all</span><span class="p">)</span> <span class="k">do</span>
+    <span class="vi">@fizzbuzzes</span> <span class="o">=</span> <span class="no">FizzBuzz</span><span class="p">.</span><span class="nf">first</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"returns 'Fizz' for all multiples of 3"</span> <span class="k">do</span>
+    <span class="vi">@fizzbuzzes</span><span class="p">[</span><span class="mi">3</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nf">should</span> <span class="o">==</span> <span class="s1">'Fizz'</span>
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"returns 'Buzz' for all multiples of 5"</span> <span class="k">do</span>
+    <span class="vi">@fizzbuzzes</span><span class="p">[</span><span class="mi">5</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="nf">should</span> <span class="o">==</span> <span class="s1">'Buzz'</span>
+
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"returns 'FizzBuzz' for all multiples of 3 and 5"</span> <span class="k">do</span>
+    <span class="vi">@fizzbuzzes</span><span class="p">[</span><span class="mi">60</span> <span class="o">-</span> <span class="mi">1</span><span class="p">].</span><span class="nf">should</span> <span class="o">==</span> <span class="s1">'FizzBuzz'</span>
+
+  <span class="k">end</span>
+
+  <span class="n">it</span> <span class="s2">"returns the passed number if not a multiple of 3 or 5"</span> <span class="k">do</span>
+    <span class="vi">@fizzbuzzes</span><span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">].</span><span class="nf">should</span> <span class="o">==</span> <span class="mi">1</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+</p>
+<p>
+You can also find the code in its GitHub repository: <a href="https://github.com/brafales/ruby-fizzbuzz">https://github.com/brafales/ruby-fizzbuzz</a>.
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2012/06/07/push-git-tags-remote-repository/">Push git tags to a remote repository</a></h1>
 
           <p class="post-meta">
@@ -185,106 +263,6 @@ The <em>magic</em> donde behind the scenes is pretty simple: this gem just repli
 <p>
 This method is not perfect, as probably not all the goodness of the original association can be done with it, but for simple scenarios is more than enough.
 </p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2011/12/02/creating-job-managers-ubiquo/">Creating your own Job Managers in Ubiquo</a></h1>
-
-          <p class="post-meta">
-            Dec 2, 2011 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/ruby-on-rails/">ruby on rails</a>, <a href="/tags/ubiquo/">ubiquo</a></p>
-        </header>
-
-        <div class="post-content">
-          <p><a href="http://www.ubiquo.me">Ubiquo</a> is a <a href="http://rubyonrails.org/">Ruby on Rails</a>, <a href="http://www.opensource.org/licenses/mit-license.php">MIT Licensed</a> Open Source <a href="http://en.wikipedia.org/wiki/Content_management_system">CMS</a> we develop and use at <a href="http://www.gnuine.com">gnuine</a> for a variety of projects. One of the features of Ubiquo is the ability to run jobs separately from the http requests to the site. Today I'm going to show you how to customize the Ubiquo Jobs plugin to create your own types of jobs and managers to launch them.</p>
-<p>Sometimes can be useful to create different managers. An example of this situation is when you want to run different kind of jobs in different circumstances.</p>
-<p>Ubiquo Jobs provides a default manager which will get <tt>ActiveJob</tt> jobs depending on priorities and schedule times:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
-  <span class="n">recovery</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
-  <span class="n">candidate_jobs</span> <span class="o">=</span> <span class="n">job_class</span><span class="p">.</span><span class="nf">all</span><span class="p">(</span>
-    <span class="ss">:conditions</span> <span class="o">=&gt;</span> <span class="p">[</span>
-      <span class="s1">'planified_at &lt;= ? AND state = ?'</span><span class="p">,</span>
-      <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">utc</span><span class="p">,</span>
-      <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:waiting</span><span class="p">]</span>
-    <span class="p">],</span>
-    <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s1">'priority asc'</span>
-  <span class="p">)</span>
-  <span class="n">job</span> <span class="o">=</span> <span class="n">first_without_dependencies</span><span class="p">(</span><span class="n">candidate_jobs</span><span class="p">)</span>
-  <span class="n">job</span><span class="p">.</span><span class="nf">update_attributes</span><span class="p">({</span>
-      <span class="ss">:state</span> <span class="o">=&gt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:instantiated</span><span class="p">],</span>
-      <span class="ss">:runner</span> <span class="o">=&gt;</span> <span class="n">runner</span>
-    <span class="p">})</span> <span class="k">if</span> <span class="n">job</span>
-  <span class="n">job</span>
-<span class="k">end</span></code></pre></figure>
-
-<p>The <tt>job_class</tt> variable defaults to <tt>UbiquoJobs::Jobs::ActiveJob</tt>. If you want to make your own manager to handle special jobs, or change the way the jobs are picked, the best way to do so is to implement your own manager. A nice rails-like way to do that is include them in the <tt>lib/</tt> folder of your ubiquo project.
-The class you should inherit from is <tt>UbiquoJobs::Managers::ActiveManager</tt>. If you wanted the manager to just pick up a specific subclass of ubiquo jobs, it would suffice to reimplement the <tt>self.job_class</tt> class method to return your own kind of job:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">job_class</span>
-  <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">YourJobClass</span>
-<span class="k">end</span></code></pre></figure>
-
-<p>However, there&#8217;s a better way to do this. For this special case, the default <tt>UbiquoJob</tt> class provides a special member which stores the job&#8217;s class name, allowing you to select all objects subclasses of <tt>ActiveJob</tt> by its classname. For example, imagine you have a kind of job for special tasks that you know for sure will take a long time to complete. Seems reasonable to have a different manager to handle those jobs. You would create a new job in the file <tt>app/jobs/very_long_job.rb</tt>:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">class</span> <span class="nc">VeryLongJob</span> <span class="o">&lt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">ActiveJob</span>
-  <span class="k">def</span> <span class="nf">do_job_work</span>
-    <span class="c1">#Do what needs to be done here</span>
-    <span class="k">return</span> <span class="mi">0</span>
-  <span class="k">end</span>
-<span class="k">end</span></code></pre></figure>
-
-<p>Then you could create a manager that handles only those kind of jobs by implementing your own subclass of the <tt>UbiquoJobs::Managers::ActiveManager</tt> class:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">module</span> <span class="nn">JobManagers</span>
-  <span class="k">class</span> <span class="nc">VeryLongJobManager</span> <span class="o">&lt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Managers</span><span class="o">::</span><span class="no">ActiveManager</span>
-    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
-      <span class="n">recovery</span><span class="p">(</span><span class="n">runner</span><span class="p">)</span>
-      <span class="n">candidate_jobs</span> <span class="o">=</span> <span class="n">job_class</span><span class="p">.</span><span class="nf">all</span><span class="p">(</span>
-        <span class="ss">:conditions</span> <span class="o">=&gt;</span> <span class="p">[</span>
-          <span class="s1">'planified_at &lt;= ? AND state = ? AND type = ?'</span><span class="p">,</span> 
-          <span class="no">Time</span><span class="p">.</span><span class="nf">now</span><span class="p">.</span><span class="nf">utc</span><span class="p">,</span>
-          <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:waiting</span><span class="p">],</span>
-          <span class="s1">'VeryLongJob'</span>
-        <span class="p">],</span>
-        <span class="ss">:order</span> <span class="o">=&gt;</span> <span class="s1">'priority asc'</span>
-      <span class="p">)</span>
-      <span class="n">job</span> <span class="o">=</span> <span class="n">first_without_dependencies</span><span class="p">(</span><span class="n">candidate_jobs</span><span class="p">)</span>
-      <span class="n">job</span><span class="p">.</span><span class="nf">update_attributes</span><span class="p">({</span>
-          <span class="ss">:state</span> <span class="o">=&gt;</span> <span class="no">UbiquoJobs</span><span class="o">::</span><span class="no">Jobs</span><span class="o">::</span><span class="no">Base</span><span class="o">::</span><span class="no">STATES</span><span class="p">[</span><span class="ss">:instantiated</span><span class="p">],</span>
-          <span class="ss">:runner</span> <span class="o">=&gt;</span> <span class="n">runner</span>
-        <span class="p">})</span> <span class="k">if</span> <span class="n">job</span>
-      <span class="n">job</span>
-    <span class="k">end</span>
-  <span class="k">end</span>
-<span class="k">end</span></code></pre></figure>
-
-<p>The code is exactly the same as the default <tt>ActiveManager</tt> class, but the finder will take an extra parameter, <tt>'VeryLongJob'</tt>, to indicate that only the <tt>ActiveJob</tt> objects that are of the subclass <tt>VerylongJob</tt> should be taken.</p>
-<p>After that, you need to modify the task that calls the workers so it takes your manager, or create a new task that will run your manager. The default task that will
-start a worker looks as this:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">desc</span> <span class="s2">"Starts a new ubiquo worker"</span>
-<span class="n">task</span> <span class="ss">:start</span><span class="p">,</span> <span class="p">[</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:interval</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:environment</span><span class="p">]</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">|</span>
-  <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="ss">:sleep_time</span> <span class="o">=&gt;</span> <span class="n">args</span><span class="p">.</span><span class="nf">interval</span><span class="p">.</span><span class="nf">to_f</span>
-  <span class="p">}.</span><span class="nf">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="o">|</span> <span class="n">v</span><span class="p">.</span><span class="nf">blank?</span> <span class="p">}</span>
-  <span class="no">UbiquoWorker</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="nf">name</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
-<span class="k">end</span></code></pre></figure>
-
-<p>This uses a special configuration parameter to determine the manager to use. This configuration option is stored in <tt>Ubiquo::Config.context(:ubiquo_jobs)</tt>, the name of the configuration option is <tt>:job_manager_class</tt>, and takes the manager class as a value. So in order to create a task that will use your manager, you should create a new task like this one:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">desc</span> <span class="s2">"Starts a new ubiquo worker"</span>
-<span class="n">task</span> <span class="ss">:start_very_long_jobs</span><span class="p">,</span> <span class="p">[</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:interval</span><span class="p">]</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="ss">:environment</span><span class="p">]</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">|</span>
-  <span class="n">options</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="ss">:sleep_time</span> <span class="o">=&gt;</span> <span class="n">args</span><span class="p">.</span><span class="nf">interval</span><span class="p">.</span><span class="nf">to_f</span>
-  <span class="p">}.</span><span class="nf">delete_if</span> <span class="p">{</span> <span class="o">|</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="o">|</span> <span class="n">v</span><span class="p">.</span><span class="nf">blank?</span> <span class="p">}</span>
-  <span class="no">Ubiquo</span><span class="o">::</span><span class="no">Config</span><span class="p">.</span><span class="nf">context</span><span class="p">(</span><span class="ss">:ubiquo_jobs</span><span class="p">).</span><span class="nf">set</span><span class="p">(</span><span class="ss">:job_manager_class</span><span class="p">,</span> <span class="no">JobManagers</span><span class="o">::</span><span class="no">VeryLongJobManager</span><span class="p">)</span>
-  <span class="no">UbiquoWorker</span><span class="p">.</span><span class="nf">init</span><span class="p">(</span><span class="n">args</span><span class="p">.</span><span class="nf">name</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
-<span class="k">end</span></code></pre></figure>
-
-<p>Your should call this task like this (assuming it&#8217;s on the same namespace as the default task):</p>
-<p><code>
-rake ubiquo:worker:start_very_long_jobs[name,interval]
-</code></p>
 
         </div></li></ul>
   <div class="pagination">

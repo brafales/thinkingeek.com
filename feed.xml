@@ -1,4 +1,242 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2023-10-29T06:44:02+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Graphical notifications for long-running tasks</title><link href="https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/" rel="alternate" type="text/html" title="Graphical notifications for long-running tasks" /><published>2023-09-03T21:15:00+00:00</published><updated>2023-09-03T21:15:00+00:00</updated><id>https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh</id><content type="html" xml:base="https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/">&lt;p&gt;In my dayjob I often have to perform long-running tasks that do not require
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2023-12-27T15:45:35+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Locally testing API Gateway Docker based Lambdas</title><link href="https://thinkingeek.com/2023/12/24/testing-api-gateway-docker-lambdas/" rel="alternate" type="text/html" title="Locally testing API Gateway Docker based Lambdas" /><published>2023-12-24T00:00:00+00:00</published><updated>2023-12-24T00:00:00+00:00</updated><id>https://thinkingeek.com/2023/12/24/testing-api-gateway-docker-lambdas</id><content type="html" xml:base="https://thinkingeek.com/2023/12/24/testing-api-gateway-docker-lambdas/">&lt;p&gt;AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as &lt;a href=&quot;https://aws.amazon.com/amplify/&quot;&gt;AWS Amplify&lt;/a&gt; and the &lt;a href=&quot;https://www.serverless.com&quot;&gt;Serverless Framework&lt;/a&gt;, which will allow you to define your Lambda, your application code, and will provide tools that will package and provision, and then deploy those Lambdas (using &lt;a href=&quot;https://aws.amazon.com/cloudformation/&quot;&gt;CloudFormation&lt;/a&gt; under the hood). They also provide tools to locally run the functions for local testing, which is particularly useful if they are invoked using technologies such as &lt;a href=&quot;https://aws.amazon.com/api-gateway/&quot;&gt;API Gateway&lt;/a&gt;. Sometimes, however, especially if your organisation has adopted other Infrastructure as Code tools such as &lt;a href=&quot;https://www.terraform.io&quot;&gt;Terraform&lt;/a&gt;, you might want to just provision a function with simpler IaC tools, and keep the application deployment steps separate. Let us explore an alternative method to still be able to run and test API Gateway based Lambdas locally without the need to bring in big frameworks such as the ones mentioned earlier.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;We will make some assumptions before moving forward:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Our Lambda will be designed to be invoked by AWS API Gateway, using the &lt;a href=&quot;https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html&quot;&gt;Proxy Integration&lt;/a&gt;.&lt;/li&gt;
+  &lt;li&gt;Our Lambda will be Docker based.&lt;/li&gt;
+  &lt;li&gt;Our Lambda has already been provisioned by another tool, so our only concern here is how to locally build it and run it the same way any other client would do via API Gateway.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2&gt;Lambda code and Docker image&lt;/h2&gt;
+
+&lt;p&gt;Let us follow the &lt;a href=&quot;https://docs.aws.amazon.com/lambda/latest/dg/python-image.html&quot;&gt;AWS Documentation&lt;/a&gt; and write a very simple function in Python which we can use throughout this project.&lt;/p&gt;
+
+&lt;p&gt;The Python code for our handler will be straightforward:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;lambda_function.py&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;kn&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;json&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;handler&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;s&quot;&gt;&quot;isBase64Encoded&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;s&quot;&gt;&quot;statusCode&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;200&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;s&quot;&gt;&quot;body&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;json&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dumps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;
+        &lt;span class=&quot;s&quot;&gt;&quot;headers&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;content-type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;application/json&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This handler will simply return a 200 response code with the Lambda event as its body, in JSON format.&lt;/p&gt;
+
+&lt;p&gt;In order to package this function so that the AWS runtime can execute it, we will make use of the provided AWS base Docker image, and add our code to it (at the time of writing this article Python’s latest version was 3.12). The dockerfile below assumes that our code is written on a file named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda_function.py&lt;/code&gt; and that we have a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;requirements.txt&lt;/code&gt; file with our dependencies on it (in our case the file can be empty).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;dockerfile&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-docker&quot; data-lang=&quot;docker&quot;&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; public.ecr.aws/lambda/python:3.12&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Copy requirements.txt&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; requirements.txt ${LAMBDA_TASK_ROOT}&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Install the specified packages&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-r&lt;/span&gt; requirements.txt
+
+&lt;span class=&quot;c&quot;&gt;# Copy function code&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; lambda_function.py ${LAMBDA_TASK_ROOT}&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Set the CMD to your handler (could also be done as a parameter override outside of the Dockerfile)&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;CMD&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; [ &quot;lambda_function.handler&quot; ]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2&gt;Running and testing the Lambda function&lt;/h2&gt;
+
+&lt;p&gt;In order to test that this all works as expected, we need to build that Docker image and run it:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;docker build &lt;span class=&quot;nt&quot;&gt;-t&lt;/span&gt; docker-image:test &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt;
+docker run &lt;span class=&quot;nt&quot;&gt;-p&lt;/span&gt; 9000:8080 docker-image:test&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The above commands will do exactly that, and map the container port 8080 to the local port 9000.&lt;/p&gt;
+
+&lt;p&gt;As per the documentation, in order to test this function and see an HTTP response, it is not sufficient to just make an HTTP request to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;http://localhost:9000&lt;/code&gt;. If we were to do this, we would simply get back a 404 response. After all, our function could be triggered in the real world not just by HTTP requests but by many other events, such as a change to an S3 bucket, or a message being pulled from an SQS queue.&lt;/p&gt;
+
+&lt;p&gt;Behind the scenes, any invocation of a Lambda function eventually happens via an &lt;a href=&quot;https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda/client/invoke.html&quot;&gt;API call&lt;/a&gt;. When we make an HTTP request that is eventually served by a Lambda function, what is happening is that some other service (for example AWS API Gateway, or an AWS ALB) transforms that HTTP request into an event, then that event is passed to the Lambda &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Invoke&lt;/code&gt; method as a parameter, and the Lambda response gets mapped back to an HTTP response.&lt;/p&gt;
+
+&lt;p&gt;The AWS provided base Docker images already come with something called the &lt;em&gt;Runtime Interface Client&lt;/em&gt; which takes care of acting as that proxy for you, allowing the invocation of the function via an HTTP API call.&lt;/p&gt;
+
+&lt;p&gt;In order to get our local Lambda to reply with a response, this is what we need to do instead:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;curl &lt;span class=&quot;s2&quot;&gt;&quot;http://localhost:9000/2015-03-31/functions/function/invocations&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-d&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'{}'&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;This will invoke the Lambda with an empty event. If our Lambda is to be behind AWS API Gateway using a Proxy Integration, the real event it would receive would look like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;request_uri&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;request_headers&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;user-agent&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;curl/8.1.2&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;content-type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;application/json&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;accept&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;*/*&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;host&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;localhost:8000&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;request_method&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;GET&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;&quot;request_uri_args&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;In some cases testing our Lambda locally by carefully crafting curl commands with JSON payloads might be a good option, but sometimes it is necessary to be able to locally hit our Lambda just like we would do if we had the AWS API Gateway Proxy Integration in place. A good example of this might be if we want to test locally how our Lambda would interact with other services we are also running locally, such as a web browser making a GET HTTP request. This is where big footprint frameworks come in handy, since they have those tools built in.&lt;/p&gt;
+
+&lt;h2&gt;Kong API Gateway to the rescue&lt;/h2&gt;
+
+&lt;p&gt;An alternative way to gain the same behaviour we would get with frameworks such as Amplify or the Serverless Framework when it comes to testing Lambdas locally is to make use of an open source API Gateway tool called &lt;a href=&quot;https://konghq.com/products/kong-gateway&quot;&gt;Kong&lt;/a&gt;. Kong is a big API Gateway product and offers many features, but in a nutshell what it does is take an incoming HTTP Request, optionally transform it, send it to a downstream service, optionally transform the response, and send that back to the client. One of the many downstream services Kong supports out of the box through a plugin are AWS Lambda functions. One could argue that using something like Kong just to test our Lambda is no different than going the Framework route, however, there are a couple of things I find particularly relevant here:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Kong can be run via Docker, which we already need to package and run our Lambda. This means we do not have to install any new tool in our local setup.&lt;/li&gt;
+  &lt;li&gt;This solution allows us to keep our Lambda setup small and simple, and we are not forced to follow any Framework ways of organising our source code.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;So our final setup is going to look like this:&lt;/p&gt;
+
+&lt;figure&gt;
+    &lt;img src=&quot;/assets/images/lambda-kong.png&quot; alt=&quot;Life cycle of an HTTP request in our solution&quot; /&gt;
+    &lt;figcaption&gt;
+The HTTP request will be sent to Kong, then Kong will transform that request into a Lambda API call, the Lambda will receive that call with an HTTP event, and will respond with a JSON payload, which Kong will transform again and send back to the HTTP client.
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;In order for this to work, we need to configure Kong to proxy HTTP requests to our Lambda. We can do this by using a declarative configuration that uses the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;aws-lambda&lt;/code&gt; plugin on the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/&lt;/code&gt; route.&lt;/p&gt;
+
+&lt;p&gt;We can achieve this using this &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kong.yml&lt;/code&gt; configuration file:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;kong.yml&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;na&quot;&gt;_format_version&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;3.0&quot;&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;_transform&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;routes&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;paths&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;pi&quot;&gt;[&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;/&quot;&lt;/span&gt; &lt;span class=&quot;pi&quot;&gt;]&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;plugins&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+&lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;route&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;aws-lambda&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;config&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;aws_region&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;eu-west-1&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;aws_key&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;DUMMY_KEY&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;aws_secret&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;DUMMY_SECRET&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;function_name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;function&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;host&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;port&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;8080&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;disable_https&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;forward_request_body&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;forward_request_headers&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;forward_request_method&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;forward_request_uri&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;is_proxy_integration&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;true&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;A few things worth mentioning:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;aws_key&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;aws_secret&lt;/code&gt; are mandatory for the plugin to work, however we do not need to put any real secrets in there, since the invocation will happen locally.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;function_name&lt;/code&gt; should stay hardcoded as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;function&lt;/code&gt;, as this is the name the Runtime Interface Client uses by default.&lt;/li&gt;
+  &lt;li&gt;The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;host&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;port&lt;/code&gt; values there should point to your local docker container running the Lambda function. In our case we use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;8080&lt;/code&gt; as we will run all this solution in a single Docker Compose setup where the Lambda runs in a container named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;We need to set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;disable_https&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;true&lt;/code&gt; as our Lambda container is not able to handle SSL.&lt;/li&gt;
+  &lt;li&gt;The rest of the configuration options can be tweaked depending on our specific needs. They are all &lt;a href=&quot;https://docs.konghq.com/hub/kong-inc/aws-lambda/&quot;&gt;documented in the Kong website&lt;/a&gt;. The values shown here will work for an AWS Lambda Proxy Integration setup using AWS API Gateway, but the Kong plugin supports other types of integrations.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2&gt;Putting it all together&lt;/h2&gt;
+
+&lt;p&gt;So far we have built a Docker based Lambda function and we are able to run it locally. We have also seen how to configure Kong API Gateway to proxy HTTP requests to that function. We will now look at what a Docker Compose setup might look like to run it all in a single project and command.&lt;/p&gt;
+
+&lt;p&gt;The full source code for this can be found in &lt;a href=&quot;https://github.com/brafales/docker-lambda-kong&quot;&gt;brafales/docker-lambda-kong&lt;/a&gt;. I recommend checking it out to see the whole project structure.&lt;/p&gt;
+
+&lt;p&gt;We will assume we have the following folders in our root:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda&lt;/code&gt;: here we will store the Lambda function source code and its Dockerfile.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kong&lt;/code&gt;: here we will store the declarative configuration for Kong which will allow us to set it up as a proxy for our function.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And then in the root we can have our &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;docker-compose.yml&lt;/code&gt; file:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;docker-compose.yml&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;na&quot;&gt;services&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;lambda&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;build&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;container_name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;networks&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda-example&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;kong&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;image&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;kong:latest&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;container_name&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;kong&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;ports&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;8000:8000&quot;&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;environment&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;KONG_DATABASE&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;off&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;KONG_DECLARATIVE_CONFIG&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/usr/local/kong/declarative/kong.yml&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;volumes&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;./kong:/usr/local/kong/declarative&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;networks&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+      &lt;span class=&quot;pi&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;lambda-example&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;networks&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;na&quot;&gt;lambda-example&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This file does the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Creates a docker network called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda-example&lt;/code&gt;. This is optional since the default network created by compose would work equally well.&lt;/li&gt;
+  &lt;li&gt;It defines a Docker container named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda&lt;/code&gt; and instructs compose to build it using the contents of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lambda&lt;/code&gt; folder.&lt;/li&gt;
+  &lt;li&gt;It defines a Docker container named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kong&lt;/code&gt;, using the Docker image &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kong:latest&lt;/code&gt;, and mapping our &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kong&lt;/code&gt; folder to the container path &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/usr/local/kong/declarative&lt;/code&gt;. This will allow the container to read our declarative config file, which we set as an environment variable &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;KONG_DECLARATIVE_CONFIG&lt;/code&gt;. We also set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;KONG_DATABASE&lt;/code&gt; to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;off&lt;/code&gt; to instruct Kong not to search for a database to read its config from, and finally map the container port &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;8000&lt;/code&gt; to our localhost port &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;8000&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;With all this in place, we can now simply run the following command to spin it all up:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker compose up
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Once all is up and running, we can now reach our Lambda function using curl or any other HTTP client like we would normally do if it was deployed to AWS behind an API Gateway:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;➜ curl -s localhost:8000 | jq .
+{
+  &quot;request_method&quot;: &quot;GET&quot;,
+  &quot;request_body&quot;: &quot;&quot;,
+  &quot;request_body_args&quot;: {},
+  &quot;request_uri&quot;: &quot;/&quot;,
+  &quot;request_headers&quot;: {
+    &quot;user-agent&quot;: &quot;curl/8.1.2&quot;,
+    &quot;host&quot;: &quot;localhost:8000&quot;,
+    &quot;accept&quot;: &quot;*/*&quot;
+  },
+  &quot;request_body_base64&quot;: true,
+  &quot;request_uri_args&quot;: {}
+}
+
+➜ curl -s -X POST localhost:8000/ | jq .
+{
+  &quot;request_method&quot;: &quot;POST&quot;,
+  &quot;request_body&quot;: &quot;&quot;,
+  &quot;request_body_args&quot;: {},
+  &quot;request_uri&quot;: &quot;/&quot;,
+  &quot;request_headers&quot;: {
+    &quot;user-agent&quot;: &quot;curl/8.1.2&quot;,
+    &quot;host&quot;: &quot;localhost:8000&quot;,
+    &quot;accept&quot;: &quot;*/*&quot;
+  },
+  &quot;request_body_base64&quot;: true,
+  &quot;request_uri_args&quot;: {}
+}
+
+➜ curl -s  localhost:8000/?foo=bar | jq .
+{
+  &quot;request_method&quot;: &quot;GET&quot;,
+  &quot;request_body&quot;: &quot;&quot;,
+  &quot;request_body_args&quot;: {},
+  &quot;request_uri&quot;: &quot;/?foo=bar&quot;,
+  &quot;request_headers&quot;: {
+    &quot;user-agent&quot;: &quot;curl/8.1.2&quot;,
+    &quot;host&quot;: &quot;localhost:8000&quot;,
+    &quot;accept&quot;: &quot;*/*&quot;
+  },
+  &quot;request_body_base64&quot;: true,
+  &quot;request_uri_args&quot;: {
+    &quot;foo&quot;: &quot;bar&quot;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;</content><author><name>Bernat Ràfales</name></author><summary type="html">AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as AWS Amplify and the Serverless Framework, which will allow you to define your Lambda, your application code, and will provide tools that will package and provision, and then deploy those Lambdas (using CloudFormation under the hood). They also provide tools to locally run the functions for local testing, which is particularly useful if they are invoked using technologies such as API Gateway. Sometimes, however, especially if your organisation has adopted other Infrastructure as Code tools such as Terraform, you might want to just provision a function with simpler IaC tools, and keep the application deployment steps separate. Let us explore an alternative method to still be able to run and test API Gateway based Lambdas locally without the need to bring in big frameworks such as the ones mentioned earlier.</summary></entry><entry><title type="html">Graphical notifications for long-running tasks</title><link href="https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/" rel="alternate" type="text/html" title="Graphical notifications for long-running tasks" /><published>2023-09-03T21:15:00+00:00</published><updated>2023-09-03T21:15:00+00:00</updated><id>https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh</id><content type="html" xml:base="https://thinkingeek.com/2023/09/03/remote-notifications-over-ssh/">&lt;p&gt;In my dayjob I often have to perform long-running tasks that do not require
 constant attention (e.g. compiling a compiler) on Linux systems. When this
 happens, it is unavoidable to context switch to other tasks even if experts
 advice against it.  Turns out that compilation scrolls are not always very
@@ -4329,367 +4567,4 @@ the multiplication result, into &lt;code class=&quot;language-plaintext highligh
 
 &lt;p&gt;And this is all for this installment. In the next one we will make enough
 changes to the compiler so we can convince the existing loop vectorizer of LLVM
-that it can vectorize some simple codes in VFPv2.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">We finished the last installment of this series mentioning that the compiler cannot copy, load or store a vector. Today we will address this.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 6</title><link href="https://thinkingeek.com/2021/07/11/raspberry-vectors-part-6/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 6" /><published>2021-07-11T20:10:00+00:00</published><updated>2021-07-11T20:10:00+00:00</updated><id>https://thinkingeek.com/2021/07/11/raspberry-vectors-part-6</id><content type="html" xml:base="https://thinkingeek.com/2021/07/11/raspberry-vectors-part-6/">&lt;p&gt;There is an issue we have mentioned several times in earlier installments: the
-value of the vector length at function boundaries. This is, when entering or
-leaving a function. We will address this question today.&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;h1&gt;Calling convention&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://developer.arm.com/documentation/ihi0042/j&quot;&gt;Arm Procedure Call
-Standard&lt;/a&gt; specifies how
-parameters are passed in function calls. Also the convention specifies
-other details, like the state registers upon entering a function. One of the
-details it specifies is the value of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt;.&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;The length bits (16-18) must be 0b100 when using M-profile Vector Extension,
-0b000 when using VFP vector mode and otherwise preserved across a public
-interface.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;So, in order to interface correctly with other functions we need to make sure
-the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; field is set to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt; when calling a function. We will achieve this
-using the following approach&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; that sets &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to 0 will be emitted prior a function call&lt;/li&gt;
-  &lt;li&gt;a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; that sets &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to 0 will be emitted before returning from a function&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;We will do this in SelectionDAG. The optimisation we implemented in the last
-chapter should be able to remove all the redundant cases.&lt;/p&gt;
-
-&lt;h1&gt;Changes in SelectionDAG&lt;/h1&gt;
-
-&lt;p&gt;In order to implement this in SelectionDAG, the easiest approach is to create
-a new target-specific SelectionDAG node.&lt;/p&gt;
-
-&lt;p&gt;We do that by first declaring a new enumerator of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;NodeType&lt;/code&gt; enum, in
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISelLowering.h&lt;/code&gt;. We will call it &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENZERO&lt;/code&gt; and its purpose
-will be exclusively setting &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to 0.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMISelLowering.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -312,6 +312,9 @@&lt;/span&gt;
-     CSNEG, // Conditional select negate.
-     CSINC, // Conditional select increment.
- 
-&lt;span class=&quot;gi&quot;&gt;+    // VFP2
-+    VFPSETLENZERO,
-+
-&lt;/span&gt;     // Vector load N-element structure to all lanes:
-     VLD1DUP = ISD::FIRST_TARGET_MEMORY_OPCODE,
-     VLD2DUP,&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now we can define the tablegen node itself. This is done in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMInstrVFP.td&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMInstrVFP.td&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -32,6 +32,9 @@&lt;/span&gt;
- def arm_vmovhr : SDNode&amp;lt;&quot;ARMISD::VMOVhr&quot;, SDT_VMOVhr&amp;gt;;
- def arm_vmovrh : SDNode&amp;lt;&quot;ARMISD::VMOVrh&quot;, SDT_VMOVrh&amp;gt;;
- 
-&lt;span class=&quot;gi&quot;&gt;+def arm_vfpsetlenzero : SDNode&amp;lt;&quot;ARMISD::VFPSETLENZERO&quot;, SDTNone,
-+                               [SDNPHasChain]&amp;gt;;
-+
-&lt;/span&gt; //===----------------------------------------------------------------------===//
- // Pseudos VFP database.
- //&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This definition in tablegen defines a new record named &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;arm_vfpsetlenzero&lt;/code&gt; of
-type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SDNode&lt;/code&gt;. This class needs a few parameters: the enumerator we declared
-above in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISelLowering.h&lt;/code&gt;, a prototype of the node and a list of attributes. The
-prototype of the node allows specifying what operands and what values returns a
-node. In our case &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;arm_vfpsetlenzero&lt;/code&gt; will not receive any parameter not return
-anything so we can use the predefined prototype for this case, called
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SDTNone&lt;/code&gt;. The only attribute we have is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SDNPHasChain&lt;/code&gt; which means the node
-has a chain.&lt;/p&gt;
-
-&lt;p&gt;A chain is one of the three dependence kinds that SelectionDAG nodes can
-represent: data flow (called &lt;em&gt;normal values&lt;/em&gt;, this is operands and results of a
-node modelling some operation), control flow (chain, used for things like
-memory accesses or other dependences that are unrelated to data but to
-operation ordering), and scheduling-dependences (called &lt;em&gt;glue&lt;/em&gt;, used for things
-like CPU flags).  Dependences are important when the output SelectionDAG is
-linearised into &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MachineInstr&lt;/code&gt;s because they determine a valid order. When a
-SelectionDAG node has chain, it has an input and an output chain.&lt;/p&gt;
-
-&lt;p&gt;We still need to make one final change in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISelLowering.cpp&lt;/code&gt; so we can print
-the name of the node (used for debugging).&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMISelLowering.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -1840,6 +1840,7 @@&lt;/span&gt; const char *ARMTargetLowering::getTargetNodeName(unsigned Opcode) const {
-     MAKE_CASE(ARMISD::CSINC)
-     MAKE_CASE(ARMISD::MEMCPYLOOP)
-     MAKE_CASE(ARMISD::MEMSETLOOP)
-&lt;span class=&quot;gi&quot;&gt;+    MAKE_CASE(ARMISD::VFPSETLENZERO)
-&lt;/span&gt; #undef MAKE_CASE
-   }
-   return nullptr;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h1&gt;Lowering&lt;/h1&gt;
-
-&lt;p&gt;We have to change two locations in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISelLowering.cpp&lt;/code&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMTargetLowering::LowerCall&lt;/code&gt; which deals with calls functions. We will
-add a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENZERO&lt;/code&gt; right before the lowering of a function call.&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMTargetLowering::LowerReturn&lt;/code&gt; which deals with lowering a function. We will
-add a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLENZERO&lt;/code&gt; very early in the return node.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;In both places the code is the same.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMISelLowering.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -2386,6 +2387,10 @@&lt;/span&gt; ARMTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &amp;amp;CLI,
-       AFI-&amp;gt;setArgRegsSaveSize(-SPDiff);
-   }
- 
-&lt;span class=&quot;gi&quot;&gt;+  if (Subtarget-&amp;gt;hasVFP2Base()) {
-+    Chain = DAG.getNode(ARMISD::VFPSETLENZERO, dl, MVT::Other, Chain);
-+  }
-+
-&lt;/span&gt;   if (isSibCall) {
-     // For sibling tail calls, memory operands are available in our caller's stack.
-     NumBytes = 0;
-&lt;span class=&quot;p&quot;&gt;@@ -3116,6 +3121,10 @@&lt;/span&gt; ARMTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
-     DAG.getContext()-&amp;gt;diagnose(Diag);
-   }
- 
-&lt;span class=&quot;gi&quot;&gt;+  if (Subtarget-&amp;gt;hasVFP2Base()) {
-+    Chain = DAG.getNode(ARMISD::VFPSETLENZERO, dl, MVT::Other, Chain);
-+  }
-+
-&lt;/span&gt;   // Copy the result values into the output registers.
-   for (unsigned i = 0, realRVLocIdx = 0;
-        i != RVLocs.size();&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;We create an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;arm_vfpsetlenzero&lt;/code&gt; in C++ using its enumerator
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISD::VFPSETLENZERO&lt;/code&gt;. It only returns a chain which has type &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MVT::Other&lt;/code&gt;
-and receives an input &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Chain&lt;/code&gt;. The new node is the previous chain that will
-be used in later nodes.&lt;/p&gt;
-
-&lt;h2&gt;Initial DAG&lt;/h2&gt;
-
-&lt;p&gt;Now we can do a first experiment and see how the SelectionDAG looks like. Let’s
-consider the following LLVM IR.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.ll&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;declare&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;call&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
-  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
-  &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - test.ll &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-      &lt;span class=&quot;nt&quot;&gt;-debug-only&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;isel&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This will crash because we are still missing a few bits, but we can look
-at the initial SelectionDAG.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;Initial selection DAG: %bb.0 'test_vec:'
-SelectionDAG has 33 nodes:
-  t0: ch = EntryToken
-  t7: i32 = GlobalAddress&amp;lt;void (i32, i32)* @foo&amp;gt; 0
-    t10: ch = ARMISD::VFPSETLENZERO t0
-  t12: ch,glue = callseq_start t10, TargetConstant:i32&amp;lt;0&amp;gt;, TargetConstant:i32&amp;lt;0&amp;gt;
-  t14: i32,ch = CopyFromReg t12, Register:i32 $sp
-  t16: ch,glue = CopyToReg t12, Register:i32 $r0, Constant:i32&amp;lt;1&amp;gt;
-  t18: ch,glue = CopyToReg t16, Register:i32 $r1, Constant:i32&amp;lt;3&amp;gt;, t16:1
-  t21: ch,glue = ARMISD::CALL t18, TargetGlobalAddress:i32&amp;lt;void (i32, i32)* @foo&amp;gt; 0, Register:i32 $r0, Register:i32 $r1, RegisterMask:Untyped, t18:1
-  t23: ch,glue = callseq_end t21, TargetConstant:i32&amp;lt;0&amp;gt;, TargetConstant:i32&amp;lt;-1&amp;gt;, t21:1
-  t24: i32 = Constant&amp;lt;0&amp;gt;
-    t2: i32,ch = CopyFromReg t0, Register:i32 %0
-  t26: v2f64,ch = load&amp;lt;(load 16 from %ir.pa, align 8)&amp;gt; t23, t2, undef:i32
-    t4: i32,ch = CopyFromReg t0, Register:i32 %1
-  t27: v2f64,ch = load&amp;lt;(load 16 from %ir.pb, align 8)&amp;gt; t23, t4, undef:i32
-        t29: ch = TokenFactor t26:1, t27:1
-        t28: v2f64 = fadd t26, t27
-        t6: i32,ch = CopyFromReg t0, Register:i32 %2
-      t30: ch = store&amp;lt;(store 16 into %ir.pc, align 8)&amp;gt; t29, t28, t6, undef:i32
-    t31: ch = ARMISD::VFPSETLENZERO t30
-  t32: ch = ARMISD::RET_FLAG t31
-&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If you check lines 5 and 21 you will see the new node. You will see each one
-receives a chain &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t0&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t30&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t0&lt;/code&gt; is the initial chain of the basic block
-and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISD::VFPSETLENZERO&lt;/code&gt; has an output chain called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t10&lt;/code&gt; which is the inptu
-chain of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;callseq_start&lt;/code&gt;, a node used to signal the beginning of a function
-call. We basically set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;len&lt;/code&gt; to zero right before starting the function call
-sequence.&lt;/p&gt;
-
-&lt;p&gt;Similarly, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t30&lt;/code&gt; is the input chain for the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISDF::VFPSETLENZERO&lt;/code&gt; that we
-emit right before returning. The return in ARM is represented using the node
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISD::RET_FLAG&lt;/code&gt;. The input chain of that node is exactly &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;t31&lt;/code&gt; which is the
-output chain of this second &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISD::VFPSETLENZERO&lt;/code&gt;.&lt;/p&gt;
-
-&lt;h2&gt;Selection&lt;/h2&gt;
-
-&lt;p&gt;As I mentioned, the initial test above crashes. At this stage, LLVM does not
-know how to select this input SelectionDAG node &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMISD::VFPSETLENZERO&lt;/code&gt; into an
-output SelectionDAG node. So we have to tell LLVM how to do that.&lt;/p&gt;
-
-&lt;p&gt;The easiest way is to add a pattern. A suitable place is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ARMInstrVFP.td&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;def : Pat&amp;lt;(arm_vfpsetlenzero), (VFPSETLEN 0)&amp;gt;;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;However, there is a minor issue. When the output SelectionDAG has been
-scheduled, the creation of machine instructions (done by InstrEmitter) will set
-the implicit &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Defs&lt;/code&gt; to &lt;em&gt;dead&lt;/em&gt; (meaning that nobody uses the value set there).
-This means that this pattern will generate a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MachineInstr&lt;/code&gt; like this&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;  %20:gpr, %21:gprnopc = VFPSETLEN 0, implicit-def dead $fpscr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This confuses later passes in the LLVM pipeline and causes wrong code
-generation. There are reasons why SelectionDAG does this. In fact, there is a
-number of situations in which InstrEmitter will not mark implicit definitions
-as dead, but this is not one of them. Luckily we can do a final fixup of an
-instruction after it has been emitted.&lt;/p&gt;
-
-&lt;p&gt;To do that we first need to change the definition of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMInstrVFP.td&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -2928,7 +2927,8 @@&lt;/span&gt; let Defs = [FPSCR],
-     hasNoSchedulingInfo = 1,
-     mayLoad = 0,
-     mayStore = 0,
-&lt;span class=&quot;gd&quot;&gt;-    hasSideEffects = 0 in
-&lt;/span&gt;&lt;span class=&quot;gi&quot;&gt;+    hasSideEffects = 0,
-+    hasPostISelHook = 1 in
-&lt;/span&gt; def VFPSETLEN : PseudoInst&amp;lt;(outs GPR:$scratch1, GPRnopc:$scratch2),
-                            (ins imm0_7:$len),
-                            IIC_fpSTAT, []&amp;gt;,&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Now InstrEmitter will call a function called &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;AdjustInstrPostInstrSelection&lt;/code&gt;
-after it has created the machine instruction. Let’s handle the
-instruction there and make sure the implicit operand is never dead.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMISelLowering.cpp&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;&lt;span class=&quot;p&quot;&gt;@@ -12030,6 +12029,14 @@&lt;/span&gt; void ARMTargetLowering::AdjustInstrPostInstrSelection(MachineInstr &amp;amp;MI,
-     return;
-   }
- 
-&lt;span class=&quot;gi&quot;&gt;+  if (MI.getOpcode() == ARM::VFPSETLEN) {
-+      // fpscr is never dead.
-+      MachineOperand &amp;amp;MO = MI.getOperand(3);
-+      assert(MO.isImplicit() &amp;amp;&amp;amp; &quot;This is not an implicit operand&quot;);
-+      MO.setIsDead(false);
-+      return;
-+  }
-+
-&lt;/span&gt;   const MCInstrDesc *MCID = &amp;amp;MI.getDesc();
-   // Adjust potentially 's' setting instructions after isel, i.e. ADC, SBC, RSB,
-   // RSC. Coming out of isel, they have an implicit CPSR def, but the optional&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This will make the above machine instruction look like this.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-plaintext&quot; data-lang=&quot;plaintext&quot;&gt;  %20:gpr, %21:gprnopc = VFPSETLEN 0, implicit-def $fpscr&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;h1&gt;Results&lt;/h1&gt;
-
-&lt;p&gt;Now we can see what is the output of our &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;test.ll&lt;/code&gt; above with and without
-optimisation. The first &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt; can be removed.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;diff &lt;span class=&quot;nt&quot;&gt;-U1000&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-                       &lt;span class=&quot;nt&quot;&gt;-arm-optimize-vfp2-disable&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - test.ll&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;        &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-                 &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-                       &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - test.ll&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt; @ %bb.0:
- 	push	{r4, r5, r6, lr}
- 	mov	r5, r1
-&lt;span class=&quot;gd&quot;&gt;-	vmrs	r1, fpscr
-&lt;/span&gt; 	mov	r6, r0
- 	mov	r0, #1
-&lt;span class=&quot;gd&quot;&gt;-	mov	r4, r2
--	bic	r1, r1, #458752
--	vmsr	fpscr, r1
-&lt;/span&gt; 	mov	r1, #3
-&lt;span class=&quot;gi&quot;&gt;+	mov	r4, r2
-&lt;/span&gt; 	bl	foo
- 	vldmia	r5, {d4, d5}
- 	mov	r0, #65536
- 	vldmia	r6, {d6, d7}
- 	vmrs	r1, fpscr
- 	bic	r1, r1, #458752
- 	orr	r1, r1, r0
- 	vmsr	fpscr, r1
- 	vadd.f64	d4, d6, d4
- 	vstmia	r4, {d4, d5}
- 	vmrs	r1, fpscr
- 	bic	r1, r1, #458752
- 	vmsr	fpscr, r1
- 	pop	{r4, r5, r6, pc}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;If we move the call right before the return, this time the final &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;VFPSETLEN&lt;/code&gt;
-can be removed.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test-2.ll&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-llvm&quot; data-lang=&quot;llvm&quot;&gt;&lt;span class=&quot;k&quot;&gt;declare&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;define&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@test_vec&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pa&lt;/span&gt;
-  &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;load&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;*&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%pb&lt;/span&gt;
-  &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fadd&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%b&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;store&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;%c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;double&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;%pc&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;call&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;vg&quot;&gt;@foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;i32&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;diff &lt;span class=&quot;nt&quot;&gt;-U1000&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-                       &lt;span class=&quot;nt&quot;&gt;-arm-optimize-vfp2-disable&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - test-2.ll&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;        &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-                 &amp;lt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
-                       &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - test-2.ll&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt; test_vec:
- 	.fnstart
- @ %bb.0:
- 	push	{r11, lr}
- 	vldmia	r0, {d6, d7}
- 	mov	r0, #65536
- 	vldmia	r1, {d4, d5}
- 	vmrs	r1, fpscr
- 	bic	r1, r1, #458752
- 	orr	r1, r1, r0
- 	mov	r0, #1
- 	vmsr	fpscr, r1
- 	vadd.f64	d4, d6, d4
- 	vstmia	r2, {d4, d5}
- 	vmrs	r1, fpscr
- 	bic	r1, r1, #458752
- 	vmsr	fpscr, r1
- 	mov	r1, #3
- 	bl	foo
--	vmrs	r1, fpscr
--	bic	r1, r1, #458752
--	vmsr	fpscr, r1
- 	pop	{r11, pc}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;However, if we move the call to some other position the backend crashes. The
-reason is that the compiler wants to preserve the value of the vector registers
-that are live across the call. To do this it needs to store the vector register
-onto the stack, but it does not know how to do that.&lt;/p&gt;
-
-&lt;p&gt;In the next installment we will teach the compiler to &lt;em&gt;spill&lt;/em&gt;, &lt;em&gt;reload&lt;/em&gt; and
-&lt;em&gt;copy&lt;/em&gt; vector registers.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">There is an issue we have mentioned several times in earlier installments: the value of the vector length at function boundaries. This is, when entering or leaving a function. We will address this question today.</summary></entry></feed>
+that it can vectorize some simple codes in VFPv2.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">We finished the last installment of this series mentioning that the compiler cannot copy, load or store a vector. Today we will address this.</summary></entry></feed>

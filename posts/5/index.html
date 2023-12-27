@@ -64,6 +64,38 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2020/06/20/forgotten-memories-1/">Forgotten memories (1)</a></h1>
+
+          <p class="post-meta">
+            Jun 20, 2020 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/compilers/">compilers</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/risc-v/">risc-v</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>Most compiler infrastructures that target register machines do it by using the
+concept of <em>virtual registers</em>. In their intermediate representations instructions
+use virtual registers to represent their operands.</p>
+
+<p>Because hardware is finite, these virtual registers must be mapped to physical
+registers at some point. The compiler does this in a process called <a href="https://en.wikipedia.org/wiki/Register_allocation"><em>register
+allocation</em></a>.</p>
+
+<p>Being physical registers finite, it may happen that not all the virtual
+registers used by the program can be held in physical registers at the same
+time. When this happens, the compiler must emit <em>spill code</em>. Spill code stores
+a value in a memory (<em>spill</em>) and loads it later, often close to the point of
+use (<em>reload</em>).</p>
+
+<p>The memory used for spill code is commonly the <em>function stack</em>. However
+nothing prevents us from using other kinds of “memories” as long as we can
+guarantee that nobody is going to use them. This is exactly the kind of
+experiment we will do today: we’re going to spill general-purpose registers
+into floating-point registers.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2020/06/20/forgotten-memories-1/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2020/06/06/local-domain-and-dhcp-with-dnsmasq/">Create your own local domain and DHCP with dnsmasq</a></h1>
 
           <p class="post-meta">
@@ -133,28 +165,6 @@ hosts trusting SSH users.</p>
 
         </div><p class="post-continue">
             <a href="/2018/12/22/walk-through-flang-part-8/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2018/10/05/serverless-framework-a-small-example/">Serverless framework: a small example</a></h1>
-
-          <p class="post-meta">
-            Oct 5, 2018 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/aws/">aws</a>, <a href="/tags/go/">go</a>, <a href="/tags/serverless/">serverless</a></p>
-        </header>
-
-        <div class="post-content">
-          <h2>Use case</h2>
-
-<p>I've been willing to give the <a href="https://www.serverless.com/">serverless framework</a> a try for a while, and recently I came up with a small side project that was a potential good fit for it.</p>
-
-<p>I am a <a href="https://monzo.com/">Monzo</a> user, and I use their card to pay for things like my weekday lunches around the office or my travel expenses like Oyster Card top ups. I also happen to be a user of <a href="https://toshl.com/">Toshl</a>, which helps me with my personal finances and budgets.</p>
-
-<p>Typically, whenever my Oyster card gets topped up or I pay for a lunch in a restaurant, I then input that expense into Toshl. But turns out both Monzo and Toshl are developer friendly, so I thought I could easily automate that process by having a system that would get certain Monzo expenses directly into Toshl for me, saving me a few seconds per day.</p>
-
-<p>A serverless approach was ideal for this, especially since AWS offers a free tier for its services, meaning this would also not cost me a penny.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2018/10/05/serverless-framework-a-small-example/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     

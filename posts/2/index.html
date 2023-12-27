@@ -64,6 +64,27 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2022/01/03/ssh-and-socks/">OpenSSH as a SOCKS server</a></h1>
+
+          <p class="post-meta">
+            Jan 3, 2022 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/tags/socks/">SOCKS</a>, <a href="/tags/proxy/">proxy</a>, <a href="/tags/ssh/">ssh</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>Sometimes we are given access via ssh to nodes that do not have, for policy or
+technical reasons, access to the internet (i.e. they cannot make outbound
+connections).  Depending on the policies, we may be able to open reverse SSH
+tunnels, so things are not so bad.</p>
+
+<p>Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated.
+This is probably a well known feature of OpenSSH but I thought it was
+interesting to share how it can be used.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2022/01/03/ssh-and-socks/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2021/12/31/using-distcc-in-a-cluster/">Distributed compilation in a cluster</a></h1>
 
           <p class="post-meta">
@@ -128,22 +149,6 @@ cannot copy, load or store a vector. Today we will address this.</p>
 
         </div><p class="post-continue">
             <a href="/2021/07/31/raspberry-vectors-part-7/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2021/07/11/raspberry-vectors-part-6/">Fun with vectors in the Raspberry Pi 1 - Part 6</a></h1>
-
-          <p class="post-meta">
-            Jul 11, 2021 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>There is an issue we have mentioned several times in earlier installments: the
-value of the vector length at function boundaries. This is, when entering or
-leaving a function. We will address this question today.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2021/07/11/raspberry-vectors-part-6/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     

@@ -633,6 +633,10 @@
 <lastmod>2023-09-03T21:15:00+00:00</lastmod>
 </url>
 <url>
+<loc>https://thinkingeek.com/2023/12/24/testing-api-gateway-docker-lambdas/</loc>
+<lastmod>2023-12-24T00:00:00+00:00</lastmod>
+</url>
+<url>
 <loc>https://thinkingeek.com/archives/</loc>
 </url>
 <url>
@@ -1219,6 +1223,15 @@
 </url>
 <url>
 <loc>https://thinkingeek.com/categories/systemd/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/aws/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/lambda/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/docker/</loc>
 </url>
 <url>
 <loc>https://thinkingeek.com/posts/2/</loc>
