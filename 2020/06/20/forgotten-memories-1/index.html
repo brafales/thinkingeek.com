@@ -163,7 +163,7 @@ force the compiler to spill values. Even in an architecture whith a large
 number of registers like RISC-V, spilling (caused by register allocation) may
 be unavoidable.</p>
 
-<figure class="highlight"><figcaption>example.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>example.c</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -196,7 +196,7 @@ addresses based on the <code class="language-plaintext highlighter-rouge">sp</co
 <p>If we examine the assembly listing for this function, we first see a bunch of
 stores to the stack. Those are the spills caused by the callee-saved registers.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
 9
 10
 11
@@ -236,7 +236,7 @@ stores to the stack. Those are the spills caused by the callee-saved registers.<
 that are also spilled. Note that the spill here is just the <code class="language-plaintext highlighter-rouge">sd</code> instruction. The
 <code class="language-plaintext highlighter-rouge">addi</code> was part of the original program.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
 25
 26
 27
@@ -313,7 +313,7 @@ is a loop so it is going to be pointless only in the first iteration (i.e.
 these registers will be reused in the loop so we need to reload their value).
 The <code class="language-plaintext highlighter-rouge">ld</code> instruction is used to load a GPR from a memory location.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
 78
 79
 80
@@ -352,7 +352,7 @@ The <code class="language-plaintext highlighter-rouge">ld</code> instruction is 
 <p>If we go to the end of the function, we see the reloads of the callee-saved
 registers, right before returning.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
 468
 469
 470
@@ -432,7 +432,7 @@ the spills and reloads of callee-saved registers is called
 in <code class="language-plaintext highlighter-rouge">llvm/lib/Target/RISCV/RISCVFrameLowering.cpp</code>. To keep things a bit tidy I
 added the call here but I implemented the algorithm in another file.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVFrameLowering.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">569
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVFrameLowering.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">569
 570
 571
 572
@@ -490,7 +490,7 @@ can continue.</p>
 
 <p>Following is the main implementation file.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -561,7 +561,7 @@ declaration in that namespace first. We can add one in <code class="language-pla
 There are better ways to organise this code, this one is just simple and
 effective.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCV.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">50
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCV.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">50
 51
 52
 53
@@ -573,7 +573,7 @@ effective.</p>
 
 <p>Also we need to let know cmake about this new file.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/CMakeLists.txt</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">19
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/CMakeLists.txt</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">19
 20
 21
 22
@@ -626,7 +626,7 @@ code generation phase of LLVM. We get two kinds of objects, those that are
 are <code class="language-plaintext highlighter-rouge">Target</code><em>Something</em> are backend-specific information not necessarily
 function-specific (i.e. they might be shared between functions).</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">26
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">26
 27
 28
 29
@@ -668,7 +668,7 @@ target. We will need this to enumerate the FPR registers.</p>
 
 <p>A first check we can do now is see if this function has calls. <code class="language-plaintext highlighter-rouge">MFI</code> knows that.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">35
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">35
 36
 37
 38
@@ -683,7 +683,7 @@ target. We will need this to enumerate the FPR registers.</p>
 <p>Also if we are not compiling for F or D, we won’t be able to use the instruction
 we need, so check this as well.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">42
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">42
 43
 44
 45
@@ -722,7 +722,7 @@ register such as <code class="language-plaintext highlighter-rouge">f3</code> is
 instructions. So we iterate for each <a href="https://en.wikipedia.org/wiki/Basic_block">basic block</a>
 and then for each instruction.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
 52
 53
 54
@@ -756,7 +756,7 @@ don’t consider callee-saved registers.</p>
 <p><code class="language-plaintext highlighter-rouge">MRI</code> can tell us which are the callee-saved registers of the function. So we
 make a handy function for that.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">63
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">63
 64
 65
 66
@@ -776,7 +776,7 @@ make a handy function for that.</p>
 If they are available but they are not callee-saved, they are candidates for
 our spills. If no register is available, we just bail out.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
 72
 73
 74
@@ -807,7 +807,7 @@ instructions of the target.</p>
 
 <p>Let’s make first a convenient function.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">83
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">83
 84
 85
 86
@@ -867,7 +867,7 @@ are using.</p>
 <p>Now we can start mapping frame indexes to registers. To do that we define
 a mapping from frame indexes (represented as <code class="language-plaintext highlighter-rouge">unsigned</code>) and registers.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">107
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">107
 108
 </pre></td><td class="code"><pre>  <span class="k">using</span> <span class="n">FrameIndexToFPRTy</span> <span class="o">=</span> <span class="n">DenseMap</span><span class="o">&lt;</span><span class="kt">unsigned</span><span class="p">,</span> <span class="n">Register</span><span class="o">&gt;</span><span class="p">;</span>
   <span class="n">FrameIndexToFPRTy</span> <span class="n">FrameIndexToFPR</span><span class="p">;</span>
@@ -883,7 +883,7 @@ about, we should conservatively leave them alone. A way to achieve this is to
 map them first to <code class="language-plaintext highlighter-rouge">RISCV::NoRegister</code>. We can use the helper <code class="language-plaintext highlighter-rouge">IsSpillReload</code> we
 defined above to filter them.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">110
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">110
 111
 112
 113
@@ -935,7 +935,7 @@ map that frame index (<code class="language-plaintext highlighter-rouge">MO.getI
 FPRs. First we filter all the instructions that are not spills or reloads
 of our interest.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">132
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">132
 133
 134
 135
@@ -973,7 +973,7 @@ of our interest.</p>
 replace instructions as we find them so this loop should be resilient to
 changing the list of instructions of the basic block.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">149
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">149
 150
 151
 152
@@ -1028,7 +1028,7 @@ we remove it from the <code class="language-plaintext highlighter-rouge">Machine
 
 <p>Now we can make the mapping effective.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">172
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">172
 173
 174
 175
@@ -1046,7 +1046,7 @@ we remove it from the <code class="language-plaintext highlighter-rouge">Machine
 do the map. Basically we need to create a <code class="language-plaintext highlighter-rouge">fmv.d.x</code> (or <code class="language-plaintext highlighter-rouge">fmv.w.x</code>) instruction
 for spills and <code class="language-plaintext highlighter-rouge">fmv.x.d</code> (or <code class="language-plaintext highlighter-rouge">fmv.x.w</code>) for reloads.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">182
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVSoftenSpills.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">182
 183
 184
 185

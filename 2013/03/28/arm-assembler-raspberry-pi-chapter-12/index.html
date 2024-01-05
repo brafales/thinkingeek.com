@@ -290,7 +290,7 @@ adc r1, r2, r6</code></pre></figure>
 Let's package this code in a nice function in a program to see if it works. We will multiply numbers 12345678901 (this is 2×2<sup>32</sup> + 3755744309) and 12345678 and print the result.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -476,7 +476,7 @@ addr_number_b_high: .word number_b_high
 Observe first that we have the addresses of the lower and upper part of each number. Instead of this we could load them by just using an offset, as we saw in chapter 8. So, in lines 41 to 44 we could have done the following.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
 41
 42
 43

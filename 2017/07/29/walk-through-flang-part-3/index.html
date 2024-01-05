@@ -101,7 +101,7 @@ The parsing process is long and involved so in this chapter we will focus on the
 The main function of <code>flang1</code> is found in <code>flang/tools/flang1exe/main.c</code> and the function <code>init</code> is invoked to initialize the front end. If you wonder what <code>getcpu</code> does, you'll be a bit disappointed as the name is misleading: it is just a function to measure time (a stopwatch function).
 </p>
 
-<figure class="highlight"><figcaption>flang/tools/flang1exe/main.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1554
+<figure class="highlight"><figcaption>flang/tools/flang1exe/main.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1554
 1555
 1556
 1557
@@ -249,7 +249,7 @@ All Fortran keywords start with a letter and flang groups them in several catego
 Each keywords is represented using a <code>KWORD</code> type. The third field (<code>nonstandard</code>) does not seem used at least when the keywords are registered.
 </p>
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/kwddf.h</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">20
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/kwddf.h</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">20
 21
 22
 23
@@ -481,7 +481,7 @@ One of the operations that are needed when reading a statement is reading the ca
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">134
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">134
 135
 136
 137
@@ -529,7 +529,7 @@ The first thing both functions do when reading a card is to invoke <code>_readln
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">212
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">212
 213
 214
 </pre></td><td class="code"><pre> <span class="k">static</span> <span class="kt">char</span> <span class="n">cardb</span><span class="p">[</span><span class="n">CARDB_SIZE</span><span class="p">];</span> <span class="cm">/* buffer containing last card read
@@ -741,7 +741,7 @@ Returning the keyword found is done by jumping to the label <code>get_keyword</c
 <p>Note that the parameter <code>exact</code> is not used at all in this function.</p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">5964
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/scan.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">5964
 5965
 5966
 5967

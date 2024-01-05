@@ -133,7 +133,7 @@ address_of_number_2: .word number_2</code></pre></figure>
 
 <p>But if you run this you will get a rude <code>Segmentation fault</code>. We cannot actually modify <code>pointer_to_number</code> because, even if it is a location of memory that contains an address (and it would contain another address after the store) it is not in the <code>data</code> section, but in the <code>text</code> section. So this is a statically defined pointer, whose value (i.e. the address it contains) cannot change. So, how can we have a pointer that can change? Well, we will have to put it in the <code>data</code> section, where we usually put all the data of our program.</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -260,7 +260,7 @@ to the function (together with the length of the array if the length may not be 
 
 <p>Let’s make a function <code>sum_array_value</code> that must have the array of integers passed by value. The first parameter, in <code>r0</code> will be the number of items of the integer array. Registers <code>r1</code> to <code>r3</code> may (or may not) have value depending on the number of items in the array. So the first three elements must be handled differently. Then, if there are still items left, they must be loaded from the stack.</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -398,7 +398,7 @@ to the function (together with the length of the array if the length may not be 
 
 <p>In order to call this function we have to put an array into the stack. Consider the following program.</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -588,7 +588,7 @@ address_of_message : .word message
 
 <p>Consider the following program, which also sums an array of integers but now passing the array by reference.</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -733,7 +733,7 @@ then we use it to access the array and compute the sum. Much simpler, isn’t it
 
 <p>For a more elaborated example, let’s retake the array code but this time instead of computing the sum of all the values, we will multiply each item by two and keep it in the same array. To prove that we have modified it, we will also print each item.</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

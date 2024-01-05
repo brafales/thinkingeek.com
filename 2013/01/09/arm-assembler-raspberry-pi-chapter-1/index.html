@@ -116,7 +116,7 @@ Just open an editor like <code>vim</code>, <code>nano</code> or <code>emacs</cod
 We have to start with something, so we will start with a ridiculously simple program which does nothing but return an error code.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -140,7 +140,7 @@ Create a file called <code>first.s</code> and write the contents shown above. Sa
 To <i>assemble</i> the file type the following command (write what comes after <code>$ </code>).
 </p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 </pre></td><td class="code"><pre><span class="nv">$ </span>as <span class="nt">-o</span> first.o first.s
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -148,7 +148,7 @@ To <i>assemble</i> the file type the following command (write what comes after <
 This will create a <code>first.o</code>. Now link this file to get an executable.
 </p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 </pre></td><td class="code"><pre><span class="nv">$ </span>gcc <span class="nt">-o</span> first first.o
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -156,7 +156,7 @@ This will create a <code>first.o</code>. Now link this file to get an executable
 If everything goes as expected you will get a <code>first</code> file. This is your program. Run it.
 </p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 </pre></td><td class="code"><pre><span class="nv">$ </span>./first
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -164,7 +164,7 @@ If everything goes as expected you will get a <code>first</code> file. This is y
 It should do nothing. Yes, it is a bit disappointing, but it actually does something. Get its error code this time.
 </p>
 
-<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="nv">$ </span>./first <span class="p">;</span> <span class="nb">echo</span> <span class="nv">$?</span>
 2
@@ -178,7 +178,7 @@ Great! That error code of 2 is not by chance, it is due to that <code>#2</code> 
 Since running the assembler and the linker soon becomes boring, I'd recommend you using the following <code>Makefile</code> file instead or a similar one.
 </p>
 
-<figure class="highlight"><pre><code class="language-make" data-lang="make"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-make" data-lang="make"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -212,7 +212,7 @@ We cheated a bit just to make things a bit easier. We wrote a C <code>main</code
 Let's review every line of our minimal assembler file.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre>/* -- first.s */
 /* This is a comment */
@@ -222,7 +222,7 @@ Let's review every line of our minimal assembler file.
 These are comments. Comments are enclosed in <code>/*</code> and <code>*/</code>. Use them to document your assembler as they are ignored. As usually, do not nest <code>/*</code> and <code>*/</code> inside <code>/*</code> because it does not work.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3
 </pre></td><td class="code"><pre>.global main /* 'main' is our entry point and must be global */
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -230,7 +230,7 @@ These are comments. Comments are enclosed in <code>/*</code> and <code>*/</code>
 This is a directive for GNU Assembler. A directive tells GNU Assembler to do something special. They start with a dot (<code>.</code>) followed by the name of the directive and some arguments. In this case we are saying that <code>main</code> is a global name. This is needed because the C runtime will call <code>main</code>. If it is not global, it will not be callable by the C runtime and the linking phase will fail.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">5
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">5
 </pre></td><td class="code"><pre>main:          /* This is main */
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -238,7 +238,7 @@ This is a directive for GNU Assembler. A directive tells GNU Assembler to do som
 Every line in GNU Assembler that is not a directive will always be like <code>label: instruction</code>. We can omit <code>label:</code> and <code>instruction</code> (empty and blank lines are ignored). A line with only <code>label:</code>, applies that label to the next line (you can have more than one label referring to the same thing this way). The <code>instruction</code> part is the ARM assembler language itself. In this case we are just defining <code>main</code> as there is no instruction.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
 </pre></td><td class="code"><pre>    mov r0, #2 /* Put a 2 inside the register r0 */
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -253,7 +253,7 @@ This is the <code>mov</code> instruction which means <i>move</i>. We move a valu
 In summary, this instruction puts a <code>2</code> inside the register <code>r0</code> (this effectively overwrites whatever register <code>r0</code> may have at that point).
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">7
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">7
 </pre></td><td class="code"><pre>    bx lr      /* Return from main */
 </pre></td></tr></tbody></table></code></pre></figure>
 

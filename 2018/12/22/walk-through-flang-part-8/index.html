@@ -88,7 +88,7 @@ We can dump all the STDs passing <code>-Hq,5,2</code> to flang. Because the seco
 For instance, the function of the last chapter
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -141,7 +141,7 @@ Due to the long story of Fortran, the language has many colourful features that 
 Consider the following function that computes the absolute value of <code>A</code>
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -218,7 +218,7 @@ The AST 17 represents the <code>END IF</code> statement. It may come as a surpri
 Consider the following function that does an addition or a subtraction depending on a logical parameter.
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -271,7 +271,7 @@ Again we need to delimit the regions corresponding to the "then" and the "else" 
 Let's see what happens a more complex example:
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -349,7 +349,7 @@ aptr:   27</code></pre></figure>
 Fortran does not have a dedicated while statement but instead it is a special case of the <em>do-statement</em>. Consider the following program that computes the greater common divisor using the Euclid algorithm.
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -407,7 +407,7 @@ Take a moment to appreciate what flang did here. It introduced an artificial <em
 So flang has lowered the input above into something like this.
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -481,7 +481,7 @@ Because this syntax is a bit awkward in the current world of structured programm
 The good news are that flang will lower the non-block loops into block ones. Consider the following program that computes the sum of integers 1 to N.
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -535,7 +535,7 @@ Technically in the Fortran standard, <code>DO WHILE</code> and <code>DO</code> b
 There is a form of the <em>do-construct</em> that may never end. In practice, this is just a dated form of the <code>DO WHILE</code> because any sensible program written in Fortran will eventually terminate: this means there will be some check inside the loop body that will make the loop terminate. We can rewrite the Euclid algorithm above using this form. The <code>EXIT</code> statement causes the termination of the innermost enclosing loop.
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -610,7 +610,7 @@ If we look at the STDs of the code above we see that the <code>EXIT</code> state
 It is possible to "curtail" an iteration of a loop using the <code>CYCLE</code> statement. For instance, we use that statement to sum only the positive numbers of a given array.
 </p>
 
-<figure class="highlight"><figcaption>test.f90</figcaption><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -690,7 +690,7 @@ We are handling semantic actions. We know from previous chapters that they are s
 We will first encounter a <code>DO</code> token. Fortran allows some constructs to have non-numeric labels. These labels precede the keyword (<code>DO</code> in this case) and are followed by a colon. In this case there isn't any construct-name, so flang just remembers this fact.
 </p>
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2896
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2896
 2897
 2898
 2899
@@ -708,7 +708,7 @@ We will first encounter a <code>DO</code> token. Fortran allows some constructs 
 We mentioned earlier about non-block constructs, for those a label would follow the DO token. In this case no label follows it, so flang just remembers this fact too.
 </p>
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2887
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2887
 2888
 2889
 2890
@@ -726,7 +726,7 @@ We mentioned earlier about non-block constructs, for those a label would follow 
 What may follow a <code>&lt;do begin&gt;</code> in the flang parser parlance is called a <code>&lt;loop control&gt;</code> so we will recognise that first. A <code>&lt;loop control&gt;</code> includes several syntaxes but in this case our will be <code>&lt;dowhile&gt; &lt;etmp lp&gt; &lt;expression&gt; )</code>. So we need to first recognise a &lt;dowhile&gt;.
 </p>
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3108
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3108
 3109
 3110
 3111
@@ -785,7 +785,7 @@ Great, we semantically handled a &lt;dowhile&gt;. Now the next item is <code>&lt
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">531
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">531
 532
 533
 534
@@ -807,7 +807,7 @@ Basically this is bookkeeping used by the parser to mean "we may have to allocat
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3084
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">3084
 3085
 3086
 3087
@@ -837,7 +837,7 @@ Now a <code>&lt;loop control&gt;</code> has been recognized so we're done with t
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1832
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1832
 1833
 1834
 1835
@@ -857,7 +857,7 @@ The code above just keeps the AST of <code>&lt;loop control&gt;</code> (in our c
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1305
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1305
 1306
 1307
 1308
@@ -879,7 +879,7 @@ If you wonder about <code>&lt;nii&gt;</code> and <code>&lt;nim&gt;</code> above,
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1554
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant2.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1554
 1555
 1556
 1557
@@ -909,7 +909,7 @@ Ok, so what has happened is that now we have just added an <code>if-then-stateme
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1862
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1862
 1863
 1864
 1865
@@ -939,7 +939,7 @@ Here the construct name can be empty (and in our input it is). First we check if
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1873
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1873
 1874
 1875
 1876
@@ -977,7 +977,7 @@ Now we check if this <em>end-do-statement</em> actually finishes a <em>do-constr
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1889
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semant3.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1889
 </pre></td><td class="code"><pre>    <span class="n">do_end</span><span class="p">(</span><span class="n">doinfo</span><span class="p">);</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -987,7 +987,7 @@ The function <code>do_end</code> does a lot of things which are required upon co
 </p>
 
 
-<figure class="highlight"><figcaption>tools/flang1/flang1exe/semutil.c</figcaption><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6000
+<figure class="highlight"><figcaption>tools/flang1/flang1exe/semutil.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6000
 6001
 6002
 6003

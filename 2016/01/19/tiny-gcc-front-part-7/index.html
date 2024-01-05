@@ -86,7 +86,7 @@ A read statement is a bit like the dual of a write statement. We will implement 
 〈read〉&ensp;→&ensp;<code><strong>read</strong></code> 〈identifier〉 <code><strong>;</strong></code><br />
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -227,7 +227,7 @@ We then prepare the call to <code>scanf</code>, first we set the appropiate form
 Control statements are a bit more complicated than other statements so we will split the parsing proper and the GENERIC tree construction. You will also see that the tree synthesized for these control statements is often a TreeStmtList: the implementation of these statements require several GENERIC trees. Let's see first how to parse an if statement.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -352,7 +352,7 @@ Both the <em>then</em> part and the <em>else</em> part of an if statement are �
 Now we call the function <code>build_if_statement</code> that will be the responsible for building the GENERIC tree of this if statement (line 46).
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -552,7 +552,7 @@ We will use the same strategy for the while statement: first parse its syntactic
 Parsing a while statement is relatively easy: a condition expression of boolean type and then a body. We then call <code>build_while_statement</code> with these two parts.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -736,7 +736,7 @@ Now we will appreciate that it has paid off to create a <code>build_while_statem
 Now <code>build_for_statement</code> just creates the statements shown above. The variable of the for statement is commonly known as the <em>induction variable</em>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

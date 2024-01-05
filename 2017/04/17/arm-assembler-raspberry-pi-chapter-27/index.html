@@ -296,7 +296,7 @@ Now we have all the necessary ingredients to access <code>myvar</code> in a posi
 
 <p><img src="/wp-content/uploads/2017/04/got.svg_.png" alt="" width="532" height="470" class="aligncenter size-full wp-image-3916" /></p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -364,7 +364,7 @@ myvar_in_GOT : .word myvar(GOT)
 We can replace the <code>add</code> (line 16) and the <code>ldr</code> (line 19) with a more elaborated memory access.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">16
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">16
 17
 18
 </pre></td><td class="code"><pre>  ldr r0, [r0, r1]     /* r0 ← *(r0 + r1)

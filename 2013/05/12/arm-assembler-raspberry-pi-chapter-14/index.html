@@ -95,7 +95,7 @@ We can multiply a matrix <code>A</code> of <code>n</code> rows and <code>m</code
 A straightforward implementation of the matrix multiplication in C is as follows.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -131,7 +131,7 @@ A straightforward implementation of the matrix multiplication in C is as follows
 In order to simplify the example, we will asume that both matrices A and B are square matrices of size <code>n x n</code>. This simplifies just a bit the algorithm.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -169,7 +169,7 @@ Matrix multiplication is an important operation used in many areas. For instance
 A first improvement we want to do in this algorithm is making the loops perfectly nested. There are some technical reasons beyond the scope of this code for that. So we will get rid of the initialization of <code>C[i][j]</code> to 0, outside of the loop.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -233,7 +233,7 @@ add r7, r3, r7    /* r7 ← C + ELEMENTSIZE * ( k + NK * (j + NJ * i) ) */</code
 As a first step, let's implement a naive matrix multiply that follows the C algorithm above according to the letter.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -562,7 +562,7 @@ Matrix result is:
 The algorithm we are trying to implement is fine but it is not the most optimizable. The problem lies in the way the loop <code>k</code> accesses the elements. Access <code>A[i][k]</code> is eligible for a multiple load as <code>A[i][k]</code> and <code>A[i][k+1]</code> are contiguous elements in memory. This way we could entirely avoid all the loop <code>k</code> and perform a 4 element load from <code>A[i][0]</code> to <code>A[i][3]</code>. The access <code>B[k][j]</code> does not allow that since elements <code>B[k][j]</code> and <code>B[k+1][j]</code> have a full row inbetween. This is a <em>strided access</em> (the stride here is a full row of 4 elements, this is 16 bytes), VFPv2 does not allow a strided multiple load, so we will have to load one by one.. Once we have all the elements of the loop <code>k</code> loaded, we can do a vector multiplication and a sum.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -752,7 +752,7 @@ With this approach we can entirely remove the loop <code>k</code>, as we do 4 op
 In the previous version we are not exploiting all the registers of VFPv2. Each rows takes 4 registers and so does each column, so we end using only 8 registers plus 4 for the result and one in the bank 0 for the summation. We got rid the loop <code>k</code> to process <code>C[i][j]</code> at once. What if we processed <code>C[i][j]</code> and <code>C[i][j+1]</code> at the same time? This way we can fill all the 8 registers in each bank.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -972,7 +972,7 @@ As you can see, the accesses to <code>b[k][j]</code> and <code>b[k][j+1]</code> 
 Is there a way we can mitigate the strided accesses to the matrix B? Yes, there is one, we only have to permute the loop nest i, j, k into the loop nest k, i, j. Now you may be wondering if this is legal. Well, checking for the legality of these things is beyond the scope of this post so you will have to trust me here. Such permutation is fine. What does this mean? Well, it means that our algorithm will now look like this.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -1017,7 +1017,7 @@ This may seem not very useful, but note that, since now k is in the outermost lo
 If you remember the chapter 13, VFPv2 instructions have a mixed mode when the <code>Rsource2</code> register is in bank 0. This case makes a perfect match: we can load <code>C[i][0..3]</code> and <code>B[k][0..3]</code> with a load multiple and then load <code>A[i][k]</code> in a register of the bank 0. Then we can make multiply<code> A[i][k]*B[k][0..3]</code> and add the result to <code>C[i][0..3]</code>. As a bonus, the number of instructions is much lower.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -1177,7 +1177,7 @@ If you remember the chapter 13, VFPv2 instructions have a mixed mode when the <c
 As adding after a multiplication is a relatively usual sequence, we can replace the sequence
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
 56
 </pre></td><td class="code"><pre>vmul.f32 s24, s16, s0          /* {s24,s25,s26,s27} ← {s16,s17,s18,s19} * {s0,s0,s0,s0} */
 vadd.f32 s8, s8, s24           /* {s8,s9,s10,s11} ← {s8,s9,s10,s11} + {s24,s25,s26,s7} */
@@ -1187,7 +1187,7 @@ vadd.f32 s8, s8, s24           /* {s8,s9,s10,s11} ← {s8,s9,s10,s11} + {s24,s25
 with a single instruction <code>vmla</code> (multiply and add).
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
 </pre></td><td class="code"><pre>vmla.f32 s8, s16, s0          /* {s8,s9,s10,s11} ← {s8,s9,s10,s11} + ({s16,s17,s18,s19} * {s0,s0,s0,s0}) */
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -1195,7 +1195,7 @@ with a single instruction <code>vmla</code> (multiply and add).
 Now we can also unroll the loop <code>i</code>, again with an unrolling factor of 2. This would give us the <em>best</em> version.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

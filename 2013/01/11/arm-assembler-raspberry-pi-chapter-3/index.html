@@ -151,7 +151,7 @@ Data lives in memory like code but due to some practical technicalities, that we
 Ok, we will retrieve our example from the Chapter 2 and enhance it with some accesses to memory. We will define two 4 byte variables <code>myvar1</code> and <code>myvar2</code>, initialized to 3 and 4 respectively. We will load their values using <code>ldr</code>, and perform an addition. The resulting error code should be 7, like that of chapter 2.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -229,7 +229,7 @@ addr_of_myvar2 : .word myvar2
 I have cheated a bit in the example above because of limitations in the assembler. As you can see there are four <code>ldr</code> instructions. I will try to explain their meaning. First, though, we have to discuss the following two labels.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">34
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">34
 35
 36
 </pre></td><td class="code"><pre>/* Labels needed to access data */
@@ -245,7 +245,7 @@ Well, these two labels, contain the address of <code>myvar1</code> and <code>myv
 Well, when the assembler emits the binary code, <code>.word myvar1</code> will not be address of <code>myvar1</code> but instead it will be a <i>relocation</i>. A relocation is the way the assembler uses to emit an address, the exact value of which is unknown but it will known be when the program is <i>linked</i> (i.e. when generating the final executable). It is like saying <q>well, I have no idea where this variable will actually be, let's the linker patch this value for me later</q>. So this <code>addr_of_myvar1</code> will be used instead. The address of <code>addr_of_myvar1</code> is in the same section <code>.text</code>. That value will be <i>patched</i> by the linker during the linking phase (when the final executable is created and it knows where all the entities of our program will definitely be laid out in memory). This is why the linker (invoked internally by <code>gcc</code>) is called <code>ld</code>. It stands for <code>Link eDitor</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">27
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">27
 28
 </pre></td><td class="code"><pre>    ldr r1, addr_of_myvar1 /* r1 ← &amp;myvar1 */
     ldr r1, [r1]           /* r1 ← *r1 */
@@ -274,7 +274,7 @@ The program loads two 32 bit values from <code>myvar1</code> and <code>myvar2</c
 Now take the previous example but instead of setting the initial values of <code>myvar1</code> and <code>myvar2</code> to 3 and 4 respectively, set both to 0. We will reuse the existing code but we will prepend some assembler to store a 3 and a 4 in the variables.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

@@ -559,7 +559,7 @@ used to expand the generic pseudo instructions used by the Register Allocator
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span> armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2  <span class="nt">-o</span> copy.mir <span class="se">\</span>
       t_doubles_phi.ll  <span class="nt">-stop-before</span><span class="o">=</span>postrapseudos <span class="nt">-simplify-mir</span></code></pre></figure>
 
-<figure class="highlight"><figcaption>copy.mir</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>copy.mir</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

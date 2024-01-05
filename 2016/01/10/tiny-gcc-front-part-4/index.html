@@ -82,7 +82,7 @@ Now that we have a stream of tokens we can start performing syntactic analysis.
 The lexer is providing us a stream of tokens. But we still have to check if such sequence forms a valid program.
 </p>
 
-<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 </pre></td><td class="code"><pre><span class="k">var</span> <span class="n">i</span> <span class="p">:</span> <span class="n">int</span><span class="p">;</span>
@@ -94,7 +94,7 @@ The lexer is providing us a stream of tokens. But we still have to check if such
 All the tokens in the program above are valid tokens, but the second assignment statement (line 3) is not an assignment statement because there is an incorrect token <code><strong>)</strong></code> after <code><strong>:=</strong></code>. On the other hand, the following program
 </p>
 
-<figure class="highlight"><pre><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-pascal" data-lang="pascal"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 </pre></td><td class="code"><pre><span class="k">if</span> <span class="m">3</span> <span class="k">then</span> <span class="k">end</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -698,7 +698,7 @@ First let's see the null denotations. They represent the action that we have to 
 </p>
 
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

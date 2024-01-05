@@ -88,7 +88,7 @@ environment we can use the tool <code class="language-plaintext highlighter-roug
 when the command ends. We can combine this in a convenient script like the one
 below.</p>
 
-<figure class="highlight"><figcaption>runot</figcaption><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>runot</figcaption><pre class="with_line_numbers"><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -214,7 +214,7 @@ to the remote machine as a way to initiate the “session”. You would run
 this only for the first connection, the other ones would just use a regular
 <code class="language-plaintext highlighter-rouge">ssh</code> command.</p>
 
-<figure class="highlight"><figcaption>ssh-session</figcaption><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>ssh-session</figcaption><pre class="with_line_numbers"><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -336,7 +336,7 @@ D-Bus activation.</p>
 <p>First <code class="language-plaintext highlighter-rouge">~/.local/share/dbus-1/services/org.Notifications.service</code> to tell D-Bus
 what is the associated systemd unit and daemon.</p>
 
-<figure class="highlight"><figcaption>~/.local/share/dbus-1/services/org.Notifications.service</figcaption><pre><code class="language-ini" data-lang="ini"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>~/.local/share/dbus-1/services/org.Notifications.service</figcaption><pre class="with_line_numbers"><code class="language-ini" data-lang="ini"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -351,7 +351,7 @@ executable: the one shown corresponds to Ubuntu/Debian systems.</p>
 
 <p>Now we need to create a systemd-unit in <code class="language-plaintext highlighter-rouge">~/.config/systemd/user/my-notification-daemon.service</code></p>
 
-<figure class="highlight"><figcaption>~/.config/systemd/user/my-notification-daemon.service</figcaption><pre><code class="language-ini" data-lang="ini"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>~/.config/systemd/user/my-notification-daemon.service</figcaption><pre class="with_line_numbers"><code class="language-ini" data-lang="ini"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

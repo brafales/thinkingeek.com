@@ -112,7 +112,7 @@ Where <code>F</code> is something that can be called: the name of a function or 
 Let's take again our phase from the previous chapter to draw the associated graph to the code we used to motivate this series of posts. Let me repeat it below.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -152,7 +152,7 @@ Besides the ENTRY and EXIT, there is only a single basic block in function <code
 Before we continue, let's make two more tests to better understand what is going on. First add a user-declared destructor to class <code>A</code>, the rest of the code is left untouched.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -180,7 +180,7 @@ This is much more complicated, the compiler must call the destructor of A with t
 Now, remove the user-declared destructor but let's change function <code>build_A</code> to return a pointer to <code>A</code> (rather than a <code>A</code>), the rest of the code is left untouched.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
 </pre></td><td class="code"><pre><span class="n">A</span><span class="o">*</span> <span class="nf">build_A</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -206,7 +206,7 @@ While we may tolerate false negatives (i.e. not emitting a warning where it may 
 Let's start laying out this strategy, we can begin with the code from part 2 (though this time I renamed the class from <code>my_first_pass</code> to <code>warn_unused_result_cxx</code>).
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
 41
 42
 43
@@ -288,7 +288,7 @@ After the usual <code>pass_data</code> structure we find the actual definition o
 Let's see the implementation of <code>gather_unused_lhs</code>
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
 118
 119
 120
@@ -416,7 +416,7 @@ For function calls, this function has to be called for each argument of the func
 The second step of our process involves emitting the warning. We do this in the function warn_unused_result_lhs.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">175
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">175
 176
 177
 178
@@ -520,7 +520,7 @@ The next lines of code are deliberately identical to the lines of code found in 
 Now we can proceed to see the implementation of <code>insert_potentially_unused_lhs</code> and <code>erase_if_used_lhs</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
 78
 79
 80
@@ -556,7 +556,7 @@ You will have already noticed but, <code>potential_unused_lhs</code> is a set of
 If our left hand side (recall, a <code>tree</code>) is NULL we do not have to do anything (line 81). Similar to the GIMPLE code, trees also have a code that is retrieved using the macro <code>TREE_CODE</code> (these macros are a witness of the story of GCC, initially written in C, I assume that they will be eventually replaced by C++ inline functions). If the code of the left hand side is a <code>VAR_DECL</code>, and this means it is a variable, we will verify, using the macro <code>DECL_ARTIFICIAL</code>, if it is an <em>artificial variable</em> created by the compiler (lines 84 and 85). If all these checks succeed, we will insert the tree into our <code>potential_unused_lhs</code> set (line 87).
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">91
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">91
 92
 93
 94
@@ -731,7 +731,7 @@ This happens because we are not handling <code>GIMPLE_RETURN</code> in <code>gat
 </p>
 
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">117
 118
 119
 120

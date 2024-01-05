@@ -97,7 +97,7 @@ Most computers perform an integer division where the remainder has the same sign
 An unsigned integer division is an integer division involving two unsigned integers N and D. This has the consequence that Q and R will always be positive. A very naive (and slow) approach for unsigned division is as follows.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -141,7 +141,7 @@ An unsigned integer division is an integer division involving two unsigned integ
 This algorithm, while correct and easy to understand, is not very efficient (think on dividing a big N with a small D). Is there a way that we can compute the division in a fixed amount of time? The answer is yes, just adapt how you divide by hand but to binary numbers. We will compute a temporary remainder picking bits, from left to right, of the dividend. When the remainder is larger than the divisor, we will subtract the divisor from that remainder and set the appropiate bit in the quotient.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -203,7 +203,7 @@ The shown code is fine but it can be improved in a number of ways. First, there 
 Given N and D, we will first shift D as many bits to the left as possible but always having N &gt; D. So, for instance if we divide N=1010<sub>(2</sub> by D=10<sub>(2</sub> we would adjust D until it was D<sub>0</sub>=1000<sub>(2</sub> (this is shifting twice to the left). Now we start a similar process to the one above: if N<sub>i</sub> &ge; D<sub>i</sub>, we set 1 to the lowest bit of Q and then we compute a new N<sub>i+1</sub> ← N<sub>i</sub> - D<sub>i</sub> and a new D<sub>i+1</sub> ← D<sub>i</sub>/2. If N<sub>i</sub> &lt; D<sub>i</sub> then we simply compute a new D<sub>i+1</sub> ← D<sub>i</sub>/2. We stop when the current D<sub>i</sub> is smaller than the initial D (not D<sub>0</sub>). Note that this condition is what makes dividing N=1010<sub>(2</sub> by D=10<sub>(2</sub> different that dividing N=1010<sub>(2</sub> by D=1<sub>(2</sub> although the D<sub>0</sub> of both cases is the same.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -261,7 +261,7 @@ Given N and D, we will first shift D as many bits to the left as possible but al
 We can avoid the first loop where we shift until we exceed by counting the <em>leading zeroes</em>. By counting the leading zeroes of the dividend and the divisor we can straightforwardly compute how many bits we need to shift the divisor.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -362,7 +362,7 @@ s_divide_by_14:
 As an example I have used it to implement a small program that just divides the user input by 14.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -498,7 +498,7 @@ addr_of_read_number: .word read_number
 I would not recommend using this technique. I present it here for the sake of completeness. We simply convert our integers to floating point numbers, divide them as floating point numbers and convert the result back to an integer.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

@@ -235,7 +235,7 @@ the basics, <a href="https://clang.llvm.org/extra/clang-tidy/Contributing.html">
 <p>First let’s define a header inside the <code class="language-plaintext highlighter-rouge">concurrency</code> namespace. There are a few
 namespaces but this one feels right for our purpose.</p>
 
-<figure class="highlight"><figcaption>clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -284,7 +284,7 @@ namespaces but this one feels right for our purpose.</p>
 <p>This header defines a class that inherits from <code class="language-plaintext highlighter-rouge">ClangTidyCheck</code> and we override
 a member function called <code class="language-plaintext highlighter-rouge">registerMatcher</code> and <code class="language-plaintext highlighter-rouge">check</code>.</p>
 
-<figure class="highlight"><figcaption>clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>clang-tools-extra/clang-tidy/concurrency/UselessLockCheck.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -393,7 +393,7 @@ index 7ae891d463f7..b21737150a2e 100644
 
 <p>Let’s consider the following input</p>
 
-<figure class="highlight"><figcaption>t.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>t.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

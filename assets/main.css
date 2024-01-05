@@ -11,9 +11,11 @@ table td { padding: 5px 10px; border: 1px solid #cacaca; }
 table th { padding: 5px 10px; border: 1px solid #cacaca; background: #e6e6e6; }
 
 /** Code formatting */
-pre, code { font-family: "Fira Mono", monospace; font-size: 13px; /* border: 1px solid $grey-color-light; */ /* border-radius: 0; */ background-color: #f8f8f8; }
+pre, code { font-family: "Fira Mono", monospace; font-size: 13px; /* border: 1px solid $grey-color-light; */ /* border-radius: 0; */ background-color: #f0f0f0; }
 
 pre { overflow-x: auto; }
+
+div.highlight > pre.highlight { padding: 1em; }
 
 /** Code tables */
 table.rouge-table { margin: 0px; line-height: 20px; border-collapse: collapse; border: 0px; }
@@ -45,7 +47,9 @@ figure.highlight > figcaption { background-color: #ddeeff; font-family: "Fira Mo
 
 figure.highlight { border: 0px solid #e8e8e8; border-radius: 0; padding: 0px; }
 
-figure.highlight > pre { overflow-x: auto; }
+figure.highlight > pre { overflow-x: auto; padding: 1em; }
+
+figure.highlight > pre.with_line_numbers { overflow-x: auto; padding: 0em; }
 
 /** Lists */
 ul, ol { margin-left: 30px; }
@@ -176,9 +180,9 @@ dd { flex-basis: 70%; flex-grow: 1; padding-left: 1em; margin-bottom: 0.5em; }
 .pagination .next { float: right; }
 
 /** Syntax highlighting styles */
-.highlight { background-color: #f8f8f8; }
+.highlight { background-color: #f0f0f0; }
 
-.highlighter-rouge .highlight { background-color: #f8f8f8; }
+.highlighter-rouge .highlight { background-color: #f0f0f0; }
 
 .highlight .cm { color: #727262; font-style: italic; }
 

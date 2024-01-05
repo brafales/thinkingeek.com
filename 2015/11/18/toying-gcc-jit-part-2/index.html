@@ -103,7 +103,7 @@ $    matches the end of the input string
 In the same article, Kernighan presents an implementation, by Rob Pike, of the matcher algorithm. The implementation is strikingly simple and neat.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
 7
 8
 9
@@ -185,7 +185,7 @@ In the same article, Kernighan presents an implementation, by Rob Pike, of the m
 The article is missing <code>main</code> (a <em>driver</em> routine in the article terminology) function that takes the regular expression and tries to match it against each line. It is not hard to make one, though.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">43
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">43
 44
 45
 46
@@ -291,7 +291,7 @@ You may be now wondering whether the specialized version will run faster than th
 Let's get back at the <code>matchhere</code> function above.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -337,7 +337,7 @@ In lines 9 to 10, our matcher simply checks that <code>.</code> or c match a sin
 Finally, lines 5 to 6 implement the <a href="https://en.wikipedia.org/wiki/Kleene_star">Kleene star</a>. We have to match 0 or more times the character before the star. The original implementation just calls <code>matchstar</code> (repeated below for clarity). The call to matchstar passes the current character (that we have to match 0 or more times) and the remainder of the regular expression (the code skips the <code>*</code> as well, this is why it says <code>regexp+2</code>).
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -373,7 +373,7 @@ This is all we need for the <code>matchhere</code> function. Let's encode it so 
 Ok, let's start with <code>matchhere</code>. Each matcher will return <code>int</code> and receive a <code>const char*</code>, that we will call text. So let's start creating the function.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">109
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">109
 110
 111
 112
@@ -415,7 +415,7 @@ The exact name of the function will be passed as a parameter, you will see later
 We will also prepare a couple of variables at this point. We will always need a return 1, either when our matcher reaches the end of the regular expression or when we generate code for the Kleene star. So let's have a return_one ready.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">136
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">136
 137
 138
 139
@@ -437,7 +437,7 @@ We also prepare a <code>return_zero</code>, but it is not clear whether we will 
 Now let's go processing the given regular expression and create code to match it.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">144
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">144
 145
 146
 </pre></td><td class="code"><pre>  <span class="c1">// Now go creating</span>
@@ -449,7 +449,7 @@ Now let's go processing the given regular expression and create code to match it
 A simple first case is when we reach the end of the regular expression.
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">146
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">146
 147
 148
 149
@@ -475,7 +475,7 @@ Let's put the Kleene star aside for a moment so we see the simpler cases first. 
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">212
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">212
 213
 214
 215
@@ -513,7 +513,7 @@ Another two simple examples are <code>.</code> and <code>c</code>. The case for 
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">225
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">225
 226
 227
 228
@@ -585,7 +585,7 @@ If the comparison fails, meaning that the current letter is not <code>(char)0</c
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">125
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">125
 126
 127
 128
@@ -617,7 +617,7 @@ The case for <code>c</code>, shown below, is very similar but now we just return
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">255
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">255
 256
 257
 258
@@ -685,7 +685,7 @@ You may be wondering what is this <code>new_block_name</code> (lines 229 and 259
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">55
 56
 57
 58
@@ -775,7 +775,7 @@ Now we can proceed to implement the Kleene star. I left if for the last because 
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">153
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">153
 154
 155
 156
@@ -790,7 +790,7 @@ Now we can proceed to implement the Kleene star. I left if for the last because 
 Now we need two more blocks, <code>loop_body</code> and <code>loop_check</code>, and we will end the current block with an unconditional jump to <code>loop_body</code>. This is implementing the initial semantics of the C do-while statement: we first enter the loop body prior checking the condition.
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">158
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">158
 159
 160
 161
@@ -806,7 +806,7 @@ If you check the code of matchstar above you will see that inside the do-while w
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">163
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">163
 164
 165
 166
@@ -854,7 +854,7 @@ So we have to create a <em>temporary variable</em> to store <code>*text</code>, 
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">177
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">177
 178
 179
 180
@@ -874,7 +874,7 @@ We create a new temporary variable (line 177) and then we assign to it the value
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">184
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">184
 185
 186
 187
@@ -899,7 +899,7 @@ We create a new temporary variable (line 177) and then we assign to it the value
 For the former case (i.e. <code>c*</code>), we just compute if the temporary is equal (lines 196 to 199) to <code>c</code> (line 199).
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">193
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">193
 194
 195
 196
@@ -923,7 +923,7 @@ Next, we perform <code>text++</code>.
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">202
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">202
 203
 204
 </pre></td><td class="code"><pre>      <span class="n">gcc_jit_block_add_assignment</span><span class="p">(</span><span class="n">loop_check</span><span class="p">,</span> <span class="cm">/* loc */</span> <span class="nb">NULL</span><span class="p">,</span>
@@ -937,7 +937,7 @@ And finally we end the <code>loop_check</code> block with a conditional jump, de
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">205
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">205
 206
 207
 208
@@ -961,7 +961,7 @@ Finally we return the function we have created. This is important because we nee
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">293
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">293
 294
 </pre></td><td class="code"><pre>  <span class="k">return</span> <span class="n">matchhere</span><span class="p">;</span>
 <span class="err">}</span>
@@ -975,7 +975,7 @@ Phew, that was long, but we are not done yet. We have to implement the match fun
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">296
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">296
 297
 298
 299
@@ -1003,7 +1003,7 @@ Now we create a match function, that like matchhere, will just receive a text as
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">310
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">310
 311
 312
 313
@@ -1029,7 +1029,7 @@ Since we will have to call <code>matchhere</code>, let's prepare a call now that
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">318
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">318
 319
 320
 321
@@ -1045,7 +1045,7 @@ Now let's conditionally generate code depending on whether the regular expressio
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">322
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">322
 323
 324
 325
@@ -1079,7 +1079,7 @@ If the regular expression does not start with <code>^</code>, then we have to su
 </p>
 
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">333
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">333
 334
 335
 336

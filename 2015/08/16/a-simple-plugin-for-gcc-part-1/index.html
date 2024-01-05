@@ -105,7 +105,7 @@ That said, some functions may return values that is essential for the programmer
 GCC has an attribute <code>warn_unused_result</code> that can be specified for functions whose value cannot be ignored. This is used for diagnostics.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -135,7 +135,7 @@ test.c:6:5: warning: ignoring <span class="k">return </span>value of â€˜new_intâ
 For C, this attribute gives predictable results. For instance if we return a structure by value it also works.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -180,7 +180,7 @@ But surprisingly it does not work for C++.
 C++ is much, much more complicated than C. And even apparently identical code carries much more semantic load in C++ than its equivalent C code. One of the things that C++ has that C does not are <em>destructors</em>. Consider the following code
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -210,7 +210,7 @@ C++ is much, much more complicated than C. And even apparently identical code ca
 In line 11 of the code above, the function call creates a temporary value that looks like unused. But it is not, since this value is a class type and that class type has a non-trivial destructor (and a <em>user-defined</em> destructor is never trivial), the code must invoke the destructor to destroy this temporary value. So, what at first looks like a discarded value, it happens to be used. The following code tries to represent what actually happens: a temporary is created with the call to <code>f</code> and then immediately destroyed.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">9
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">9
 10
 11
 12
@@ -371,7 +371,7 @@ This makefile by default will only build the plugin. If we want to test it, we c
 Now we need to write some code for the file <code>warn_unused.cc</code>. As a starter, let's make a plugin that does nothing but prove it works.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

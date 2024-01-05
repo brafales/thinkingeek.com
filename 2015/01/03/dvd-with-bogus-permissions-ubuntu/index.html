@@ -225,7 +225,7 @@ removed <span class="s1">'../udisks2_2.1.3-1_amd64.deb'</span></code></pre></fig
 Time to hack! We will modify the file <code>src/udiskslinuxfilesystem.c</code> using our favorite editor. Around line 300 we will see the following.
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">298
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">298
 299
 300
 301
@@ -239,7 +239,7 @@ Time to hack! We will modify the file <code>src/udiskslinuxfilesystem.c</code> u
 The first array is the default parameters that <code>udisks</code> uses when mounting a filesystem. The second array are the parameters allowed by <code>udisksctl</code> in its <code>mount</code> subcommand. Let's change these two arrays to
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">298
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">298
 299
 300
 301

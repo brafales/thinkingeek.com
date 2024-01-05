@@ -105,7 +105,7 @@ on how to use using derived widgets and <code class="language-plaintext highligh
 <p>First lets define a very simple interface made up of an application
 window that includes a box container which has our derived button.</p>
 
-<figure class="highlight"><figcaption>derived.ui</figcaption><pre><code class="language-xml" data-lang="xml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>derived.ui</figcaption><pre class="with_line_numbers"><code class="language-xml" data-lang="xml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -165,7 +165,7 @@ in the XML file (<code class="language-plaintext highlighter-rouge">"Button with
 
 <p>Let’s define now our custom button.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -223,7 +223,7 @@ will allow us to connect the signal that is emitted when the property changes.</
 <p>Constructors at lines 8 and 9 deserve some explanation, but first let’s see
 the implementation of the class.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -307,7 +307,7 @@ instantiated the class <code class="language-plaintext highlighter-rouge">Derive
 we won’t be defining new properties for it. However in C++ we will create
 a subclass for it as well.</p>
 
-<figure class="highlight"><figcaption>derivedwindow.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>derivedwindow.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -355,7 +355,7 @@ a subclass for it as well.</p>
 will be created elsewhere. Parameter <code class="language-plaintext highlighter-rouge">builder</code> is a reference to Gtk.Builder
 which is an object used to create interfaces from <code class="language-plaintext highlighter-rouge">.ui</code> files.</p>
 
-<figure class="highlight"><figcaption>derivedwindow.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>derivedwindow.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -410,7 +410,7 @@ signal so it hides the dialog. We will use this later to quit the application.</
 
 <p>The only last piece remaining is the entry point to our application.</p>
 
-<figure class="highlight"><figcaption>main.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>main.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -576,7 +576,7 @@ with <code class="language-plaintext highlighter-rouge">DerivedWindow</code> if 
 To define the class we will use a custom class that we will use to sidestep
 some of the glibmm defaults.</p>
 
-<figure class="highlight"><figcaption>customclass.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>customclass.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -627,7 +627,7 @@ some of the glibmm defaults.</p>
 <p>The implementation class is a bit longer but basically repeats what
 <code class="language-plaintext highlighter-rouge">Glib::Class</code> does but allowing us to specify a name.</p>
 
-<figure class="highlight"><figcaption>customclass.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>customclass.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -782,7 +782,7 @@ some of the glibmm defaults.</p>
 <p>With this first piece of boilerplate done, we can focus on manually deriving
 our button.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -813,7 +813,7 @@ our GObject. We will use those later.</p>
 the GObject class and then we can define the C++ class that represents
 the GObject instances.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">28
+<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">28
 29
 30
 31
@@ -901,7 +901,7 @@ the GObject instances.</p>
 
 <p>Now the class.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
+<figure class="highlight"><figcaption>derivedbutton.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
 72
 73
 74
@@ -934,7 +934,7 @@ will represent the GObject class and it will be used by <code class="language-pl
 register the type. This happens because we will obtain a reference of a
 <code class="language-plaintext highlighter-rouge">Glib::Class</code> via the <code class="language-plaintext highlighter-rouge">DerivedButton_Class::init</code>.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">135
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">135
 136
 137
 138
@@ -967,7 +967,7 @@ new type with <code class="language-plaintext highlighter-rouge">DerivedButton_C
 GObjects with a C++ object so it needs to link both, here we link this type
 with the creation function. The creation function looks like this</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">146
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">146
 147
 148
 </pre></td><td class="code"><pre><span class="n">Glib</span><span class="o">::</span><span class="n">ObjectBase</span> <span class="o">*</span><span class="n">DerivedButton_Class</span><span class="o">::</span><span class="n">wrap_new</span><span class="p">(</span><span class="n">GObject</span> <span class="o">*</span><span class="n">object</span><span class="p">)</span> <span class="p">{</span>
@@ -979,7 +979,7 @@ with the creation function. The creation function looks like this</p>
 our class initialisation function (<code class="language-plaintext highlighter-rouge">DerivedButton_Class::class_init_function</code>) will
 be invoked. It looks like this.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">151
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">151
 152
 153
 154
@@ -1028,7 +1028,7 @@ can do much better here) and then we proceed to initialise the base class, in
 our case <code class="language-plaintext highlighter-rouge">Gtk::Button</code>. <code class="language-plaintext highlighter-rouge">PROPERTY_INT</code> and <code class="language-plaintext highlighter-rouge">PROPERTY_STRING</code> are a couple of
 enumerators that we use to identify these properties in this class.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
 67
 68
 69
@@ -1048,7 +1048,7 @@ have just installed.</p>
 
 <p>I’m going to list here only the functions that have changes.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">32
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">32
 33
 34
 35
@@ -1072,7 +1072,7 @@ it does not have to invoke the constructor of <code class="language-plaintext hi
 <p>Ideally we would use this constructor, but it turns out that we may build
 the wrapping C++ object earlier. So let’s add one constructor for this case.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">41
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">41
 42
 43
 44
@@ -1095,7 +1095,7 @@ the constructor.</p>
 but ours does not have to do anything special because we will keep the state
 in the C++ object and not in the GObject itself.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
 52
 53
 54
@@ -1110,7 +1110,7 @@ in the C++ object and not in the GObject itself.</p>
 identify types (they are just integer handles). We need one for the current class
 (<code class="language-plaintext highlighter-rouge">MyButton</code>) and one for the base (<code class="language-plaintext highlighter-rouge">GtkButton</code>).</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">56
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">56
 57
 58
 59
@@ -1132,7 +1132,7 @@ object for the GObject, the function <code class="language-plaintext highlighter
 earlier and that we registered in glibmm when registering the new GObject class
 type.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">62
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">62
 63
 64
 </pre></td><td class="code"><pre><span class="n">DerivedButton</span> <span class="o">*</span><span class="n">DerivedButton</span><span class="o">::</span><span class="n">wrap</span><span class="p">(</span><span class="n">GObject</span> <span class="o">*</span><span class="n">object</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">take_copy</span><span class="p">)</span> <span class="p">{</span>
@@ -1144,7 +1144,7 @@ type.</p>
 We still need to implement them. Those functions are basically C interfaces
 but we can still use most of the time the glibmm wrappers.</p>
 
-<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">72
+<figure class="highlight"><figcaption>derivedbutton.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">72
 73
 74
 75
@@ -1285,7 +1285,7 @@ the constructor we had will not actually run.</p>
 the beginning of the application, in the same place were before we had to
 create a dummy instance instead.</p>
 
-<figure class="highlight"><figcaption>main.cc</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">28
+<figure class="highlight"><figcaption>main.cc</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">28
 29
 30
 31

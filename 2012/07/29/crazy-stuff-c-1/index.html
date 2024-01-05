@@ -81,13 +81,13 @@
 <h3>Template declarations</h3>
 <p>Consider these two declarations</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
 <span class="k">struct</span> <span class="nc">my_list</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
 <span class="kt">void</span> <span class="nf">max</span><span class="p">(</span><span class="n">T</span> <span class="n">a</span><span class="p">,</span> <span class="n">T</span> <span class="n">b</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="o">?</span> <span class="n">a</span> <span class="o">:</span> <span class="n">b</span><span class="p">;</span> <span class="p">}</span>
@@ -97,13 +97,13 @@
 
 <p>The template header defines what are the parameters of the template class. These are called the <em>template parameters</em>. A <em>type-template parameter</em>, like that <em>T</em> shown above, is a “type variable”. This is the most usual template parameter as it allows to parameterize the declaration over one or more type variables. C++, though, has two more kinds of template parameters:<em> nontype-template parameters</em> and (the funny named) <em>template-template parameter</em>. A nontype-template parameter allows us to parameterize the declaration over a (compile-time) constant integer value. Here “integer value” is a very broad term: of course it includes all integers, but also enum values (enumerators) and addresses of (statically allocated) variables and functions. A template-template parameter allows us to parameterize a declaration over another class template with appropiate template parameters.</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">,</span> <span class="kt">int</span> <span class="n">N</span><span class="p">&gt;</span> <span class="c1">// N is a nontype-template parameter</span>
 <span class="k">struct</span> <span class="nc">my_fixed_array</span> <span class="p">{</span> <span class="p">};</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span> <span class="n">MyContainer</span><span class="p">&gt;</span> <span class="c1">// MyContainer is a template-template parameter</span>
 <span class="k">struct</span> <span class="nc">adaptor</span> <span class="p">{</span> <span class="p">};</span>
@@ -114,7 +114,7 @@
 
 <p>We give value to template parameters of a template by means of <em>template arguments</em>. These template arguments always appear in what is called a <em>template-id</em>. A template-id is just the template-name followed by a list of template-arguments enclosed in &lt; and &gt;.</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="n">my_list</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">l</span><span class="p">;</span><span class="c1">// Here T has value int, we will write it as T ← int</span>
 <span class="n">max</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">3.4</span><span class="n">f</span><span class="p">,</span> <span class="mf">5.6</span><span class="n">f</span><span class="p">);</span> <span class="c1">// T ← float</span>
@@ -123,13 +123,13 @@
 <h3>Primary template and partial specializations</h3>
 <p>When we first declare a class template or a function template, such declaration defines the <em>primary template</em>.</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
 <span class="k">struct</span> <span class="nc">my_list</span> <span class="p">{</span> <span class="p">...</span> <span class="p">};</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 </pre></td><td class="code"><pre><span class="k">template</span> <span class="o">&lt;</span><span class="k">typename</span> <span class="nc">T</span><span class="p">&gt;</span>
 <span class="kt">void</span> <span class="nf">swap</span><span class="p">(</span><span class="n">T</span><span class="o">&amp;</span> <span class="n">a</span><span class="p">,</span> <span class="n">T</span><span class="o">&amp;</span> <span class="n">b</span><span class="p">);</span>
@@ -137,7 +137,7 @@
 
 <p>Class templates (but not function templates!) can have an extra set of template declarations called <em>partial specializations</em>. A partial specialization looks like a normal class template declaration but the template-name is now a template-id where the template-arguments partially specialize the given template parameters.</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -165,7 +165,7 @@
 
 <p>A C++ compiler will always pick the partial specialization (if any) that is “closer” to the one requested in the template arguments. If no partial specialization matches, the primary template is chosen instead. The exact algorithm is not important here.</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

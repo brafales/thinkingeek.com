@@ -131,7 +131,7 @@ to the part in which they try to detect other copies).</p>
 <p>Our library <code class="language-plaintext highlighter-rouge">only_one</code> will offer a very iminal interface, in which we get
 an increasing number every time we invoke <code class="language-plaintext highlighter-rouge">only_get</code>.</p>
 
-<figure class="highlight"><figcaption>lib/only_one.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_one.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -145,7 +145,7 @@ an increasing number every time we invoke <code class="language-plaintext highli
 <span class="cp">#endif // ONLY_H</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -188,7 +188,7 @@ an increasing number every time we invoke <code class="language-plaintext highli
 <p>I will use <a href="https://mesonbuild.com/">meson</a> because it is rather concise
 when expressing build rules. For simplicity we will generate a static library.</p>
 
-<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>meson.build</figcaption><pre class="with_line_numbers"><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -207,7 +207,7 @@ this time a shared library. This shared library is called <code class="language-
 
 <p><code class="language-plaintext highlighter-rouge">only_two</code> has a very minimal interface as well.</p>
 
-<figure class="highlight"><figcaption>lib/only_two.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_two.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -225,7 +225,7 @@ this time a shared library. This shared library is called <code class="language-
 library <code class="language-plaintext highlighter-rouge">only_two</code> uses <code class="language-plaintext highlighter-rouge">only_one</code>. A more realistic library would bring more
 value than just forwarding the call.</p>
 
-<figure class="highlight"><figcaption>lib/only_two.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_two.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -244,7 +244,7 @@ visibility. In particular the defaults of ELF, used in Linux, are often too
 lax. We can restrict that using a <em>version script</em>. In this example we only
 make one symbol visible for version 1.0. Everything else will be not exported.</p>
 
-<figure class="highlight"><figcaption>lib/only_two.map</figcaption><pre><code class="language-plaintext" data-lang="plaintext"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_two.map</figcaption><pre class="with_line_numbers"><code class="language-plaintext" data-lang="plaintext"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -263,7 +263,7 @@ make one symbol visible for version 1.0. Everything else will be not exported.</
 <p>Below are the rules for <code class="language-plaintext highlighter-rouge">only_two</code>. Version scripts are not fully integrated
 in meson yet so we need to manually build the proper linker flag option.</p>
 
-<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+<figure class="highlight"><figcaption>meson.build</figcaption><pre class="with_line_numbers"><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
 7
 8
 9
@@ -289,7 +289,7 @@ but if those functions use global data that will be embedded too).</p>
 
 <p>Ok let’s write a small example using the two libraries.</p>
 
-<figure class="highlight"><figcaption>tools/use_only.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>tools/use_only.c</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -319,7 +319,7 @@ but if those functions use global data that will be embedded too).</p>
 
 <p>And its meson build rules</p>
 
-<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">15
+<figure class="highlight"><figcaption>meson.build</figcaption><pre class="with_line_numbers"><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">15
 16
 17
 18
@@ -351,7 +351,7 @@ be based on using environment variables.</p>
 <p>The main idea is to set an environment variable when the library initializes.
 If the environment variable was already there we know the library was around.</p>
 
-<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -451,7 +451,7 @@ the <em>process keyring</em>.</p>
 <p>The downside is that the system calls used for key management are not wrapped
 by the GNU C library. Instead a library called <code class="language-plaintext highlighter-rouge">libkeyutils</code> must be used.</p>
 
-<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>lib/only_one.c</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -537,7 +537,7 @@ we haven’t quite solved the problem here.</p>
 <p>We still need to update our meson build rules. Library <code class="language-plaintext highlighter-rouge">libkeyutils</code> provides
 a <code class="language-plaintext highlighter-rouge">pkg-config</code> file, so it is not difficult for meson to find it.</p>
 
-<figure class="highlight"><figcaption>meson.build</figcaption><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>meson.build</figcaption><pre class="with_line_numbers"><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

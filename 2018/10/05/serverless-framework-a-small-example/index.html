@@ -121,7 +121,7 @@
 <p>The serverless framework allows you to define all the moving pieces you need fairly easily. I'll show you the final serverless.yml file of the project while explaining all the sections individually. While most of it is standard, I used a couple of third party plugins to enable the use of my own domain in API Gateway and to configure an SQS dead letter queue for the <code>toshl</code> lambda (more on dead letter queues later).</p>
 
 
-<figure class="highlight"><figcaption>serverless.yml</figcaption><pre><code class="language-yaml" data-lang="yaml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>serverless.yml</figcaption><pre class="with_line_numbers"><code class="language-yaml" data-lang="yaml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -369,7 +369,7 @@
 <p>Let's have a look at the Go code that will execute as a lambda:</p>
 
 
-<figure class="highlight"><figcaption>monzo/main.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>monzo/main.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -453,7 +453,7 @@
 <p>AWS provides a <a href="https://docs.aws.amazon.com/lambda/latest/dg/go-programming-model-handler-types.html">Lambda SDK for Go</a>. The lambda is a Go binary that needs to define a main function, and that main function needs to eventually call a lambda handler function. The signature of the lambda handler function depends on the type of event we are handling. In our case we are handling an API Gateway event, and so our handler looks like this:</p>
 
 
-<figure class="highlight"><figcaption>monzo/hanler/handler.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>monzo/hanler/handler.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -793,7 +793,7 @@
 <p>This is what the Go code looks like for the lambda itself:</p>
 
 
-<figure class="highlight"><figcaption>toshl/main.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>toshl/main.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -919,7 +919,7 @@
 
 
 
-<figure class="highlight"><figcaption>toshl/client/client.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>toshl/client/client.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

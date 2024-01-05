@@ -99,7 +99,7 @@ Let's recall the syntax of a variable declaration.
 Recall that a variable declaration statement adds a new mapping for the 〈identifier〉 in the topmost mapping of the scope. Let's see how we have to change <code>parse_variable_declaration</code> to do this.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -285,7 +285,7 @@ Ok, now we can declare variables. Let's assign them some value.
 〈assignment〉&ensp;→&ensp;〈identifier〉 <code><strong>:=</strong></code> 〈expression〉 <code><strong>;</strong></code><br />
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -415,7 +415,7 @@ In part 4 we used a Pratt parser to parse expressions. Now it is time to extend 
 Recall that a Pratt parser works by decomposing the expression into a null denotation and then a left denotation. The null denotation receives as a parameter the current token. In the expression grammar of tiny, null denotations handle primaries and unary operands.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -438,7 +438,7 @@ Recall that a Pratt parser works by decomposing the expression into a null denot
 When we encounter an identifier, we have to look it up in the scope (this was defined in part 5). The expression is just its <code>VAR_DECL</code> that we stored in the <code>Symbol</code> when it was declared.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
 7
 8
 9
@@ -472,7 +472,7 @@ Note that using <code>Tree</code> rather than the GENERIC <code>tree</code> is e
 For literals, the literal itself encodes the value. So the text of the token will have to be interpreted as the appropiate value. For integers we can just use <code>atoi</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">18
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">18
 19
 20
 21
@@ -494,7 +494,7 @@ Note: we still have to check that the value represented by the token lies in the
 Real literals are similar.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
 25
 26
 27
@@ -522,7 +522,7 @@ For a real literal we have to invoke the (GCC-provided) function <code>real_from
 Likewise with string literals.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">33
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">33
 34
 35
 36
@@ -563,7 +563,7 @@ In the function above, <code>TYPE_MAIN_VARIANT </code>returns the main variant o
 Back to the nullary denotation: a parenthesized expression like <code><strong>(</strong></code> e <code><strong>)</strong></code> just parses the expression e and returns its tree.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">40
 41
 42
 43
@@ -591,7 +591,7 @@ Back to the nullary denotation: a parenthesized expression like <code><strong>(<
 Unary plus operator actually does nothing in tiny but it can only be applied to integer and float expressions.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">51
 52
 53
 54
@@ -683,7 +683,7 @@ A GENERIC tree with tree code <code>NEGATE_EXPR</code> computes the negation of 
 Unary not operator computes the logical negation of its boolean argument.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">66
 67
 68
 69
@@ -729,7 +729,7 @@ The GENERIC tree code for a logical negation is <code>TRUTH_NOT_EXPR</code>.
 Finally, any other token is a syntax error, so diagnose them as usual. This completes the handling of null denotations.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">84
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">84
 85
 86
 87
@@ -945,7 +945,7 @@ And we are done with the expressions!
 A write statement is not particularly complicated at first.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -991,7 +991,7 @@ Now we have to print the value of the expression. To do this we will emit a call
 Let's see the case for integers.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">20
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">20
 21
 22
 23
@@ -1033,7 +1033,7 @@ In line 31 we build a call to the print function (represented in <code>printf_fn
 To be able to call <code>printf</code> we need first to obtain its declaration, i.e. a <code>FUNCTION_DECL</code>. But for some reason, though, GENERIC trees do not allow calling a <code>FUNCTION_DECL</code> directly, it has to be done through an address to the function declaration. Function <code>get_printf_addr</code> thus, returns an address to a function declaration of <code>printf</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -1203,7 +1203,7 @@ GENERIC trees represent mappings using a <code>BIND_EXPR</code>. A <code>BIND_EX
 Unfortunately at this point, GENERIC makes things a bit complicated because of another kind of tree called block. Let's explain this seeing the code of <code>enter_scope</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -1326,7 +1326,7 @@ The complexity arises when we have several sibling blocks. We have to gather the
 All this complex process happens in <code>leave_scope</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -1464,7 +1464,7 @@ In contrast to most <code>parse_xxx</code> functions, this one does not return a
 Since this post is already too long, let's end with what we have to do for a tiny program.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

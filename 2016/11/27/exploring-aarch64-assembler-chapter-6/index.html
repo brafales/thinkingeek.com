@@ -357,7 +357,7 @@ As an example of branches, let's see how we could implement a high-level program
 Fortran is a very old language invented in 1956. This means that has some odd constructions (in current practice, I guess at that moment they probably made sense). One of those constructions is the <code>arithmetic if</code> statement. The arithmetic if had this form
 </p>
 
-<figure class="highlight"><pre><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 </pre></td><td class="code"><pre><span class="k">IF</span><span class="w"> </span><span class="n">expression</span><span class="p">,</span><span class="w"> </span><span class="n">label1</span><span class="p">,</span><span class="w"> </span><span class="n">label2</span><span class="p">,</span><span class="w"> </span><span class="n">label3</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -369,7 +369,7 @@ Let's assume, for simplicity, that the value of our expression is in <code>w0</c
 </p>
 
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 </pre></td><td class="code"><pre>arithmetic_if:
@@ -383,7 +383,7 @@ Let's assume that <code>w0</code> is a signed integer. The order of the comparis
 </p>
 
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">4
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">4
 5
 6
 7
@@ -419,7 +419,7 @@ Of course we can save some branches if we make use of the layout of the instruct
 </p>
 
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

@@ -83,7 +83,7 @@ during the process.</p>
 
 <p>As a recap, we were using this code as an example.</p>
 
-<figure class="highlight"><figcaption>example.c</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>example.c</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -111,7 +111,7 @@ the register allocation.</p>
 <p>At the beginning of the function, in the prologue, we see a bunch of callee-saved
 registers being saved.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
 9
 10
 11
@@ -146,7 +146,7 @@ registers being saved.</p>
 <p>A bunch of addresses computed by the program were spilled by the register
 allocation.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">24
 25
 26
 27
@@ -216,7 +216,7 @@ allocation.</p>
 
 <p>The outermost loop, loads those values.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
 78
 79
 80
@@ -257,7 +257,7 @@ shown).</p>
 
 <p>At the epilog of the function we restore the callee-saved registers.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
 468
 469
 470
@@ -295,7 +295,7 @@ shown).</p>
 
 <p>The callee-saved registers are all stored in floating point registers now.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">8
 9
 10
 11
@@ -332,7 +332,7 @@ shown).</p>
 <p>And some of the spilled values, as well. But not all of them, we run out
 of FPRs before we can keep all of them.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">26
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">26
 27
 28
 29
@@ -403,7 +403,7 @@ of FPRs before we can keep all of them.</p>
 <p>Now the loop reloads some of the values from the stack and others from
 FPR registers.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">77
 78
 79
 80
@@ -441,7 +441,7 @@ FPR registers.</p>
 
 <p>Finally we restore the registers in the epilog. All from FPRs.</p>
 
-<figure class="highlight"><figcaption>example.s</figcaption><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
+<figure class="highlight"><figcaption>example.s</figcaption><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">467
 468
 469
 470
@@ -496,7 +496,7 @@ take my evaluation with a pinch of salt.</p>
 
 <p>A first one here:</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Codegen/PrologEpilogInserter.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">815
+<figure class="highlight"><figcaption>llvm/lib/Codegen/PrologEpilogInserter.cpp</figcaption><pre class="with_line_numbers"><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">815
 816
 817
 818
@@ -522,7 +522,7 @@ take my evaluation with a pinch of salt.</p>
 
 <p>Another one later on</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Codegen/PrologEpilogInserter.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">842
+<figure class="highlight"><figcaption>llvm/lib/Codegen/PrologEpilogInserter.cpp</figcaption><pre class="with_line_numbers"><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">842
 843
 844
 845
@@ -553,7 +553,7 @@ callee-saved are in the stack, so the <a href="https://www.imperialviolet.org/20
 directives</a> (used for
 debugging and stack unwinding) are wrong. For now let’s skip them.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVFrameLowering.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">303
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVFrameLowering.cpp</figcaption><pre class="with_line_numbers"><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">303
 304
 305
 306
@@ -576,7 +576,7 @@ debugging and stack unwinding) are wrong. For now let’s skip them.</p>
 <p>Finally in <code class="language-plaintext highlighter-rouge">RISCVInstrInfo.cpp</code> the function that tells us if a store is a
 store to the stack seems wrong.</p>
 
-<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVInstrInfo.cpp</figcaption><pre><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">65
+<figure class="highlight"><figcaption>llvm/lib/Target/RISCV/RISCVInstrInfo.cpp</figcaption><pre class="with_line_numbers"><code class="language-diff" data-lang="diff"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">65
 66
 67
 68

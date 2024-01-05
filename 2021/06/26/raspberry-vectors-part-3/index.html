@@ -586,7 +586,7 @@ lowered and that would cause <code class="language-plaintext highlighter-rouge">
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>llc <span class="nt">-mtriple</span><span class="o">=</span>armv6kz-unknown-linux-gnu <span class="nt">-mattr</span><span class="o">=</span>+vfp2 <span class="se">\</span>
       <span class="nt">-stop-after</span><span class="o">=</span>finalize-isel <span class="nt">-simplify-mir</span> scalar.ll <span class="nt">-o</span> scalar.mir</code></pre></figure>
 
-<figure class="highlight"><figcaption>scalar.mir</figcaption><pre><code class="language-yaml" data-lang="yaml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>scalar.mir</figcaption><pre class="with_line_numbers"><code class="language-yaml" data-lang="yaml"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

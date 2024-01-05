@@ -84,7 +84,7 @@
 <h2>Labels as symbolic names</h2>
 <p>When we use global variables we have to use the following schema:</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -106,7 +106,7 @@ addr_of_var : .word var
 
 <p>The reason is that in ARM instructions we cannot encode the full 32-bit address of a variable inside an instruction. So it makes sense to keep the address in a place, in this case in <code>addr_of_var</code>, which is amenable for finding it from the current instruction. In the case shown above, the assembler replaces the usage of <code>addr_of_var</code> into something like this:</p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">6
 </pre></td><td class="code"><pre>   ldr r0, [pc, #offset]
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -301,7 +301,7 @@ Idx Name          Size      VMA       LMA       File off  Algn  Flags
 <figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gcc <span class="nt">-o</span> test.exe main.o inc_result.o <span class="nt">-Wl</span>,--print-map <span class="o">&gt;</span> map.txt
 <span class="nv">$ </span><span class="nb">cat </span>map.txt</code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-text" data-lang="text"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">314
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-text" data-lang="text"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">314
 315
 316
 317

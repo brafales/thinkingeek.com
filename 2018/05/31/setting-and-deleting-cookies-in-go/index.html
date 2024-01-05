@@ -103,7 +103,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>Let’s go ahead and create our login handler skeleton:</p>
 
-<figure class="highlight"><figcaption>handlers/login.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>handlers/login.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -149,7 +149,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>At this stage, we could have a very small program that could look like this:</p>
 
-<figure class="highlight"><figcaption>main.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>main.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -207,7 +207,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>So for our purposes, our handler could look like this:</p>
 
-<figure class="highlight"><figcaption>handlers/login.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>handlers/login.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -251,7 +251,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>Since we want our handlers to be a bit more flexible, we can make all of the cookie attributes part of the handler object. This will help us testing, and will let us eventually make changes in there quicker in the future. It’s also good practice to allow our handlers to be chained (so we can add a middleware type of functionality in our application like logging or monitoring). Let’s see what a complete login handler would look like with all these new features:</p>
 
-<figure class="highlight"><figcaption>handlers/login.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>handlers/login.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -313,7 +313,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>The logout handler will now be straightforward. Turns out the way to delete a cookie is essentially the same as setting it. The only difference is the <code>Max-Age</code> attribute is set to either <code>0</code> or a negative integer. With this in mind, we can write the handler as follows:</p>
 
-<figure class="highlight"><figcaption>handlers/logout.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>handlers/logout.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -380,7 +380,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>Here’s what a complete example looks like:</p>
 
-<figure class="highlight"><figcaption>main.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>main.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -503,7 +503,7 @@ In this post we'll learn how to set and delete cookies as part of your Go HTTP H
 
 <p>This is what a possible test file for our login handler could look like:</p>
 
-<figure class="highlight"><figcaption>handlers/login_test.go</figcaption><pre><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>handlers/login_test.go</figcaption><pre class="with_line_numbers"><code class="language-go" data-lang="go"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

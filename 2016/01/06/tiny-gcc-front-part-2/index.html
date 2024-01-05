@@ -257,7 +257,7 @@ A third file that will be required is <code>Make-lang.in</code>. This is another
 Recall that <code>gcc</code> is the generic driver of GCC and when passed a <code>.tiny</code> file will invoke tiny1. This would work. But we want a <code>gcctiny</code> driver (similar to <code>gcc</code>, <code>g++</code>, <code>gfortran</code>) specific of our language. We only have to write a very small file for our gcctiny driver, the rest of the code is shared among drivers.
 </p>
 
-<figure class="highlight"><pre><code class="language-make" data-lang="make"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-make" data-lang="make"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -463,7 +463,7 @@ Some front ends may require changing the flags before they are passed to the dri
 Finally, tiny1.cc. This is a rather big file full of boilerplate that we are not in position to fully understand yet. So just trust me here.
 </p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -926,7 +926,7 @@ collect2: error: ld returned 1 <span class="nb">exit </span>status</code></pre><
 If you want to see what is going on, just pass <code>-v</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-txt" data-lang="txt"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-txt" data-lang="txt"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

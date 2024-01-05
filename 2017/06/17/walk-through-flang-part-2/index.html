@@ -95,7 +95,7 @@ When clang (the driver) runs, it analyzes its command line. Depending on the fla
 The entry point of the driver is in <code>llvm/tools/clang/tools/driver/driver.cpp</code>. It does a few checks to see if it is <code>cc1</code> or <code>cc1as</code> and if it is not it will create a <code>Compilation</code> and it will execute it. And this is where all the magic happens. Everything else in that file just takes care of handling the errors that might have happened during compilation. in the snippet below <code>argv</code> is the <code>argv</code> of the <code>main</code> function. Line 459 below simply checks if the compilation <code>C</code> has been created successfully, if so it executes it.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">456
+<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">456
 457
 458
 459
@@ -122,7 +122,7 @@ One of the first things <code>BuildCompilation</code> does is determining what t
 Detecting the mode of the driver lets us know whether we have to behave like a gcc-style driver, cl.exe driver or flang driver. This impacts how command options are analyzed and also may impact some of the steps done by the driver.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">568
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">568
 569
 570
 </pre></td><td class="code"><pre>  <span class="c1">// We look for the driver mode option early, because the mode can affect</span>
@@ -134,7 +134,7 @@ Detecting the mode of the driver lets us know whether we have to behave like a g
 This function infers the mode of the driver, the set of modes it supports are described in <code>llvm/tools/clang/include/clang/Driver/Driver.h</code> and by default the <code>GCCMode</code> is chosen.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/include/clang/Driver/Driver.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
+<figure class="highlight"><figcaption>llvm/tools/clang/include/clang/Driver/Driver.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">71
 72
 73
 74
@@ -154,7 +154,7 @@ This function infers the mode of the driver, the set of modes it supports are de
 If you follow this function you will see that it does this
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">94
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">94
 95
 96
 </pre></td><td class="code"><pre><span class="kt">void</span> <span class="n">Driver</span><span class="o">::</span><span class="n">ParseDriverMode</span><span class="p">(</span><span class="n">StringRef</span> <span class="n">ProgramName</span><span class="p">,</span>
@@ -164,7 +164,7 @@ If you follow this function you will see that it does this
 
 <p>Function <code>getTargetAndModeFromProgramName</code> is defined in <code>llvm/tools/clang/lib/Driver/ToolChain.cpp</code>.</p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">166
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">166
 167
 168
 169
@@ -178,7 +178,7 @@ If you follow this function you will see that it does this
 The function <code>parseDriverSuffix</code> tries hard to infer the driver mode in many different ways but eventually calls <code>FindDriverSuffix</code>.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">139
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">139
 140
 141
 142
@@ -230,7 +230,7 @@ The function <code>parseDriverSuffix</code> tries hard to infer the driver mode 
 <span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">102
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">102
 103
 104
 105
@@ -292,7 +292,7 @@ What all this means? It means that if we invoke the driver as <code>flang</code>
 Let's go back to <code>BuildCompilation</code>. At some point the arguments of the driver are processed and a set of inputs is constructed.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">669
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">669
 670
 671
 </pre></td><td class="code"><pre>  <span class="c1">// Construct the list of inputs.</span>
@@ -345,7 +345,7 @@ With the list of inputs built in <code>BuildInputs</code> it is time to build th
 Function <code>getFinalPhase</code> uses the arguments in the command line to determine which is the last phase to perform. For instance if there is the <code>-c</code> option, it only assembles while if there is the <code>-S</code> option it runs only up to the backend (for the generation of the assembly). There are several other flags that impact the final phase.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">169
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">169
 170
 171
 172
@@ -447,7 +447,7 @@ Function <code>getFinalPhase</code> uses the arguments in the command line to de
 Back to <code>BuildActions</code>, now we can actually build the actions required for each input file.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2455
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">2455
 2456
 2457
 2458
@@ -467,7 +467,7 @@ Back to <code>BuildActions</code>, now we can actually build the actions require
 The required compilation phases will depend on the input type, so this is again defined in <code>Types.cpp</code>. Generally preprocessed files have their own preprocessing phase but Fortran files can be preprocessed at the same time as they are compiled (in a step that we will see later, called the "upper part" of the Fortran compiler). In fact, Fortran files, line 298-301, go through a different sequence of phases compared to other inputs: <code>FortranFrontEnd</code>, then <code>Compile</code>, then <code>Backend</code>.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Types.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">284
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Types.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">284
 285
 286
 287
@@ -706,7 +706,7 @@ This will construct each tool individually. There are classes for each possible 
 After the jobs have been built, <code>BuildJobsForActionNoCache</code>, <code>BuildJobsForAction</code> and <code>BuildJobs</code> do a few more of uninteresting bookkeeping but in practical terms they are done. So we go back to <code>BuildCompilation</code>. Building the jobs is the last thing it does, so we're back to the driver. As a reminder where we started.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">456
+<figure class="highlight"><figcaption>llvm/tools/clang/tools/driver/driver.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">456
 457
 458
 459
@@ -763,7 +763,7 @@ We have mentioned several times above the class <code>ToolChain</code>. Objects 
 We stated above that when creating the jobs for an action we need a tool. <code>ToolSelector::getTool</code> calls <code>ToolChain::SelectTool</code> to do this. By default it prioritizes <code>cc1</code> or <code>cc1as</code> if it can process the input specified, otherwise it falls back to <code>ToolChain::getTool</code> that can be overriden by the <code>ToolChain</code>.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">347
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">347
 348
 349
 350
@@ -783,7 +783,7 @@ We stated above that when creating the jobs for an action we need a tool. <code>
 The base <code>ToolChain</code> class provides the following <code>getTool</code> implementation. The few <code>ToolChain</code> that override this function forward to the base implementation if they do not have to provide specific behaviour.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">255
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">255
 256
 257
 258
@@ -861,7 +861,7 @@ The base <code>ToolChain</code> class provides the following <code>getTool</code
 Recall that when the input is a Fortran file, the phase for the action is a <code>FortranFrontend</code> which generates a <code>FortranFrontendJobAction</code> and this one uses the tool specified in <code>ToolChain::getFlangFrontend</code>.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">231
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/ToolChain.cpp</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">231
 232
 233
 234
@@ -877,7 +877,7 @@ Recall that when the input is a Fortran file, the phase for the action is a <cod
 This is the tool that will execute the Fortran front end phases. It is defined in <code>Tools.h</code>.
 </p>
 
-<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Tools.h</figcaption><pre><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">129
+<figure class="highlight"><figcaption>llvm/tools/clang/lib/Driver/Tools.h</figcaption><pre class="with_line_numbers"><code class="language-cpp" data-lang="cpp"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">129
 130
 131
 132

@@ -178,7 +178,7 @@ It should not be hard to find obvious uses for these instructions. For instance,
 Let's first write a naive approach to the above loop, which is similar to the one in the beginning of the post.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -224,7 +224,7 @@ Let's first write a naive approach to the above loop, which is similar to the on
 This loop again is fine but we can do better by using the instruction <code>uadd8</code>. Note that now we will be able to add 4 bytes at a time. This means that we will have to increment <code>r4</code> by 4.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -286,7 +286,7 @@ We cannot, though, simply append an epilog loop to the above loop,because it is 
 Note that checking <code>r4 + 3 &lt; N</code> would force us to compute <code>r4 + 3</code> at every iteration in the loop, but we do not have to. Checking <code>r4 + 3 &lt; N</code> is equivalent to check <code>r4 &lt; N - 3</code>. <code>N - 3</code> does not depend on <code>r4</code> so it can be computed before the loop.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -348,7 +348,7 @@ In line 10 where we compute <code>r8</code> which will keep <code>N - 3</code>, 
 The epilog loop follows.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">27
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">27
 28
 29
 30

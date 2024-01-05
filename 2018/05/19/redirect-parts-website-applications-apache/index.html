@@ -101,7 +101,7 @@ Microservices everywhere. Those are the times we live in now. Everyone seems to 
 
 <p>Let’s start by creating our own Apache configuration file that we can mess with, so we don’t have to worry about modifying the ones that come with our OS.</p>
 
-<figure class="highlight"><figcaption>dev.acme.com.conf</figcaption><pre><code class="language-apache" data-lang="apache"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>dev.acme.com.conf</figcaption><pre class="with_line_numbers"><code class="language-apache" data-lang="apache"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -158,7 +158,7 @@ Microservices everywhere. Those are the times we live in now. Everyone seems to 
 
 <p>In order for us to achieve this we need to add another set of proxy rules to our Apache configuration file:</p>
 
-<figure class="highlight"><figcaption>dev.acme.com.conf</figcaption><pre><code class="language-apache" data-lang="apache"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>dev.acme.com.conf</figcaption><pre class="with_line_numbers"><code class="language-apache" data-lang="apache"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -216,7 +216,7 @@ Microservices everywhere. Those are the times we live in now. Everyone seems to 
 
 <p>If you are using a typical React project, the HTML response that your browser renders will look like this:</p>
 
-<figure class="highlight"><figcaption>response.html</figcaption><pre><code class="language-html" data-lang="html"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>response.html</figcaption><pre class="with_line_numbers"><code class="language-html" data-lang="html"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -250,7 +250,7 @@ Microservices everywhere. Those are the times we live in now. Everyone seems to 
 
 <p>We could now add more proxy rules to our configuration, but this doesn’t scale very well the moment we need to either add more applications, or our React app needs to serve more assets. Luckily for us, there’s another tool we can use to help us: <a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html" rel="noopener" target="_blank">Apache’s <code>mod_rewrite</code> plugin</a>. <em>mod_rewrite</em> provides us with directives that can change the paths of the requested URLs based on rules. We can do this with <a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritecond" rel="noopener" target="_blank"><code>RewriteCond</code></a> and <a href="https://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewriterule" rel="noopener" target="_blank"><code>RewriteRule</code></a>. This is what our final Apache configuration file will look like:</p>
 
-<figure class="highlight"><figcaption>dev.acme.com.conf</figcaption><pre><code class="language-apache" data-lang="apache"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><figcaption>dev.acme.com.conf</figcaption><pre class="with_line_numbers"><code class="language-apache" data-lang="apache"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4

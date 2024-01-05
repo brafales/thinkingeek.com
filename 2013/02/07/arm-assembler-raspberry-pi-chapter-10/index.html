@@ -183,7 +183,7 @@ Let's implement the factorial function above.
 First we have to learn a new instruction to multiply two numbers: <code>mul Rdest, Rsource1, Rsource2</code>. Note that multiplying two 32 bit values may require up to 64 bits for the result. This instruction only computes the lower 32 bits. Because we are not going to use 64 bit values in this example, the maximum factorial we will be able to compute is 12! (13! is bigger than 2<sup>32</sup>). We will not check that the entered number is lower than 13 to keep the example simple (I encourage you to add this check to the example, though). In versions of the ARM architecture prior to ARMv6 this instruction could not have <code>Rdest</code> the same as <code>Rsource1</code>. GNU assembler may print a warning if you don't pass <code>-march=armv6</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -376,7 +376,7 @@ If you go back to the code of our factorial, there is a moment, when computing <
 In our second version of factorial, we will keep a copy of the initial value of <code>r0</code> into <code>r4</code>. But <code>r4</code> is a register the value of which must be restored upon leaving a function. So we will keep the value of <code>r4</code> at the entry of the function in the stack. At the end we will restore it back from the stack. This way we can use <code>r4</code> without breaking the rules of <em>well-behaved functions</em>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">10
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">10
 11
 12
 13
@@ -434,13 +434,13 @@ Note that the remainder of the program does not have to change. This is the cool
 Ok, now pay attention to these two sequences in our new factorial version above.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">11
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">11
 12
 </pre></td><td class="code"><pre>    str lr, [sp,#-4]!  /* Push lr onto the top of the stack */
     str r4, [sp,#-4]!  /* Push r4 onto the top of the stack */
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">30
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">30
 31
 </pre></td><td class="code"><pre>    ldr r4, [sp], #+4  /* Pop the top of the stack and put it in r4 */
     ldr lr, [sp], #+4  /* Pop the top of the stack and put it in lr */
@@ -450,11 +450,11 @@ Ok, now pay attention to these two sequences in our new factorial version above.
 Now, let's replace them with <code>stmdb</code> and <code>ldmia</code> as explained a few paragraphs ago.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">11
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">11
 </pre></td><td class="code"><pre>    stmdb sp!, {r4, lr}    /* Push r4 and lr onto the stack */
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">30
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">30
 </pre></td><td class="code"><pre>    ldmia sp!, {r4, lr}    /* Pop lr and r4 from the stack */
 </pre></td></tr></tbody></table></code></pre></figure>
 
@@ -466,11 +466,11 @@ Note that the order of the registers in the set of registers is not relevant, bu
 Remembering <code>stmdb sp!</code> and <code>ldmia sp!</code> may be a bit hard. Also, given that these two instructions will be relatively common when entering and leaving functions, GNU assembler provides two <em>mnemonics</em> <code>push</code> and <code>pop</code> for <code>stmdb sp!</code> and <code>ldmia sp!</code>, respectively. Note that these are not ARM instructions actually, just convenience names that are easier to remember.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">11
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">11
 </pre></td><td class="code"><pre>    push {r4, lr}
 </pre></td></tr></tbody></table></code></pre></figure>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">30
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">30
 </pre></td><td class="code"><pre>    pop {r4, lr}
 </pre></td></tr></tbody></table></code></pre></figure>
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2024-01-05T11:14:26+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Mitigate runaway processes</title><link href="https://thinkingeek.com/2024/01/05/mitigate-runaway-processes/" rel="alternate" type="text/html" title="Mitigate runaway processes" /><published>2024-01-05T10:34:00+00:00</published><updated>2024-01-05T10:34:00+00:00</updated><id>https://thinkingeek.com/2024/01/05/mitigate-runaway-processes</id><content type="html" xml:base="https://thinkingeek.com/2024/01/05/mitigate-runaway-processes/">&lt;p&gt;Sometimes I find myself running testsuites that typically, in order to make
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2024-01-05T15:14:33+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Mitigate runaway processes</title><link href="https://thinkingeek.com/2024/01/05/mitigate-runaway-processes/" rel="alternate" type="text/html" title="Mitigate runaway processes" /><published>2024-01-05T10:34:00+00:00</published><updated>2024-01-05T10:34:00+00:00</updated><id>https://thinkingeek.com/2024/01/05/mitigate-runaway-processes</id><content type="html" xml:base="https://thinkingeek.com/2024/01/05/mitigate-runaway-processes/">&lt;p&gt;Sometimes I find myself running testsuites that typically, in order to make
 the most of the several cores available in the system, spawn many processes
 so the tests can run in parallel. This allows running the testsuites much
 faster.&lt;/p&gt;
@@ -172,7 +172,7 @@ EnvironmentFile=&amp;lt;file&amp;gt;&lt;/code&gt; option.&lt;/p&gt;
 
 &lt;p&gt;With all this, we can build a convenient shell script.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;confine.sh&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;confine.sh&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -485,7 +485,7 @@ environment we can use the tool &lt;code class=&quot;language-plaintext highligh
 when the command ends. We can combine this in a convenient script like the one
 below.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;runot&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;runot&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -611,7 +611,7 @@ to the remote machine as a way to initiate the “session”. You would run
 this only for the first connection, the other ones would just use a regular
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssh&lt;/code&gt; command.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;ssh-session&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;ssh-session&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -733,7 +733,7 @@ D-Bus activation.&lt;/p&gt;
 &lt;p&gt;First &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;~/.local/share/dbus-1/services/org.Notifications.service&lt;/code&gt; to tell D-Bus
 what is the associated systemd unit and daemon.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;~/.local/share/dbus-1/services/org.Notifications.service&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;~/.local/share/dbus-1/services/org.Notifications.service&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -748,7 +748,7 @@ executable: the one shown corresponds to Ubuntu/Debian systems.&lt;/p&gt;
 
 &lt;p&gt;Now we need to create a systemd-unit in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;~/.config/systemd/user/my-notification-daemon.service&lt;/code&gt;&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;~/.config/systemd/user/my-notification-daemon.service&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;~/.config/systemd/user/my-notification-daemon.service&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-ini&quot; data-lang=&quot;ini&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -833,7 +833,7 @@ on how to use using derived widgets and &lt;code class=&quot;language-plaintext 
 &lt;p&gt;First lets define a very simple interface made up of an application
 window that includes a box container which has our derived button.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derived.ui&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derived.ui&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -893,7 +893,7 @@ in the XML file (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;
 
 &lt;p&gt;Let’s define now our custom button.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -951,7 +951,7 @@ will allow us to connect the signal that is emitted when the property changes.&l
 &lt;p&gt;Constructors at lines 8 and 9 deserve some explanation, but first let’s see
 the implementation of the class.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1035,7 +1035,7 @@ instantiated the class &lt;code class=&quot;language-plaintext highlighter-rouge
 we won’t be defining new properties for it. However in C++ we will create
 a subclass for it as well.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedwindow.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedwindow.h&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1083,7 +1083,7 @@ a subclass for it as well.&lt;/p&gt;
 will be created elsewhere. Parameter &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;builder&lt;/code&gt; is a reference to Gtk.Builder
 which is an object used to create interfaces from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.ui&lt;/code&gt; files.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedwindow.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedwindow.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1138,7 +1138,7 @@ signal so it hides the dialog. We will use this later to quit the application.&l
 
 &lt;p&gt;The only last piece remaining is the entry point to our application.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;main.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;main.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1304,7 +1304,7 @@ with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DerivedW
 To define the class we will use a custom class that we will use to sidestep
 some of the glibmm defaults.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;customclass.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;customclass.h&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1355,7 +1355,7 @@ some of the glibmm defaults.&lt;/p&gt;
 &lt;p&gt;The implementation class is a bit longer but basically repeats what
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Glib::Class&lt;/code&gt; does but allowing us to specify a name.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;customclass.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;customclass.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1510,7 +1510,7 @@ some of the glibmm defaults.&lt;/p&gt;
 &lt;p&gt;With this first piece of boilerplate done, we can focus on manually deriving
 our button.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -1541,7 +1541,7 @@ our GObject. We will use those later.&lt;/p&gt;
 the GObject class and then we can define the C++ class that represents
 the GObject instances.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;28
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;28
 29
 30
 31
@@ -1629,7 +1629,7 @@ the GObject instances.&lt;/p&gt;
 
 &lt;p&gt;Now the class.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;71
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.h&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;71
 72
 73
 74
@@ -1662,7 +1662,7 @@ will represent the GObject class and it will be used by &lt;code class=&quot;lan
 register the type. This happens because we will obtain a reference of a
 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Glib::Class&lt;/code&gt; via the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DerivedButton_Class::init&lt;/code&gt;.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;135
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;135
 136
 137
 138
@@ -1695,7 +1695,7 @@ new type with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt
 GObjects with a C++ object so it needs to link both, here we link this type
 with the creation function. The creation function looks like this&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;146
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;146
 147
 148
 &lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;Glib&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ObjectBase&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DerivedButton_Class&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wrap_new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GObject&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;object&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -1707,7 +1707,7 @@ with the creation function. The creation function looks like this&lt;/p&gt;
 our class initialisation function (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DerivedButton_Class::class_init_function&lt;/code&gt;) will
 be invoked. It looks like this.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;151
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;151
 152
 153
 154
@@ -1756,7 +1756,7 @@ can do much better here) and then we proceed to initialise the base class, in
 our case &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Gtk::Button&lt;/code&gt;. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PROPERTY_INT&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PROPERTY_STRING&lt;/code&gt; are a couple of
 enumerators that we use to identify these properties in this class.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;66
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;66
 67
 68
 69
@@ -1776,7 +1776,7 @@ have just installed.&lt;/p&gt;
 
 &lt;p&gt;I’m going to list here only the functions that have changes.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;32
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;32
 33
 34
 35
@@ -1800,7 +1800,7 @@ it does not have to invoke the constructor of &lt;code class=&quot;language-plai
 &lt;p&gt;Ideally we would use this constructor, but it turns out that we may build
 the wrapping C++ object earlier. So let’s add one constructor for this case.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;41
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;41
 42
 43
 44
@@ -1823,7 +1823,7 @@ the constructor.&lt;/p&gt;
 but ours does not have to do anything special because we will keep the state
 in the C++ object and not in the GObject itself.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;51
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;51
 52
 53
 54
@@ -1838,7 +1838,7 @@ in the C++ object and not in the GObject itself.&lt;/p&gt;
 identify types (they are just integer handles). We need one for the current class
 (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MyButton&lt;/code&gt;) and one for the base (&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GtkButton&lt;/code&gt;).&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;56
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;56
 57
 58
 59
@@ -1860,7 +1860,7 @@ object for the GObject, the function &lt;code class=&quot;language-plaintext hig
 earlier and that we registered in glibmm when registering the new GObject class
 type.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;62
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;62
 63
 64
 &lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;n&quot;&gt;DerivedButton&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;DerivedButton&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wrap&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GObject&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;object&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;take_copy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
@@ -1872,7 +1872,7 @@ type.&lt;/p&gt;
 We still need to implement them. Those functions are basically C interfaces
 but we can still use most of the time the glibmm wrappers.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;72
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;derivedbutton.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;72
 73
 74
 75
@@ -2013,7 +2013,7 @@ the constructor we had will not actually run.&lt;/p&gt;
 the beginning of the application, in the same place were before we had to
 create a dummy instance instead.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;main.cc&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;28
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;main.cc&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;28
 29
 30
 31
@@ -4041,7 +4041,7 @@ right before the optimisation pass.&lt;/p&gt;
 &lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2  &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - t_doubles_phi.ll &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
       &lt;span class=&quot;nt&quot;&gt;-print-before&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm-optimize-vfp2-len&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4
@@ -4122,7 +4122,7 @@ line 23), so we should be able to reuse this.&lt;/p&gt;
 &lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;llc &lt;span class=&quot;nt&quot;&gt;-mtriple&lt;/span&gt; armv6kz-unknown-linux-gnu &lt;span class=&quot;nt&quot;&gt;-mattr&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;+vfp2  &lt;span class=&quot;nt&quot;&gt;-o&lt;/span&gt; - t_doubles_phi.ll &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
       &lt;span class=&quot;nt&quot;&gt;-print-after&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;arm-optimize-vfp2-len&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
 2
 3
 4

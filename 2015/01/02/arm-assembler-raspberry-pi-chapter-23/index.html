@@ -119,7 +119,7 @@ When a function calls a <em>nested function</em> (also called a <em>local functi
 Consider the following C code (note that Standard C does not allow nesting functions though <a href="https://gcc.gnu.org/onlinedocs/gcc/Nested-Functions.html" title="GCC nested functions">GCC implements them as an extension</a> that we will discuss in a later chapter).
 </p>
 
-<figure class="highlight"><pre><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -155,7 +155,7 @@ The code above features this simple case where a function can call a nested one.
 To access to <code>x</code> from <code>g</code> we need to get the previous <code>fp</code>. Since only <code>f</code> can call us, once we get this previous <code>fp</code>, it will be like the <code>fp</code> we had inside <code>f</code>. So it is now a matter of using the same offset as <code>f</code> uses.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -385,7 +385,7 @@ bl non-immediately-nested-function</code></pre></figure>
 This may seem very complicated but it is not. Since in the example above there are a few functions, we will do one function at a time. Let's start with <code>f</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">31
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">31
 32
 33
 34
@@ -461,7 +461,7 @@ Now f calls h (line 57). Since it is an immediately nested function, the static 
 Let's see the code of <code>h</code> now.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">63
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">63
 64
 65
 66
@@ -554,7 +554,7 @@ After the call to <code>g</code>, the function calls <code>m</code> (line 92) wh
 Let's see now the code of <code>m</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">104
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">104
 105
 106
 107
@@ -636,7 +636,7 @@ Then <code>m</code> calls <code>g</code> (line 131). This is again a case II. Bu
 Let's see now the code of g, which is pretty similar to that of h except that it does not call anyone.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">127
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">127
 128
 129
 130
@@ -712,7 +712,7 @@ Below is the same image but this time using coloured lines to show how each func
 Finally here is the <code>main</code>. Note that when a non-nested function calls another non-nested function, there is no need to do anything to <code>r10</code>. This is the reason why <code>r10</code> does not have any meaningful value upon the entry to <code>f</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">152
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">152
 153
 154
 155

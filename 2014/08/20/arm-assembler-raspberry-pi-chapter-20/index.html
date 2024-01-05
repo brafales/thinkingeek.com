@@ -108,7 +108,7 @@ In reality, calling a function is usually much more involved but at the end ther
 What if rather than using the label of a function, we were able to keep the addres of a function (or several of them) somewhere and call a function indirectly? Let's try that. First, we will start with a basic <q>Hello world</q> that uses a label. We will call this a <em>direct call</em>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -340,7 +340,7 @@ You are probably not impressed by the output of this previous program. So let's 
 Let's start defining a bunch of data that we will require for this example. First greeting messages in English and French. Note that we will greet the person by name, so we will use a printf format string.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
 2
 3
 4
@@ -358,7 +358,7 @@ message_bonjour: .asciz "Bonjour %s\n"
 Next we will define some <em>tags</em> that we will use to tag people as English or French. This tag will contain the address to the specific greeting function. The English tag will have the address of <code>say_hello</code> and the French tag will have the address of <code>say_bonjour</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">7
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">7
 8
 9
 10
@@ -382,7 +382,7 @@ person_french : .word say_bonjour /* tag for people
 Let's define some names that we will use later, when defining people.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">18
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">18
 19
 20
 21
@@ -406,7 +406,7 @@ name_bernadette: .asciz "Bernadette"
 And now define some people. Every person is actually a pair formed by an address to their name and an address to their tag.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">28
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">28
 29
 30
 31
@@ -428,7 +428,7 @@ person_bernadette: .word name_bernadette, person_french
 Finally let's group every person in an array. The array contains addresses to each people (not the people themselves).
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">38
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">38
 39
 </pre></td><td class="code"><pre>/* array of people */
 people : .word person_john, person_pierre, person_sally, person_bernadette 
@@ -438,7 +438,7 @@ people : .word person_john, person_pierre, person_sally, person_bernadette
 Now let's define the code. These are the two specific functions for each language (English and French). Note that we already named their labels in the tags above.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">41
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">41
 42
 43
 44
@@ -510,7 +510,7 @@ addr_of_message_bonjour: .word message_bonjour
 Before we go to the interesting function, let's define the <code>main</code> function.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">99
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">99
 100
 101
 102
@@ -582,7 +582,7 @@ As you can see, what we do here is to load elements 0 to 3 of the <code>people</
 Let's see now the code for the function <code>greet_person</code>.
 </p>
 
-<figure class="highlight"><pre><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">75
+<figure class="highlight"><pre class="with_line_numbers"><code class="language-asm" data-lang="asm"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">75
 76
 77
 78
