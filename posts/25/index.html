@@ -64,6 +64,41 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2012/01/24/ruby-rails-associations-multiple-databases/">Ruby on Rails Many To Many associations with multiple databases</a></h1>
+
+          <p class="post-meta">
+            Jan 24, 2012 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/activerecord/">activerecord</a>, <a href="/tags/databases/">databases</a>, <a href="/tags/github/">github</a>, <a href="/tags/rails/">rails</a>, <a href="/tags/ruby/">ruby</a>, <a href="/tags/ruby-on-rails/">ruby on rails</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+Sometimes you need to use multiple databases in your Rails projects. Usually when some data must be shared between different applications. When this happens you usually have some models in a shared database, and some other models in the specific application database. This can be easily done using the <a href="http://apidock.com/rails/ActiveRecord/Base/establish_connection/class">establish_connection</a> method in the shared models to tell them they have to connect to a different database.
+</p>
+<p>
+However, when you need some interaction between those <em>shared models</em> and the models of your specific application, like a <a href="http://apidock.com/rails/ActiveRecord/Associations/ClassMethods/has_many">has_many, :through</a> association, some problems arise. The typical <em>Many To Many</em> association uses an intermediate database table that links the relation between two models, and allows you to add some extra information on that relation. When navigating through the association, Rails tries to make an SQL query that joins the model with this intermediate table. For example, imagine you have a <em>Team</em> model, which has many <em>Players</em>, but a player can also be on more than one team. We use an intermediate model <em>TeamPlayers</em> (and we can also use it to save the role of that player into that team, for example). You would have those three tables:
+<ul>
+  <li>teams</li>
+  <li>players</li>
+  <li>teams_players</li>
+</ul>
+When asking for the players of a given Team, Rails would do something similar to this:
+
+<figure class="highlight"><pre><code class="language-sql" data-lang="sql"><span class="k">SELECT</span> <span class="nv">"players"</span><span class="p">.</span><span class="o">*</span> <span class="k">FROM</span> <span class="nv">"players"</span> <span class="k">INNER</span> <span class="k">JOIN</span> <span class="n">teams_players</span><span class="nv">" ON "</span><span class="n">players</span><span class="nv">".id = "</span><span class="n">teams_players</span><span class="nv">".player_id WHERE "</span><span class="n">players</span><span class="nv">".team_id = 1</span></code></pre></figure>
+
+Where <code>1</code> is the <em>id</em> of the team you asked for. This [obviously] works perfectly fine when everything is in the same database, and it's as efficient as the SQL database manager you're using. What happens, however, when we have the Player model in another database? It will miserably fail because Rails will try to join with a  table that doesn't exist.
+</p>
+<p>
+Unfortunately, there's no efficient way to solve this problem, that is, using SQL, as you can't work with tables from different databases. However, there's a rather elegant solution that <a href="http://emphaticsolutions.com/2009/11/23/has_many_through_across_databases.html">Brian Doll</a> cared to implement as a <a href="https://github.com/briandoll/st-elsewhere">gem</a> a while ago. As indicated in the GitHub readme, you just have to use a <code>has_many_elsewhere</code> relation instead of the usual one, and make sure that the model referenced has the connection established to the shared database. And that's all.
+</p>
+<p>
+The <em>magic</em> donde behind the scenes is pretty simple: this gem just replicates the same methods that the <code>ActiveRecord::Base</code> class does in the <em>has_many</em> method call, changing the failing unique SQL calls to double SQL calls, one for each database, fetching the intermediate models first, and then fetching the remote models using those ids.
+</p>
+<p>
+This method is not perfect, as probably not all the goodness of the original association can be done with it, but for simple scenarios is more than enough.
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2011/12/02/creating-job-managers-ubiquo/">Creating your own Job Managers in Ubiquo</a></h1>
 
           <p class="post-meta">
@@ -247,27 +282,6 @@ I strongly suggest you take a look at the <a href="http://www.ruby-doc.org/core-
 <span class="k">end</span></code></pre></figure>
 
 <p>In this case we tell mySQL to sort the collection using the internal <code>RAND()</code> method. One problem with this solution is that it’s database-engine specific (the sorting method may be named different in other engines, and in fact at least in PostgreSQL is). Other solutions try to get pseudo random records using the id column, for example by getting the n first records which id is greater or lower than a certain number. While this may be ok in most cases (considering you use a random index to compare with based on the min and max for id values) it may not be so good in other cases.</p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2011/06/16/wordpress-addtoany-plugin/">WordPress AddToAny plugin</a></h1>
-
-          <p class="post-meta">
-            Jun 16, 2011 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/addtoany/">addtoany</a>, <a href="/tags/footer/">footer</a>, <a href="/tags/php/">php</a>, <a href="/tags/wordpress/">wordpress</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-If you encounter problems after upgrading <a href="http://www.wordpress.org">Wordpress</a> and the <a href="http://wordpress.org/extend/plugins/add-to-any/">AddToAny</a> plugin version .9.9.9.1 (the one I tested), try to update your <em>footer.php</em> file of your current theme too add this line just before the closing <em>body</em> tag:
-</p>
-<p>
-
-<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span> <span class="nf">wp_footer</span><span class="p">();</span> <span class="cp">?&gt;</span></code></pre></figure>
-
-</p>
-<p>
-It seems that newer versions of the plugin put some javascript code into the footer section, so without this call, there's no javascript for <em>AddToAny</em>, and without javascript, you can't see the popup div that allows you to select the service you want to use to share your posts.
-</p>
 
         </div></li></ul>
   <div class="pagination">

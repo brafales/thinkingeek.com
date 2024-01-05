@@ -64,6 +64,27 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2011/06/16/wordpress-addtoany-plugin/">WordPress AddToAny plugin</a></h1>
+
+          <p class="post-meta">
+            Jun 16, 2011 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/addtoany/">addtoany</a>, <a href="/tags/footer/">footer</a>, <a href="/tags/php/">php</a>, <a href="/tags/wordpress/">wordpress</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+If you encounter problems after upgrading <a href="http://www.wordpress.org">Wordpress</a> and the <a href="http://wordpress.org/extend/plugins/add-to-any/">AddToAny</a> plugin version .9.9.9.1 (the one I tested), try to update your <em>footer.php</em> file of your current theme too add this line just before the closing <em>body</em> tag:
+</p>
+<p>
+
+<figure class="highlight"><pre><code class="language-php" data-lang="php"><span class="cp">&lt;?php</span> <span class="nf">wp_footer</span><span class="p">();</span> <span class="cp">?&gt;</span></code></pre></figure>
+
+</p>
+<p>
+It seems that newer versions of the plugin put some javascript code into the footer section, so without this call, there's no javascript for <em>AddToAny</em>, and without javascript, you can't see the popup div that allows you to select the service you want to use to share your posts.
+</p>
+
+        </div></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2011/06/16/fixtures-and-serialized-attributes-in-ruby-on-rails/">Fixtures and serialized attributes in Ruby on Rails</a></h1>
 
           <p class="post-meta">
@@ -230,27 +251,7 @@ It's not a perfect solution, because it should be implemented as a subclass or s
 
         </div><p class="post-continue">
             <a href="/2011/03/29/limiting-the-suggestions-on-jqueryui-autocomplete-widget/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2011/03/11/jquery-bars-plugin/">jQuery Bars plugin</a></h1>
-
-          <p class="post-meta">
-            Mar 11, 2011 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/bars/">bars</a>, <a href="/tags/html/">html</a>, <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-I was developing an application recently that needed some king of horizontal bars to be drawn on a web page. I found the <a href="http://docs.jquery.com/UI/Progressbar">jQuery Progressbar</a> plugin and found it it was something similar to what I wanted to achieve, so I took some spare time and modified it to convert it in a plugin I could use in my app. The result is the <a href="https://github.com/brafales/jQuery-bars">jQuery Bars plugin</a>. It's a pretty simple plugin that will take a div and convert it into a horizontal bar, in which you can change the background color, the actual bar color, the duration of the animation and the height and width of the bar.
-</p>
-<p>
-You can check a how it works and looks in this simple <a href="https://github.com/brafales/jQuery-bars/blob/master/test/test.html">test</a> I uploaded. It can be useful if you ever have to shown some kind of a percentage bar in a chart and you need a bit more customization that jQuery UI Progressbar gives you.
-</p>
-<p>
-The plugin is dual licensed in MIT and GPLv2, the same license as jQuery, so feel free to use it or modify it at your will.
-</p>
-
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/27/">&laquo; Older</a>

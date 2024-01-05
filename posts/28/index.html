@@ -64,6 +64,21 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2010/11/24/execute-javascript-code-every-time-a-form-is-loaded-via-ajax-beginform/">Execute javascript code every time a form is loaded via Ajax.BeginForm</a></h1>
+
+          <p class="post-meta">
+            Nov 24, 2010 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/ajax/">ajax</a>, <a href="/tags/c/">c#</a>, <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a>, <a href="/tags/mvc/">MVC</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+If you've ever used the <em>Ajax.BeginForm</em> code to render a form in ASP MVC using Ajax (via jQuery, for example), you may have wondered there's an object you can pass to the call called <em>AjaxOptions</em>. This object allows you to pass the BeginForm call some interesting options to further enhance the form when it's rendered. One of those options is specially useful if you want some javascript to be executed just after the form has been rendered. You can always use the <em>$(document).ready</em> in jQuery, but this code will not be called if, for example, the form is rendered after a postback and you have some validation errors (a missing required field, for example). Fortunately, you can use the <em>AjaxOptions</em> object to tell the form to execute a method right after the form has been loaded (for the first time or after a postback).
+</p>
+
+        </div><p class="post-continue">
+            <a href="/2010/11/24/execute-javascript-code-every-time-a-form-is-loaded-via-ajax-beginform/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2010/11/16/creating-and-consuming-json-data-in-mvc-2/">Creating and consuming JSON data in MVC 2</a></h1>
 
           <p class="post-meta">
@@ -143,111 +158,7 @@
 
         </div><p class="post-continue">
             <a href="/2009/06/08/disabling-updatepanels-when-an-asynchronous-postback-is-done/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2009/03/11/using-ironpython-to-extend-your-net-applications/">Using IronPython to extend your .NET applications</a></h1>
-
-          <p class="post-meta">
-            Mar 11, 2009 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/net/">.net</a>, <a href="/tags/c/">c#</a>, <a href="/tags/ironpython/">ironpython</a>, <a href="/tags/ironruby/">ironruby</a>, <a href="/tags/python/">python</a>, <a href="/tags/ruby/">ruby</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>
-One of the interesting new things on the .NET platform is the recent addition of <a href="http://www.python.org/">Python</a> and <a href="http://ruby-lang.org/">Ruby</a> to the CLR. Both versions for .NET are called <a href="http://www.codeplex.com/IronPython">IronPython</a> and <a href="http://www.ironruby.net/">IronRuby</a> respectively, and they provide some new and good things to the platform.
-</p>
-<p>
-Python and Ruby lovers will see now that they can use all the library and features of the .NET platform programming in their favorite scripting language. Since both of them are object oriented, you can now write fully fledged apps using either of them.
-</p>
-<p>
-However, there's another interesting application for IronPython and IronRuby: adding scripting support for your existing .NET applications. This can be a very useful and powerful way to extend your applications and give the user freedom to program their own mini programs, scripts or whatever in your applications. It could be good for defining rules, assigning and calculating values, etc.
-</p>
-<p>
-I'll provide a simple class you can use to add scripting to your application. I'll use IronPython in this example.
-</p>
-<p>
-First of all, you have to download IronPython and install it, and add the references to the assemblies on your project references.
-</p>
-<p>
-The usual way to proceed in those cases is to provide the user of some local variables you give them access to, execute the script, and then recover the values of those or new variables. To do so, You can use a class similar to this one:
-</p>
-<p>
-
-<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">System.Collections.Generic</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">System.Text</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">IronPython.Hosting</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Microsoft.Scripting.Hosting</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Microsoft.Scripting</span><span class="p">;</span>
-
-<span class="k">namespace</span> <span class="nn">Scripting</span>
-<span class="p">{</span>
-	<span class="k">internal</span> <span class="k">class</span> <span class="nc">PythonEngine</span>
-	<span class="p">{</span>
-        <span class="n">ScriptEngine</span> <span class="n">m_engine</span><span class="p">;</span>
-        <span class="n">ExceptionOperations</span> <span class="n">m_exceptionOperations</span><span class="p">;</span>
-        <span class="n">SortedDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;</span> <span class="n">m_inputVariables</span><span class="p">;</span>
-        <span class="kt">string</span> <span class="n">m_script</span><span class="p">;</span>
-
-        <span class="k">internal</span> <span class="nf">PythonEngine</span><span class="p">()</span>
-        <span class="p">{</span>
-            <span class="n">m_engine</span> <span class="p">=</span> <span class="n">Python</span><span class="p">.</span><span class="nf">CreateEngine</span><span class="p">();</span>
-            <span class="n">m_exceptionOperations</span> <span class="p">=</span> <span class="n">m_engine</span><span class="p">.</span><span class="n">GetService</span><span class="p">&lt;</span><span class="n">ExceptionOperations</span><span class="p">&gt;();</span>
-        <span class="p">}</span>
-
-        <span class="k">internal</span> <span class="n">SortedDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;</span> <span class="n">ScriptVariables</span>
-        <span class="p">{</span>
-            <span class="k">set</span> <span class="p">{</span> <span class="n">m_inputVariables</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span> <span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="k">internal</span> <span class="kt">string</span> <span class="n">Script</span>
-        <span class="p">{</span>
-            <span class="k">set</span> <span class="p">{</span> <span class="n">m_script</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span> <span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="k">internal</span> <span class="n">ExceptionOperations</span> <span class="n">ExceptionOperations</span>
-        <span class="p">{</span>
-            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">m_exceptionOperations</span><span class="p">;</span> <span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="k">internal</span> <span class="n">SortedDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;</span> <span class="nf">Execute</span><span class="p">()</span>
-        <span class="p">{</span>
-            <span class="c1">//Create structures</span>
-            <span class="n">SourceCodeKind</span> <span class="n">sc</span> <span class="p">=</span> <span class="n">SourceCodeKind</span><span class="p">.</span><span class="n">Statements</span><span class="p">;</span>
-            <span class="n">ScriptSource</span> <span class="n">source</span> <span class="p">=</span> <span class="n">m_engine</span><span class="p">.</span><span class="nf">CreateScriptSourceFromString</span><span class="p">(</span><span class="n">m_script</span><span class="p">,</span> <span class="n">sc</span><span class="p">);</span>
-            <span class="n">ScriptScope</span> <span class="n">scope</span> <span class="p">=</span> <span class="n">m_engine</span><span class="p">.</span><span class="nf">CreateScope</span><span class="p">();</span>
-            <span class="c1">//Fill input variables</span>
-            <span class="k">foreach</span> <span class="p">(</span><span class="n">KeyValuePair</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;</span> <span class="n">variable</span> <span class="k">in</span> <span class="n">m_inputVariables</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="n">scope</span><span class="p">.</span><span class="nf">SetVariable</span><span class="p">(</span><span class="n">variable</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">variable</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
-            <span class="p">}</span>
-            <span class="n">SortedDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;</span> <span class="n">outputVariables</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SortedDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;();</span>
-            <span class="c1">//Execute the script</span>
-            <span class="k">try</span>
-            <span class="p">{</span>
-                <span class="n">source</span><span class="p">.</span><span class="nf">Execute</span><span class="p">(</span><span class="n">scope</span><span class="p">);</span>
-                <span class="c1">//Recover variables</span>
-                <span class="k">foreach</span> <span class="p">(</span><span class="kt">string</span> <span class="n">variable</span> <span class="k">in</span> <span class="n">scope</span><span class="p">.</span><span class="nf">GetVariableNames</span><span class="p">())</span>
-                <span class="p">{</span>
-                    <span class="n">outputVariables</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">scope</span><span class="p">.</span><span class="nf">GetVariable</span><span class="p">(</span><span class="n">variable</span><span class="p">));</span>
-                <span class="p">}</span>
-            <span class="p">}</span>
-            <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">e</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="kt">string</span> <span class="n">error</span> <span class="p">=</span> <span class="n">m_exceptionOperations</span><span class="p">.</span><span class="nf">FormatException</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-                <span class="c1">//Do something with the pretty printed error</span>
-                <span class="k">throw</span><span class="p">;</span>
-            <span class="p">}</span>
-            <span class="k">return</span> <span class="n">outputVariables</span><span class="p">;</span>
-        <span class="p">}</span>
-	<span class="p">}</span>
-<span class="p">}</span></code></pre></figure>
-
-</p>
-<p>
-Usage of this class is pretty simple. You have to provide the object the script you want to execute and the input variables the script will have available as local variables. Once this is done, you have to call the Execute method, and this method will either return the output variables of the execution of the resulting script, or throw an exception.
-</p>
-
-        </div></li></ul>
+          </p></li></ul>
   <div class="pagination">
     
       <a class="previous" href="/posts/29/">&laquo; Older</a>

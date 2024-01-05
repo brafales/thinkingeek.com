@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Mitigate runaway processes</title>
+  <meta name="description" content="Sometimes I find myself running testsuites that typically, in order to make the most of the several cores available in the system, spawn many processes so the tests can run in parallel. This allows running the testsuites much faster. One side-effect, though, of these mechanisms is that they may not be able to handle correctly cancellation, say pressing Ctrl-C. Today we are going to see a way to mitigate this problem using systemd-run.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2024/01/05/mitigate-runaway-processes/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Mitigate runaway processes">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2024/01/05/mitigate-runaway-processes/">
+  <meta property="og:description" content="Sometimes I find myself running testsuites that typically, in order to make the most of the several cores available in the system, spawn many processes so the tests can run in parallel. This allows running the testsuites much faster. One side-effect, though, of these mechanisms is that they may not be able to handle correctly cancellation, say pressing Ctrl-C. Today we are going to see a way to mitigate this problem using systemd-run.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Mitigate runaway processes">
+  <meta name="twitter:description" content="Sometimes I find myself running testsuites that typically, in order to make the most of the several cores available in the system, spawn many processes so the tests can run in parallel. This allows...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/arm-assembler-raspberry-pi/">Arm Assembler Raspberry Pi</a><a class="page-link" href="/gcc-tiny/">GCC tiny</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Mitigate runaway processes</h1>
+    
+    <p class="post-meta"><time datetime="2024-01-05T10:34:00+00:00" itemprop="datePublished">Jan 5, 2024</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/systemd/">systemd</a>, <a href="/categories/linux/">linux</a>, <a href="/categories/processes/">processes</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Sometimes I find myself running testsuites that typically, in order to make
+the most of the several cores available in the system, spawn many processes
+so the tests can run in parallel. This allows running the testsuites much
+faster.</p>
+
+<p>One side-effect, though, of these mechanisms is that they may not be able
+to handle correctly cancellation, say pressing <code class="language-plaintext highlighter-rouge">Ctrl-C</code>.</p>
+
+<p>Today we are going to see a way to mitigate this problem using <code class="language-plaintext highlighter-rouge">systemd-run</code>.</p>
+
+<!--more-->
+
+<h2>Systemd</h2>
+
+<p><a href="https://systemd.io/">Systemd</a> is the system and service manager used in Linux
+these days in replacement of existing solutions based on shell scripts. In
+contrast to loosely coupled scripts, systemd is a more integrated solution.
+In that sense it has pros and cons but the former seem to outweigh the latter
+and most Linux distributions have migrated to use systemd.</p>
+
+<p>Systemd uses the concept of
+<a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html">units</a>,
+of which there are different kinds, and we are interested in the
+<a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html">service</a>
+unit type.</p>
+
+<p>Typically units are described by files on the disk so we can start, stop, etc. using
+the <code class="language-plaintext highlighter-rouge">systemctl</code> command.</p>
+
+<h3>systemd-run</h3>
+
+<p>The tool <code class="language-plaintext highlighter-rouge">systemd-run</code> allows us to create service units on the fly for ad-hoc
+purposes. By default <code class="language-plaintext highlighter-rouge">systemd-run</code> will try to use the global (system-wide)
+<code class="language-plaintext highlighter-rouge">systemd</code> session, but we can tell it to use the systemd session created when
+the user logged on (e.g. via <code class="language-plaintext highlighter-rouge">ssh</code>) using the command option <code class="language-plaintext highlighter-rouge">--user</code>.</p>
+
+<p>One interesting flag is the <code class="language-plaintext highlighter-rouge">--shell</code> flag, which allows us to run <code class="language-plaintext highlighter-rouge">$SHELL</code> as
+a systemd service. This means that systemd is in control of the processes
+created in there.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>systemd-run <span class="nt">--user</span> <span class="nt">--shell</span>
+Running as unit: run-u100.service
+Press ^] three <span class="nb">times </span>within 1s to disconnect TTY.
+<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux mybox 6.1.0-17-amd64 <span class="c">#1 SMP PREEMPT_DYNAMIC Debian 6.1.69-1 (2023-12-30) x86_64 GNU/Linux</span>
+<span class="nv">$ </span><span class="nb">exit
+exit
+</span>Finished with result: success
+Main processes terminated with: <span class="nv">code</span><span class="o">=</span>exited/status<span class="o">=</span>0
+Service runtime: 2.715s
+CPU <span class="nb">time </span>consumed: 10ms
+</code></pre></div></div>
+
+<p>The flag <code class="language-plaintext highlighter-rouge">--shell</code> according the
+<a href="https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html">documentation</a>
+is a shortcut for the command options <code class="language-plaintext highlighter-rouge">--pty --same-dir --wait --collect --service-type=exec $SHELL</code>.</p>
+
+<h2>Use case</h2>
+
+<p>As part of my dayjob I often run the LLVM
+<a href="https://llvm.org/docs/TestingGuide.html#unit-tests">unit</a> and <a href="https://llvm.org/docs/TestingGuide.html#regression-tests">regression
+tests</a>. Once we have
+built LLVM, along with other projects such as <code class="language-plaintext highlighter-rouge">clang</code>, <code class="language-plaintext highlighter-rouge">flang</code> and <code class="language-plaintext highlighter-rouge">lld</code>, there
+is a target in the build system called <code class="language-plaintext highlighter-rouge">check</code>. Check will build the necessary
+infrastructure for unit tests and invoke
+<a href="https://llvm.org/docs/CommandGuide/lit.html"><code class="language-plaintext highlighter-rouge">lit</code></a></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Build LLVM and all the projects
+user:~/llvm-build$ cmake --build .
+# Run the unit and regression tests
+user:~/llvm-build$ cmake --build . --target check
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">lit</code> is implemented in Python and in order to exploit parallelism uses the
+<a href="https://docs.python.org/3/library/multiprocessing.html">multiprocessing</a>
+module.  Unfortunately if for some reason you need to cancel early the
+testsuite execution (e.g., you realised you forgot to add a test), say,
+pressing <code class="language-plaintext highlighter-rouge">Ctrl-C</code>, if your machine has lots of threads, you will end with a
+large number of runaway processes. This is easy to observe when LLVM is build
+in Debug mode as everything runs much slower, including tests. I have not dug
+further but I assume this is a limitation of the <code class="language-plaintext highlighter-rouge">multiprocessing</code> module.</p>
+
+<p>Following is an example of what typically happens if we press Ctrl-C on a
+machine with 16 cores (32 threads):</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user:~/llvm-build$ cmake --build . --target check
+[2/3] cd /home/user/soft/llvm-build... /usr/bin/python3 -m unittest discover
+.................................................................................................................................
+----------------------------------------------------------------------
+Ran 129 tests in 1.403s
+
+OK
+[2/3] Running all regression tests
+llvm-lit: /home/user/llvm-src/llvm/utils/lit/lit/llvm/config.py:488: note: using clang: /home/user/llvm-build/bin/clang
+^C  interrupted by user, skipping remaining tests
+
+Testing Time: 4.53s
+
+Total Discovered Tests: 74509
+  Skipped: 74509 (100.00%)
+ninja: build stopped: interrupted by user.
+</code></pre></div></div>
+
+<p>If right after cancelling we check <code class="language-plaintext highlighter-rouge">ps -x -f</code>, we will see a large number of
+processes that have been detached from the <code class="language-plaintext highlighter-rouge">lit</code> process.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user:~/llvm-build$ ps -x -f
+  …
+  16574 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-global-agent.ll.script
+  16575 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx600 -verify-machineinstrs
+  16576 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX6 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-global-agent.ll
+  16577 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-local-singlethread.ll.script
+  16578 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx600 -verify-machineinstrs
+  16579 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX6 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-local-singlethread.ll
+  16580 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/sched-group-barrier-pipeline-solver.mir.script
+  16612 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -march=amdgcn -mcpu=gfx908 -amdgpu-igrouplp-exact-solver -run-pass=machine-scheduler -o - /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/sched-group-barrier-pipeline-solver.mir
+  16613 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck -check-prefix=EXACT /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/sched-group-barrier-pipeline-solver.mir
+  16583 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-global-system.ll.script
+  16584 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx600 -verify-machineinstrs
+  16585 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX6 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-global-system.ll
+  16586 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-flat-agent.ll.script
+  16587 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -verify-machineinstrs
+  16588 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX7 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-flat-agent.ll
+  16590 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-flat-singlethread.ll.script
+  16591 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -verify-machineinstrs
+  16592 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX7 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-flat-singlethread.ll
+  16593 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-flat-system.ll.script
+  16594 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -verify-machineinstrs
+  16595 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX7 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-flat-system.ll
+  16596 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-flat-wavefront.ll.script
+  16597 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -verify-machineinstrs
+  16598 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX7 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-flat-wavefront.ll
+  16600 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/tools/clang/test/CodeGen/X86/Output/x86_64-xsave.c.script
+  16658 pts/2    R      0:04  |   \_ /home/user/llvm-build/bin/clang -cc1 -internal-isystem /home/user/llvm-build/lib/clang/18/include -nostdsysteminc /home/user/llvm-src/clang/test/CodeGen/X86/x86_64-xsave.c -DTEST_XSAVE -O0 
+  16659 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck /home/user/llvm-src/clang/test/CodeGen/X86/x86_64-xsave.c --check-prefix=XSAVE
+  16603 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/memory-legalizer-flat-workgroup.ll.script
+  16607 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -mtriple=amdgcn-amd-amdhsa -mcpu=gfx700 -verify-machineinstrs
+  16608 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck --check-prefixes=GFX7 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/memory-legalizer-flat-workgroup.ll
+  16609 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/tools/clang/test/CodeGen/X86/Output/rot-intrinsics.c.script
+  16646 pts/2    R      0:05  |   \_ /home/user/llvm-build/bin/clang -cc1 -internal-isystem /home/user/llvm-build/lib/clang/18/include -nostdsysteminc -x c -ffreestanding -triple x86_64--linux -no-enable-noundef-analysis -emit-llvm /home/roge
+  16647 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck /home/user/llvm-src/clang/test/CodeGen/X86/rot-intrinsics.c --check-prefixes CHECK,CHECK-64BIT-LONG
+  16621 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/tools/clang/test/Headers/Output/opencl-builtins.cl.script
+  16642 pts/2    R      0:09  |   \_ /home/user/llvm-build/bin/clang -cc1 -internal-isystem /home/user/llvm-build/lib/clang/18/include -nostdsysteminc -include /home/user/llvm-src/clang/test/Headers/opencl-builtins.cl /home/ro
+  16622 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/tools/clang/test/CodeGen/PowerPC/Output/ppc-smmintrin.c.script
+  16652 pts/2    R      0:04  |   \_ /home/user/llvm-build/bin/clang -S -emit-llvm -target powerpc64-unknown-linux-gnu -mcpu=pwr8 -ffreestanding -DNO_WARN_X86_INTRINSICS /home/user/llvm-src/clang/test/CodeGen/PowerPC/ppc-smmintrin.c -fno-discard-
+  16623 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/tools/clang/test/CodeGen/X86/Output/x86_32-xsave.c.script
+  16656 pts/2    R      0:04  |   \_ /home/user/llvm-build/bin/clang -cc1 -internal-isystem /home/user/llvm-build/lib/clang/18/include -nostdsysteminc /home/user/llvm-src/clang/test/CodeGen/X86/x86_32-xsave.c -DTEST_XSAVE -O0 
+  16657 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck /home/user/llvm-src/clang/test/CodeGen/X86/x86_32-xsave.c --check-prefix=XSAVE
+  16624 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/GlobalISel/Output/fdiv.f16.ll.script
+  16627 pts/2    R      0:10  |   \_ /home/user/llvm-build/bin/llc -global-isel -march=amdgcn -mcpu=tahiti -denormal-fp-math=ieee -verify-machineinstrs
+  16629 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck -check-prefixes=GFX6,GFX6-IEEE /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/GlobalISel/fdiv.f16.ll
+  16625 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/tools/clang/test/Headers/Output/opencl-c-header.cl.script
+  16648 pts/2    R      0:05  |   \_ /home/user/llvm-build/bin/clang -cc1 -internal-isystem /home/user/llvm-build/lib/clang/18/include -nostdsysteminc -O0 -triple spir-unknown-unknown -internal-isystem ../../lib/Headers -include opencl-c.h -e
+  16649 pts/2    S      0:00  |   \_ /home/user/llvm-build/bin/FileCheck /home/user/llvm-src/clang/test/Headers/opencl-c-header.cl
+  16636 pts/2    S      0:00  \_ /bin/bash /home/user/llvm-build/test/CodeGen/AMDGPU/Output/mad-mix.ll.script
+  16650 pts/2    R      0:05      \_ /home/user/llvm-build/bin/llc -march=amdgcn -mcpu=gfx900 -verify-machineinstrs
+  16651 pts/2    S      0:00      \_ /home/user/llvm-build/bin/FileCheck -check-prefixes=GFX900,SDAG-GFX900 /home/user/llvm-src/llvm/test/CodeGen/AMDGPU/mad-mix.ll
+  …
+</code></pre></div></div>
+
+<p>Granted, given enough time, those processes will eventually finish silently.
+But given that tests sometimes use deterministic intermediate files, if we run
+them again immediately we risk having spurious failures caused by two processes
+writing to the same file (i.e. kind of a a filesystem data race).</p>
+
+<h3>Running inside systemd-run</h3>
+
+<p>One of the downsides of running something as a service using systemd-run is
+that it won’t inherit the environment but instead will use the environment of
+the systemd session. Luckily this can be addressed using the <code class="language-plaintext highlighter-rouge">-p
+EnvironmentFile=&lt;file&gt;</code> option.</p>
+
+<p>With all this, we can build a convenient shell script.</p>
+
+<figure class="highlight"><figcaption>confine.sh</figcaption><pre><code class="language-bash" data-lang="bash"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="code"><pre><span class="c">#!/usr/bin/env bash</span>
+<span class="nb">set</span> <span class="nt">-euo</span> pipefail
+
+<span class="k">function </span>cleanup<span class="o">()</span> <span class="o">{</span>
+  <span class="o">[</span> <span class="nt">-n</span> <span class="s2">"</span><span class="k">${</span><span class="nv">ENV_FILE</span><span class="k">}</span><span class="s2">"</span> <span class="o">]</span> <span class="o">&amp;&amp;</span> <span class="nb">rm</span> <span class="nt">-f</span> <span class="s2">"</span><span class="k">${</span><span class="nv">ENV_FILE</span><span class="k">}</span><span class="s2">"</span>
+<span class="o">}</span>
+
+<span class="nv">ENV_FILE</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span><span class="nb">mktemp</span><span class="si">)</span><span class="s2">"</span>
+<span class="nb">trap </span>cleanup EXIT
+
+<span class="nb">env</span> <span class="o">&gt;</span> <span class="s2">"</span><span class="k">${</span><span class="nv">ENV_FILE</span><span class="k">}</span><span class="s2">"</span>
+
+systemd-run <span class="nt">--user</span> <span class="nt">--pty</span> <span class="nt">--same-dir</span> <span class="nt">--wait</span> <span class="nt">--collect</span> <span class="nt">--service-type</span><span class="o">=</span><span class="nb">exec</span> <span class="nt">-q</span> <span class="se">\</span>
+            <span class="nt">-p</span> <span class="s2">"EnvironmentFile=</span><span class="k">${</span><span class="nv">ENV_FILE</span><span class="k">}</span><span class="s2">"</span> <span class="nt">--</span> <span class="s2">"</span><span class="nv">$@</span><span class="s2">"</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>The flag <code class="language-plaintext highlighter-rouge">-q</code> silences the informational messages emitted <code class="language-plaintext highlighter-rouge">systemd-run</code> on
+start and end.</p>
+
+<p>Now we can run the regression tests using this convenient script, and even
+if we abort the execution by pressing Ctrl-C, systemd will kill all the process
+tree.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user:~/llvm-build<span class="nv">$ </span>confine.sh cmake <span class="nt">--build</span> <span class="nb">.</span> <span class="nt">--target</span> check
+<span class="o">[</span>2/3] <span class="nb">cd</span> /home/user/llvm-src/clang/bindings/python <span class="o">&amp;&amp;</span> /usr/bin/cmake <span class="nt">-E</span> <span class="nb">env </span><span class="nv">CLANG_NO_DEFAULT_CONFIG</span><span class="o">=</span>1 <span class="nv">CLANG_LIBRARY_PATH</span><span class="o">=</span>/home/user/llvm-build/lib /usr/bin/python3 <span class="nt">-m</span> unittest discover
+.................................................................................................................................
+<span class="nt">----------------------------------------------------------------------</span>
+Ran 129 tests <span class="k">in </span>1.410s
+
+OK
+<span class="o">[</span>2/3] Running all regression tests
+llvm-lit: /home/user/llvm-src/llvm/utils/lit/lit/llvm/config.py:488: note: using clang: /home/user/llvm-build/bin/clang
+^C  interrupted by user, skipping remaining tests
+
+Testing Time: 18.81s
+
+Total Discovered Tests: 74509
+  Skipped: 74509 <span class="o">(</span>100.00%<span class="o">)</span>
+ninja: build stopped: interrupted by user.
+user:~/llvm-build<span class="nv">$ </span>ps <span class="nt">-x</span> <span class="nt">-f</span> | <span class="nb">grep</span> <span class="s2">"bash.*</span><span class="se">\.</span><span class="s2">script"</span> | <span class="nb">wc</span> <span class="nt">-l</span>
+0
+</code></pre></div></div>
+
+<p>Hope this is useful :)</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2023/12/24/testing-api-gateway-docker-lambdas/">&laquo; Locally testing API Gateway Docker based Lambdas</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
