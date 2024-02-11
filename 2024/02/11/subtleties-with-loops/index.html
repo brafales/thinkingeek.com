@@ -263,6 +263,18 @@ x86-64 it is likely to not to terminate at any optimisation level.</p>
 <p>will never terminate when <code class="language-plaintext highlighter-rouge">N = 4294967295</code>. In C and C++, overflow of unsigned
 integers is well-defined as wrapping-around.</p>
 
+<p>Based on the approach seen above, a way to correctly implement either case is
+as follows:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Example for the signed case.</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">N</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Again, it does not look great but it is always correct.</p>
+
   </div>
 
 </article>
