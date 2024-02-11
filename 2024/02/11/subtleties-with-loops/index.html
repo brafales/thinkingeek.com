@@ -14,7 +14,7 @@
   
 
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://thinkingeek.com/2024/02/11/sometimes-loops-are-difficult/">
+  <link rel="canonical" href="https://thinkingeek.com/2024/02/11/subtleties-with-loops/">
   
   
   <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
@@ -24,7 +24,7 @@
   
   <meta property="og:title" content="Subtleties with loops">
   <meta property="og:site_name" content="Think In Geek">
-  <meta property="og:url" content="https://thinkingeek.com/2024/02/11/sometimes-loops-are-difficult/">
+  <meta property="og:url" content="https://thinkingeek.com/2024/02/11/subtleties-with-loops/">
   <meta property="og:description" content="A common task in imperative programming languages is writing a loop. A loop that can terminate requires a way to check the terminating condition and a way to repeatedly execute some part of the code. These two mechanisms exists in many forms: from the crudest approach of using an if and a goto (that must jump backwards in the code) to higher-level structured constructs like for and while ending in very high-level constructs built around higher-order functions in for_each-like constructs and more recently, in the context of GPU programming, the idea of a kernel function instantiated over a n-dimensional domain (where typically n ≤ 3 but most of the time n = 1). These more advanced mechanisms make writing loops a commonplace task and typically regarded as uneventful. Yet, there are situations when things get subtler than we would like.">
   
   
@@ -209,7 +209,7 @@ The answer is yes, but the loop will not look as nice.</p>
 
 <p>Let’s be honest, this construction does not look very nice but it avoids any
 overflow. So <code class="language-plaintext highlighter-rouge">i</code> only has to be as large as <code class="language-plaintext highlighter-rouge">lower</code> and <code class="language-plaintext highlighter-rouge">upper</code>. In other
-words., there is no need to make it larger “just in case”.</p>
+words, there is no need to make it larger “just in case”.</p>
 
 <h3>Impact on optimisation</h3>
 
