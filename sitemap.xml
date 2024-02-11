@@ -641,6 +641,10 @@
 <lastmod>2024-01-05T10:34:00+00:00</lastmod>
 </url>
 <url>
+<loc>https://thinkingeek.com/2024/02/11/sometimes-loops-are-difficult/</loc>
+<lastmod>2024-02-11T09:50:00+00:00</lastmod>
+</url>
+<url>
 <loc>https://thinkingeek.com/archives/</loc>
 </url>
 <url>
@@ -1250,6 +1254,12 @@
 <loc>https://thinkingeek.com/categories/processes/</loc>
 </url>
 <url>
+<loc>https://thinkingeek.com/categories/loops/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/categories/overflow/</loc>
+</url>
+<url>
 <loc>https://thinkingeek.com/posts/2/</loc>
 </url>
 <url>
@@ -1341,5 +1351,8 @@
 </url>
 <url>
 <loc>https://thinkingeek.com/posts/32/</loc>
+</url>
+<url>
+<loc>https://thinkingeek.com/posts/33/</loc>
 </url>
 </urlset>

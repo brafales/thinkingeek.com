@@ -64,6 +64,32 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2024/02/11/sometimes-loops-are-difficult/">Subtleties with loops</a></h1>
+
+          <p class="post-meta">
+            Feb 11, 2024 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/loops/">loops</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/programming/">programming</a>, <a href="/categories/overflow/">overflow</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>A common task in imperative programming languages is writing a loop. A loop
+that can terminate requires a way to check the terminating condition and a way
+to repeatedly execute some part of the code. These two mechanisms exists in
+many forms: from the crudest approach of using an <code class="language-plaintext highlighter-rouge">if</code> and a <code class="language-plaintext highlighter-rouge">goto</code> (that must
+jump backwards in the code) to higher-level structured constructs like <code class="language-plaintext highlighter-rouge">for</code>
+and <code class="language-plaintext highlighter-rouge">while</code> ending in very high-level constructs built around higher-order
+functions in <code class="language-plaintext highlighter-rouge">for_each</code>-like constructs and more recently, in the context of
+GPU programming, the idea of a kernel function instantiated over a
+n-dimensional domain (where typically n ≤ 3 but most of the time n = 1).</p>
+
+<p>These more advanced mechanisms make writing loops a commonplace task and
+typically regarded as uneventful. Yet, there are situations when things get
+subtler than we would like.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2024/02/11/sometimes-loops-are-difficult/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2024/01/05/mitigate-runaway-processes/">Mitigate runaway processes</a></h1>
 
           <p class="post-meta">
@@ -138,27 +164,6 @@ we are going to face.</p>
 
         </div><p class="post-continue">
             <a href="/2023/02/04/writing-gobjects-in-cpp/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2023/01/15/wrapping-gobjects-in-cpp/">Wrapping GObjects in C++</a></h1>
-
-          <p class="post-meta">
-            Jan 15, 2023 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/gtk/">gtk</a>, <a href="/categories/gobject/">gobject</a>, <a href="/categories/gnome/">gnome</a>, <a href="/categories/cpp/">cpp</a>, <a href="/categories/cplusplus/">cplusplus</a></p>
-        </header>
-
-        <div class="post-content">
-          <p><a href="https://docs.gtk.org/gobject/">GObject</a> is the foundational dynamic type
-system implemented on top of the C language that is used by many other
-libraries like GLib, GTK and many other components, most of them part of the
-<a href="https://www.gnome.org/">GNOME desktop</a> environment stack.</p>
-
-<p><a href="https://github.com/rofirrim/libadwaitamm">I’ve been lately wrapping</a> a <a href="https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.2/">C
-library</a> that uses
-GObject for C++ and I learned about some of the challenges.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2023/01/15/wrapping-gobjects-in-cpp/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     

@@ -64,6 +64,30 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2011/03/29/limiting-the-suggestions-on-jqueryui-autocomplete-widget/">Limiting the suggestions on jQueryUI Autocomplete widget</a></h1>
+
+          <p class="post-meta">
+            Mar 29, 2011 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/autocomplete/">autocomplete</a>, <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a>, <a href="/tags/jqueryui/">jqueryUI</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>
+If you ever used <a href="http://jqueryui.com/demos/autocomplete/">autocomplete.ui</a> plugin from <a href="http://jqueryui.com/">jQuery UI</a> and have an array with lots of suggestions you'll see that the solutions provided by the plugin are not always satisfactory. You can add a scrollbar to the suggestions box by using a CSS hack, but even with that, you'll have to render a big HTML that can be annoying on slow machines (mobile devices, for example).
+</p>
+<p>
+I was working on a web site recently that had to be displayed on mobile devices and needed an autocomplete. But the suggestions array was big. A lot. This caused some problems on the mobile devices as they were behaving very slow, and the default plugin configuration doesn't allow you to specify a maximum number of items to show in the suggesstions box.
+</p>
+<p>
+So I decided to do a dirty hack into the plugin code to add this behaviour, adding a <em>max</em> property to the options to be able to limit the number of suggestions to show.
+</p>
+<p>
+It's not a perfect solution, because it should be implemented as a subclass or something, but if you need a fast solution, this is the way to go. You can find the code in my <a href="https://github.com/brafales/jquery-ui/blob/master/ui/jquery.ui.autocomplete.js">GitHub repository fork of jQueryUI</a>. You can check the <a href="https://github.com/brafales/jquery-ui/commit/aa07a7e7604394098bb65abcb1afacb74615e01e">commit</a> to see the changes I made.
+</p>
+
+        </div><p class="post-continue">
+            <a href="/2011/03/29/limiting-the-suggestions-on-jqueryui-autocomplete-widget/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2011/03/11/jquery-bars-plugin/">jQuery Bars plugin</a></h1>
 
           <p class="post-meta">
@@ -224,23 +248,6 @@ All you need to do to make a route like the one in the example to work is add th
 </p>
 <p>
 This will pass the controller <em>Blob</em> a parameter called <em>path</em> that will contain the parameter you want (in the example that would be <em>master/Core/Models/Commit.cs</em>. All you have to do now is use this parameter as you wish so you can access the desired file and show it's contents on a web page.
-</p>
-
-        </div></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2010/12/02/get-the-number-of-days-in-a-month-in-net/">Get the number of days in a month in .NET</a></h1>
-
-          <p class="post-meta">
-            Dec 2, 2010 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/net/">.net</a>, <a href="/tags/c/">c#</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>If you've ever wondered how to get the number of days for a given month in .NET, the solution is pretty easy:</p>
-
-<figure class="highlight"><pre><code class="language-csharp" data-lang="csharp"><span class="n">System</span><span class="p">.</span><span class="n">DateTime</span><span class="p">.</span><span class="nf">DaysInMonth</span><span class="p">(</span><span class="kt">int</span> <span class="n">year</span><span class="p">,</span> <span class="kt">int</span> <span class="n">month</span><span class="p">)</span></code></pre></figure>
-
-<p>
-Hope it helps!
 </p>
 
         </div></li></ul>

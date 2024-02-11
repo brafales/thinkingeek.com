@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Subtleties with loops</title>
+  <meta name="description" content="A common task in imperative programming languages is writing a loop. A loop that can terminate requires a way to check the terminating condition and a way to repeatedly execute some part of the code. These two mechanisms exists in many forms: from the crudest approach of using an if and a goto (that must jump backwards in the code) to higher-level structured constructs like for and while ending in very high-level constructs built around higher-order functions in for_each-like constructs and more recently, in the context of GPU programming, the idea of a kernel function instantiated over a n-dimensional domain (where typically n ≤ 3 but most of the time n = 1). These more advanced mechanisms make writing loops a commonplace task and typically regarded as uneventful. Yet, there are situations when things get subtler than we would like.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2024/02/11/sometimes-loops-are-difficult/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Subtleties with loops">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2024/02/11/sometimes-loops-are-difficult/">
+  <meta property="og:description" content="A common task in imperative programming languages is writing a loop. A loop that can terminate requires a way to check the terminating condition and a way to repeatedly execute some part of the code. These two mechanisms exists in many forms: from the crudest approach of using an if and a goto (that must jump backwards in the code) to higher-level structured constructs like for and while ending in very high-level constructs built around higher-order functions in for_each-like constructs and more recently, in the context of GPU programming, the idea of a kernel function instantiated over a n-dimensional domain (where typically n ≤ 3 but most of the time n = 1). These more advanced mechanisms make writing loops a commonplace task and typically regarded as uneventful. Yet, there are situations when things get subtler than we would like.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Subtleties with loops">
+  <meta name="twitter:description" content="A common task in imperative programming languages is writing a loop. A loop that can terminate requires a way to check the terminating condition and a way to repeatedly execute some part of the cod...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/series/">Series</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Subtleties with loops</h1>
+    
+    <p class="post-meta"><time datetime="2024-02-11T09:50:00+00:00" itemprop="datePublished">Feb 11, 2024</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/loops/">loops</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/programming/">programming</a>, <a href="/categories/overflow/">overflow</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>A common task in imperative programming languages is writing a loop. A loop
+that can terminate requires a way to check the terminating condition and a way
+to repeatedly execute some part of the code. These two mechanisms exists in
+many forms: from the crudest approach of using an <code class="language-plaintext highlighter-rouge">if</code> and a <code class="language-plaintext highlighter-rouge">goto</code> (that must
+jump backwards in the code) to higher-level structured constructs like <code class="language-plaintext highlighter-rouge">for</code>
+and <code class="language-plaintext highlighter-rouge">while</code> ending in very high-level constructs built around higher-order
+functions in <code class="language-plaintext highlighter-rouge">for_each</code>-like constructs and more recently, in the context of
+GPU programming, the idea of a kernel function instantiated over a
+n-dimensional domain (where typically n ≤ 3 but most of the time n = 1).</p>
+
+<p>These more advanced mechanisms make writing loops a commonplace task and
+typically regarded as uneventful. Yet, there are situations when things get
+subtler than we would like.</p>
+
+<!--more-->
+
+<h2>A ranged-loop over integers</h2>
+
+<p>Let’s consider a construct like this in some sort of pseudo-Pascal:</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="n">lower</span> <span class="k">to</span> <span class="n">upper</span> <span class="k">do</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>in which the statement <code class="language-plaintext highlighter-rouge">S(i)</code> is repeatedly executed with the value of the
+variable <code class="language-plaintext highlighter-rouge">i</code> starting with a value <code class="language-plaintext highlighter-rouge">lower</code>. Between each repetition we increase
+<code class="language-plaintext highlighter-rouge">i</code> by one. We stop repeating <code class="language-plaintext highlighter-rouge">S(i)</code> when <code class="language-plaintext highlighter-rouge">i</code> has the value <code class="language-plaintext highlighter-rouge">upper</code>. This is,
+<code class="language-plaintext highlighter-rouge">S(upper)</code> is executed but <code class="language-plaintext highlighter-rouge">S(upper+1)</code> is not.</p>
+
+<p>As an example:</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">1</span> <span class="k">to</span> <span class="m">5</span> <span class="k">do</span>
+  <span class="k">writeln</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>will print</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1
+2
+3
+4
+5
+</code></pre></div></div>
+
+<h3>A possible implementation</h3>
+
+<p>Let’s imagine how this could be compiled to a lower level representation. Imagine
+we only have <code class="language-plaintext highlighter-rouge">goto</code> and <code class="language-plaintext highlighter-rouge">if + goto</code> (as a way to mimick a bit how current computers
+work).</p>
+
+<p>Back to our loop:</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="n">lower</span> <span class="k">to</span> <span class="n">upper</span> <span class="k">do</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>could be implemented like</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">i</span> <span class="p">:=</span> <span class="n">lower</span><span class="p">;</span>
+<span class="n">loop</span><span class="p">:</span>
+  <span class="k">if</span> <span class="n">i</span> <span class="p">&lt;=</span> <span class="n">upper</span> <span class="k">then</span> <span class="k">goto</span> <span class="n">repeated</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">after_loop</span><span class="p">;</span>
+<span class="n">repeated</span><span class="p">:</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+  <span class="n">i</span> <span class="p">:=</span> <span class="n">i</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">loop</span><span class="p">;</span>
+<span class="n">after_loop</span><span class="p">:</span>
+  <span class="cm">{ ... }</span>
+</code></pre></div></div>
+
+<h2>Iterating a whole range of integers</h2>
+
+<p>Now consider that, for some reason, we want to iterate over all the integers
+of, say, 32-bit. For simplicity, we will assume unsigned integers but signed
+integers face similar issues.</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">0</span> <span class="k">to</span> <span class="m">4294967295</span> <span class="k">do</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>It still seems not to be a big deal. But look at <code class="language-plaintext highlighter-rouge">i</code>, what type should it have?</p>
+
+<p>If we use the implementation above, consider the last iteration. This is, when,
+<code class="language-plaintext highlighter-rouge">i = 4294967295</code>. The <code class="language-plaintext highlighter-rouge">i</code> variable has to be able to represent <code class="language-plaintext highlighter-rouge">4294967295</code> so
+it has to be at least 32-bit. If it is exactly 32-bit it will overflow when we
+compute <code class="language-plaintext highlighter-rouge">i := i + 1;</code>.</p>
+
+<p>Here each system may behave differently: some system will simply wrap-around
+and <code class="language-plaintext highlighter-rouge">i</code> will become <code class="language-plaintext highlighter-rouge">0</code>. Which is bad because <code class="language-plaintext highlighter-rouge">0 ≤ 4294967295</code> which is the
+condition we use to check whether we have to keep repeating so we will never
+terminate. Some other machine may trap, which is slightly better (we do
+terminate!) but prevents our correct program from running.</p>
+
+<p>Now if you’re on a 64-bit system (or a system where the CPU provides efficient
+64-bit integer arithmetic), this is easy to address, just make <code class="language-plaintext highlighter-rouge">i</code> to be 64-bit
+and you’re done.</p>
+
+<p>But this is a bit of an unsatisfying answer and further questions may arise
+at this point.</p>
+
+<p>What if we want to iterate all the 64-bit? Granted, this is a very large number
+of iterations and so we’re probably never going to terminate in a reasonable
+amount of time.</p>
+
+<p>What if our CPU does not provide 32-bit integers and
+representing 64-bit magnitudes is expensive? The reality is that nowadays
+additions (and subtractions) are cheap for a CPU. For instance, on most 32-bit
+systems, adding or subtracting a 64-bit integer can be done with two
+instructions (rather than one if 64-bit were natively supported).</p>
+
+<p>What if we chose to use a 64-bit integer (no matter if supported or not) but
+our loop has an unknown upper bound. If N is less than 4294967295 it would be
+fine to use a 32-bit integer.</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">i</span> <span class="p">:=</span> <span class="m">0</span> <span class="k">to</span> <span class="n">N</span> <span class="k">do</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This leaves us with a bit of an uneasy feeling and while modern machines could
+use a larger integer, we probably want a solution that always works.</p>
+
+<h3>A safer, but less nice, implementation</h3>
+
+<p>Can we implement the loop in a way so this issue is a non-problem?
+The answer is yes, but the loop will not look as nice.</p>
+
+<div class="language-pascal highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">lower</span> <span class="p">&gt;</span> <span class="n">upper</span> <span class="k">then</span> <span class="k">goto</span> <span class="n">after_loop</span><span class="p">;</span>
+<span class="n">i</span> <span class="p">:=</span> <span class="n">lower</span><span class="p">;</span>
+<span class="n">repeated</span><span class="p">:</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+  <span class="k">if</span> <span class="n">i</span> <span class="p">=</span> <span class="n">upper</span> <span class="k">then</span> <span class="k">goto</span> <span class="n">after_loop</span><span class="p">;</span>
+  <span class="n">i</span> <span class="p">:=</span> <span class="n">i</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">repeated</span><span class="p">;</span>
+<span class="n">after_loop</span><span class="p">:</span>
+  <span class="cm">{ ... }</span>
+</code></pre></div></div>
+
+<p>Let’s be honest, this construction does not look very nice but it avoids any
+overflow. So <code class="language-plaintext highlighter-rouge">i</code> only has to be as large as <code class="language-plaintext highlighter-rouge">lower</code> and <code class="language-plaintext highlighter-rouge">upper</code>. In other
+words., there is no need to make it larger “just in case”.</p>
+
+<h3>Impact on optimisation</h3>
+
+<p>Compilers these days are very smart and the two loops can be compiled
+efficiently (they will emit almost the same code for both), so the less safe
+version has no particular performance advantage over the safer one.</p>
+
+<p>From a teaching perspective, though, the less safe version is probably easier
+to explain.</p>
+
+<h2>What about C and C++?</h2>
+
+<p>But then, if we may overflow, what about a loop like this?</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Assume N is int</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>According to the spec, the loop above is equivalent to the following code:</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span>
+  <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="n">N</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+    <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>The C++ standard also tells us that signed integer overflow is undefined
+behaviour (UB) in C and C++.</p>
+
+<p>Our loop is incorrect when <code class="language-plaintext highlighter-rouge">N</code> is <code class="language-plaintext highlighter-rouge">2147483647</code> (<code class="language-plaintext highlighter-rouge">2147483647</code> is <code class="language-plaintext highlighter-rouge">INT_MAX</code>,
+assuming <code class="language-plaintext highlighter-rouge">int</code> is a 32-bit integer, which typically is) because it triggers UB
+in <code class="language-plaintext highlighter-rouge">i++</code>.</p>
+
+<p>When a program triggers UB all bets are off in terms of its mandated behaviour.
+The observed behaviour becomes typically platform and/or compiler dependent.
+For example, in clang on x86-64 a loop like the above will loop forever at
+<code class="language-plaintext highlighter-rouge">-O0</code> but it seems to work at <code class="language-plaintext highlighter-rouge">-O1</code> or higher optimisation levels, in GCC on
+x86-64 it is likely to not to terminate at any optimisation level.</p>
+
+<p>In contrast, a loop like this</p>
+
+<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Assume N is unsigned</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+  <span class="n">S</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</code></pre></div></div>
+
+<p>will never terminate when <code class="language-plaintext highlighter-rouge">N = 4294967295</code>. In C and C++, overflow of unsigned
+integers is well-defined as wrapping-around.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2024/01/05/mitigate-runaway-processes/">&laquo; Mitigate runaway processes</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
