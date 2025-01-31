@@ -64,6 +64,26 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2025/01/31/caveat-with-statically-linked-language-runtimes/">A caveat with statically linked language runtimes</a></h1>
+
+          <p class="post-meta">
+            Jan 31, 2025 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/linux/">linux</a>, <a href="/categories/libraries/">libraries</a>, <a href="/categories/language/">language</a>, <a href="/categories/runtime/">runtime</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>Most programming languages, including C and C++, provide language runtime
+libraries that implement parts of the language itself. These libraries must
+be linked in the final program or shared library.</p>
+
+<p>Today we are going to see how an unfortunate default in the way shared
+libraries work in Linux can make our lives a bit more complicated than they
+have to if the language runtimes are in static libraries.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2025/01/31/caveat-with-statically-linked-language-runtimes/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2024/02/11/subtleties-with-loops/">Subtleties with loops</a></h1>
 
           <p class="post-meta">
@@ -145,25 +165,6 @@ So the idea is to receive a notification when the task ends.</p>
 
         </div><p class="post-continue">
             <a href="/2023/09/03/remote-notifications-over-ssh/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2023/02/04/writing-gobjects-in-cpp/">Writing GObjects in C++</a></h1>
-
-          <p class="post-meta">
-            Feb 4, 2023 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/gtk/">gtk</a>, <a href="/categories/gobject/">gobject</a>, <a href="/categories/gnome/">gnome</a>, <a href="/categories/cpp/">cpp</a>, <a href="/categories/cplusplus/">cplusplus</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>In the last post I discussed about how glibmm, the wrapper of the GLib
-library exposes GObjects and we finished about a rationale about why
-one would want to write full-fledged GObjects in C++.</p>
-
-<p>Today we are exploring this venue and observing some of the pain points
-we are going to face.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2023/02/04/writing-gobjects-in-cpp/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     

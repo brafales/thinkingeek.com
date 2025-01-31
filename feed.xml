@@ -1,4 +1,689 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2024-09-21T08:38:20+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Subtleties with loops</title><link href="https://thinkingeek.com/2024/02/11/subtleties-with-loops/" rel="alternate" type="text/html" title="Subtleties with loops" /><published>2024-02-11T09:50:00+00:00</published><updated>2024-02-11T09:50:00+00:00</updated><id>https://thinkingeek.com/2024/02/11/subtleties-with-loops</id><content type="html" xml:base="https://thinkingeek.com/2024/02/11/subtleties-with-loops/">&lt;p&gt;A common task in imperative programming languages is writing a loop. A loop
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2025-01-31T21:05:38+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">A caveat with statically linked language runtimes</title><link href="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/" rel="alternate" type="text/html" title="A caveat with statically linked language runtimes" /><published>2025-01-31T20:12:00+00:00</published><updated>2025-01-31T20:12:00+00:00</updated><id>https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes</id><content type="html" xml:base="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/">&lt;p&gt;Most programming languages, including C and C++, provide language runtime
+libraries that implement parts of the language itself. These libraries must
+be linked in the final program or shared library.&lt;/p&gt;
+
+&lt;p&gt;Today we are going to see how an unfortunate default in the way shared
+libraries work in Linux can make our lives a bit more complicated than they
+have to if the language runtimes are in static libraries.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h1&gt;Quick recap of the C compilation model&lt;/h1&gt;
+
+&lt;h2&gt;Object files&lt;/h2&gt;
+
+&lt;p&gt;The C compilation model, which is also used in other programming languages such
+as C++ or Fortran, enables separated compilation and is based on the following
+strategy:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;each source code file (&lt;em&gt;translation unit&lt;/em&gt; in the C lingo) is compiled
+separatedly into what we could call compiled units&lt;/li&gt;
+  &lt;li&gt;all compiled units are linked together to form the program&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;However, this leaves lots of details up in the air, so in Linux (and many other
+UNIX-like environments), it looks like this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;each source code file is compiled into a &lt;em&gt;relocatable object file&lt;/em&gt; or simply
+&lt;em&gt;object file&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt;)&lt;/li&gt;
+  &lt;li&gt;all object files are linked together to create a program
+(typically all object files would be part of the final program, this is a
+simplified view though)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Language runtimes could, of course, use this simple model. For instance, for C
+we could have a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;stdlibc.o&lt;/code&gt; file with all the functions and global variables of
+the C standard library as specified by Standard C. We would include this
+hypothetical &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;stdlibc.o&lt;/code&gt; when linking a C program.&lt;/p&gt;
+
+&lt;p&gt;For the sake of the writing, I am going to refer to functions and global
+variables collectively as &lt;em&gt;symbols&lt;/em&gt;: these are the low level names that the
+compiler and the linker use to identify these program entities.&lt;/p&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;The link step conveys the idea that all the symbols used (referenced) by a
+program are ultimately connected (linked) to its actual defining entity.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;h2&gt;Archives (aka static libraries)&lt;/h2&gt;
+
+&lt;p&gt;However, because of the 1-to-1 mapping of source code file to objects, it would
+be inconvenient to have all the C library into a single source file. Several
+source files are easier to handle so one would get several object files and
+those should have to be included in the link step.&lt;/p&gt;
+
+&lt;p&gt;How the language runtime library is split into source files is a detail
+that the user of the runtime library should not care about. Thus, naturally, it
+emerges the idea of grouping several object files. This grouping of object
+files typically called an &lt;em&gt;archive&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.a&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;These archives are often called &lt;em&gt;static libraries&lt;/em&gt; but they are nothing more
+than a collection of objects and an index.&lt;/p&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;This is accidental and not fundamental to the question: archives also allow
+saving some time during linking. Typically object files are handled as a whole
+during linking (this is a simplified explanation, there is more nuance here).&lt;/p&gt;
+
+  &lt;p&gt;Because archives are collections of objects, library authors can make the
+object files as fine-grained as possible to favour the linking step so only the
+required object files end being part of the program. A symbol referenced by the
+program that is defined in an object file found inside an archive will make
+that object file required. Conceptually the object file is extracted from the
+archive and added to the link process as if it were another object file.&lt;/p&gt;
+
+  &lt;p&gt;This also makes the linking process unavoidably order-sensitive: the order in
+which the archives get examined impacts on how the linking is performed.&lt;/p&gt;
+
+  &lt;p&gt;Most of these quirky behaviours of linkers with archives are due to the way
+they were implemented in the first UNIX systems, where memory was scarce and
+computation was slow.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Archives complicate a bit the compilation model as we may not be longer
+generating a program. We may be generating an archive. So the compilation
+model looks like this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;When generating an archive:
+    &lt;ul&gt;
+      &lt;li&gt;each source code file is compiled into a &lt;em&gt;relocatable object file&lt;/em&gt; or simply
+&lt;em&gt;object file&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt;)&lt;/li&gt;
+      &lt;li&gt;each object file is grouped into an archive file. In UNIX this is typically
+done with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ar&lt;/code&gt; tool.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;When generating a program:
+    &lt;ul&gt;
+      &lt;li&gt;each source code file is compiled into a &lt;em&gt;relocatable object file&lt;/em&gt; or simply
+&lt;em&gt;object file&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt;)&lt;/li&gt;
+      &lt;li&gt;all object files are linked together to create a program (typically all
+object files would be part of the final program, this is a simplified view
+though). When a symbol is not in the object files but is found in an object
+file in an archive, the object file is extracted and included in the link
+step.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;Another accident of archives and not fundamental to the way they work, is that
+to speed up linking step archives are only examined once (and in the order they are
+provided) during the link process.&lt;/p&gt;
+
+  &lt;p&gt;So, all the symbols that are expected to be defined in an archive (more
+precisely in one of its object files) should be known in advance before
+processing the archive. Current linkers have flags to change this default
+behaviour if needed.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;h2&gt;Shared objects (aka dynamic libraries)&lt;/h2&gt;
+
+&lt;p&gt;Libraries, embodied in archives, enable reuse of code between programs but at
+expense of replicating the compiled code in every single program. This is,
+any C program that uses &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;puts&lt;/code&gt; would include a copy of the code required
+to implement &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;puts&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Because repeating code throughout our programs has an impact on the installed
+system (our binaries are larger), naturally it emerges the idea of being able
+to reuse this code without actually having to embed it in the program. This
+is the core idea of dynamic libraries. In Linux, and other UNIX systems, they
+are called &lt;em&gt;shared objects&lt;/em&gt; (typically in files whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.so&lt;/code&gt;).&lt;/p&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;Shared objects complicate a lot the whole compilation model. These days shared
+objects are often shunned. There are a number of reasons for that and they span
+from ease of deployment, safety and performance. Discussing these reasons is out
+of scope of this post.&lt;/p&gt;
+
+  &lt;p&gt;If you wonder why program binaries are relatively large these days, avoiding
+shared libraries is one of the reasons. Modern systems provide now plenty of
+storage and we can accomodate this increase in size but the bloat is definitely
+there.&lt;/p&gt;
+
+&lt;/div&gt;
+
+&lt;p&gt;In contrast to the previous cases when only using object files or archives, the
+use of shared objects in our programs implies the program is incomplete. At
+runtime, a mechanism must exist to complete the program doing what is known as
+&lt;em&gt;dynamic linking&lt;/em&gt;. This may fully happen as part of the loading of the program
+(which may be slow for large applications) or on demand (lazily) throughout the
+execution of the program. A special program, called the &lt;em&gt;dynamic linker&lt;/em&gt; or
+&lt;em&gt;runtime linker&lt;/em&gt;, is responsible to make this possible.&lt;/p&gt;
+
+&lt;p&gt;The compilation now looks like this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;When generating an archive:
+    &lt;ul&gt;
+      &lt;li&gt;each source code file is compiled into a &lt;em&gt;relocatable object file&lt;/em&gt; or simply
+&lt;em&gt;object file&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt;)&lt;/li&gt;
+      &lt;li&gt;each object file is grouped into an archive file. In UNIX this is typically
+done with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ar&lt;/code&gt; tool.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;When generating a program:
+    &lt;ul&gt;
+      &lt;li&gt;each source code file is compiled into a &lt;em&gt;relocatable object file&lt;/em&gt; or simply
+&lt;em&gt;object file&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt;)&lt;/li&gt;
+      &lt;li&gt;all object files are linked together to create a program
+(typically all object files would be part of the final program, this is a
+simplified view though). Symbols used by the program may add to the link step additional
+object files extracted from archives. Shared objects can be used
+when linking a program. The linker only establishes a dependence with the
+shared object that will be used by the dynamic linker to complete the
+program at runtime.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;When generating a shared object:
+    &lt;ul&gt;
+      &lt;li&gt;each source code file is compiled into a &lt;em&gt;relocatable object file&lt;/em&gt; or simply
+&lt;em&gt;object file&lt;/em&gt; (typically a file whose name ends in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;.o&lt;/code&gt;)&lt;/li&gt;
+      &lt;li&gt;all object files are linked together to create a program
+(typically all object files would be part of the final program, this is a
+simplified view though). Symbols used by the shared object may add to the link step additional
+object files extracted from archives. A shared object can use other
+shared objects.  The linker only establishes a dependence with the
+shared object that will be used by the dynamic linker when the shared
+object is loaded (either because it is needed by the program or another
+shared object).&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1&gt;Shared objects exports&lt;/h1&gt;
+
+&lt;p&gt;Shared objects are a bit special because in them there is a list of symbols
+that they export. These are the symbols that can be used during the dynamic
+linking that happens at runtime. The (static) linker only establishes a
+dependence with the shared object, for the dynamic linker to use, but it does
+not specify what shared object provides a symbol.&lt;/p&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;The static linker only ensures that all the symbols can be resolved. For those
+appearing defined in object files and archives, the linker will also link to
+them. For the rest of the symbols, they must be exported by at lest one shared
+object and this is all what the linker checks in practice. The bulk of the
+linking for those symbols is offloaded to the dynamic linker.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Finding what shared object provides a definition of a symbol is the task of the
+dynamic linker. This enables a number of features like interposition or
+versioning. While these features are useful they also can cause inefficiencies
+(any symbol might be interposed) or safety risks (it may be possible to provide
+an evil version of the function or global variable).&lt;/p&gt;
+
+&lt;p&gt;For reasons that go beyond the scope of this post (mostly historical), when
+creating a shared object &lt;strong&gt;all external (i.e., non-local) defined symbols in
+object files or objects extracted from archives are exported by default&lt;/strong&gt;. Now,
+there are mechanisms to control what symbols get exported: it often happens
+that not all the symbols used by the different objects that make up a shared
+object are to be used outside of the library.  This mechanism is called
+visibility control and can be enabled by different ways. In the case of GNU ld
+linker: a version script or additional linker flags can be used.&lt;/p&gt;
+
+&lt;h1&gt;The case of Flang&lt;/h1&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;I want to make clear that this is &lt;strong&gt;not&lt;/strong&gt; a criticism of flang. The status quo
+may change and the problem go away.&lt;/p&gt;
+
+  &lt;p&gt;That said, it shows an issue that may impact language implementations that use
+the same approach as the one used by flang described at the time of writing.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The flang compiler, is the new Fortran frontend of the LLVM project. The
+Fortran language is rich and a number of features must be implemented in a
+runtime, mostly I/O and math support.&lt;/p&gt;
+
+&lt;p&gt;Flang chose to use static libraries to implement that runtime. Flang has two
+libraries that are considered part of its runtime &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFlangRuntime.a&lt;/code&gt; and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFlangDecimal.a&lt;/code&gt; (for decimal floating point which to be fair is a bit of a
+niche thing).&lt;/p&gt;
+
+&lt;h2&gt;A small shared object&lt;/h2&gt;
+
+&lt;p&gt;Consider the following small testcase.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;test.f90&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;module&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;moo&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! Global variables&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;integer&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;var_init&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;integer&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;var_uninit&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;contains&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;! A subroutine that is also a module procedure&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;subroutine&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sub&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;hello!&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;var_init&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;var_zeroed&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;subroutine&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sub&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;module&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;moo&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Let’s make a shared object using the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;flang&lt;/code&gt; driver.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ flang -c -o t.o -fPIC test.f90
+$ flang -shared -o libmylib.so t.o
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Now let’s check the list of exported symbols. We can use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nm -D&lt;/code&gt; for that. The
+list is very long and just its final part is shown below.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nm -D libmylib.so
+…
+000000000003bbc0 W _ZNK7Fortran7runtime2io17RealOutputEditingILi8EE6IsZeroEv
+000000000006b500 T _ZNK7Fortran7runtime2io20NonTbpDefinedIoTable4FindERKNS0_8typeInfo11DerivedTypeENS_6common9DefinedIoE
+0000000000021ee0 W _ZNK7Fortran7runtime2io21ChildIoStatementStateILNS1_9DirectionE0EE19GetExternalFileUnitEv
+0000000000022350 W _ZNK7Fortran7runtime2io21ChildIoStatementStateILNS1_9DirectionE1EE19GetExternalFileUnitEv
+0000000000054490 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE0EE10descriptorEv
+0000000000053a80 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE0EE13CurrentRecordEv
+0000000000053dc0 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE0EE17ViewBytesInRecordERPKcb
+0000000000054f10 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE1EE10descriptorEv
+00000000000549b0 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE1EE13CurrentRecordEv
+0000000000054bd0 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE1EE17ViewBytesInRecordERPKcb
+0000000000021710 W _ZNK7Fortran7runtime2io24ExternalIoStatementStateILNS1_9DirectionE0EE17ViewBytesInRecordERPKcb
+0000000000021930 W _ZNK7Fortran7runtime2io24ExternalIoStatementStateILNS1_9DirectionE1EE17ViewBytesInRecordERPKcb
+0000000000024e30 T _ZNK7Fortran7runtime2io25FormattedIoStatementStateILNS1_9DirectionE1EE22GetEditDescriptorCharsEv
+0000000000044a50 T _ZNK7Fortran7runtime2io8OpenFile15InquirePositionEv
+000000000002b140 T _ZNK7Fortran7runtime8TypeCode18GetCategoryAndKindEv
+000000000006bee0 T _ZNK7Fortran7runtime8typeInfo11DerivedType13GetParentTypeEv
+000000000006bf00 T _ZNK7Fortran7runtime8typeInfo11DerivedType17FindDataComponentEPKcm
+000000000006c210 T _ZNK7Fortran7runtime8typeInfo11DerivedType4DumpEP8_IO_FILE
+000000000006cda0 T _ZNK7Fortran7runtime8typeInfo14SpecialBinding4DumpEP8_IO_FILE
+000000000006b7c0 T _ZNK7Fortran7runtime8typeInfo5Value8GetValueEPKNS0_10DescriptorE
+000000000006b8a0 T _ZNK7Fortran7runtime8typeInfo9Component11GetElementsERKNS0_10DescriptorE
+000000000006b9f0 T _ZNK7Fortran7runtime8typeInfo9Component11SizeInBytesERKNS0_10DescriptorE
+000000000006b820 T _ZNK7Fortran7runtime8typeInfo9Component18GetElementByteSizeERKNS0_10DescriptorE
+000000000006bb00 T _ZNK7Fortran7runtime8typeInfo9Component19EstablishDescriptorERNS0_10DescriptorERKS3_RNS0_10TerminatorE
+000000000006bdf0 T _ZNK7Fortran7runtime8typeInfo9Component23CreatePointerDescriptorERNS0_10DescriptorERKS3_RNS0_10TerminatorEPKl
+000000000006cac0 T _ZNK7Fortran7runtime8typeInfo9Component4DumpEP8_IO_FILE
+0000000000020210 T _ZNSt3__122__libcpp_verbose_abortEPKcz
+000000000009f1e0 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi113ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009eea0 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi11ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009ef70 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi24ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009f040 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi53ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009f110 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi64ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009edd0 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi8ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;What is all this, you wonder?  Let’s demangle these symbols as they look like C++ symbols. We can use the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-C&lt;/code&gt; flag of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;nm&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nm -D -C libmylib.so
+…
+000000000003de80 W Fortran::runtime::io::RealOutputEditing&amp;lt;10&amp;gt;::IsZero() const
+00000000000407b0 W Fortran::runtime::io::RealOutputEditing&amp;lt;16&amp;gt;::IsZero() const
+0000000000034e80 W Fortran::runtime::io::RealOutputEditing&amp;lt;2&amp;gt;::IsZero() const
+00000000000374e0 W Fortran::runtime::io::RealOutputEditing&amp;lt;3&amp;gt;::IsZero() const
+0000000000039770 W Fortran::runtime::io::RealOutputEditing&amp;lt;4&amp;gt;::IsZero() const
+000000000003bbc0 W Fortran::runtime::io::RealOutputEditing&amp;lt;8&amp;gt;::IsZero() const
+000000000006b500 T Fortran::runtime::io::NonTbpDefinedIoTable::Find(Fortran::runtime::typeInfo::DerivedType const&amp;amp;, Fortran::common::DefinedIo) const
+0000000000021ee0 W Fortran::runtime::io::ChildIoStatementState&amp;lt;(Fortran::runtime::io::Direction)0&amp;gt;::GetExternalFileUnit() const
+0000000000022350 W Fortran::runtime::io::ChildIoStatementState&amp;lt;(Fortran::runtime::io::Direction)1&amp;gt;::GetExternalFileUnit() const
+0000000000054490 W Fortran::runtime::io::InternalDescriptorUnit&amp;lt;(Fortran::runtime::io::Direction)0&amp;gt;::descriptor() const
+0000000000053a80 W Fortran::runtime::io::InternalDescriptorUnit&amp;lt;(Fortran::runtime::io::Direction)0&amp;gt;::CurrentRecord() const
+0000000000053dc0 W Fortran::runtime::io::InternalDescriptorUnit&amp;lt;(Fortran::runtime::io::Direction)0&amp;gt;::ViewBytesInRecord(char const*&amp;amp;, bool) const
+0000000000054f10 W Fortran::runtime::io::InternalDescriptorUnit&amp;lt;(Fortran::runtime::io::Direction)1&amp;gt;::descriptor() const
+00000000000549b0 W Fortran::runtime::io::InternalDescriptorUnit&amp;lt;(Fortran::runtime::io::Direction)1&amp;gt;::CurrentRecord() const
+0000000000054bd0 W Fortran::runtime::io::InternalDescriptorUnit&amp;lt;(Fortran::runtime::io::Direction)1&amp;gt;::ViewBytesInRecord(char const*&amp;amp;, bool) const
+0000000000021710 W Fortran::runtime::io::ExternalIoStatementState&amp;lt;(Fortran::runtime::io::Direction)0&amp;gt;::ViewBytesInRecord(char const*&amp;amp;, bool) const
+0000000000021930 W Fortran::runtime::io::ExternalIoStatementState&amp;lt;(Fortran::runtime::io::Direction)1&amp;gt;::ViewBytesInRecord(char const*&amp;amp;, bool) const
+0000000000024e30 T Fortran::runtime::io::FormattedIoStatementState&amp;lt;(Fortran::runtime::io::Direction)1&amp;gt;::GetEditDescriptorChars() const
+0000000000044a50 T Fortran::runtime::io::OpenFile::InquirePosition() const
+000000000002b140 T Fortran::runtime::TypeCode::GetCategoryAndKind() const
+000000000006bee0 T Fortran::runtime::typeInfo::DerivedType::GetParentType() const
+000000000006bf00 T Fortran::runtime::typeInfo::DerivedType::FindDataComponent(char const*, unsigned long) const
+000000000006c210 T Fortran::runtime::typeInfo::DerivedType::Dump(_IO_FILE*) const
+000000000006cda0 T Fortran::runtime::typeInfo::SpecialBinding::Dump(_IO_FILE*) const
+000000000006b7c0 T Fortran::runtime::typeInfo::Value::GetValue(Fortran::runtime::Descriptor const*) const
+000000000006b8a0 T Fortran::runtime::typeInfo::Component::GetElements(Fortran::runtime::Descriptor const&amp;amp;) const
+000000000006b9f0 T Fortran::runtime::typeInfo::Component::SizeInBytes(Fortran::runtime::Descriptor const&amp;amp;) const
+000000000006b820 T Fortran::runtime::typeInfo::Component::GetElementByteSize(Fortran::runtime::Descriptor const&amp;amp;) const
+000000000006bb00 T Fortran::runtime::typeInfo::Component::EstablishDescriptor(Fortran::runtime::Descriptor&amp;amp;, Fortran::runtime::Descriptor const&amp;amp;, Fortran::runtime::Terminator&amp;amp;) const
+000000000006bdf0 T Fortran::runtime::typeInfo::Component::CreatePointerDescriptor(Fortran::runtime::Descriptor&amp;amp;, Fortran::runtime::Descriptor const&amp;amp;, Fortran::runtime::Terminator&amp;amp;, long const*) const
+000000000006cac0 T Fortran::runtime::typeInfo::Component::Dump(_IO_FILE*) const
+0000000000020210 T std::__1::__libcpp_verbose_abort(char const*, ...)
+000000000009f1e0 V Fortran::decimal::BigRadixFloatingPointNumber&amp;lt;113, 16&amp;gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009eea0 V Fortran::decimal::BigRadixFloatingPointNumber&amp;lt;11, 16&amp;gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009ef70 V Fortran::decimal::BigRadixFloatingPointNumber&amp;lt;24, 16&amp;gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009f040 V Fortran::decimal::BigRadixFloatingPointNumber&amp;lt;53, 16&amp;gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009f110 V Fortran::decimal::BigRadixFloatingPointNumber&amp;lt;64, 16&amp;gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009edd0 V Fortran::decimal::BigRadixFloatingPointNumber&amp;lt;8, 16&amp;gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Indeed, this is a bunch of symbols coming from the flang runtime. Why are we exporting them?&lt;/p&gt;
+
+&lt;p&gt;The reason, as exposed above, is by default we will export all the symbols that
+are part of the objects and objects extracted from archives during linking. The
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;PRINT&lt;/code&gt; statement involves a number of I/O routines which (possibly by
+accident) are pulling in a bunch of C++ code from the library as well.&lt;/p&gt;
+
+&lt;p&gt;There is no need to export so many symbols, so let’s find ways to avoid this
+problem.&lt;/p&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;gfortran, the Fortran compiler of GCC, does not have this issue because its
+runtime, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libgfortran.so&lt;/code&gt;, is a shared object already.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;h2&gt;Why is this a problem?&lt;/h2&gt;
+
+&lt;p&gt;This may seem a petty problem. After all if all the libraries used when linking
+our programs and shared libraries are consistent (i.e. the same libraries or
+compatible) this does not introduce any complication.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;We risk by accident linking to symbols that are exported by shared objects
+   that have nothing to do with those symbols. For instance, when using OpenMPI a shared
+   object is built using flang. This shared object will accidentally export those flang runtime symbols.
+   Our program symbols will not be linked against &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFortranRuntime.a&lt;/code&gt; but instead against the
+   exports in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libmpi_usempif08.so&lt;/code&gt; (a shared object of OpenMPI to be used by Fortran programs)&lt;/li&gt;
+  &lt;li&gt;A crash in the runtime will be actually reported by the debugger in the
+   shared object (in the example above, the crash looks to the debugger that it
+   happens in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libmpi_usempif08.so&lt;/code&gt;) even if the error was caused by the main
+   program and not by the OpenMPI library.&lt;/li&gt;
+  &lt;li&gt;The more symbols are exported, the slower is the dynamic linking process
+   at runtime. Reducing those, thus, reduces that runtime cost.&lt;/li&gt;
+  &lt;li&gt;Symbols linked against exports of shared objects use a less efficient
+   mechanism than when they are directly linked to an object.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Regarding the last point, consider the following Fortran program.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;program.f90&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-fortran&quot; data-lang=&quot;fortran&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;&lt;span class=&quot;k&quot;&gt;program&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+      &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;hello!&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;k&quot;&gt;program&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;main&lt;/span&gt;
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;When linked alone, the runtime symbols are directly resolved using the symbols
+in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFortranRuntime.a&lt;/code&gt;. We can see this in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;objdump&lt;/code&gt; of the final binary,
+check the references in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;call&lt;/code&gt; instructions.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ flang -O2 -o program -fPIC program.o
+$ objdump  --section=.text --disassemble=_QQmain program
+
+program:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000002540 &amp;lt;_QQmain&amp;gt;:
+    2540:	53                   	push   %rbx
+    2541:	48 8d 35 c8 7a 07 00 	lea    0x77ac8(%rip),%rsi        # 7a010 &amp;lt;_QQclXd32e6f2d1ab4707a5800ed1a42e135c0&amp;gt;
+    2548:	bf 06 00 00 00       	mov    $0x6,%edi
+    254d:	ba 02 00 00 00       	mov    $0x2,%edx
+    2552:	e8 79 00 00 00       	call   25d0 &amp;lt;_FortranAioBeginExternalListOutput&amp;gt;
+    2557:	48 89 c3             	mov    %rax,%rbx
+    255a:	48 8d 35 ea 7a 07 00 	lea    0x77aea(%rip),%rsi        # 7a04b &amp;lt;_QQclX68656C6C6F21&amp;gt;
+    2561:	ba 06 00 00 00       	mov    $0x6,%edx
+    2566:	48 89 c7             	mov    %rax,%rdi
+    2569:	e8 b2 0f 00 00       	call   3520 &amp;lt;_FortranAioOutputAscii&amp;gt;
+    256e:	48 89 df             	mov    %rbx,%rdi
+    2571:	5b                   	pop    %rbx
+    2572:	e9 89 04 00 00       	jmp    2a00 &amp;lt;_FortranAioEndIoStatement&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;But if we link against &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libmylib.so&lt;/code&gt; those Fortran runtime symbols are linked
+against the shared object exports. In this case the symbols must go through the
+procedure linkage table (PLT), which is a more involved process of linking
+symbols (check the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;call&lt;/code&gt; instructions, now they go through the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;@plt&lt;/code&gt; symbol)
+as it must happen at runtime.  None of this was intended when using the Fortran
+runtime.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ flang -O2 -o program -fPIC program.o -L. -lmylib
+$ objdump  --section=.text --disassemble=_QQmain program
+
+program:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000012d0 &amp;lt;_QQmain&amp;gt;:
+    12d0:	53                   	push   %rbx
+    12d1:	48 8d 35 38 0d 00 00 	lea    0xd38(%rip),%rsi        # 2010 &amp;lt;_QQclXd32e6f2d1ab4707a5800ed1a42e135c0&amp;gt;
+    12d8:	bf 06 00 00 00       	mov    $0x6,%edi
+    12dd:	ba 02 00 00 00       	mov    $0x2,%edx
+    12e2:	e8 99 fd ff ff       	call   1080 &amp;lt;_FortranAioBeginExternalListOutput@plt&amp;gt;
+    12e7:	48 89 c3             	mov    %rax,%rbx
+    12ea:	48 8d 35 5a 0d 00 00 	lea    0xd5a(%rip),%rsi        # 204b &amp;lt;_QQclX68656C6C6F21&amp;gt;
+    12f1:	ba 06 00 00 00       	mov    $0x6,%edx
+    12f6:	48 89 c7             	mov    %rax,%rdi
+    12f9:	e8 12 fe ff ff       	call   1110 &amp;lt;_FortranAioOutputAscii@plt&amp;gt;
+    12fe:	48 89 df             	mov    %rbx,%rdi
+    1301:	5b                   	pop    %rbx
+    1302:	e9 c9 fd ff ff       	jmp    10d0 &amp;lt;_FortranAioEndIoStatement@plt&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2&gt;Controlling exports&lt;/h2&gt;
+
+&lt;p&gt;Typically what symbols get exported or not is defined by the visibility
+attribute of symbols. In C and C++, &lt;a href=&quot;https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-visibility-function-attribute&quot;&gt;compilers have extensions to define this
+attribute&lt;/a&gt;.
+Fortran doesn’t typically have syntax for that. So we need to use other
+approaches.&lt;/p&gt;
+
+&lt;h3&gt;Excluding libraries&lt;/h3&gt;
+
+&lt;p&gt;The simplest, in my opinion, is to pass &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;--exclude-libs&lt;/code&gt; which is supported by
+both GNU ld and LLVM lld. This is a flag for the linker, so we need to tell
+the flang driver to pass the flag onto the linker using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-Wl,&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Let’s try linking again.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ flang -shared -o libmylib.so t.o \
+   -Wl,--exclude-libs=libFortranRuntime.a \
+   -Wl,--exclude-libs=libFortranDecimal.a
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div style=&quot;display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;&quot;&gt;
+  &lt;p&gt;According to the GNU ld manual
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-Wl,--exclude-libs=libFortranRuntime.a,libFortranDecimal.a&lt;/code&gt; should work as
+well but it didn’t in my system: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ld&lt;/code&gt; complained that the library
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFortranDecimal.a&lt;/code&gt; was not found.&lt;/p&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Now the list of symbols is much shorter and we can list it all.&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nm -C -D libmylib.so
+                 U abort@GLIBC_2.2.5
+                 U access@GLIBC_2.2.5
+                 U __assert_fail@GLIBC_2.2.5
+                 U bcmp@GLIBC_2.2.5
+                 U close@GLIBC_2.2.5
+                 U __ctype_toupper_loc@GLIBC_2.3
+                 U __cxa_atexit@GLIBC_2.2.5
+                 w __cxa_finalize@GLIBC_2.2.5
+                 U __environ@GLIBC_2.2.5
+                 U environ@GLIBC_2.2.5
+                 U __errno_location@GLIBC_2.2.5
+                 U feraiseexcept@GLIBC_2.2.5
+                 U fflush@GLIBC_2.2.5
+                 U fprintf@GLIBC_2.2.5
+                 U fputc@GLIBC_2.2.5
+                 U free@GLIBC_2.2.5
+                 U fstat@GLIBC_2.33
+                 U ftruncate@GLIBC_2.2.5
+                 U fwrite@GLIBC_2.2.5
+                 U getenv@GLIBC_2.2.5
+                 w __gmon_start__
+                 U isatty@GLIBC_2.2.5
+                 w _ITM_deregisterTMCloneTable
+                 w _ITM_registerTMCloneTable
+                 U lseek64@GLIBC_2.2.5
+                 U malloc@GLIBC_2.2.5
+                 U memchr@GLIBC_2.2.5
+                 U memcpy@GLIBC_2.14
+                 U memmove@GLIBC_2.2.5
+                 U memset@GLIBC_2.2.5
+                 U mkstemp@GLIBC_2.2.5
+                 U open@GLIBC_2.2.5
+                 U pread@GLIBC_2.2.5
+                 U pthread_mutex_destroy@GLIBC_2.2.5
+                 U pthread_mutex_init@GLIBC_2.2.5
+                 U pthread_mutex_lock@GLIBC_2.2.5
+                 U pthread_mutex_unlock@GLIBC_2.2.5
+                 U pthread_self@GLIBC_2.2.5
+                 U pwrite@GLIBC_2.2.5
+0000000000092198 D _QMmooEvar_init
+000000000009246c B _QMmooEvar_uninit
+00000000000024b0 T _QMmooPsub
+0000000000079000 V _QQclX43688a1c5df271c4b78af31a16dbe815
+000000000007902e V _QQclX68656C6C6F21
+                 U read@GLIBC_2.2.5
+                 U realloc@GLIBC_2.2.5
+                 U setenv@GLIBC_2.2.5
+                 U snprintf@GLIBC_2.2.5
+                 U stat@GLIBC_2.33
+                 U stderr@GLIBC_2.2.5
+                 U strcmp@GLIBC_2.2.5
+                 U strcpy@GLIBC_2.2.5
+                 U strerror@GLIBC_2.2.5
+                 U strerror_r@GLIBC_2.2.5
+                 U strlen@GLIBC_2.2.5
+                 U strtol@GLIBC_2.2.5
+                 U strtoul@GLIBC_2.2.5
+                 U unlink@GLIBC_2.2.5
+                 U vfprintf@GLIBC_2.2.5
+                 U vsnprintf@GLIBC_2.2.5
+                 U write@GLIBC_2.2.5
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;There is a bunch of symbols from the C Standard Library (glibc in this case)
+but these will be linked to a shared object, so not a problem.&lt;/p&gt;
+
+&lt;p&gt;We can see how our global (module) variables &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;var_init&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;var_uninit&lt;/code&gt; along
+with the module procedure &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sub&lt;/code&gt; are exported (the names are mangled by
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;flang&lt;/code&gt;). We also see some internal symbols that we could just not export them
+(they contain the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;hello!&lt;/code&gt; string and the name of the file) but this is much
+better than the status quo.&lt;/p&gt;
+
+&lt;p&gt;I think it would be a good thing if the flang driver could pass these flags to
+the linker (only flang knows exactly what libraries are runtime libraries).
+Alternatively, build systems such as cmake or meson (when they know the Fortran
+compiler is flang) could pass these flags when building shared objects.&lt;/p&gt;
+
+&lt;h3&gt;Using a version script&lt;/h3&gt;
+
+&lt;p&gt;If we are serious about symbol visibility, we can use a &lt;a href=&quot;https://sourceware.org/binutils/docs/ld/VERSION.html&quot;&gt;version
+script&lt;/a&gt;. A version script
+will allow us to be more precise naming things. For this example we will use
+the fact that all symbols emitted by flang in a module start with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;_QM&lt;/code&gt;. Of
+course we can be more fine-grained if we want.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;mylib.exports&lt;/figcaption&gt;&lt;pre class=&quot;with_line_numbers&quot;&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;&lt;table class=&quot;rouge-table&quot;&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td class=&quot;gutter gl&quot;&gt;&lt;pre class=&quot;lineno&quot;&gt;1
+2
+3
+4
+&lt;/pre&gt;&lt;/td&gt;&lt;td class=&quot;code&quot;&gt;&lt;pre&gt;{
+  global: _QM*;
+  local: *;
+};
+&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ flang -shared -o libmylib.so t.o -Wl,--version-script=mylib.exports
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;$ nm -C -D libmylib.so
+                 U abort@GLIBC_2.2.5
+                 U access@GLIBC_2.2.5
+                 U __assert_fail@GLIBC_2.2.5
+                 U bcmp@GLIBC_2.2.5
+                 U close@GLIBC_2.2.5
+                 U __ctype_toupper_loc@GLIBC_2.3
+                 U __cxa_atexit@GLIBC_2.2.5
+                 w __cxa_finalize@GLIBC_2.2.5
+                 U __environ@GLIBC_2.2.5
+                 U environ@GLIBC_2.2.5
+                 U __errno_location@GLIBC_2.2.5
+                 U feraiseexcept@GLIBC_2.2.5
+                 U fflush@GLIBC_2.2.5
+                 U fprintf@GLIBC_2.2.5
+                 U fputc@GLIBC_2.2.5
+                 U free@GLIBC_2.2.5
+                 U fstat@GLIBC_2.33
+                 U ftruncate@GLIBC_2.2.5
+                 U fwrite@GLIBC_2.2.5
+                 U getenv@GLIBC_2.2.5
+                 w __gmon_start__
+                 U isatty@GLIBC_2.2.5
+                 w _ITM_deregisterTMCloneTable
+                 w _ITM_registerTMCloneTable
+                 U lseek64@GLIBC_2.2.5
+                 U malloc@GLIBC_2.2.5
+                 U memchr@GLIBC_2.2.5
+                 U memcpy@GLIBC_2.14
+                 U memmove@GLIBC_2.2.5
+                 U memset@GLIBC_2.2.5
+                 U mkstemp@GLIBC_2.2.5
+                 U open@GLIBC_2.2.5
+                 U pread@GLIBC_2.2.5
+                 U pthread_mutex_destroy@GLIBC_2.2.5
+                 U pthread_mutex_init@GLIBC_2.2.5
+                 U pthread_mutex_lock@GLIBC_2.2.5
+                 U pthread_mutex_unlock@GLIBC_2.2.5
+                 U pthread_self@GLIBC_2.2.5
+                 U pwrite@GLIBC_2.2.5
+0000000000092198 D _QMmooEvar_init
+000000000009246c B _QMmooEvar_uninit
+00000000000024b0 T _QMmooPsub
+                 U read@GLIBC_2.2.5
+                 U realloc@GLIBC_2.2.5
+                 U setenv@GLIBC_2.2.5
+                 U snprintf@GLIBC_2.2.5
+                 U stat@GLIBC_2.33
+                 U stderr@GLIBC_2.2.5
+                 U strcmp@GLIBC_2.2.5
+                 U strcpy@GLIBC_2.2.5
+                 U strerror@GLIBC_2.2.5
+                 U strerror_r@GLIBC_2.2.5
+                 U strlen@GLIBC_2.2.5
+                 U strtol@GLIBC_2.2.5
+                 U strtoul@GLIBC_2.2.5
+                 U unlink@GLIBC_2.2.5
+                 U vfprintf@GLIBC_2.2.5
+                 U vsnprintf@GLIBC_2.2.5
+                 U write@GLIBC_2.2.5
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;One downside of version scripts is that they are more artisan and currently
+there is no good tooling around them. Also, each Fortran compiler mangles
+symbols differently so potentially we may need one version per supported
+Fortran compiler.&lt;/p&gt;
+
+&lt;h2&gt;What about the C++ standard library?&lt;/h2&gt;
+
+&lt;p&gt;The same issue happens if the C++ standard library is linked statically. This
+is not a common scenario but sometimes, for ease of deploy or performance, it
+is done. Typically the flag &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-static-libstdc++&lt;/code&gt; is used to achieve that
+(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-static&lt;/code&gt; is also possible but means that no shared object will be used when
+linking the program).&lt;/p&gt;
+
+&lt;p&gt;For these cases, the techniques shown above still hold.&lt;/p&gt;
+
+&lt;p&gt;For the libstdc++ library of GCC:&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-Wl,--exclude-libs=libstdc++.a
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;For the libc++ library of LLVM:&lt;/p&gt;
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;-Wl,--exclude-libs=libc++.a
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Again, using a version script is also the most precise way to handle this issue
+of “everything gets exported by default” when building shared objects.&lt;/p&gt;
+
+&lt;p&gt;Version scripts can also be used to fine-grain define a backwards-compatible
+evolution of a library, but that would be a topic for another day.&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">Most programming languages, including C and C++, provide language runtime libraries that implement parts of the language itself. These libraries must be linked in the final program or shared library. Today we are going to see how an unfortunate default in the way shared libraries work in Linux can make our lives a bit more complicated than they have to if the language runtimes are in static libraries.</summary></entry><entry><title type="html">Subtleties with loops</title><link href="https://thinkingeek.com/2024/02/11/subtleties-with-loops/" rel="alternate" type="text/html" title="Subtleties with loops" /><published>2024-02-11T09:50:00+00:00</published><updated>2024-02-11T09:50:00+00:00</updated><id>https://thinkingeek.com/2024/02/11/subtleties-with-loops</id><content type="html" xml:base="https://thinkingeek.com/2024/02/11/subtleties-with-loops/">&lt;p&gt;A common task in imperative programming languages is writing a loop. A loop
 that can terminate requires a way to check the terminating condition and a way
 to repeatedly execute some part of the code. These two mechanisms exists in
 many forms: from the crudest approach of using an &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;if&lt;/code&gt; and a &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;goto&lt;/code&gt; (that must
@@ -3394,301 +4079,4 @@ sys	2m56.167s
 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;3 minutes to compile clang+LLVM in Release mode is not bad 😀&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><category term="distributed" /><category term="compilation" /><category term="cluster" /><category term="HPC" /><category term="scientific" /><summary type="html">In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.</summary></entry><entry><title type="html">Fun with vectors in the Raspberry Pi 1 - Part 9</title><link href="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/" rel="alternate" type="text/html" title="Fun with vectors in the Raspberry Pi 1 - Part 9" /><published>2021-08-22T09:48:00+00:00</published><updated>2021-08-22T09:48:00+00:00</updated><id>https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9</id><content type="html" xml:base="https://thinkingeek.com/2021/08/22/raspberry-vectors-part-9/">&lt;p&gt;I think we have enough pieces of machinery working already that we can start
-with the most exciting part of this journey: autovectorisation!&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;h2&gt;SIMD&lt;/h2&gt;
-
-&lt;h3&gt;Data parallelism&lt;/h3&gt;
-
-&lt;p&gt;If we look at the step of computations required by an algorithm, we may find
-that often the precise order between some of the steps is not relevant. When
-this happens we say that those steps could run concurrently and the algorithm
-would still be correct. We can call &lt;em&gt;concurrency&lt;/em&gt; to the number of operations
-that can be executed concurrently.  When concurrency is somewhat related (or
-directly proportional) to the amount of data being processed by the algorithm
-we can say that it exposes &lt;em&gt;data parallelism&lt;/em&gt;.&lt;/p&gt;
-
-&lt;p&gt;The following C program tells us to add elements from two arrays from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt; to
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;N-1&lt;/code&gt; but nothing it it requires that. For instance, we could run from &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;N-1&lt;/code&gt; to
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;0&lt;/code&gt; and the observable effect would be identical.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;simple_add.c&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;enum&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;N&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1024&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
-
-&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
-&lt;span class=&quot;kt&quot;&gt;float&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
-
-&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;vector_sum&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;N&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;i&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;We can exploit &lt;em&gt;data parallelism&lt;/em&gt; in many ways: we can distribute parts of the
-computation over different computers in a cluster, over different threads in a
-multicore or, the approach we are interested in, between the different elements
-of a vector of a CPU using SIMD instructions. The important assumption here is
-that all of the mentioned approaches can perform several computations
-simultaneously in time.&lt;/p&gt;
-
-&lt;p&gt;SIMD precisely represents this idea: Single Instruction Multiple Data. With a
-single CPU instruction we can process more than one element of data.  We can
-obtain performane gains from using SIMD instructions if the CPU can execute
-them in a similar amount of time as their scalar counterparts. It all this
-depends on the amount of resources that the CPU has. The ARM1176JZF-S that
-powers the Raspberry Pi 1 does not devote extra resources, so vector
-instructions take proportionally longer, so we will not improve the performance
-a lot. However there are still some small gains here: each instruction executed
-comes with a (small) fixed cost which we are now avoiding.&lt;/p&gt;
-
-&lt;h3&gt;Autovectorisation&lt;/h3&gt;
-
-&lt;p&gt;Compilers may be able to identify in some circumstances that the source code is
-expressing data parallel computation. We will focus on loops though it is
-possible to identify similar cases for straight-line code.&lt;/p&gt;
-
-&lt;p&gt;Once those cases are identified, the compiler may be able to implement the
-scalar computation using vector instructions. This process is called
-&lt;em&gt;vectorisation&lt;/em&gt;.&lt;/p&gt;
-
-&lt;p&gt;Historically automatic vectorisation has been a bit disappointing. Compilers
-must be very careful not to break the semantics of the program. Some
-programming languages, such as C and C++, require very complex analyses to
-determine the safety of the vectorisation. This process is also time consuming
-and it is not commonly enabled by default in mainstream compilers. So many
-interesting loops which potentially could be vectorised are not vectorised. Or
-worse, the programmer has to adapt the code so it ends being vectorised.&lt;/p&gt;
-
-&lt;h2&gt;Enable vectorisation in LLVM&lt;/h2&gt;
-
-&lt;p&gt;Vectorization is necessarily a target-specific transformation. LLVM IR is not
-platform neutral but its genericity helps reusing code between architectures.
-Sometimes the LLVM IR optimisation passes need information from the
-backend to assess if a transformation is profitable or not.&lt;/p&gt;
-
-&lt;p&gt;The loop vectoriser is not an exception to this, so before we can get it to
-vectorise simple codes, we need to teach the ARM backend about the new vector
-reality.&lt;/p&gt;
-
-&lt;p&gt;A first thing we need to do is to let LLVM know how many vector registers
-are there. We mentioned that in practice is like if there were 6 of them.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMTargetTransformInfo.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;   unsigned getNumberOfRegisters(unsigned ClassID) const {
-     bool Vector = (ClassID == 1);
-     if (Vector) {
-&lt;span class=&quot;gi&quot;&gt;+      if (ST-&amp;gt;hasVFP2Base())
-+        return 6;
-&lt;/span&gt;       if (ST-&amp;gt;hasNEON())
-         return 16;
-       if (ST-&amp;gt;hasMVEIntegerOps())
-         return 8;
-       return 0;
-     }
- 
-     if (ST-&amp;gt;isThumb1Only())
-       return 8;
-     return 13;
-   }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;A second thing we need to let LLVM know is the size of our vectors. Because we
-aim only for vectors that can hold either 4 floats or 2 doubles and both
-cases amount to 128 bit, we will claim that size.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;figcaption&gt;llvm/lib/Target/ARM/ARMTargetTransformInfo.h&lt;/figcaption&gt;&lt;pre&gt;&lt;code class=&quot;language-diff&quot; data-lang=&quot;diff&quot;&gt;   TypeSize getRegisterBitWidth(TargetTransformInfo::RegisterKind K) const {
-     switch (K) {
-     case TargetTransformInfo::RGK_Scalar:
-       return TypeSize::getFixed(32);
-     case TargetTransformInfo::RGK_FixedWidthVector:
-&lt;span class=&quot;gi&quot;&gt;+      if (ST-&amp;gt;hasVFP2Base())
-+        return TypeSize::getFixed(128);
-&lt;/span&gt;       if (ST-&amp;gt;hasNEON())
-         return TypeSize::getFixed(128);
-       if (ST-&amp;gt;hasMVEIntegerOps())
-         return TypeSize::getFixed(128);
-       return TypeSize::getFixed(0);
-     case TargetTransformInfo::RGK_ScalableVector:
-       return TypeSize::getScalable(0);
-     }
-     llvm_unreachable(&quot;Unsupported register kind&quot;);
-   }&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;With all this we can try our loop above.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6-linux-gnueabihf &lt;span class=&quot;nt&quot;&gt;-O2&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o-&lt;/span&gt; simple_add.c&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;vector_sum:
-	.fnstart
-@ %bb.0:
-	.save	{r11, lr}
-	push	{r11, lr}
-	ldr	r12, .LCPI0_0
-	ldr	lr, .LCPI0_1
-	ldr	r3, .LCPI0_2
-	mov	r0, #0
-.LBB0_1:                                @ =&amp;gt;This Inner Loop Header: Depth=1
-	add	r1, r12, r0
-	add	r2, lr, r0
-	vldr	s2, [r1]
-	vldr	s0, [r2]
-	add	r1, r3, r0
-	add	r0, r0, #4
-	cmp	r0, #4096
-	vadd.f32	s0, s2, s0
-	vstr	s0, [r1]
-	bne	.LBB0_1
-@ %bb.2:
-	pop	{r11, pc}
-	.p2align	2&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;Uhm, this is not what we wanted, right? The reason is that in general the
-vectoriser will try not to make unsafe transformations. VFP instructions are
-not 100% compliant with IEEE-754 so the vectoriser will not use them by
-default.&lt;/p&gt;
-
-&lt;p&gt;We need to tell the compiler “it is OK, let’s use not 100% precise
-instructions” by using &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-O2 -ffast-math&lt;/code&gt; or the shorter form &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;-Ofast&lt;/code&gt;.&lt;/p&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;clang &lt;span class=&quot;nt&quot;&gt;--target&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;armv6-linux-gnueabihf &lt;span class=&quot;nt&quot;&gt;-Ofast&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-S&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-o-&lt;/span&gt; simple_add.c&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-asm&quot; data-lang=&quot;asm&quot;&gt;vector_sum:
-	.fnstart
-@ %bb.0:
-	.save	{r4, lr}
-	push	{r4, lr}
-	.vsave	{d8, d9, d10, d11}
-	vpush	{d8, d9, d10, d11}
-	ldr	r12, .LCPI0_0
-	ldr	lr, .LCPI0_1
-	ldr	r3, .LCPI0_2
-	mov	r0, #0
-.LBB0_1:                                @ =&amp;gt;This Inner Loop Header: Depth=1
-	add	r1, r12, r0
-	add	r2, lr, r0
-	vldmia	r1, {s16, s17, s18, s19, s20, s21, s22, s23}
-	vldmia	r2, {s8, s9, s10, s11, s12, s13, s14, s15}
-	vmrs	r2, fpscr
-	mov	r1, #196608
-	bic	r2, r2, #458752
-	orr	r2, r2, r1
-	vmsr	fpscr, r2
-	vadd.f32	s12, s20, s12
-	vadd.f32	s8, s16, s8
-	add	r1, r3, r0
-	add	r0, r0, #32
-	add	r2, r1, #20
-	cmp	r0, #4096
-	vstmia	r2, {s13, s14, s15}
-	vstmia	r1, {s8, s9, s10, s11, s12}
-	bne	.LBB0_1
-@ %bb.2:
-	vmrs	r1, fpscr
-	bic	r1, r1, #458752
-	vmsr	fpscr, r1
-	vpop	{d8, d9, d10, d11}
-	pop	{r4, pc}
-	.p2align	2&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
-
-&lt;p&gt;This is more interesting!&lt;/p&gt;
-
-&lt;p&gt;Note however we have some gross inefficiency here: we are changing the vector
-length (setting it to 2) in every iteration of the loop. Later in this post we
-will evaluate if it is worth trying to hoist it out of the loop.&lt;/p&gt;
-
-&lt;h2&gt;A very simple benchmark&lt;/h2&gt;
-
-&lt;p&gt;Let’s use this &lt;a href=&quot;https://gist.github.com/rofirrim/813729ddb7c2f29898f678cc30a0b5e0&quot;&gt;simple
-benchmark&lt;/a&gt;
-that computes a vector addition of floats (similar to the code shown above in
-the post).  It also has a mechanism to validate the scalar version and the
-vector version. &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;#pragma clang loop&lt;/code&gt; is used to explicitly disable
-vectorisation in the scalar loops that would otherwise be vectorised.&lt;/p&gt;
-
-&lt;p&gt;The benchmark can be adjusted for number of times we run the benchmark and the
-size of the vector. This is useful to run it in different scenarios.&lt;/p&gt;
-
-&lt;p&gt;This benchmark has a low ratio of computation over memory accesses. We do one
-addition and three memory accesses (two loads and one store).  This means that
-the &lt;a href=&quot;https://en.wikipedia.org/wiki/Roofline_model&quot;&gt;&lt;em&gt;arithmetic intensity&lt;/em&gt;&lt;/a&gt; of
-this benchmark is small. We may not be able to observe a lot of improvement
-with vector instructions.&lt;/p&gt;
-
-&lt;p&gt;We can study more favourable situations if we use smaller arrays. In this case,
-when we run the benchmark again, chances are that the vector will be in the
-cache already.  While the arithmetic intensity hasn’t changed, in this
-situation the arithmetic computation has higher weight in the overall
-execution.&lt;/p&gt;
-
-&lt;p&gt;Let’s look at two executions of the benchmark. The figure below show the ratio
-of execution time of the vector loop respect to the scalar loop (not vectorised
-at all). The plot at the left shows the results when the vectorised loop sets
-the vector length at each iteration, as it is emitted by the compiler. The
-plot at the right shows the results when the vector length change is hoisted
-out of the loop: this is, it is set only once before entering the vector body.
-I did this transformation by editing the assembly output.&lt;/p&gt;
-&lt;figure&gt;
-    &lt;img src=&quot;/assets/images/vadd-results.svg&quot; alt=&quot;Plot with speedup of vector addition results&quot; /&gt;
-    &lt;figcaption&gt;Very simple array addition benchmark. The plot at the left
-contains the results for the program as it is emitted by the compiler with
-vectorisation enabled. It sets the vector length at each iteration of the
-vectorised loop. The plot at the right contains the result for a manually
-modified assembly output so it sets the vector length right before entering the
-vectorised loop. The benchmark runs 256 times and it was run 50 times for
-each array length (from 4 to 131072).
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-
-&lt;p&gt;In both cases an array of 4 floats does not perform very well because the loop
-has been vectorised using an interleave factor of 2. So each vector loop
-iteration wants to process 8 iterations of the original scalar loop. There is
-some overhead setting up the vector length to 1 in the tail loop (the loop that
-processes the remaining elements that do not complete a vector) hence the bad
-performance. This is less noticeable on the right plot as the vector length is
-only set once before entering the scalar loop (not once per iteration of the
-loop as it happens on the left).&lt;/p&gt;
-
-&lt;p&gt;On the left plot we see that, until 4096 float elements, the improvement over
-scalar is modest: around 2.5X the scalar code. I believe changing the vector
-lenght (which requires reading the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fpscr&lt;/code&gt;) introduces some extra cost that
-limits the performance. On the right plot we see it improves up to ~3.4X. This
-means it is a good idea to hoist the set vector length out of the vector loop
-if possible. We will look into it in a later chapter.&lt;/p&gt;
-
-&lt;p&gt;Starting from 4096, both plots show a similar performance degradation. The
-reason is that our &lt;em&gt;working set&lt;/em&gt; is now beyond the &lt;a href=&quot;http://sandsoftwaresound.net/raspberry-pi/raspberry-pi-gen-1/memory-hierarchy/&quot;&gt;16KB of the L1 data
-cache&lt;/a&gt;.
-Note that when using arrays of 2048 float elements each array takes 8KB.  Given
-that the benchmark uses two of them in the loop, our &lt;em&gt;working set&lt;/em&gt; is 16KB.
-Beyond that we overflow the cache (the L2, afaict is not used) and the
-performance drops to ~1.3X. The low arithmetic intensity of this benchmark
-means it quickly becomes a memory-bound problem rather than a CPU-bound
-problem. Vectorisation is unlikely to help under memory-bound problems.&lt;/p&gt;
-
-&lt;h3&gt;Too good to be true?&lt;/h3&gt;
-
-&lt;p&gt;After thinking a bit more about the results, a doubt came to mind. In practice,
-this is like if we had unrolled the loop but using hardware instructions. This
-is because the vector mode of the VFP does not bring any performance benefit:
-the latency of the instructions is scaled by the vector length.&lt;/p&gt;
-
-&lt;p&gt;So I extended the benchmark to include an unrolled version of the vector
-addition, without vectorisation. I think the results speak for themselves.&lt;/p&gt;
-
-&lt;figure&gt;
-    &lt;img src=&quot;/assets/images/vadd-results-plus-unroll.svg&quot; alt=&quot;Plot with speedup of vector addition results including an unrolled version&quot; /&gt;
-    &lt;figcaption&gt;
-Unrolling is almost as competitive in performance as vectorising in the naive
-way. We can get a bit of an edge if we hoist the set vector length, but this
-advantage quickly fades away.
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-
-&lt;p&gt;So as I already hypothesised at the first chapter of this series, the only
-benefit we may obtain from using vector instructions is code size
-improvement.&lt;/p&gt;
-
-&lt;p&gt;In the next chapter we will look into trying to hoist the set vector length
-out of the loops that only set it once (which we expect to be the common
-case for vectorised loops).&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><summary type="html">I think we have enough pieces of machinery working already that we can start with the most exciting part of this journey: autovectorisation!</summary></entry></feed>
+&lt;p&gt;3 minutes to compile clang+LLVM in Release mode is not bad 😀&lt;/p&gt;</content><author><name>Roger Ferrer Ibáñez</name></author><category term="distributed" /><category term="compilation" /><category term="cluster" /><category term="HPC" /><category term="scientific" /><summary type="html">In software development there is an unavoidable trend in which applications become larger and more complex. For compiled programming languages one of the consequences is that their compilation takes longer. Today I want to talk about using distcc to speed C/C++ compilation using different nodes in a scientific cluster.</summary></entry></feed>

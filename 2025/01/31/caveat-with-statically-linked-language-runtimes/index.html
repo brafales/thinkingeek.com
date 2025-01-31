@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>A caveat with statically linked language runtimes</title>
+  <meta name="description" content="Most programming languages, including C and C++, provide language runtime libraries that implement parts of the language itself. These libraries must be linked in the final program or shared library. Today we are going to see how an unfortunate default in the way shared libraries work in Linux can make our lives a bit more complicated than they have to if the language runtimes are in static libraries.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="A caveat with statically linked language runtimes">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/">
+  <meta property="og:description" content="Most programming languages, including C and C++, provide language runtime libraries that implement parts of the language itself. These libraries must be linked in the final program or shared library. Today we are going to see how an unfortunate default in the way shared libraries work in Linux can make our lives a bit more complicated than they have to if the language runtimes are in static libraries.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="A caveat with statically linked language runtimes">
+  <meta name="twitter:description" content="Most programming languages, including C and C++, provide language runtime libraries that implement parts of the language itself. These libraries must be linked in the final program or shared librar...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/series/">Series</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">A caveat with statically linked language runtimes</h1>
+    
+    <p class="post-meta"><time datetime="2025-01-31T20:12:00+00:00" itemprop="datePublished">Jan 31, 2025</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/linux/">linux</a>, <a href="/categories/libraries/">libraries</a>, <a href="/categories/language/">language</a>, <a href="/categories/runtime/">runtime</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Most programming languages, including C and C++, provide language runtime
+libraries that implement parts of the language itself. These libraries must
+be linked in the final program or shared library.</p>
+
+<p>Today we are going to see how an unfortunate default in the way shared
+libraries work in Linux can make our lives a bit more complicated than they
+have to if the language runtimes are in static libraries.</p>
+
+<!--more-->
+
+<h1>Quick recap of the C compilation model</h1>
+
+<h2>Object files</h2>
+
+<p>The C compilation model, which is also used in other programming languages such
+as C++ or Fortran, enables separated compilation and is based on the following
+strategy:</p>
+
+<ul>
+  <li>each source code file (<em>translation unit</em> in the C lingo) is compiled
+separatedly into what we could call compiled units</li>
+  <li>all compiled units are linked together to form the program</li>
+</ul>
+
+<p>However, this leaves lots of details up in the air, so in Linux (and many other
+UNIX-like environments), it looks like this:</p>
+
+<ul>
+  <li>each source code file is compiled into a <em>relocatable object file</em> or simply
+<em>object file</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.o</code>)</li>
+  <li>all object files are linked together to create a program
+(typically all object files would be part of the final program, this is a
+simplified view though)</li>
+</ul>
+
+<p>Language runtimes could, of course, use this simple model. For instance, for C
+we could have a <code class="language-plaintext highlighter-rouge">stdlibc.o</code> file with all the functions and global variables of
+the C standard library as specified by Standard C. We would include this
+hypothetical <code class="language-plaintext highlighter-rouge">stdlibc.o</code> when linking a C program.</p>
+
+<p>For the sake of the writing, I am going to refer to functions and global
+variables collectively as <em>symbols</em>: these are the low level names that the
+compiler and the linker use to identify these program entities.</p>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>The link step conveys the idea that all the symbols used (referenced) by a
+program are ultimately connected (linked) to its actual defining entity.</p>
+</div>
+
+<h2>Archives (aka static libraries)</h2>
+
+<p>However, because of the 1-to-1 mapping of source code file to objects, it would
+be inconvenient to have all the C library into a single source file. Several
+source files are easier to handle so one would get several object files and
+those should have to be included in the link step.</p>
+
+<p>How the language runtime library is split into source files is a detail
+that the user of the runtime library should not care about. Thus, naturally, it
+emerges the idea of grouping several object files. This grouping of object
+files typically called an <em>archive</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.a</code>).</p>
+
+<p>These archives are often called <em>static libraries</em> but they are nothing more
+than a collection of objects and an index.</p>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>This is accidental and not fundamental to the question: archives also allow
+saving some time during linking. Typically object files are handled as a whole
+during linking (this is a simplified explanation, there is more nuance here).</p>
+
+  <p>Because archives are collections of objects, library authors can make the
+object files as fine-grained as possible to favour the linking step so only the
+required object files end being part of the program. A symbol referenced by the
+program that is defined in an object file found inside an archive will make
+that object file required. Conceptually the object file is extracted from the
+archive and added to the link process as if it were another object file.</p>
+
+  <p>This also makes the linking process unavoidably order-sensitive: the order in
+which the archives get examined impacts on how the linking is performed.</p>
+
+  <p>Most of these quirky behaviours of linkers with archives are due to the way
+they were implemented in the first UNIX systems, where memory was scarce and
+computation was slow.</p>
+</div>
+
+<p>Archives complicate a bit the compilation model as we may not be longer
+generating a program. We may be generating an archive. So the compilation
+model looks like this:</p>
+
+<ul>
+  <li>When generating an archive:
+    <ul>
+      <li>each source code file is compiled into a <em>relocatable object file</em> or simply
+<em>object file</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.o</code>)</li>
+      <li>each object file is grouped into an archive file. In UNIX this is typically
+done with the <code class="language-plaintext highlighter-rouge">ar</code> tool.</li>
+    </ul>
+  </li>
+  <li>When generating a program:
+    <ul>
+      <li>each source code file is compiled into a <em>relocatable object file</em> or simply
+<em>object file</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.o</code>)</li>
+      <li>all object files are linked together to create a program (typically all
+object files would be part of the final program, this is a simplified view
+though). When a symbol is not in the object files but is found in an object
+file in an archive, the object file is extracted and included in the link
+step.</li>
+    </ul>
+  </li>
+</ul>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>Another accident of archives and not fundamental to the way they work, is that
+to speed up linking step archives are only examined once (and in the order they are
+provided) during the link process.</p>
+
+  <p>So, all the symbols that are expected to be defined in an archive (more
+precisely in one of its object files) should be known in advance before
+processing the archive. Current linkers have flags to change this default
+behaviour if needed.</p>
+</div>
+
+<h2>Shared objects (aka dynamic libraries)</h2>
+
+<p>Libraries, embodied in archives, enable reuse of code between programs but at
+expense of replicating the compiled code in every single program. This is,
+any C program that uses <code class="language-plaintext highlighter-rouge">puts</code> would include a copy of the code required
+to implement <code class="language-plaintext highlighter-rouge">puts</code>.</p>
+
+<p>Because repeating code throughout our programs has an impact on the installed
+system (our binaries are larger), naturally it emerges the idea of being able
+to reuse this code without actually having to embed it in the program. This
+is the core idea of dynamic libraries. In Linux, and other UNIX systems, they
+are called <em>shared objects</em> (typically in files whose name ends in <code class="language-plaintext highlighter-rouge">.so</code>).</p>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>Shared objects complicate a lot the whole compilation model. These days shared
+objects are often shunned. There are a number of reasons for that and they span
+from ease of deployment, safety and performance. Discussing these reasons is out
+of scope of this post.</p>
+
+  <p>If you wonder why program binaries are relatively large these days, avoiding
+shared libraries is one of the reasons. Modern systems provide now plenty of
+storage and we can accomodate this increase in size but the bloat is definitely
+there.</p>
+
+</div>
+
+<p>In contrast to the previous cases when only using object files or archives, the
+use of shared objects in our programs implies the program is incomplete. At
+runtime, a mechanism must exist to complete the program doing what is known as
+<em>dynamic linking</em>. This may fully happen as part of the loading of the program
+(which may be slow for large applications) or on demand (lazily) throughout the
+execution of the program. A special program, called the <em>dynamic linker</em> or
+<em>runtime linker</em>, is responsible to make this possible.</p>
+
+<p>The compilation now looks like this:</p>
+
+<ul>
+  <li>When generating an archive:
+    <ul>
+      <li>each source code file is compiled into a <em>relocatable object file</em> or simply
+<em>object file</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.o</code>)</li>
+      <li>each object file is grouped into an archive file. In UNIX this is typically
+done with the <code class="language-plaintext highlighter-rouge">ar</code> tool.</li>
+    </ul>
+  </li>
+  <li>When generating a program:
+    <ul>
+      <li>each source code file is compiled into a <em>relocatable object file</em> or simply
+<em>object file</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.o</code>)</li>
+      <li>all object files are linked together to create a program
+(typically all object files would be part of the final program, this is a
+simplified view though). Symbols used by the program may add to the link step additional
+object files extracted from archives. Shared objects can be used
+when linking a program. The linker only establishes a dependence with the
+shared object that will be used by the dynamic linker to complete the
+program at runtime.</li>
+    </ul>
+  </li>
+  <li>When generating a shared object:
+    <ul>
+      <li>each source code file is compiled into a <em>relocatable object file</em> or simply
+<em>object file</em> (typically a file whose name ends in <code class="language-plaintext highlighter-rouge">.o</code>)</li>
+      <li>all object files are linked together to create a program
+(typically all object files would be part of the final program, this is a
+simplified view though). Symbols used by the shared object may add to the link step additional
+object files extracted from archives. A shared object can use other
+shared objects.  The linker only establishes a dependence with the
+shared object that will be used by the dynamic linker when the shared
+object is loaded (either because it is needed by the program or another
+shared object).</li>
+    </ul>
+  </li>
+</ul>
+
+<h1>Shared objects exports</h1>
+
+<p>Shared objects are a bit special because in them there is a list of symbols
+that they export. These are the symbols that can be used during the dynamic
+linking that happens at runtime. The (static) linker only establishes a
+dependence with the shared object, for the dynamic linker to use, but it does
+not specify what shared object provides a symbol.</p>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>The static linker only ensures that all the symbols can be resolved. For those
+appearing defined in object files and archives, the linker will also link to
+them. For the rest of the symbols, they must be exported by at lest one shared
+object and this is all what the linker checks in practice. The bulk of the
+linking for those symbols is offloaded to the dynamic linker.</p>
+</div>
+
+<p>Finding what shared object provides a definition of a symbol is the task of the
+dynamic linker. This enables a number of features like interposition or
+versioning. While these features are useful they also can cause inefficiencies
+(any symbol might be interposed) or safety risks (it may be possible to provide
+an evil version of the function or global variable).</p>
+
+<p>For reasons that go beyond the scope of this post (mostly historical), when
+creating a shared object <strong>all external (i.e., non-local) defined symbols in
+object files or objects extracted from archives are exported by default</strong>. Now,
+there are mechanisms to control what symbols get exported: it often happens
+that not all the symbols used by the different objects that make up a shared
+object are to be used outside of the library.  This mechanism is called
+visibility control and can be enabled by different ways. In the case of GNU ld
+linker: a version script or additional linker flags can be used.</p>
+
+<h1>The case of Flang</h1>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>I want to make clear that this is <strong>not</strong> a criticism of flang. The status quo
+may change and the problem go away.</p>
+
+  <p>That said, it shows an issue that may impact language implementations that use
+the same approach as the one used by flang described at the time of writing.</p>
+</div>
+
+<p>The flang compiler, is the new Fortran frontend of the LLVM project. The
+Fortran language is rich and a number of features must be implemented in a
+runtime, mostly I/O and math support.</p>
+
+<p>Flang chose to use static libraries to implement that runtime. Flang has two
+libraries that are considered part of its runtime <code class="language-plaintext highlighter-rouge">libFlangRuntime.a</code> and
+<code class="language-plaintext highlighter-rouge">libFlangDecimal.a</code> (for decimal floating point which to be fair is a bit of a
+niche thing).</p>
+
+<h2>A small shared object</h2>
+
+<p>Consider the following small testcase.</p>
+
+<figure class="highlight"><figcaption>test.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td><td class="code"><pre><span class="k">module</span><span class="w"> </span><span class="n">moo</span><span class="w">
+  </span><span class="c1">! Global variables</span><span class="w">
+  </span><span class="kt">integer</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">var_init</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">12</span><span class="w">
+  </span><span class="kt">integer</span><span class="w"> </span><span class="p">::</span><span class="w"> </span><span class="n">var_uninit</span><span class="w">
+  </span><span class="k">contains</span><span class="w">
+    </span><span class="c1">! A subroutine that is also a module procedure</span><span class="w">
+    </span><span class="k">subroutine</span><span class="w"> </span><span class="n">sub</span><span class="p">()</span><span class="w">
+      </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"hello!"</span><span class="p">,</span><span class="w"> </span><span class="n">var_init</span><span class="p">,</span><span class="w"> </span><span class="n">var_zeroed</span><span class="w">
+    </span><span class="k">end</span><span class="w"> </span><span class="k">subroutine</span><span class="w"> </span><span class="n">sub</span><span class="w">
+</span><span class="k">end</span><span class="w"> </span><span class="k">module</span><span class="w"> </span><span class="n">moo</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Let’s make a shared object using the <code class="language-plaintext highlighter-rouge">flang</code> driver.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ flang -c -o t.o -fPIC test.f90
+$ flang -shared -o libmylib.so t.o
+</code></pre></div></div>
+
+<p>Now let’s check the list of exported symbols. We can use <code class="language-plaintext highlighter-rouge">nm -D</code> for that. The
+list is very long and just its final part is shown below.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ nm -D libmylib.so
+…
+000000000003bbc0 W _ZNK7Fortran7runtime2io17RealOutputEditingILi8EE6IsZeroEv
+000000000006b500 T _ZNK7Fortran7runtime2io20NonTbpDefinedIoTable4FindERKNS0_8typeInfo11DerivedTypeENS_6common9DefinedIoE
+0000000000021ee0 W _ZNK7Fortran7runtime2io21ChildIoStatementStateILNS1_9DirectionE0EE19GetExternalFileUnitEv
+0000000000022350 W _ZNK7Fortran7runtime2io21ChildIoStatementStateILNS1_9DirectionE1EE19GetExternalFileUnitEv
+0000000000054490 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE0EE10descriptorEv
+0000000000053a80 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE0EE13CurrentRecordEv
+0000000000053dc0 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE0EE17ViewBytesInRecordERPKcb
+0000000000054f10 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE1EE10descriptorEv
+00000000000549b0 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE1EE13CurrentRecordEv
+0000000000054bd0 W _ZNK7Fortran7runtime2io22InternalDescriptorUnitILNS1_9DirectionE1EE17ViewBytesInRecordERPKcb
+0000000000021710 W _ZNK7Fortran7runtime2io24ExternalIoStatementStateILNS1_9DirectionE0EE17ViewBytesInRecordERPKcb
+0000000000021930 W _ZNK7Fortran7runtime2io24ExternalIoStatementStateILNS1_9DirectionE1EE17ViewBytesInRecordERPKcb
+0000000000024e30 T _ZNK7Fortran7runtime2io25FormattedIoStatementStateILNS1_9DirectionE1EE22GetEditDescriptorCharsEv
+0000000000044a50 T _ZNK7Fortran7runtime2io8OpenFile15InquirePositionEv
+000000000002b140 T _ZNK7Fortran7runtime8TypeCode18GetCategoryAndKindEv
+000000000006bee0 T _ZNK7Fortran7runtime8typeInfo11DerivedType13GetParentTypeEv
+000000000006bf00 T _ZNK7Fortran7runtime8typeInfo11DerivedType17FindDataComponentEPKcm
+000000000006c210 T _ZNK7Fortran7runtime8typeInfo11DerivedType4DumpEP8_IO_FILE
+000000000006cda0 T _ZNK7Fortran7runtime8typeInfo14SpecialBinding4DumpEP8_IO_FILE
+000000000006b7c0 T _ZNK7Fortran7runtime8typeInfo5Value8GetValueEPKNS0_10DescriptorE
+000000000006b8a0 T _ZNK7Fortran7runtime8typeInfo9Component11GetElementsERKNS0_10DescriptorE
+000000000006b9f0 T _ZNK7Fortran7runtime8typeInfo9Component11SizeInBytesERKNS0_10DescriptorE
+000000000006b820 T _ZNK7Fortran7runtime8typeInfo9Component18GetElementByteSizeERKNS0_10DescriptorE
+000000000006bb00 T _ZNK7Fortran7runtime8typeInfo9Component19EstablishDescriptorERNS0_10DescriptorERKS3_RNS0_10TerminatorE
+000000000006bdf0 T _ZNK7Fortran7runtime8typeInfo9Component23CreatePointerDescriptorERNS0_10DescriptorERKS3_RNS0_10TerminatorEPKl
+000000000006cac0 T _ZNK7Fortran7runtime8typeInfo9Component4DumpEP8_IO_FILE
+0000000000020210 T _ZNSt3__122__libcpp_verbose_abortEPKcz
+000000000009f1e0 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi113ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009eea0 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi11ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009ef70 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi24ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009f040 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi53ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009f110 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi64ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+000000000009edd0 V _ZZNK7Fortran7decimal27BigRadixFloatingPointNumberILi8ELi16EE16ConvertToDecimalEPcmNS0_22DecimalConversionFlagsEiE3lut
+</code></pre></div></div>
+
+<p>What is all this, you wonder?  Let’s demangle these symbols as they look like C++ symbols. We can use the <code class="language-plaintext highlighter-rouge">-C</code> flag of <code class="language-plaintext highlighter-rouge">nm</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ nm -D -C libmylib.so
+…
+000000000003de80 W Fortran::runtime::io::RealOutputEditing&lt;10&gt;::IsZero() const
+00000000000407b0 W Fortran::runtime::io::RealOutputEditing&lt;16&gt;::IsZero() const
+0000000000034e80 W Fortran::runtime::io::RealOutputEditing&lt;2&gt;::IsZero() const
+00000000000374e0 W Fortran::runtime::io::RealOutputEditing&lt;3&gt;::IsZero() const
+0000000000039770 W Fortran::runtime::io::RealOutputEditing&lt;4&gt;::IsZero() const
+000000000003bbc0 W Fortran::runtime::io::RealOutputEditing&lt;8&gt;::IsZero() const
+000000000006b500 T Fortran::runtime::io::NonTbpDefinedIoTable::Find(Fortran::runtime::typeInfo::DerivedType const&amp;, Fortran::common::DefinedIo) const
+0000000000021ee0 W Fortran::runtime::io::ChildIoStatementState&lt;(Fortran::runtime::io::Direction)0&gt;::GetExternalFileUnit() const
+0000000000022350 W Fortran::runtime::io::ChildIoStatementState&lt;(Fortran::runtime::io::Direction)1&gt;::GetExternalFileUnit() const
+0000000000054490 W Fortran::runtime::io::InternalDescriptorUnit&lt;(Fortran::runtime::io::Direction)0&gt;::descriptor() const
+0000000000053a80 W Fortran::runtime::io::InternalDescriptorUnit&lt;(Fortran::runtime::io::Direction)0&gt;::CurrentRecord() const
+0000000000053dc0 W Fortran::runtime::io::InternalDescriptorUnit&lt;(Fortran::runtime::io::Direction)0&gt;::ViewBytesInRecord(char const*&amp;, bool) const
+0000000000054f10 W Fortran::runtime::io::InternalDescriptorUnit&lt;(Fortran::runtime::io::Direction)1&gt;::descriptor() const
+00000000000549b0 W Fortran::runtime::io::InternalDescriptorUnit&lt;(Fortran::runtime::io::Direction)1&gt;::CurrentRecord() const
+0000000000054bd0 W Fortran::runtime::io::InternalDescriptorUnit&lt;(Fortran::runtime::io::Direction)1&gt;::ViewBytesInRecord(char const*&amp;, bool) const
+0000000000021710 W Fortran::runtime::io::ExternalIoStatementState&lt;(Fortran::runtime::io::Direction)0&gt;::ViewBytesInRecord(char const*&amp;, bool) const
+0000000000021930 W Fortran::runtime::io::ExternalIoStatementState&lt;(Fortran::runtime::io::Direction)1&gt;::ViewBytesInRecord(char const*&amp;, bool) const
+0000000000024e30 T Fortran::runtime::io::FormattedIoStatementState&lt;(Fortran::runtime::io::Direction)1&gt;::GetEditDescriptorChars() const
+0000000000044a50 T Fortran::runtime::io::OpenFile::InquirePosition() const
+000000000002b140 T Fortran::runtime::TypeCode::GetCategoryAndKind() const
+000000000006bee0 T Fortran::runtime::typeInfo::DerivedType::GetParentType() const
+000000000006bf00 T Fortran::runtime::typeInfo::DerivedType::FindDataComponent(char const*, unsigned long) const
+000000000006c210 T Fortran::runtime::typeInfo::DerivedType::Dump(_IO_FILE*) const
+000000000006cda0 T Fortran::runtime::typeInfo::SpecialBinding::Dump(_IO_FILE*) const
+000000000006b7c0 T Fortran::runtime::typeInfo::Value::GetValue(Fortran::runtime::Descriptor const*) const
+000000000006b8a0 T Fortran::runtime::typeInfo::Component::GetElements(Fortran::runtime::Descriptor const&amp;) const
+000000000006b9f0 T Fortran::runtime::typeInfo::Component::SizeInBytes(Fortran::runtime::Descriptor const&amp;) const
+000000000006b820 T Fortran::runtime::typeInfo::Component::GetElementByteSize(Fortran::runtime::Descriptor const&amp;) const
+000000000006bb00 T Fortran::runtime::typeInfo::Component::EstablishDescriptor(Fortran::runtime::Descriptor&amp;, Fortran::runtime::Descriptor const&amp;, Fortran::runtime::Terminator&amp;) const
+000000000006bdf0 T Fortran::runtime::typeInfo::Component::CreatePointerDescriptor(Fortran::runtime::Descriptor&amp;, Fortran::runtime::Descriptor const&amp;, Fortran::runtime::Terminator&amp;, long const*) const
+000000000006cac0 T Fortran::runtime::typeInfo::Component::Dump(_IO_FILE*) const
+0000000000020210 T std::__1::__libcpp_verbose_abort(char const*, ...)
+000000000009f1e0 V Fortran::decimal::BigRadixFloatingPointNumber&lt;113, 16&gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009eea0 V Fortran::decimal::BigRadixFloatingPointNumber&lt;11, 16&gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009ef70 V Fortran::decimal::BigRadixFloatingPointNumber&lt;24, 16&gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009f040 V Fortran::decimal::BigRadixFloatingPointNumber&lt;53, 16&gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009f110 V Fortran::decimal::BigRadixFloatingPointNumber&lt;64, 16&gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+000000000009edd0 V Fortran::decimal::BigRadixFloatingPointNumber&lt;8, 16&gt;::ConvertToDecimal(char*, unsigned long, Fortran::decimal::DecimalConversionFlags, int) const::lut
+</code></pre></div></div>
+
+<p>Indeed, this is a bunch of symbols coming from the flang runtime. Why are we exporting them?</p>
+
+<p>The reason, as exposed above, is by default we will export all the symbols that
+are part of the objects and objects extracted from archives during linking. The
+<code class="language-plaintext highlighter-rouge">PRINT</code> statement involves a number of I/O routines which (possibly by
+accident) are pulling in a bunch of C++ code from the library as well.</p>
+
+<p>There is no need to export so many symbols, so let’s find ways to avoid this
+problem.</p>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>gfortran, the Fortran compiler of GCC, does not have this issue because its
+runtime, <code class="language-plaintext highlighter-rouge">libgfortran.so</code>, is a shared object already.</p>
+</div>
+
+<h2>Why is this a problem?</h2>
+
+<p>This may seem a petty problem. After all if all the libraries used when linking
+our programs and shared libraries are consistent (i.e. the same libraries or
+compatible) this does not introduce any complication.</p>
+
+<ol>
+  <li>We risk by accident linking to symbols that are exported by shared objects
+   that have nothing to do with those symbols. For instance, when using OpenMPI a shared
+   object is built using flang. This shared object will accidentally export those flang runtime symbols.
+   Our program symbols will not be linked against <code class="language-plaintext highlighter-rouge">libFortranRuntime.a</code> but instead against the
+   exports in <code class="language-plaintext highlighter-rouge">libmpi_usempif08.so</code> (a shared object of OpenMPI to be used by Fortran programs)</li>
+  <li>A crash in the runtime will be actually reported by the debugger in the
+   shared object (in the example above, the crash looks to the debugger that it
+   happens in <code class="language-plaintext highlighter-rouge">libmpi_usempif08.so</code>) even if the error was caused by the main
+   program and not by the OpenMPI library.</li>
+  <li>The more symbols are exported, the slower is the dynamic linking process
+   at runtime. Reducing those, thus, reduces that runtime cost.</li>
+  <li>Symbols linked against exports of shared objects use a less efficient
+   mechanism than when they are directly linked to an object.</li>
+</ol>
+
+<p>Regarding the last point, consider the following Fortran program.</p>
+
+<figure class="highlight"><figcaption>program.f90</figcaption><pre class="with_line_numbers"><code class="language-fortran" data-lang="fortran"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="code"><pre><span class="k">program</span><span class="w"> </span><span class="n">main</span><span class="w">
+      </span><span class="k">print</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="s2">"hello!"</span><span class="w">
+</span><span class="k">end</span><span class="w"> </span><span class="k">program</span><span class="w"> </span><span class="n">main</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>When linked alone, the runtime symbols are directly resolved using the symbols
+in <code class="language-plaintext highlighter-rouge">libFortranRuntime.a</code>. We can see this in the <code class="language-plaintext highlighter-rouge">objdump</code> of the final binary,
+check the references in the <code class="language-plaintext highlighter-rouge">call</code> instructions.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ flang -O2 -o program -fPIC program.o
+$ objdump  --section=.text --disassemble=_QQmain program
+
+program:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000002540 &lt;_QQmain&gt;:
+    2540:	53                   	push   %rbx
+    2541:	48 8d 35 c8 7a 07 00 	lea    0x77ac8(%rip),%rsi        # 7a010 &lt;_QQclXd32e6f2d1ab4707a5800ed1a42e135c0&gt;
+    2548:	bf 06 00 00 00       	mov    $0x6,%edi
+    254d:	ba 02 00 00 00       	mov    $0x2,%edx
+    2552:	e8 79 00 00 00       	call   25d0 &lt;_FortranAioBeginExternalListOutput&gt;
+    2557:	48 89 c3             	mov    %rax,%rbx
+    255a:	48 8d 35 ea 7a 07 00 	lea    0x77aea(%rip),%rsi        # 7a04b &lt;_QQclX68656C6C6F21&gt;
+    2561:	ba 06 00 00 00       	mov    $0x6,%edx
+    2566:	48 89 c7             	mov    %rax,%rdi
+    2569:	e8 b2 0f 00 00       	call   3520 &lt;_FortranAioOutputAscii&gt;
+    256e:	48 89 df             	mov    %rbx,%rdi
+    2571:	5b                   	pop    %rbx
+    2572:	e9 89 04 00 00       	jmp    2a00 &lt;_FortranAioEndIoStatement&gt;
+</code></pre></div></div>
+
+<p>But if we link against <code class="language-plaintext highlighter-rouge">libmylib.so</code> those Fortran runtime symbols are linked
+against the shared object exports. In this case the symbols must go through the
+procedure linkage table (PLT), which is a more involved process of linking
+symbols (check the <code class="language-plaintext highlighter-rouge">call</code> instructions, now they go through the <code class="language-plaintext highlighter-rouge">@plt</code> symbol)
+as it must happen at runtime.  None of this was intended when using the Fortran
+runtime.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ flang -O2 -o program -fPIC program.o -L. -lmylib
+$ objdump  --section=.text --disassemble=_QQmain program
+
+program:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000012d0 &lt;_QQmain&gt;:
+    12d0:	53                   	push   %rbx
+    12d1:	48 8d 35 38 0d 00 00 	lea    0xd38(%rip),%rsi        # 2010 &lt;_QQclXd32e6f2d1ab4707a5800ed1a42e135c0&gt;
+    12d8:	bf 06 00 00 00       	mov    $0x6,%edi
+    12dd:	ba 02 00 00 00       	mov    $0x2,%edx
+    12e2:	e8 99 fd ff ff       	call   1080 &lt;_FortranAioBeginExternalListOutput@plt&gt;
+    12e7:	48 89 c3             	mov    %rax,%rbx
+    12ea:	48 8d 35 5a 0d 00 00 	lea    0xd5a(%rip),%rsi        # 204b &lt;_QQclX68656C6C6F21&gt;
+    12f1:	ba 06 00 00 00       	mov    $0x6,%edx
+    12f6:	48 89 c7             	mov    %rax,%rdi
+    12f9:	e8 12 fe ff ff       	call   1110 &lt;_FortranAioOutputAscii@plt&gt;
+    12fe:	48 89 df             	mov    %rbx,%rdi
+    1301:	5b                   	pop    %rbx
+    1302:	e9 c9 fd ff ff       	jmp    10d0 &lt;_FortranAioEndIoStatement@plt&gt;
+</code></pre></div></div>
+
+<h2>Controlling exports</h2>
+
+<p>Typically what symbols get exported or not is defined by the visibility
+attribute of symbols. In C and C++, <a href="https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-visibility-function-attribute">compilers have extensions to define this
+attribute</a>.
+Fortran doesn’t typically have syntax for that. So we need to use other
+approaches.</p>
+
+<h3>Excluding libraries</h3>
+
+<p>The simplest, in my opinion, is to pass <code class="language-plaintext highlighter-rouge">--exclude-libs</code> which is supported by
+both GNU ld and LLVM lld. This is a flag for the linker, so we need to tell
+the flang driver to pass the flag onto the linker using <code class="language-plaintext highlighter-rouge">-Wl,</code>.</p>
+
+<p>Let’s try linking again.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ flang -shared -o libmylib.so t.o \
+   -Wl,--exclude-libs=libFortranRuntime.a \
+   -Wl,--exclude-libs=libFortranDecimal.a
+</code></pre></div></div>
+
+<div style="display: flow-root; background-color: #efe; padding: 1em; padding-bottom: 0px; margin-bottom: 1em;">
+  <p>According to the GNU ld manual
+<code class="language-plaintext highlighter-rouge">-Wl,--exclude-libs=libFortranRuntime.a,libFortranDecimal.a</code> should work as
+well but it didn’t in my system: <code class="language-plaintext highlighter-rouge">ld</code> complained that the library
+<code class="language-plaintext highlighter-rouge">libFortranDecimal.a</code> was not found.</p>
+</div>
+
+<p>Now the list of symbols is much shorter and we can list it all.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ nm -C -D libmylib.so
+                 U abort@GLIBC_2.2.5
+                 U access@GLIBC_2.2.5
+                 U __assert_fail@GLIBC_2.2.5
+                 U bcmp@GLIBC_2.2.5
+                 U close@GLIBC_2.2.5
+                 U __ctype_toupper_loc@GLIBC_2.3
+                 U __cxa_atexit@GLIBC_2.2.5
+                 w __cxa_finalize@GLIBC_2.2.5
+                 U __environ@GLIBC_2.2.5
+                 U environ@GLIBC_2.2.5
+                 U __errno_location@GLIBC_2.2.5
+                 U feraiseexcept@GLIBC_2.2.5
+                 U fflush@GLIBC_2.2.5
+                 U fprintf@GLIBC_2.2.5
+                 U fputc@GLIBC_2.2.5
+                 U free@GLIBC_2.2.5
+                 U fstat@GLIBC_2.33
+                 U ftruncate@GLIBC_2.2.5
+                 U fwrite@GLIBC_2.2.5
+                 U getenv@GLIBC_2.2.5
+                 w __gmon_start__
+                 U isatty@GLIBC_2.2.5
+                 w _ITM_deregisterTMCloneTable
+                 w _ITM_registerTMCloneTable
+                 U lseek64@GLIBC_2.2.5
+                 U malloc@GLIBC_2.2.5
+                 U memchr@GLIBC_2.2.5
+                 U memcpy@GLIBC_2.14
+                 U memmove@GLIBC_2.2.5
+                 U memset@GLIBC_2.2.5
+                 U mkstemp@GLIBC_2.2.5
+                 U open@GLIBC_2.2.5
+                 U pread@GLIBC_2.2.5
+                 U pthread_mutex_destroy@GLIBC_2.2.5
+                 U pthread_mutex_init@GLIBC_2.2.5
+                 U pthread_mutex_lock@GLIBC_2.2.5
+                 U pthread_mutex_unlock@GLIBC_2.2.5
+                 U pthread_self@GLIBC_2.2.5
+                 U pwrite@GLIBC_2.2.5
+0000000000092198 D _QMmooEvar_init
+000000000009246c B _QMmooEvar_uninit
+00000000000024b0 T _QMmooPsub
+0000000000079000 V _QQclX43688a1c5df271c4b78af31a16dbe815
+000000000007902e V _QQclX68656C6C6F21
+                 U read@GLIBC_2.2.5
+                 U realloc@GLIBC_2.2.5
+                 U setenv@GLIBC_2.2.5
+                 U snprintf@GLIBC_2.2.5
+                 U stat@GLIBC_2.33
+                 U stderr@GLIBC_2.2.5
+                 U strcmp@GLIBC_2.2.5
+                 U strcpy@GLIBC_2.2.5
+                 U strerror@GLIBC_2.2.5
+                 U strerror_r@GLIBC_2.2.5
+                 U strlen@GLIBC_2.2.5
+                 U strtol@GLIBC_2.2.5
+                 U strtoul@GLIBC_2.2.5
+                 U unlink@GLIBC_2.2.5
+                 U vfprintf@GLIBC_2.2.5
+                 U vsnprintf@GLIBC_2.2.5
+                 U write@GLIBC_2.2.5
+</code></pre></div></div>
+
+<p>There is a bunch of symbols from the C Standard Library (glibc in this case)
+but these will be linked to a shared object, so not a problem.</p>
+
+<p>We can see how our global (module) variables <code class="language-plaintext highlighter-rouge">var_init</code> and <code class="language-plaintext highlighter-rouge">var_uninit</code> along
+with the module procedure <code class="language-plaintext highlighter-rouge">sub</code> are exported (the names are mangled by
+<code class="language-plaintext highlighter-rouge">flang</code>). We also see some internal symbols that we could just not export them
+(they contain the <code class="language-plaintext highlighter-rouge">hello!</code> string and the name of the file) but this is much
+better than the status quo.</p>
+
+<p>I think it would be a good thing if the flang driver could pass these flags to
+the linker (only flang knows exactly what libraries are runtime libraries).
+Alternatively, build systems such as cmake or meson (when they know the Fortran
+compiler is flang) could pass these flags when building shared objects.</p>
+
+<h3>Using a version script</h3>
+
+<p>If we are serious about symbol visibility, we can use a <a href="https://sourceware.org/binutils/docs/ld/VERSION.html">version
+script</a>. A version script
+will allow us to be more precise naming things. For this example we will use
+the fact that all symbols emitted by flang in a module start with <code class="language-plaintext highlighter-rouge">_QM</code>. Of
+course we can be more fine-grained if we want.</p>
+
+<figure class="highlight"><figcaption>mylib.exports</figcaption><pre class="with_line_numbers"><code class="language-text" data-lang="text"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="code"><pre>{
+  global: _QM*;
+  local: *;
+};
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ flang -shared -o libmylib.so t.o -Wl,--version-script=mylib.exports
+</code></pre></div></div>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ nm -C -D libmylib.so
+                 U abort@GLIBC_2.2.5
+                 U access@GLIBC_2.2.5
+                 U __assert_fail@GLIBC_2.2.5
+                 U bcmp@GLIBC_2.2.5
+                 U close@GLIBC_2.2.5
+                 U __ctype_toupper_loc@GLIBC_2.3
+                 U __cxa_atexit@GLIBC_2.2.5
+                 w __cxa_finalize@GLIBC_2.2.5
+                 U __environ@GLIBC_2.2.5
+                 U environ@GLIBC_2.2.5
+                 U __errno_location@GLIBC_2.2.5
+                 U feraiseexcept@GLIBC_2.2.5
+                 U fflush@GLIBC_2.2.5
+                 U fprintf@GLIBC_2.2.5
+                 U fputc@GLIBC_2.2.5
+                 U free@GLIBC_2.2.5
+                 U fstat@GLIBC_2.33
+                 U ftruncate@GLIBC_2.2.5
+                 U fwrite@GLIBC_2.2.5
+                 U getenv@GLIBC_2.2.5
+                 w __gmon_start__
+                 U isatty@GLIBC_2.2.5
+                 w _ITM_deregisterTMCloneTable
+                 w _ITM_registerTMCloneTable
+                 U lseek64@GLIBC_2.2.5
+                 U malloc@GLIBC_2.2.5
+                 U memchr@GLIBC_2.2.5
+                 U memcpy@GLIBC_2.14
+                 U memmove@GLIBC_2.2.5
+                 U memset@GLIBC_2.2.5
+                 U mkstemp@GLIBC_2.2.5
+                 U open@GLIBC_2.2.5
+                 U pread@GLIBC_2.2.5
+                 U pthread_mutex_destroy@GLIBC_2.2.5
+                 U pthread_mutex_init@GLIBC_2.2.5
+                 U pthread_mutex_lock@GLIBC_2.2.5
+                 U pthread_mutex_unlock@GLIBC_2.2.5
+                 U pthread_self@GLIBC_2.2.5
+                 U pwrite@GLIBC_2.2.5
+0000000000092198 D _QMmooEvar_init
+000000000009246c B _QMmooEvar_uninit
+00000000000024b0 T _QMmooPsub
+                 U read@GLIBC_2.2.5
+                 U realloc@GLIBC_2.2.5
+                 U setenv@GLIBC_2.2.5
+                 U snprintf@GLIBC_2.2.5
+                 U stat@GLIBC_2.33
+                 U stderr@GLIBC_2.2.5
+                 U strcmp@GLIBC_2.2.5
+                 U strcpy@GLIBC_2.2.5
+                 U strerror@GLIBC_2.2.5
+                 U strerror_r@GLIBC_2.2.5
+                 U strlen@GLIBC_2.2.5
+                 U strtol@GLIBC_2.2.5
+                 U strtoul@GLIBC_2.2.5
+                 U unlink@GLIBC_2.2.5
+                 U vfprintf@GLIBC_2.2.5
+                 U vsnprintf@GLIBC_2.2.5
+                 U write@GLIBC_2.2.5
+</code></pre></div></div>
+
+<p>One downside of version scripts is that they are more artisan and currently
+there is no good tooling around them. Also, each Fortran compiler mangles
+symbols differently so potentially we may need one version per supported
+Fortran compiler.</p>
+
+<h2>What about the C++ standard library?</h2>
+
+<p>The same issue happens if the C++ standard library is linked statically. This
+is not a common scenario but sometimes, for ease of deploy or performance, it
+is done. Typically the flag <code class="language-plaintext highlighter-rouge">-static-libstdc++</code> is used to achieve that
+(<code class="language-plaintext highlighter-rouge">-static</code> is also possible but means that no shared object will be used when
+linking the program).</p>
+
+<p>For these cases, the techniques shown above still hold.</p>
+
+<p>For the libstdc++ library of GCC:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-Wl,--exclude-libs=libstdc++.a
+</code></pre></div></div>
+
+<p>For the libc++ library of LLVM:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>-Wl,--exclude-libs=libc++.a
+</code></pre></div></div>
+
+<p>Again, using a version script is also the most precise way to handle this issue
+of “everything gets exported by default” when building shared objects.</p>
+
+<p>Version scripts can also be used to fine-grain define a backwards-compatible
+evolution of a library, but that would be a topic for another day.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2024/02/11/subtleties-with-loops/">&laquo; Subtleties with loops</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
