@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2025-01-31T21:05:38+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">A caveat with statically linked language runtimes</title><link href="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/" rel="alternate" type="text/html" title="A caveat with statically linked language runtimes" /><published>2025-01-31T20:12:00+00:00</published><updated>2025-01-31T20:12:00+00:00</updated><id>https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes</id><content type="html" xml:base="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/">&lt;p&gt;Most programming languages, including C and C++, provide language runtime
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2025-01-31T21:16:24+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">A caveat with statically linked language runtimes</title><link href="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/" rel="alternate" type="text/html" title="A caveat with statically linked language runtimes" /><published>2025-01-31T20:12:00+00:00</published><updated>2025-01-31T20:12:00+00:00</updated><id>https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes</id><content type="html" xml:base="https://thinkingeek.com/2025/01/31/caveat-with-statically-linked-language-runtimes/">&lt;p&gt;Most programming languages, including C and C++, provide language runtime
 libraries that implement parts of the language itself. These libraries must
 be linked in the final program or shared library.&lt;/p&gt;
 
@@ -239,8 +239,8 @@ Fortran language is rich and a number of features must be implemented in a
 runtime, mostly I/O and math support.&lt;/p&gt;
 
 &lt;p&gt;Flang chose to use static libraries to implement that runtime. Flang has two
-libraries that are considered part of its runtime &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFlangRuntime.a&lt;/code&gt; and
-&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFlangDecimal.a&lt;/code&gt; (for decimal floating point which to be fair is a bit of a
+libraries that are considered part of its runtime &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFortranRuntime.a&lt;/code&gt; and
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;libFortranDecimal.a&lt;/code&gt; (for decimal floating point which to be fair is a bit of a
 niche thing).&lt;/p&gt;
 
 &lt;h2&gt;A small shared object&lt;/h2&gt;
