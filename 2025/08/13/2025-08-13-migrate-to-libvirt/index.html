@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>Migrate from VirtualBox to libvirt</title>
+  <meta name="description" content="In my day job sometimes I need to edit documents using tools that are only available on Windows. As such, I have a virtual machine with Windows 10 running on VirtualBox. Recently I upgraded to Debian 13 and I took the opportunity to migrate to a libvirt-based solution. I explain here the steps that I did.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="Migrate from VirtualBox to libvirt">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/">
+  <meta property="og:description" content="In my day job sometimes I need to edit documents using tools that are only available on Windows. As such, I have a virtual machine with Windows 10 running on VirtualBox. Recently I upgraded to Debian 13 and I took the opportunity to migrate to a libvirt-based solution. I explain here the steps that I did.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="Migrate from VirtualBox to libvirt">
+  <meta name="twitter:description" content="In my day job sometimes I need to edit documents using tools that are only available on Windows. As such, I have a virtual machine with Windows 10 running on VirtualBox. Recently I upgraded to Debi...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/series/">Series</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">Migrate from VirtualBox to libvirt</h1>
+    
+    <p class="post-meta"><time datetime="2025-08-13T00:00:00+00:00" itemprop="datePublished">Aug 13, 2025</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/linux/">linux</a>, <a href="/categories/virtual-machine/">virtual machine</a>, <a href="/categories/vm/">vm</a>, <a href="/categories/libvirt/">libvirt</a>, <a href="/categories/qemu/">qemu</a>, <a href="/categories/virtualbox/">virtualbox</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In my day job sometimes I need to edit documents using tools that are only
+available on Windows. As such, I have a virtual machine with Windows 10 running
+on VirtualBox.</p>
+
+<p>Recently I upgraded to Debian 13 and I took the opportunity to migrate to a
+libvirt-based solution. I explain here the steps that I did.</p>
+
+<!--more-->
+
+<h1>VirtualBox</h1>
+
+<p>Being able to emulate a computer (the virtual computer, or the guest computer)
+within another computer (the host computer) is always a very amazing thing to
+see.  Virtualisation technology has gone a long way since its inception,
+decades ago in the context of big, expensive mainframes. It is now commonly
+used by cloud providers to efficiently offer computational resources and it is
+also available in personal computers.</p>
+
+<p>“Virtual machine” is a key concept of virtualisation. This is a very broad and
+generic term and in this context I mean something that emulates a computer (the
+virtual computer).  A virtual computer will have virtual hardware and such
+hardware is typically handled by a virtual machine manager or hypervisor.
+Hypervisors range from relatively low level ones (such as Xen) which act like
+if they were an operating system devoted only to manage virtual machines, to
+higher-level ones (such as <code class="language-plaintext highlighter-rouge">qemu</code>), which, in its default operation mode, can
+emulate a computer, including its virtual hardware, purely in software.</p>
+
+<p>VirtualBox is one of those hypervisors and it is paired with a rich offering of
+command-line tools and a graphical user interface. This makes it very intuitive
+to manage virtual machines. VirtualBox also uses hardware extensions provided
+by most modern CPUs, such as Intel-VT or AMD-V, and paravirtualisation (virtual
+hardware that is efficiently implemented by the hypervisor) for a more
+efficient virtualisation.</p>
+
+<h2>Why migrate?</h2>
+
+<p>VirtualBox is all good and fine but, for me, has two downsides:</p>
+
+<ul>
+  <li>it needs an out-of-tree Linux module. These days, Linux distributions,
+including Debian, provide mechanisms to automatically build the Linux module
+against the installed Linux kernels. This makes this less a problem but it
+may get in the way when updating the operating system.</li>
+  <li>some (arguably) basic functionality is only available through the VirtualBox
+Extension Pack. This extension has a different licencing to the rest of
+VirtualBox and in practice, except for personal use, requires purchasing a
+licence.</li>
+</ul>
+
+<p>I suggest to stay with VirtualBox if none of the above are problematic.</p>
+
+<p>There are other, less technical and more philosophical and/or moral, reasons to
+not use VirtualBox but I will not discuss them here.</p>
+
+<h1>KVM</h1>
+
+<p>KVM (Kernel-based Virtual Machine), is a Linux module that makes the Linux
+kernel to function as a hypervisor and allows it to use hardware virtualisation
+extensions along with paravirtualisation.</p>
+
+<p>KVM itself is a low-level mechanism that emulators, such as <code class="language-plaintext highlighter-rouge">qemu</code>, can use for
+a more efficient virtualisation. Because <code class="language-plaintext highlighter-rouge">qemu</code> is a generic system emulator
+which can emulate CPUs of different architectures as the host architecture,
+<code class="language-plaintext highlighter-rouge">qemu/kvm</code> (<code class="language-plaintext highlighter-rouge">qemu</code> using KVM) only makes sense when emulating a computer of the
+same architecture as the host. The dominant architecture these days is x86-64,
+so KVM is useful if you are on Linux and you want to run another OS on x86-64
+such as, say, Linux itself (for instance another distribution), FreeBSD,
+Windows, etc.</p>
+
+<h1>libvirt and virt-manager</h1>
+
+<p>I earlier mentioned that VirtualBox provides command-line tools and a graphical
+user interface. None of these are provided by KVM itself, so while it is
+possible to run qemu/kvm manually, it quickly gets old and one ends
+reinventing the wheel, especially of there is a need to manage different
+virtual machines or virtual hardware (such as virtual storage), etc.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">libvirt</code> project aims at filling the gap of common needs among all the
+virtualisation technologies. It provides a set of tools and libraries to manage
+virtual machines from different virtualisation providers (including qemu/kvm)
+and it serves as a building block for further tooling.</p>
+
+<p>One of those tools built on top of <code class="language-plaintext highlighter-rouge">libvirt</code> is <code class="language-plaintext highlighter-rouge">virt-manager</code>. <code class="language-plaintext highlighter-rouge">virt-manager</code>
+is a graphical interface to handle virtual machines and virtual hardware
+conveniently.</p>
+
+<p><code class="language-plaintext highlighter-rouge">virt-manager</code>, along with <code class="language-plaintext highlighter-rouge">libvirt</code> and <code class="language-plaintext highlighter-rouge">qemu/kvm</code>, seems a good candidate
+to replace VirtualBox.</p>
+
+<h1>Migrating a Windows 10 VM on Debian 13</h1>
+
+<p>In my case I want to migrate a Windows 10 VM. At the time of writing this blog
+post, there is no VirtualBox yet for Debian 13, so some of the operations were
+carried out in a Debian 12, and resumed after Debian 13 was fully upgraded.</p>
+
+<h2>Preparation</h2>
+
+<p>I suggest to clone the VM, fully, so you have a backup in case things go wrong.
+You can do that in the VirtualBox interface (look for the sheep icon, which is
+a late-90s reference to cloning things).</p>
+
+<p>Though not needed, for hygiene, we will uninstall the VirtualBox Guest
+Additions in our Windows 10 guest. This is not mandatory but will make things
+less noisy when booting Windows 10 under <code class="language-plaintext highlighter-rouge">virt-manager</code> for the first time.</p>
+
+<p>Also make sure you remove any disk snapshots. Later on we will convert the disk
+image from VirtualBox to qemu’s native qcow2 format and I think it may get
+confused by the presence snapshots.</p>
+
+<h2>Installation of virt-manager</h2>
+
+<p>As <code class="language-plaintext highlighter-rouge">root</code>, install <code class="language-plaintext highlighter-rouge">virt-manager</code> which should install all the rest.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt <span class="nb">install </span>virt-manager
+</code></pre></div></div>
+
+<p>Add your user <code class="language-plaintext highlighter-rouge">&lt;user-id&gt;</code> to the groups <code class="language-plaintext highlighter-rouge">kvm</code> and <code class="language-plaintext highlighter-rouge">libvirt</code> so you can access
+<code class="language-plaintext highlighter-rouge">kvm</code> and <code class="language-plaintext highlighter-rouge">libvirt</code> components that require elevated privileges.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>usermod <span class="nt">-a</span> <span class="nt">-G</span> kvm,libvirt &lt;user-id&gt;
+</code></pre></div></div>
+
+<p>The group information is only read during login. The easiest way is to reboot
+your system (logging out and logging in again does not seem to be enough). You
+can also attempt a <code class="language-plaintext highlighter-rouge">systemctl soft-reboot</code>. Use <code class="language-plaintext highlighter-rouge">id</code> in a terminal to confirm
+your user is part of these two groups.</p>
+
+<h2>Convert the virtual disk</h2>
+
+<p>Convert your <code class="language-plaintext highlighter-rouge">.vdi</code> disk into <code class="language-plaintext highlighter-rouge">.qcow2</code> format using <code class="language-plaintext highlighter-rouge">qemu-img</code>. Assuming your
+<code class="language-plaintext highlighter-rouge">.vdi</code> disk is called <code class="language-plaintext highlighter-rouge">Windows 10.vdi</code> this is a way to convert it to qcow2 into
+ a file named <code class="language-plaintext highlighter-rouge">Windows 10.qcow2</code>.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-img convert <span class="nt">-f</span> vdi <span class="nt">-O</span> qcow2 <span class="s1">'Windows 10.vdi'</span> <span class="s1">'Windows 10.qcow2'</span>
+</code></pre></div></div>
+
+<p>I suggest you move the qcow2 disk in its own directory and add that directory
+to a storage pool in <code class="language-plaintext highlighter-rouge">virt-manager</code>.</p>
+
+<h2>Import the image in virt-manager</h2>
+
+<p>Now create a new virtual machine in <code class="language-plaintext highlighter-rouge">virt-manager</code> choosing <em>Import existing disk image</em>. Set up
+the virtual memory and virtual CPUs.</p>
+
+<p><strong>Note:</strong> if your Windows 10 VM boots with UEFI, make sure you choose
+<em>Customise configuration before install</em> so you can change that in Overview
+section. Change the Firmware, which will default to <code class="language-plaintext highlighter-rouge">BIOS</code> to <code class="language-plaintext highlighter-rouge">UEFI</code>. Failing
+to do this will render an unbootable machine and this cannot be changed once
+the machine has been created. You will have to delete the VM and start anew.</p>
+
+<p>Now your Windows should boot for the first time. It will reconfigure some
+devices and your machine will be annoying to use: no mouse integration, no
+screen automatic resize, no clipboard with the host. This is expected.</p>
+
+<h2>Install the paravirtualised drivers for VirtIO</h2>
+
+<p>Download, in the Windows 10 VM, <a href="https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/latest-virtio/virtio-win-guest-tools.exe">this
+installer</a>
+and install all of the drivers. Mouse and screen integration should start
+shortly. You may need to reboot Windows at this point.</p>
+
+<h2>Extras</h2>
+
+<p>This may be enough for you, but there are number of goodies that can be worth
+considering.</p>
+
+<h3>Change the ethernet to VirtIO</h3>
+
+<p>Paravirtualised devices should have less overhead than actual emulated hardware
+so, in <code class="language-plaintext highlighter-rouge">virt-manager</code> change your NIC to have <code class="language-plaintext highlighter-rouge">virtio</code> as its Device model. The
+drivers we installed earlier will allow Windows to recognise the device without
+problems.</p>
+
+<h3>Add a shared folder</h3>
+
+<p>This one is a bit involved.</p>
+
+<ol>
+  <li>On the Debian 13 host install <code class="language-plaintext highlighter-rouge">virtiofsd</code>.
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt <span class="nb">install </span>virtiofsd
+</code></pre></div>    </div>
+  </li>
+  <li>Now go to <code class="language-plaintext highlighter-rouge">virt-manager</code> and in the Memory section of your VM enable the
+checkbox <em>Enable shared memory</em>.</li>
+  <li>Now press <em>Add Hardware</em> and choose <em>Filesystem</em>. Set the <em>Driver</em> to
+<code class="language-plaintext highlighter-rouge">virtiofs</code>. <em>Source path</em> is a path of your host (for instance,
+<code class="language-plaintext highlighter-rouge">/home/&lt;user-id&gt;</code>) and <em>Target path</em> is a name that will be displayed on
+Windows (for instance <code class="language-plaintext highlighter-rouge">host_&lt;user-id&gt;</code>).</li>
+  <li>Start the VM.</li>
+  <li>Now in the Windows 10 VM, install <a href="https://winfsp.dev/rel">WinFSP</a>
+(the default options are fine).</li>
+  <li>Type <code class="language-plaintext highlighter-rouge">Services</code> in the start menu of Windows and open the <em>Services</em> applet.
+Search for <em>VirtIO-FS Service</em>, double click it and change its <em>Startup Type</em>
+to <em>Automatic</em>. Also press the <em>Start</em> button to start the service now.
+Now go to the File Explorer, a new disk in <code class="language-plaintext highlighter-rouge">Z:</code> should have appeared
+with your files from the host.</li>
+</ol>
+
+<h3>Change the boot disk to VirtIO</h3>
+
+<p>Your disk is probably still on the SATA port. It is possible to move it to
+VirtIO as well, but the process is a bit complex as we need to make sure the
+boot phase of Windows loads the VirtIO driver for disks and so it encounters
+the system disk.</p>
+
+<ol>
+  <li>Boot Windows normally.</li>
+  <li>Run as administrator <code class="language-plaintext highlighter-rouge">cmd.exe</code> and type
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bcdedit /set "{current}" safeboot minimal
+</code></pre></div>    </div>
+  </li>
+  <li>Shutdown the VM machine</li>
+  <li>Add a dummy disk (a small one will do) on the VirtIO bus. This is <code class="language-plaintext highlighter-rouge">VirtIO Disk 1</code></li>
+  <li>Boot Windows, it should be in safe boot mode.</li>
+  <li>Shutdown Windows.</li>
+  <li>Remove the SATA disk but <strong>be careful not to remove the backing file!</strong>.</li>
+  <li>Add a new disk on the VirtIO bus using the backing file of the previous step. This disk will now be <code class="language-plaintext highlighter-rouge">VirtIO Disk 2</code></li>
+  <li>Fix the boot mode so it boots on <code class="language-plaintext highlighter-rouge">VirtIO Disk 2</code> instead of <code class="language-plaintext highlighter-rouge">VirtIO Disk 1</code>.</li>
+  <li>Boot Windows, it should boot normally.</li>
+  <li>Run as administrator <code class="language-plaintext highlighter-rouge">cmd.exe</code> and type
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bcdedit /deletevalue "{current}" safeboot
+</code></pre></div>    </div>
+  </li>
+  <li>Shutdown the VM</li>
+  <li>Remove the dummy disk <code class="language-plaintext highlighter-rouge">VirtIO Disk 1</code> (now <code class="language-plaintext highlighter-rouge">VirtIO Disk 2</code> becomes <code class="language-plaintext highlighter-rouge">VirtIO Disk 1</code>). You probably want to the remove the backing file now.</li>
+  <li>Boot Windows again, it should boot normally.</li>
+</ol>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2025/01/31/caveat-with-statically-linked-language-runtimes/">&laquo; A caveat with statically linked language runtimes</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
