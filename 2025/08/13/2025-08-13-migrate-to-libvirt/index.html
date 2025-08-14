@@ -288,7 +288,7 @@ system disk.</p>
   <li>Remove the SATA disk but <strong>be careful not to remove the backing file!</strong>.</li>
   <li>Add a new disk on the VirtIO bus using the backing file of the previous step. This disk will now be <code class="language-plaintext highlighter-rouge">VirtIO Disk 2</code></li>
   <li>Fix the boot mode so it boots on <code class="language-plaintext highlighter-rouge">VirtIO Disk 2</code> instead of <code class="language-plaintext highlighter-rouge">VirtIO Disk 1</code>.</li>
-  <li>Boot Windows, it should boot normally.</li>
+  <li>Boot Windows, it should boot correctly, still in safe mode.</li>
   <li>Run as administrator <code class="language-plaintext highlighter-rouge">cmd.exe</code> and type
     <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bcdedit /deletevalue "{current}" safeboot
 </code></pre></div>    </div>
