@@ -152,7 +152,7 @@ case is an all-zero mask, in this case the instruction returns -1 instead of 8.<
 
 <p>What if instead of the lowest numbered element of a mask that is set we want
 the highest numbered element instead? Something that intuitively we could
-name it as <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
+name <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
        |                  |
@@ -168,7 +168,7 @@ name it as <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p
        | 1 1 1 1 0 1 0 0  |  7
 </code></pre></div></div>
 
-<p>Unfortunately RVV does not provide a <code class="language-plaintext highlighter-rouge">vlast.m</code> so we will need to compute it.
+<p>Unfortunately, RVV does not provide a <code class="language-plaintext highlighter-rouge">vlast.m</code> so we will need to compute it.
 Let’s look at different options.</p>
 
 <h2>Reversing the mask</h2>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-05-30T12:09:42+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the previous part we ended with a nifty way of computing the last bit of
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-05-30T12:11:17+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the previous part we ended with a nifty way of computing the last bit of
 a mask using the prefix sum. The key of the approch is based on the fact that
 the last element of the prefix sum of a mask is either the population count
 or population count minus one.</p>
@@ -331,7 +331,7 @@ case is an all-zero mask, in this case the instruction returns -1 instead of 8.<
 
 <p>What if instead of the lowest numbered element of a mask that is set we want
 the highest numbered element instead? Something that intuitively we could
-name it as <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
+name <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
        |                  |
@@ -347,7 +347,7 @@ name it as <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p
        | 1 1 1 1 0 1 0 0  |  7
 </code></pre></div></div>
 
-<p>Unfortunately RVV does not provide a <code class="language-plaintext highlighter-rouge">vlast.m</code> so we will need to compute it.
+<p>Unfortunately, RVV does not provide a <code class="language-plaintext highlighter-rouge">vlast.m</code> so we will need to compute it.
 Let’s look at different options.</p>
 
 <h2>Reversing the mask</h2>
