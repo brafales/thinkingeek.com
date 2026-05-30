@@ -85,6 +85,18 @@ or population count minus one.</p>
 
 <figure>
     <img src="/assets/images/popc-theorem.svg" alt="Definifitions of popc and prefixsum" />
+<!--
+\mathrm{popc} : \{0, 1\}^k \rightarrow \mathbb{N} \\
+\mathrm{popc}~v = \sum_{i=0}^{i<k} v_i \\
+\mathrm{prefixsum} : \{0,1\}^k \rightarrow \mathbb{N}^k \\
+w = \mathrm{prefixsum}~v  \Leftrightarrow w_i = \left\{ \begin{array}{ll}
+0 & i = 0 \\
+\mathrm{popc}~ [v_0, v_1, \cdots, v_{i-1}] & i > 0
+\end{array} \right.
+~ \\
+~ \\
+\mathbf{Theorem}. k > 0 \rightarrow w_{k-1} = \mathrm{popc}~v \vee  w_{k-1} = \mathrm{popc}~v - 1
+-->
 </figure>
 
 <p>This is pretty obvious after thinking about it for a bit but we will prove it
