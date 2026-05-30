@@ -10,7 +10,7 @@
   
   
   <title>The last bit – Part 1</title>
-  <meta name="description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.">
+  <meta name="description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that computes the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.">
   
 
   <link rel="stylesheet" href="/assets/main.css">
@@ -25,13 +25,13 @@
   <meta property="og:title" content="The last bit – Part 1">
   <meta property="og:site_name" content="Think In Geek">
   <meta property="og:url" content="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/">
-  <meta property="og:description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.">
+  <meta property="og:description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that computes the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.">
   
   
   <meta name="twitter:card" content="summary">
   
   <meta name="twitter:title" content="The last bit – Part 1">
-  <meta name="twitter:description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that...">
+  <meta name="twitter:description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that computes the lowest-numbered element of the mask tha...">
   
   
 
@@ -71,7 +71,7 @@
 
   <div class="post-content" itemprop="articleBody">
     <p>The RISC-V Vector Extension (RVV) includes several instructions to operate
-on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that compute
+on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that computes
 the lowest-numbered element of the mask that is set.</p>
 
 <p>However, there is no <code class="language-plaintext highlighter-rouge">vlast.m</code> instruction that computes the highest-numbered
@@ -87,8 +87,8 @@ other extensions, the V extension is rather sophisticated and provides a large
 number of instructions. It also features a few unusual features like having a
 vector length, that specifies how many elements are operated in the vector, and
 encoding the types of the instructions in RVV-specific architectural registers.
-This makes the extension rather flexible but also more involved than existing,
-more straightforward designs existing in other ISAs.</p>
+This makes the extension rather flexible but also more involved than
+the more straightforward designs of other ISAs.</p>
 
 <p>Typically, SIMD/vector instructions instructions are used when vectorizing code
 whose goal is to benefit from the higher throughput (amount of work per unit of
@@ -108,7 +108,7 @@ if-conversion and they gate instructions such that executing may or may not
 have any architecturally visible effect depending on the predicate used by the
 instruction.</p>
 
-<p>The vectorized version of predicates is effectively a vector of predicates .
+<p>The vectorized version of predicates is effectively a vector of predicates.
 Because a predicate has only two values (enable/1/true vs disable/0/false) it
 can be represented with a single bit. Because of this, many SIMD/vector ISAs
 include support for masks (or simply <em>predicates</em>) to represent these vectors

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-05-30T11:56:02+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the previous part we ended with a nifty way of computing the last bit of
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-05-30T12:09:42+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the previous part we ended with a nifty way of computing the last bit of
 a mask using the prefix sum. The key of the approch is based on the fact that
 the last element of the prefix sum of a mask is either the population count
 or population count minus one.</p>
@@ -250,7 +250,7 @@ to gain confidence in our algorithms.</p>
 sum in Part 1 computes indeed the index of the last non-zero element. I’m happy
 enough to have proved the key insight that allows us to use prefix sum to
 do that. I’ll leave that as an exercise for the reader 😉.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="lean" /><category term="theorems" /><category term="proofs" /><summary type="html"><![CDATA[In the previous part we ended with a nifty way of computing the last bit of a mask using the prefix sum. The key of the approch is based on the fact that the last element of the prefix sum of a mask is either the population count or population count minus one. Let’s prove that using Lean.]]></summary></entry><entry><title type="html">The last bit – Part 1</title><link href="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/" rel="alternate" type="text/html" title="The last bit – Part 1" /><published>2026-05-28T00:00:00+00:00</published><updated>2026-05-28T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/28/compute-vlast-part-1</id><content type="html" xml:base="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/"><![CDATA[<p>The RISC-V Vector Extension (RVV) includes several instructions to operate
-on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that compute
+on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that computes
 the lowest-numbered element of the mask that is set.</p>
 
 <p>However, there is no <code class="language-plaintext highlighter-rouge">vlast.m</code> instruction that computes the highest-numbered
@@ -266,8 +266,8 @@ other extensions, the V extension is rather sophisticated and provides a large
 number of instructions. It also features a few unusual features like having a
 vector length, that specifies how many elements are operated in the vector, and
 encoding the types of the instructions in RVV-specific architectural registers.
-This makes the extension rather flexible but also more involved than existing,
-more straightforward designs existing in other ISAs.</p>
+This makes the extension rather flexible but also more involved than
+the more straightforward designs of other ISAs.</p>
 
 <p>Typically, SIMD/vector instructions instructions are used when vectorizing code
 whose goal is to benefit from the higher throughput (amount of work per unit of
@@ -287,7 +287,7 @@ if-conversion and they gate instructions such that executing may or may not
 have any architecturally visible effect depending on the predicate used by the
 instruction.</p>
 
-<p>The vectorized version of predicates is effectively a vector of predicates .
+<p>The vectorized version of predicates is effectively a vector of predicates.
 Because a predicate has only two values (enable/1/true vs disable/0/false) it
 can be represented with a single bit. Because of this, many SIMD/vector ISAs
 include support for masks (or simply <em>predicates</em>) to represent these vectors
@@ -595,7 +595,7 @@ least one bit, so we know the last bit is exactly the most significant one.</p>
     <span class="c1">// are always counting only the previous elements.</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">vl</span> <span class="o">:</span> <span class="n">idx</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
 <span class="p">}</span>
-</pre></td></tr></tbody></table></code></pre></figure>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="riscv" /><category term="vectors" /><category term="rvv" /><category term="intrinsics" /><summary type="html"><![CDATA[The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.]]></summary></entry><entry><title type="html">Migrate from VirtualBox to libvirt</title><link href="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/" rel="alternate" type="text/html" title="Migrate from VirtualBox to libvirt" /><published>2025-08-13T00:00:00+00:00</published><updated>2025-08-13T00:00:00+00:00</updated><id>https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt</id><content type="html" xml:base="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/"><![CDATA[<p>In my day job sometimes I need to edit documents using tools that are only
+</pre></td></tr></tbody></table></code></pre></figure>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="riscv" /><category term="vectors" /><category term="rvv" /><category term="intrinsics" /><summary type="html"><![CDATA[The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that computes the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.]]></summary></entry><entry><title type="html">Migrate from VirtualBox to libvirt</title><link href="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/" rel="alternate" type="text/html" title="Migrate from VirtualBox to libvirt" /><published>2025-08-13T00:00:00+00:00</published><updated>2025-08-13T00:00:00+00:00</updated><id>https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt</id><content type="html" xml:base="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/"><![CDATA[<p>In my day job sometimes I need to edit documents using tools that are only
 available on Windows. As such, I have a virtual machine with Windows 10 running
 on VirtualBox.</p>
 
