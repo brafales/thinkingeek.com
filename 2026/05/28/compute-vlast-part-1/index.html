@@ -175,7 +175,7 @@ Let’s look at different options.</p>
 
 <p>The first idea is reversing the mask and then applying <code class="language-plaintext highlighter-rouge">vfirst.m</code>. This way
 the highest numbered element that is set will be, after the reversal, the lowest
-numbered element and so <code class="language-plaintext highlighter-rouge">vfirst.m</code> will compute what we want.</p>
+numbered element set and so <code class="language-plaintext highlighter-rouge">vfirst.m</code> will compute what we want.</p>
 
 <p>RVV has a very powerful (i.e., expensive to implement) general shuffling
 instruction called <code class="language-plaintext highlighter-rouge">vrgather.vv</code>. We can reverse a data vector using this
