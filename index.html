@@ -64,6 +64,44 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2026/05/30/compute-vlast-part-2/">The last bit – Part 2</a></h1>
+
+          <p class="post-meta">
+            May 30, 2026 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>In the previous part we ended with a nifty way of computing the last bit of
+a mask using the prefix sum. The key of the approch is based on the fact that
+the last element of the prefix sum of a mask is either the population count
+or population count minus one.</p>
+
+<p>Let’s prove that using Lean.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2026/05/30/compute-vlast-part-2/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2026/05/28/compute-vlast-part-1/">The last bit – Part 1</a></h1>
+
+          <p class="post-meta">
+            May 28, 2026 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>The RISC-V Vector Extension (RVV) includes several instructions to operate
+on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that compute
+the lowest-numbered element of the mask that is set.</p>
+
+<p>However, there is no <code class="language-plaintext highlighter-rouge">vlast.m</code> instruction that computes the highest-numbered
+element of the mask that is set.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2026/05/28/compute-vlast-part-1/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2025/08/13/2025-08-13-migrate-to-libvirt/">Migrate from VirtualBox to libvirt</a></h1>
 
           <p class="post-meta">
@@ -127,42 +165,6 @@ subtler than we would like.</p>
 
         </div><p class="post-continue">
             <a href="/2024/02/11/subtleties-with-loops/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2024/01/05/mitigate-runaway-processes/">Mitigate runaway processes</a></h1>
-
-          <p class="post-meta">
-            Jan 5, 2024 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/systemd/">systemd</a>, <a href="/categories/linux/">linux</a>, <a href="/categories/processes/">processes</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>Sometimes I find myself running testsuites that typically, in order to make
-the most of the several cores available in the system, spawn many processes
-so the tests can run in parallel. This allows running the testsuites much
-faster.</p>
-
-<p>One side-effect, though, of these mechanisms is that they may not be able
-to handle correctly cancellation, say pressing <code class="language-plaintext highlighter-rouge">Ctrl-C</code>.</p>
-
-<p>Today we are going to see a way to mitigate this problem using <code class="language-plaintext highlighter-rouge">systemd-run</code>.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2024/01/05/mitigate-runaway-processes/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2023/12/24/testing-api-gateway-docker-lambdas/">Locally testing API Gateway Docker based Lambdas</a></h1>
-
-          <p class="post-meta">
-            Dec 24, 2023 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/aws/">aws</a>, <a href="/categories/testing/">testing</a>, <a href="/categories/lambda/">lambda</a>, <a href="/categories/docker/">docker</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>AWS Lambda is one of those technologies that makes the distinction between infrastructure and application code quite blurry. There are many frameworks out there, some of them quite popular, such as <a href="https://aws.amazon.com/amplify/">AWS Amplify</a> and the <a href="https://www.serverless.com">Serverless Framework</a>, which will allow you to define your Lambda, your application code, and will provide tools that will package and provision, and then deploy those Lambdas (using <a href="https://aws.amazon.com/cloudformation/">CloudFormation</a> under the hood). They also provide tools to locally run the functions for local testing, which is particularly useful if they are invoked using technologies such as <a href="https://aws.amazon.com/api-gateway/">API Gateway</a>. Sometimes, however, especially if your organisation has adopted other Infrastructure as Code tools such as <a href="https://www.terraform.io">Terraform</a>, you might want to just provision a function with simpler IaC tools, and keep the application deployment steps separate. Let us explore an alternative method to still be able to run and test API Gateway based Lambdas locally without the need to bring in big frameworks such as the ones mentioned earlier.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2023/12/24/testing-api-gateway-docker-lambdas/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     

@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>The last bit – Part 1</title>
+  <meta name="description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="The last bit – Part 1">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/">
+  <meta property="og:description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="The last bit – Part 1">
+  <meta name="twitter:description" content="The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/series/">Series</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">The last bit – Part 1</h1>
+    
+    <p class="post-meta"><time datetime="2026-05-28T00:00:00+00:00" itemprop="datePublished">May 28, 2026</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>The RISC-V Vector Extension (RVV) includes several instructions to operate
+on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that compute
+the lowest-numbered element of the mask that is set.</p>
+
+<p>However, there is no <code class="language-plaintext highlighter-rouge">vlast.m</code> instruction that computes the highest-numbered
+element of the mask that is set.</p>
+
+<!--more-->
+
+<h1>The RISC-V Vector Extension</h1>
+
+<p>The RISC-V Vector Extension (collectively the V extension and shortened to RVV)
+aims at providing vector compute capabilities to the RISC-V ISA. Compared to
+other extensions, the V extension is rather sophisticated and provides a large
+number of instructions. It also features a few unusual features like having a
+vector length, that specifies how many elements are operated in the vector, and
+encoding the types of the instructions in RVV-specific architectural registers.
+This makes the extension rather flexible but also more involved than existing,
+more straightforward designs existing in other ISAs.</p>
+
+<p>Typically, SIMD/vector instructions instructions are used when vectorizing code
+whose goal is to benefit from the higher throughput (amount of work per unit of
+time) of vector instructions.</p>
+
+<h2>Masking</h2>
+
+<p>Unfortunately, vectorization does not get along very well with control flow
+(i.e. branches/jumps in a program). The usual solution is to extend the idea of
+<em>if-conversion</em> where control flow is replaced by data-flow. After
+if-conversion, branches have been removed and the code gets flattened into
+straight-line code, i.e. without branches.</p>
+
+<p>Extra code is emitted to compute special values, that we can call predicates.
+Predicates correspond to the conditional branches that we removed during
+if-conversion and they gate instructions such that executing may or may not
+have any architecturally visible effect depending on the predicate used by the
+instruction.</p>
+
+<p>The vectorized version of predicates is effectively a vector of predicates .
+Because a predicate has only two values (enable/1/true vs disable/0/false) it
+can be represented with a single bit. Because of this, many SIMD/vector ISAs
+include support for masks (or simply <em>predicates</em>) to represent these vectors
+of predicates.</p>
+
+<p>Regular data vectors, containing integers or floating point, have the different
+elements packed throughout the vector register. In contrast, masks in RVV are
+represented with a packed vector of bits stored in the lowest bits of the
+vector register. The layout for masks is called a <em>mask vector</em>.</p>
+
+<p>Masks can be used when dealing with control flow such as <code class="language-plaintext highlighter-rouge">if</code> or even loops. In
+particular, in scan-like loops (think of C library function <code class="language-plaintext highlighter-rouge">strlen</code>) the
+instruction <code class="language-plaintext highlighter-rouge">vfirst.m</code> is useful to see if a mask contains a bit set to one
+(for the <code class="language-plaintext highlighter-rouge">strlen</code> case, we can check if one of the bytes that we loaded is a
+zero and act accordingly). More precisely <code class="language-plaintext highlighter-rouge">vfirst.m</code> returns -1 if the mask has
+all elements cleared (i.e.  zero) or the lowest-numbered element that is set
+(set to one, that is). In the scalar world, this instruction is typically
+called <em>count trailing zeroes</em> (often shortened to <code class="language-plaintext highlighter-rouge">ctz</code>).</p>
+
+<p>The following table shows some examples, assuming the mask has 8 elements. By
+writing the elements by descending number we can clearly see why this
+instruction is often known as count traling zeroes: the result is exactly the
+number of consecutive zeros starting from the lowest element. The only special
+case is an all-zero mask, in this case the instruction returns -1 instead of 8.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | vfirst.m
+----------+---------------+-----------
+ mask  | 0 0 0 0 0 0 0 0  | -1
+       | 0 0 0 0 0 0 0 1  |  0
+       | 0 0 0 0 0 0 1 0  |  1
+       | 0 0 0 0 0 1 1 0  |  1
+       | 1 0 0 0 0 0 0 0  |  7
+       | 1 0 0 0 0 1 0 0  |  2
+       | 0 1 1 1 0 1 0 0  |  2
+       | 1 1 1 1 0 1 0 0  |  2
+</code></pre></div></div>
+
+<h1>The last bit</h1>
+
+<p>What if instead of the lowest numbered element of a mask that is set we want
+the highest numbered element instead? Something that intuitively we could
+name it as <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | vlast.m
+----------+---------------+-----------
+ mask  | 0 0 0 0 0 0 0 0  | -1
+       | 0 0 0 0 0 0 0 1  |  0
+       | 0 0 0 0 0 0 1 0  |  1
+       | 0 0 0 0 0 1 1 0  |  2
+       | 1 0 0 0 0 0 0 0  |  7
+       | 1 0 0 0 0 1 0 0  |  7
+       | 0 1 1 1 0 1 0 0  |  6
+       | 1 1 1 1 0 1 0 0  |  7
+</code></pre></div></div>
+
+<p>Unfortunately RVV does not provide a <code class="language-plaintext highlighter-rouge">vlast.m</code> so we will need to compute it.
+Let’s look at different options.</p>
+
+<h2>Reversing the mask</h2>
+
+<p>The first idea is reversing the mask and then applying <code class="language-plaintext highlighter-rouge">vfirst.m</code>. This way
+the highest numbered element that is set will be, after the reversal, the lowest
+numbered element and so <code class="language-plaintext highlighter-rouge">vfirst.m</code> will compute what we want.</p>
+
+<p>RVV has a very powerful (i.e., expensive to implement) general shuffling
+instruction called <code class="language-plaintext highlighter-rouge">vrgather.vv</code>. We can reverse a data vector using this
+instruction. Mask vectors have a different layout to data vectors, so we need
+to first convert them to data vectors (not just reinterpreting them), shuffle
+them and convert them back to mask vectors.</p>
+
+<p>An example using vectors of 32-bit elements is shown below (for simplicity all
+the examples shown will be using LMUL=1 and a SEW=32).</p>
+
+<figure class="highlight"><figcaption>reverse-vrgather.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="n">vbool32_t</span> <span class="nf">reverse_mask_vrgather</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Create a vector of all zeros</span>
+    <span class="n">vint32m1_t</span> <span class="n">allzeros</span> <span class="o">=</span> <span class="n">__riscv_vmv_v_x_i32m1</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Set to 1 where the mask was true</span>
+    <span class="n">vint32m1_t</span> <span class="n">extended_mask</span> <span class="o">=</span> <span class="n">__riscv_vmerge_vxm_i32m1</span><span class="p">(</span><span class="n">allzeros</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Create 0, 1, 2, …, vl-1</span>
+    <span class="n">vuint32m1_t</span> <span class="n">index</span> <span class="o">=</span> <span class="n">__riscv_vid_v_u32m1</span><span class="p">(</span><span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Compute vl-1, vl-2, …, 0</span>
+    <span class="n">vuint32m1_t</span> <span class="n">rev_index</span> <span class="o">=</span> <span class="n">__riscv_vrsub_vx_u32m1</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">vl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Now reverse the extended_mask</span>
+    <span class="n">vint32m1_t</span> <span class="n">reversed_extended_mask</span> <span class="o">=</span> <span class="n">__riscv_vrgather_vv_i32m1</span><span class="p">(</span><span class="n">extended_mask</span><span class="p">,</span> <span class="n">rev_index</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Convert back to a mask</span>
+    <span class="n">vbool32_t</span> <span class="n">reversed_mask</span> <span class="o">=</span> <span class="n">__riscv_vmsne_vx_i32m1_b32</span><span class="p">(</span><span class="n">reversed_extended_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">reversed_mask</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Note that one must use <code class="language-plaintext highlighter-rouge">vrgatherei16</code> instead of <code class="language-plaintext highlighter-rouge">vrgather</code> if the index vector
+is a 8-bit vector and there may be more than 256 elements in a vector.</p>
+
+<p>Our <code class="language-plaintext highlighter-rouge">vlast.m</code> looks like this now:</p>
+
+<figure class="highlight"><figcaption>vlast-using-reverse.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_m_reverse</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">vbool32_t</span> <span class="n">reversed_mask</span> <span class="o">=</span> <span class="n">reverse_mask_vrgather</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="kt">long</span> <span class="n">l</span> <span class="o">=</span> <span class="n">__riscv_vfirst_m_b32</span><span class="p">(</span><span class="n">reversed_mask</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">l</span> <span class="o">:</span> <span class="p">(</span><span class="n">vl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">l</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h3>Other options for reverse</h3>
+
+<p>Here I showed the most generic version of reversing a mask, within the V
+extension. But if we have the Zbkb (Bit-manipulation for Cryptography)
+extension available and we know our mask is not going to be larger than our
+general purpose register (i.e., 64-bit in riscv64), we can reverse the bits of
+the mask directly without using a <code class="language-plaintext highlighter-rouge">vrgather.vv</code>.</p>
+
+<p>Something like this should do on riscv64 (I was not able to run this version
+so there might be some bug lurking in here!):</p>
+
+<figure class="highlight"><figcaption>reverse-zbkb.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td><td class="code"><pre><span class="n">vbool32_t</span> <span class="nf">reverse_mask_rev</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Reintepret the mask vector as data vector.</span>
+    <span class="n">vuint64m1_t</span> <span class="n">mask_as_data</span> <span class="o">=</span> <span class="n">__riscv_vreinterpret_v_b32_u64m1</span><span class="p">(</span><span class="n">m</span><span class="p">);</span>
+    <span class="c1">// Extract the lowest 64-bit elements of the vector (i.e. the first element)</span>
+    <span class="kt">uint64_t</span> <span class="n">first_element</span> <span class="o">=</span> <span class="n">__riscv_vmv_x_s_u64m1_u64</span><span class="p">(</span><span class="n">mask_as_data</span><span class="p">);</span>
+    <span class="n">assert</span><span class="p">(</span><span class="n">vl</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">);</span>
+    <span class="c1">// Clear the bits beyond vl because they might be garbage.</span>
+    <span class="n">first_element</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="kt">uint64_t</span> <span class="n">rev</span><span class="p">;</span>
+    <span class="c1">// Reverse bytes of the register.</span>
+    <span class="n">asm</span><span class="p">(</span><span class="s">"rev8 %0, %1"</span> <span class="o">:</span> <span class="s">"=r"</span><span class="p">(</span><span class="n">rev</span><span class="p">)</span> <span class="o">:</span> <span class="s">"r"</span><span class="p">(</span><span class="n">first_element</span><span class="p">));</span>
+    <span class="c1">// Reverse bits of each byte.</span>
+    <span class="n">asm</span><span class="p">(</span><span class="s">"brev8 %0, %1"</span> <span class="o">:</span> <span class="s">"=r"</span><span class="p">(</span><span class="n">rev</span><span class="p">)</span> <span class="o">:</span> <span class="s">"r"</span><span class="p">(</span><span class="n">rev</span><span class="p">));</span>
+    <span class="c1">// Now the bits are in the wrong end, push them back to the lower part.</span>
+    <span class="n">rev</span> <span class="o">=</span> <span class="n">rev</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">64</span> <span class="o">-</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Put the integer back into the first element of a vector.</span>
+    <span class="n">vuint64m1_t</span> <span class="n">data_as_mask</span> <span class="o">=</span> <span class="n">__riscv_vmv_s_x_u64m1</span><span class="p">(</span><span class="n">rev</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Reintepret the data vector as a mask vector.</span>
+    <span class="n">vbool32_t</span> <span class="n">reversed_mask</span> <span class="o">=</span> <span class="n">__riscv_vreinterpret_v_u64m1_b32</span><span class="p">(</span><span class="n">data_as_mask</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">reversed_mask</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Note that the reinteprets are no-operations and exist only to coerce the RVV
+intrinsics type system.</p>
+
+<h2>Counting the leading bits</h2>
+
+<p>If we have the Zbb (Basic bit-manipulation) extension available and our mask
+still fits in a general purpose register, we can just count the leading bits
+without having to reverse the mask. We still need to reverse the value taking
+into account that the last bit is one extra, so to say, leading zero.</p>
+
+<p>On riscv64 it looks like this:</p>
+
+<figure class="highlight"><figcaption>vlast-clz.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_clz</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Reintepret the mask vector as data vector.</span>
+    <span class="n">vuint64m1_t</span> <span class="n">mask_as_data</span> <span class="o">=</span> <span class="n">__riscv_vreinterpret_v_b32_u64m1</span><span class="p">(</span><span class="n">m</span><span class="p">);</span>
+    <span class="c1">// Extract the lowest 64-bit elements of the vector (i.e. the first element)</span>
+    <span class="kt">uint64_t</span> <span class="n">first_element</span> <span class="o">=</span> <span class="n">__riscv_vmv_x_s_u64m1_u64</span><span class="p">(</span><span class="n">mask_as_data</span><span class="p">);</span>
+    <span class="n">assert</span><span class="p">(</span><span class="n">vl</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">);</span>
+    <span class="c1">// Clear the bits beyond vl because they might be garbage.</span>
+    <span class="n">first_element</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Align the relevant bits to the higher part of the register.</span>
+    <span class="n">first_element</span> <span class="o">&lt;&lt;=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">vl</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">clz</span><span class="p">;</span>
+    <span class="c1">// Compute the leading zeroes.</span>
+    <span class="n">asm</span> <span class="p">(</span><span class="s">"clz %0, %1"</span> <span class="o">:</span> <span class="s">"=r"</span><span class="p">(</span><span class="n">clz</span><span class="p">)</span> <span class="o">:</span> <span class="s">"r"</span><span class="p">(</span><span class="n">first_element</span><span class="p">));</span>
+    <span class="c1">// clz counts the number of leading zeroes, so the first bit set will be</span>
+    <span class="c1">// found at (clz + 1). Because we are counting from the most significant</span>
+    <span class="c1">// bit, we need to reverse the index using vl.</span>
+    <span class="k">return</span> <span class="n">clz</span> <span class="o">==</span> <span class="mi">64</span> <span class="o">?</span> <span class="o">-</span><span class="mi">1</span> <span class="o">:</span> <span class="n">vl</span> <span class="o">-</span> <span class="p">(</span><span class="n">clz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2>Using the prefix sum</h2>
+
+<p>This one is a fun and clever approach that still stays inside V and does not
+require any assumption about the number of elements of the mask. It relies on
+the <code class="language-plaintext highlighter-rouge">viota.m</code> instruction that computes the prefix sum of a mask: the result is an
+integer data vector where each element contains the count of elements that are
+set in the corresponding previous elements of the mask.</p>
+
+<p>The count of elements that are set in a mask is called the population count,
+and can be computed using the <code class="language-plaintext highlighter-rouge">vpopc.m</code> instruction. So, the prefix sum is the
+population count of the subrange from the beginning to the mask right before
+the previous element of the current one.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | viota.m         | vpopc.m
+----------+---------------+-----------------+----------
+ mask  | 0 0 0 0 0 0 0 0  | 0 0 0 0 0 0 0 0 | 0
+       | 0 0 0 0 0 0 0 1  | 1 1 1 1 1 1 1 0 | 1
+       | 0 0 0 0 0 0 1 0  | 1 1 1 1 1 1 0 0 | 1
+       | 0 0 0 0 0 1 1 0  | 2 2 2 2 2 1 0 0 | 2
+       | 1 0 0 0 0 0 0 0  | 0 0 0 0 0 0 0 0 | 1
+       | 1 0 0 0 0 1 0 0  | 2 2 2 2 1 0 0 0 | 2
+       | 0 1 1 1 0 1 0 0  | 4 3 2 1 1 0 0 0 | 4
+       | 1 1 1 1 0 1 0 0  | 4 3 2 1 1 0 0 0 | 5
+</code></pre></div></div>
+
+<p>One interesting property of the prefixsum is that the last element is either
+the population count of the mask or that value minus one (in the specific case
+where the largest numbered element is set). We will prove this fact in the next
+part using Lean.</p>
+
+<p>To compute the last bit set we first compute the population count. If the
+population count is zero there is no last bit and the result is trivially -1.
+Now we compute the prefix sum and we compute a mask comparing all the elements
+of the prefix sum with the population count.</p>
+
+<p>If the most significant bit is not set, one of the elements of the prefix sum
+will be exactly the population count. And the first bit where this happens is
+exactly the first zero element after the last bit, so we only have to subtract
+one to the result of <code class="language-plaintext highlighter-rouge">vfirst.m</code>.</p>
+
+<p>If the most significant bit is set, the population count is not found in the
+prefix sum (and <code class="language-plaintext highlighter-rouge">vfirst.m</code> computes -1) but at this point we know there is at
+least one bit, so we know the last bit is exactly the most significant one.</p>
+
+<figure class="highlight"><figcaption>vlast-prefixsum.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_prefixsum</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Compute the population count.</span>
+    <span class="kt">uint64_t</span> <span class="n">popc</span> <span class="o">=</span> <span class="n">__riscv_vcpop_m_b32</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// If no bit is set we're done: there is no last bit.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">popc</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// Compute the prefix sum of the mask.</span>
+    <span class="n">vuint32m1_t</span> <span class="n">prefixsum</span> <span class="o">=</span> <span class="n">__riscv_viota_m_u32m1</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Compute a mask of elements equal to the population count.</span>
+    <span class="n">vbool32_t</span> <span class="n">equal_to_popc</span> <span class="o">=</span> <span class="n">__riscv_vmseq_vx_u32m1_b32</span><span class="p">(</span><span class="n">prefixsum</span><span class="p">,</span> <span class="n">popc</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Get the index of the lowest numbered element equal to the population count.</span>
+    <span class="kt">long</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">__riscv_vfirst_m_b32</span><span class="p">(</span><span class="n">equal_to_popc</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// If there was none, the result is `vl - 1` otherwise `idx - 1` as we</span>
+    <span class="c1">// are always counting only the previous elements.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">vl</span> <span class="o">:</span> <span class="n">idx</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2025/08/13/2025-08-13-migrate-to-libvirt/">&laquo; Migrate from VirtualBox to libvirt</a>
+
+
+  <a class="next" href="/2026/05/30/compute-vlast-part-2/">The last bit – Part 2 &raquo;</a>
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

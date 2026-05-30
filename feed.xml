@@ -1,4 +1,589 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2025-08-14T17:19:57+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">Migrate from VirtualBox to libvirt</title><link href="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/" rel="alternate" type="text/html" title="Migrate from VirtualBox to libvirt" /><published>2025-08-13T00:00:00+00:00</published><updated>2025-08-13T00:00:00+00:00</updated><id>https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt</id><content type="html" xml:base="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/"><![CDATA[<p>In my day job sometimes I need to edit documents using tools that are only
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-05-30T09:57:20+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the previous part we ended with a nifty way of computing the last bit of
+a mask using the prefix sum. The key of the approch is based on the fact that
+the last element of the prefix sum of a mask is either the population count
+or population count minus one.</p>
+
+<p>Let’s prove that using Lean.</p>
+
+<!--more-->
+
+<h1>What we want to prove</h1>
+
+<p>Given the following two definitions, we want to prove the presented Theorem.</p>
+
+<figure>
+    <img src="/assets/images/popc-theorem.svg" alt="Definifitions of popc and prefixsum" />
+</figure>
+
+<p>This is pretty obvious after thinking about it for a bit but we will prove it
+anyways.</p>
+
+<h1>Lean</h1>
+
+<p>Lean is a functional programming language built on top of a powerful formalism
+called calculus of constructions and supporting a thing called inductive types
+(types built on top of other types in a systematic way). But the most
+interesting part of Lean is its capability as a proof assistant.</p>
+
+<p>There is ample <a href="https://lean-lang.org/learn/">documentation</a> of the Lean
+language covering the different users and use cases.</p>
+
+<h1>Representation</h1>
+
+<p>While Lean supports <code class="language-plaintext highlighter-rouge">Array</code> and <code class="language-plaintext highlighter-rouge">Vector</code> types, it will make everything a bit
+simpler if we prove it using plain old <code class="language-plaintext highlighter-rouge">List</code> types. Functional languages have
+excellent support for list-like types due to its <em>inductive</em> way of
+constructing them (a list is either the empty list, or the resulting list of
+prepending an element in front of an existing list). In fact, in Lean, sees
+<code class="language-plaintext highlighter-rouge">Array</code> (proof-wise) as a wrapper to a <code class="language-plaintext highlighter-rouge">List</code> (where the size is cached in the
+data type itself, rather than being recomputed as in the length of a <code class="language-plaintext highlighter-rouge">List</code>)
+and a <code class="language-plaintext highlighter-rouge">Vector</code> is a wrapper of an <code class="language-plaintext highlighter-rouge">Array</code> where the size is a parameter of the
+type making it a dependent type. <code class="language-plaintext highlighter-rouge">Vector</code> being a dependent type means that
+some proofs get a bit hairy specially if we intend to use induction (that we
+will because makes things easier).</p>
+
+<p>It makes sense to represent the 1 and 0 above by the <code class="language-plaintext highlighter-rouge">true</code> and <code class="language-plaintext highlighter-rouge">false</code> terms
+of type <code class="language-plaintext highlighter-rouge">Bool</code>. For this reason we will define an alias <code class="language-plaintext highlighter-rouge">Mask</code> to be a <code class="language-plaintext highlighter-rouge">List
+Bool</code>.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">abbrev</span> <span class="n">Mask</span> := <span class="n">List</span> <span class="n">Bool</span></code></pre></figure>
+
+<h1>Population count</h1>
+
+<p>Now we can define <code class="language-plaintext highlighter-rouge">popc</code> using the <code class="language-plaintext highlighter-rouge">List.count</code> function that basically counts
+the number of ocurrences that are <code class="language-plaintext highlighter-rouge">true</code> in a given mask.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">def</span> <span class="n">popc</span> (<span class="n">m</span>: <span class="n">Mask</span>) : <span class="n">Nat</span> := <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">m</span></code></pre></figure>
+
+<p>We can already define some very simple theorems as a warm up for <code class="language-plaintext highlighter-rouge">popc</code>. They
+are very simple so the <code class="language-plaintext highlighter-rouge">rfl</code> tactic is enough.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_of_empty_is_zero</span> : <span class="n">popc</span> [] <span class="o">=</span> <span class="mi">0</span> := <span class="k">by</span> <span class="k">rfl</span>
+
+<span class="k">theorem</span> <span class="n">popc_of_singleton_false</span> : <span class="n">popc</span> [<span class="k">false</span>] <span class="o">=</span> <span class="mi">0</span> := <span class="k">by</span> <span class="k">rfl</span>
+<span class="k">theorem</span> <span class="n">popc_of_singleton_true</span> : <span class="n">popc</span> [<span class="k">true</span>] <span class="o">=</span> <span class="mi">1</span> := <span class="k">by</span> <span class="k">rfl</span></code></pre></figure>
+
+<p>We can generalise the last two theorems into a single one.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_of_singleton</span> : <span class="n">popc</span> [<span class="n">b</span>] <span class="o">=</span> <span class="n">if</span> <span class="n">b</span> <span class="n">then</span> <span class="mi">1</span> <span class="n">else</span> <span class="mi">0</span> := <span class="k">by</span>
+  <span class="k">cases</span> <span class="n">b</span> <span class="k">with</span>
+  <span class="o">|</span> <span class="k">true</span> <span class="o">=&gt;</span> <span class="k">rw</span>[<span class="n">popc_of_singleton_true</span>]<span class="o">;</span> <span class="k">rfl</span>
+  <span class="o">|</span> <span class="k">false</span> <span class="o">=&gt;</span> <span class="k">rw</span>[<span class="n">popc_of_singleton_false</span>]<span class="o">;</span> <span class="k">rfl</span></code></pre></figure>
+
+<p>Now we will prove that <code class="language-plaintext highlighter-rouge">popc</code> of a list that has been prepended an element is
+the popcount of that list plus whether that element is true or false. Before that
+we need a small helper</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">count_true_is_boolean</span> (<span class="n">x</span>: <span class="n">Bool</span>) : <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">=</span> <span class="n">if</span> <span class="n">x</span> <span class="n">then</span> <span class="mi">1</span> <span class="n">else</span> <span class="mi">0</span> := <span class="k">by</span> <span class="k">grind</span></code></pre></figure>
+
+<p>In some of our proofs we will slightly (ab)use the <code class="language-plaintext highlighter-rouge">grind</code> tactic. It feels a
+bit like cheating but my colleagues with more knowledge than me on these topics
+tell me that it is fine.</p>
+
+<p>Now we can prove that <code class="language-plaintext highlighter-rouge">popc</code> of prepending a mask with another element is basically the <code class="language-plaintext highlighter-rouge">popc</code> of that list
+and adding one if the new element prepended is <code class="language-plaintext highlighter-rouge">true</code>.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_of_cons</span> : <span class="n">popc</span> (<span class="n">a</span> :: <span class="n">b</span>) <span class="o">=</span> (<span class="n">if</span> <span class="n">a</span> <span class="n">then</span> <span class="mi">1</span> <span class="n">else</span> <span class="mi">0</span>) <span class="o">+</span> <span class="n">popc</span> <span class="n">b</span> := <span class="k">by</span>
+  <span class="k">induction</span> <span class="n">b</span> <span class="k">with</span>
+  <span class="o">|</span> <span class="k">nil</span> <span class="o">=&gt;</span> <span class="k">rw</span> [<span class="n">popc_of_empty_is_zero</span>]
+           <span class="k">rw</span> [<span class="n">popc_of_singleton</span>]
+           <span class="k">simp</span>
+  <span class="o">|</span> <span class="k">cons</span> <span class="n">x</span> <span class="n">b1</span> <span class="n">ih</span> <span class="o">=&gt;</span> <span class="k">unfold</span> <span class="n">popc</span>
+                    <span class="k">have</span> <span class="n">count_associates_1</span> : <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">a</span> :: <span class="n">x</span> :: <span class="n">b1</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">a</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">b1</span> := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">have</span> <span class="n">count_associates_2</span> : <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">x</span> :: <span class="n">b1</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">b1</span>  := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">rw</span> [<span class="n">count_associates_1</span>]
+                    <span class="k">rw</span> [<span class="n">count_associates_2</span>]
+                    <span class="k">rw</span> [<span class="n">count_true_is_boolean</span> <span class="n">x</span>]
+                    <span class="k">rw</span> [<span class="n">count_true_is_boolean</span> <span class="n">a</span>]
+                    <span class="k">ring</span></code></pre></figure>
+
+<p>Using a <code class="language-plaintext highlighter-rouge">List</code> is convenient because we can prove using <code class="language-plaintext highlighter-rouge">induction</code>. The base
+case is prepending to an empty list. We will be using <code class="language-plaintext highlighter-rouge">rw</code> a lot as we are
+basically proving equalities. Then we prove it for the inductive case and this needs
+to rewrite the inductive case until we get something simple enough.</p>
+
+<p>Finally we want to prove that <code class="language-plaintext highlighter-rouge">popc</code> distributes over kind concatenation (I
+called it associates in the proof but I don’t think this is the right
+terminology).</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_associates</span> : <span class="n">popc</span> (<span class="n">a</span> <span class="o">++</span> <span class="n">b</span>) <span class="o">=</span> <span class="n">popc</span> <span class="n">a</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">b</span> := <span class="k">by</span>
+ <span class="k">induction</span> <span class="n">a</span> <span class="k">with</span>
+  <span class="o">|</span> <span class="k">nil</span> <span class="o">=&gt;</span> <span class="k">rw</span> [<span class="n">popc_of_empty_is_zero</span>]<span class="o">;</span> <span class="k">simp</span>
+  <span class="o">|</span> <span class="k">cons</span> <span class="n">x</span> <span class="n">a1</span> <span class="n">ih</span> <span class="o">=&gt;</span> <span class="k">unfold</span> <span class="n">popc</span>
+                    <span class="k">have</span> <span class="n">count_associates_1</span>: <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">x</span> :: <span class="n">a1</span> <span class="o">++</span> <span class="n">b</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">b</span> := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">have</span> <span class="n">count_associates_2</span>: <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">x</span> :: <span class="n">a1</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">a1</span> := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">rw</span> [<span class="n">count_associates_1</span>]
+                    <span class="k">rw</span> [<span class="n">count_associates_2</span>]</code></pre></figure>
+
+<p>I keep abusing the <code class="language-plaintext highlighter-rouge">grind</code> tactic for the subtheorems introduced using <code class="language-plaintext highlighter-rouge">have</code>.</p>
+
+<h1>Prefix sum</h1>
+
+<p>Now we can define the prefix sum.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">def</span> <span class="n">prefixsum</span> (<span class="n">m</span>: <span class="n">Mask</span>) : <span class="n">List</span> <span class="n">Nat</span> := <span class="n">List</span><span class="o">.</span><span class="n">mapIdx</span> (<span class="k">fun</span> <span class="n">idx</span> <span class="n">_</span> <span class="o">=&gt;</span> <span class="n">popc</span> (<span class="n">List</span><span class="o">.</span><span class="n">take</span> <span class="n">idx</span> <span class="n">m</span>)) <span class="n">m</span></code></pre></figure>
+
+<p>Note that this definition puts the “least significant bits” at the beginning of the list.
+This holds:</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">#eval</span> <span class="n">prefixsum</span> [<span class="k">true</span>, <span class="k">false</span>, <span class="k">true</span>, <span class="k">true</span>, <span class="k">false</span>]
+                [<span class="mi">0</span>,    <span class="mi">1</span>,     <span class="mi">1</span>,    <span class="mi">2</span>,    <span class="mi">3</span>    ]
+<span class="k">#eval</span> <span class="n">prefixsum</span> [<span class="k">false</span>, <span class="k">false</span>, <span class="k">true</span>, <span class="k">true</span>, <span class="k">false</span>]
+                [<span class="mi">0</span>,     <span class="mi">0</span>,     <span class="mi">0</span>,    <span class="mi">1</span>,    <span class="mi">2</span>    ]</code></pre></figure>
+
+<p>Before we can prove our theorem, we will need some helpers: non-empty lists have a last element, the emptiness of a list is the same as the emptiness of that list after we have mapped and how to obtain that last element we have appended to a list.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">non_empty_lists_have_a_last</span> (<span class="n">l</span> : <span class="n">List</span> α) (<span class="n">h</span> : <span class="n">l</span> <span class="o">≠</span> []) : <span class="o">∃</span> (<span class="n">l</span><span class="err">'</span>: <span class="n">List</span> α) (<span class="n">last</span>: α), <span class="n">l</span> <span class="o">=</span> <span class="n">l</span><span class="err">'</span> <span class="o">++</span> [<span class="n">last</span>] := <span class="k">by</span>
+  <span class="k">match</span> <span class="n">l</span> <span class="k">with</span>
+  <span class="o">|</span> [<span class="n">x</span>] <span class="o">=&gt;</span> <span class="k">use</span> []<span class="o">;</span> <span class="k">use</span> <span class="n">x</span><span class="o">;</span> <span class="k">rfl</span>
+  <span class="o">|</span> <span class="n">x</span> :: <span class="n">y</span> :: <span class="n">xs</span> <span class="o">=&gt;</span> <span class="k">obtain</span> <span class="o">⟨</span><span class="n">hl</span>, <span class="n">hlast</span>, <span class="n">p</span><span class="o">⟩</span> := <span class="n">non_empty_lists_have_a_last</span> (<span class="n">y</span>::<span class="n">xs</span>) (<span class="n">List</span><span class="o">.</span><span class="n">cons_ne_nil</span> <span class="n">y</span> <span class="n">xs</span>)
+                    <span class="k">use</span> (<span class="n">x</span> :: <span class="n">hl</span>)<span class="o">;</span> <span class="k">use</span> <span class="n">hlast</span><span class="o">;</span> <span class="k">rw</span> [<span class="n">p</span>]<span class="o">;</span> <span class="k">simp</span>
+
+<span class="k">theorem</span> <span class="n">map_ne_nil_iff</span>: <span class="n">List</span><span class="o">.</span><span class="n">map</span> <span class="n">f</span> <span class="n">l</span> <span class="o">≠</span> [] <span class="o">↔</span> <span class="n">l</span> <span class="o">≠</span> [] := <span class="k">by</span>
+  <span class="k">simp</span>
+
+<span class="k">theorem</span> <span class="n">get_last_of_concat_to_singleton</span> (<span class="n">h</span> : <span class="n">l</span> <span class="o">++</span> [<span class="n">x</span>] <span class="o">≠</span> []) : <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">l</span> <span class="o">++</span> [<span class="n">x</span>]) <span class="n">h</span> <span class="o">=</span> <span class="n">x</span> := <span class="k">by</span> <span class="k">simp</span></code></pre></figure>
+
+<p>Our proof gets a bit annoying because we want to use <code class="language-plaintext highlighter-rouge">List.getLast</code> but it
+needs a proof that the list is non empty. We didn’t do explicitly in our proof
+but it should be possible to deduce that <code class="language-plaintext highlighter-rouge">m ≠ []</code> implies <code class="language-plaintext highlighter-rouge">prefixsum m ≠ []</code>.
+We simply passed the two proofs as a parameter. It should be possible to have a
+theorem with only the first assumption and prove the second one before
+rewriting with our presented theorem.</p>
+
+<p>Part of the tedium of this proof is making sure we can do the rewrites. Every
+operand of <code class="language-plaintext highlighter-rouge">List.getLast</code> needs a proof that the list is not empty. But if we
+substitue the operand then the proof may not apply and Lean will diagnose a
+type mismatch. So we need to slowly replace everything. This leads to some
+gnarly equivalences in the successive <code class="language-plaintext highlighter-rouge">eq1</code>, <code class="language-plaintext highlighter-rouge">eq2</code>, etc. A lot of the
+subtheorems (<code class="language-plaintext highlighter-rouge">h3</code>, <code class="language-plaintext highlighter-rouge">h4</code>, …) are just there to be able to carry the proof of the
+non-emptyness prior to the rewrite.</p>
+
+<p>Finally once we have managed to replace everything, we can pull the last item
+of the <code class="language-plaintext highlighter-rouge">List.getLast</code> using <code class="language-plaintext highlighter-rouge">get_last_of_concat_to_singleton</code>. Witht this the
+proof is a relatively simple one where we prove by cases of the last element.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">last_element_of_prefixsum_is_popc_or_popc_minus_one</span> (<span class="n">m</span>: <span class="n">Mask</span>) (<span class="n">h</span> : <span class="n">m</span> <span class="o">≠</span> []) (<span class="n">h2</span> : <span class="n">prefixsum</span> <span class="n">m</span> <span class="o">≠</span> []) : 
+   <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> <span class="n">m</span>) <span class="n">h2</span> <span class="o">=</span> <span class="n">popc</span> <span class="n">m</span> <span class="o">∨</span>  <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> <span class="n">m</span>) <span class="n">h2</span> <span class="o">=</span> (<span class="n">popc</span> <span class="n">m</span>) <span class="o">-</span> <span class="mi">1</span> := <span class="k">by</span>
+
+   <span class="k">obtain</span> <span class="o">⟨</span><span class="n">prefix_bools</span>, <span class="n">last_bool</span>, <span class="n">lh</span><span class="o">⟩</span> := <span class="n">non_empty_lists_have_a_last</span> <span class="n">m</span> <span class="n">h</span>
+   <span class="k">have</span> <span class="n">h3</span> : <span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>] <span class="o">≠</span> [] :=
+     <span class="k">by</span> <span class="k">simp</span>
+
+   <span class="k">have</span> <span class="n">h2</span> : <span class="n">prefixsum</span> <span class="n">m</span> <span class="o">≠</span> [] := <span class="k">by</span>
+      <span class="k">unfold</span> <span class="n">prefixsum</span>
+      <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">List</span><span class="o">.</span><span class="n">mapIdx_ne_nil_iff</span> <span class="n">h</span>
+   <span class="k">have</span> <span class="n">h4</span> : <span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>]) <span class="o">≠</span> [] := <span class="k">by</span>
+     <span class="k">unfold</span> <span class="n">prefixsum</span>
+     <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">List</span><span class="o">.</span><span class="n">mapIdx_ne_nil_iff</span> <span class="n">h3</span>
+
+   <span class="n">let</span> <span class="n">last2</span> := <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>])) <span class="n">h4</span>
+
+   <span class="k">have</span> <span class="n">eq1</span> : <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> <span class="n">m</span>) <span class="n">h2</span> <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>])) <span class="n">h4</span> := <span class="k">by</span>
+      <span class="k">unfold</span> <span class="n">prefixsum</span>
+      <span class="k">grind</span>
+
+   <span class="k">have</span> <span class="n">h5</span> : [<span class="n">last_bool</span>] <span class="o">≠</span> [] := <span class="k">by</span> <span class="k">simp</span>
+   <span class="k">have</span> <span class="n">h6</span> : <span class="n">prefixsum</span> [<span class="n">last_bool</span>] <span class="o">≠</span> [] := <span class="k">by</span>
+     <span class="k">unfold</span> <span class="n">prefixsum</span>
+     <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">List</span><span class="o">.</span><span class="n">mapIdx_ne_nil_iff</span> <span class="n">h5</span>
+
+   <span class="k">rw</span> [<span class="n">eq1</span>]
+
+   <span class="k">have</span> <span class="n">h7</span> : (<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> <span class="n">List</span><span class="o">.</span><span class="n">map</span> (<span class="k">fun</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">prefix_bools</span>) (<span class="n">prefixsum</span> [<span class="n">last_bool</span>]) <span class="o">≠</span> [] := <span class="k">by</span>
+    <span class="k">apply</span> <span class="n">List</span><span class="o">.</span><span class="n">append_ne_nil_of_right_ne_nil</span>
+    <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">map_ne_nil_iff</span> <span class="n">h6</span> 
+
+   <span class="k">have</span> <span class="n">eq2</span> : <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>])) <span class="n">h4</span> <span class="o">=</span> 
+              <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> ((<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> <span class="n">List</span><span class="o">.</span><span class="n">map</span> (<span class="k">fun</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">prefix_bools</span>) (<span class="n">prefixsum</span> [<span class="n">last_bool</span>])) <span class="n">h7</span> := <span class="k">by</span> 
+              <span class="k">unfold</span> <span class="n">prefixsum</span>
+              <span class="k">aesop</span>
+
+   <span class="k">rw</span> [<span class="n">eq2</span>]
+
+   <span class="k">have</span> <span class="n">h8</span> : (<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> [<span class="n">popc</span> <span class="n">prefix_bools</span>] <span class="o">≠</span> [] := <span class="k">by</span>
+    <span class="k">apply</span> <span class="n">List</span><span class="o">.</span><span class="n">append_ne_nil_of_right_ne_nil</span>
+    <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">map_ne_nil_iff</span> <span class="n">h6</span> 
+
+   <span class="k">have</span> <span class="n">eq3</span>: <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> ((<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> <span class="n">List</span><span class="o">.</span><span class="n">map</span> (<span class="k">fun</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">prefix_bools</span>) (<span class="n">prefixsum</span> [<span class="n">last_bool</span>])) <span class="n">h7</span> <span class="o">=</span>
+            <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> ((<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> [<span class="n">popc</span> <span class="n">prefix_bools</span>]) <span class="n">h8</span> := <span class="k">by</span>
+            <span class="k">unfold</span> <span class="n">prefixsum</span>
+            <span class="k">aesop</span>
+
+   <span class="k">rw</span> [<span class="n">eq3</span>]
+
+   <span class="k">rw</span> [<span class="n">get_last_of_concat_to_singleton</span>]
+
+   <span class="cd">-- I am sure this can be simplified</span>
+   <span class="k">match</span> <span class="n">last_bool</span> <span class="k">with</span>
+   <span class="o">|</span> <span class="k">true</span> <span class="o">=&gt;</span> <span class="k">right</span>
+             <span class="k">rw</span> [<span class="n">lh</span>]
+             <span class="k">rw</span> [<span class="n">popc_associates</span>]
+             <span class="k">rw</span> [<span class="n">popc_of_singleton</span>]
+             <span class="k">simp</span>
+   <span class="o">|</span> <span class="k">false</span> <span class="o">=&gt;</span> <span class="k">left</span>
+              <span class="k">rw</span> [<span class="n">lh</span>]
+              <span class="k">rw</span> [<span class="n">popc_associates</span>]
+              <span class="k">rw</span> [<span class="n">popc_of_singleton</span>]
+              <span class="k">simp</span></code></pre></figure>
+
+<p>Again I have abused of <code class="language-plaintext highlighter-rouge">grind</code> and <code class="language-plaintext highlighter-rouge">aesop</code> in the subtheorems.</p>
+
+<p>I’m clearly not even a rookie proving theorems but it was a fun exercise.  I
+stay convinced of two things: 1) my proofs can be improved a lot 2) being able
+to prove things with the help of a proof assistant such as Lean is very useful
+to gain confidence in our algorithms.</p>
+
+<p>It would have been cool to prove that <code class="language-plaintext highlighter-rouge">vlast.m</code> as implemented using the prefix
+sum in Part 1 computes indeed the index of the last non-zero element. I’m happy
+enough to have proved the key insight that allows us to use prefix sum to
+do that. I’ll leave that as an exercise for the reader 😉.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="riscv" /><category term="vectors" /><category term="rvv" /><category term="intrinsics" /><summary type="html"><![CDATA[In the previous part we ended with a nifty way of computing the last bit of a mask using the prefix sum. The key of the approch is based on the fact that the last element of the prefix sum of a mask is either the population count or population count minus one. Let’s prove that using Lean.]]></summary></entry><entry><title type="html">The last bit – Part 1</title><link href="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/" rel="alternate" type="text/html" title="The last bit – Part 1" /><published>2026-05-28T00:00:00+00:00</published><updated>2026-05-28T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/28/compute-vlast-part-1</id><content type="html" xml:base="https://thinkingeek.com/2026/05/28/compute-vlast-part-1/"><![CDATA[<p>The RISC-V Vector Extension (RVV) includes several instructions to operate
+on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that compute
+the lowest-numbered element of the mask that is set.</p>
+
+<p>However, there is no <code class="language-plaintext highlighter-rouge">vlast.m</code> instruction that computes the highest-numbered
+element of the mask that is set.</p>
+
+<!--more-->
+
+<h1>The RISC-V Vector Extension</h1>
+
+<p>The RISC-V Vector Extension (collectively the V extension and shortened to RVV)
+aims at providing vector compute capabilities to the RISC-V ISA. Compared to
+other extensions, the V extension is rather sophisticated and provides a large
+number of instructions. It also features a few unusual features like having a
+vector length, that specifies how many elements are operated in the vector, and
+encoding the types of the instructions in RVV-specific architectural registers.
+This makes the extension rather flexible but also more involved than existing,
+more straightforward designs existing in other ISAs.</p>
+
+<p>Typically, SIMD/vector instructions instructions are used when vectorizing code
+whose goal is to benefit from the higher throughput (amount of work per unit of
+time) of vector instructions.</p>
+
+<h2>Masking</h2>
+
+<p>Unfortunately, vectorization does not get along very well with control flow
+(i.e. branches/jumps in a program). The usual solution is to extend the idea of
+<em>if-conversion</em> where control flow is replaced by data-flow. After
+if-conversion, branches have been removed and the code gets flattened into
+straight-line code, i.e. without branches.</p>
+
+<p>Extra code is emitted to compute special values, that we can call predicates.
+Predicates correspond to the conditional branches that we removed during
+if-conversion and they gate instructions such that executing may or may not
+have any architecturally visible effect depending on the predicate used by the
+instruction.</p>
+
+<p>The vectorized version of predicates is effectively a vector of predicates .
+Because a predicate has only two values (enable/1/true vs disable/0/false) it
+can be represented with a single bit. Because of this, many SIMD/vector ISAs
+include support for masks (or simply <em>predicates</em>) to represent these vectors
+of predicates.</p>
+
+<p>Regular data vectors, containing integers or floating point, have the different
+elements packed throughout the vector register. In contrast, masks in RVV are
+represented with a packed vector of bits stored in the lowest bits of the
+vector register. The layout for masks is called a <em>mask vector</em>.</p>
+
+<p>Masks can be used when dealing with control flow such as <code class="language-plaintext highlighter-rouge">if</code> or even loops. In
+particular, in scan-like loops (think of C library function <code class="language-plaintext highlighter-rouge">strlen</code>) the
+instruction <code class="language-plaintext highlighter-rouge">vfirst.m</code> is useful to see if a mask contains a bit set to one
+(for the <code class="language-plaintext highlighter-rouge">strlen</code> case, we can check if one of the bytes that we loaded is a
+zero and act accordingly). More precisely <code class="language-plaintext highlighter-rouge">vfirst.m</code> returns -1 if the mask has
+all elements cleared (i.e.  zero) or the lowest-numbered element that is set
+(set to one, that is). In the scalar world, this instruction is typically
+called <em>count trailing zeroes</em> (often shortened to <code class="language-plaintext highlighter-rouge">ctz</code>).</p>
+
+<p>The following table shows some examples, assuming the mask has 8 elements. By
+writing the elements by descending number we can clearly see why this
+instruction is often known as count traling zeroes: the result is exactly the
+number of consecutive zeros starting from the lowest element. The only special
+case is an all-zero mask, in this case the instruction returns -1 instead of 8.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | vfirst.m
+----------+---------------+-----------
+ mask  | 0 0 0 0 0 0 0 0  | -1
+       | 0 0 0 0 0 0 0 1  |  0
+       | 0 0 0 0 0 0 1 0  |  1
+       | 0 0 0 0 0 1 1 0  |  1
+       | 1 0 0 0 0 0 0 0  |  7
+       | 1 0 0 0 0 1 0 0  |  2
+       | 0 1 1 1 0 1 0 0  |  2
+       | 1 1 1 1 0 1 0 0  |  2
+</code></pre></div></div>
+
+<h1>The last bit</h1>
+
+<p>What if instead of the lowest numbered element of a mask that is set we want
+the highest numbered element instead? Something that intuitively we could
+name it as <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | vlast.m
+----------+---------------+-----------
+ mask  | 0 0 0 0 0 0 0 0  | -1
+       | 0 0 0 0 0 0 0 1  |  0
+       | 0 0 0 0 0 0 1 0  |  1
+       | 0 0 0 0 0 1 1 0  |  2
+       | 1 0 0 0 0 0 0 0  |  7
+       | 1 0 0 0 0 1 0 0  |  7
+       | 0 1 1 1 0 1 0 0  |  6
+       | 1 1 1 1 0 1 0 0  |  7
+</code></pre></div></div>
+
+<p>Unfortunately RVV does not provide a <code class="language-plaintext highlighter-rouge">vlast.m</code> so we will need to compute it.
+Let’s look at different options.</p>
+
+<h2>Reversing the mask</h2>
+
+<p>The first idea is reversing the mask and then applying <code class="language-plaintext highlighter-rouge">vfirst.m</code>. This way
+the highest numbered element that is set will be, after the reversal, the lowest
+numbered element and so <code class="language-plaintext highlighter-rouge">vfirst.m</code> will compute what we want.</p>
+
+<p>RVV has a very powerful (i.e., expensive to implement) general shuffling
+instruction called <code class="language-plaintext highlighter-rouge">vrgather.vv</code>. We can reverse a data vector using this
+instruction. Mask vectors have a different layout to data vectors, so we need
+to first convert them to data vectors (not just reinterpreting them), shuffle
+them and convert them back to mask vectors.</p>
+
+<p>An example using vectors of 32-bit elements is shown below (for simplicity all
+the examples shown will be using LMUL=1 and a SEW=32).</p>
+
+<figure class="highlight"><figcaption>reverse-vrgather.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="n">vbool32_t</span> <span class="nf">reverse_mask_vrgather</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Create a vector of all zeros</span>
+    <span class="n">vint32m1_t</span> <span class="n">allzeros</span> <span class="o">=</span> <span class="n">__riscv_vmv_v_x_i32m1</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Set to 1 where the mask was true</span>
+    <span class="n">vint32m1_t</span> <span class="n">extended_mask</span> <span class="o">=</span> <span class="n">__riscv_vmerge_vxm_i32m1</span><span class="p">(</span><span class="n">allzeros</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Create 0, 1, 2, …, vl-1</span>
+    <span class="n">vuint32m1_t</span> <span class="n">index</span> <span class="o">=</span> <span class="n">__riscv_vid_v_u32m1</span><span class="p">(</span><span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Compute vl-1, vl-2, …, 0</span>
+    <span class="n">vuint32m1_t</span> <span class="n">rev_index</span> <span class="o">=</span> <span class="n">__riscv_vrsub_vx_u32m1</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">vl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Now reverse the extended_mask</span>
+    <span class="n">vint32m1_t</span> <span class="n">reversed_extended_mask</span> <span class="o">=</span> <span class="n">__riscv_vrgather_vv_i32m1</span><span class="p">(</span><span class="n">extended_mask</span><span class="p">,</span> <span class="n">rev_index</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Convert back to a mask</span>
+    <span class="n">vbool32_t</span> <span class="n">reversed_mask</span> <span class="o">=</span> <span class="n">__riscv_vmsne_vx_i32m1_b32</span><span class="p">(</span><span class="n">reversed_extended_mask</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">reversed_mask</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Note that one must use <code class="language-plaintext highlighter-rouge">vrgatherei16</code> instead of <code class="language-plaintext highlighter-rouge">vrgather</code> if the index vector
+is a 8-bit vector and there may be more than 256 elements in a vector.</p>
+
+<p>Our <code class="language-plaintext highlighter-rouge">vlast.m</code> looks like this now:</p>
+
+<figure class="highlight"><figcaption>vlast-using-reverse.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_m_reverse</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">vbool32_t</span> <span class="n">reversed_mask</span> <span class="o">=</span> <span class="n">reverse_mask_vrgather</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="kt">long</span> <span class="n">l</span> <span class="o">=</span> <span class="n">__riscv_vfirst_m_b32</span><span class="p">(</span><span class="n">reversed_mask</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">l</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">l</span> <span class="o">:</span> <span class="p">(</span><span class="n">vl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">l</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h3>Other options for reverse</h3>
+
+<p>Here I showed the most generic version of reversing a mask, within the V
+extension. But if we have the Zbkb (Bit-manipulation for Cryptography)
+extension available and we know our mask is not going to be larger than our
+general purpose register (i.e., 64-bit in riscv64), we can reverse the bits of
+the mask directly without using a <code class="language-plaintext highlighter-rouge">vrgather.vv</code>.</p>
+
+<p>Something like this should do on riscv64 (I was not able to run this version
+so there might be some bug lurking in here!):</p>
+
+<figure class="highlight"><figcaption>reverse-zbkb.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td><td class="code"><pre><span class="n">vbool32_t</span> <span class="nf">reverse_mask_rev</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Reintepret the mask vector as data vector.</span>
+    <span class="n">vuint64m1_t</span> <span class="n">mask_as_data</span> <span class="o">=</span> <span class="n">__riscv_vreinterpret_v_b32_u64m1</span><span class="p">(</span><span class="n">m</span><span class="p">);</span>
+    <span class="c1">// Extract the lowest 64-bit elements of the vector (i.e. the first element)</span>
+    <span class="kt">uint64_t</span> <span class="n">first_element</span> <span class="o">=</span> <span class="n">__riscv_vmv_x_s_u64m1_u64</span><span class="p">(</span><span class="n">mask_as_data</span><span class="p">);</span>
+    <span class="n">assert</span><span class="p">(</span><span class="n">vl</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">);</span>
+    <span class="c1">// Clear the bits beyond vl because they might be garbage.</span>
+    <span class="n">first_element</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="kt">uint64_t</span> <span class="n">rev</span><span class="p">;</span>
+    <span class="c1">// Reverse bytes of the register.</span>
+    <span class="n">asm</span><span class="p">(</span><span class="s">"rev8 %0, %1"</span> <span class="o">:</span> <span class="s">"=r"</span><span class="p">(</span><span class="n">rev</span><span class="p">)</span> <span class="o">:</span> <span class="s">"r"</span><span class="p">(</span><span class="n">first_element</span><span class="p">));</span>
+    <span class="c1">// Reverse bits of each byte.</span>
+    <span class="n">asm</span><span class="p">(</span><span class="s">"brev8 %0, %1"</span> <span class="o">:</span> <span class="s">"=r"</span><span class="p">(</span><span class="n">rev</span><span class="p">)</span> <span class="o">:</span> <span class="s">"r"</span><span class="p">(</span><span class="n">rev</span><span class="p">));</span>
+    <span class="c1">// Now the bits are in the wrong end, push them back to the lower part.</span>
+    <span class="n">rev</span> <span class="o">=</span> <span class="n">rev</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">64</span> <span class="o">-</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Put the integer back into the first element of a vector.</span>
+    <span class="n">vuint64m1_t</span> <span class="n">data_as_mask</span> <span class="o">=</span> <span class="n">__riscv_vmv_s_x_u64m1</span><span class="p">(</span><span class="n">rev</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Reintepret the data vector as a mask vector.</span>
+    <span class="n">vbool32_t</span> <span class="n">reversed_mask</span> <span class="o">=</span> <span class="n">__riscv_vreinterpret_v_u64m1_b32</span><span class="p">(</span><span class="n">data_as_mask</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">reversed_mask</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Note that the reinteprets are no-operations and exist only to coerce the RVV
+intrinsics type system.</p>
+
+<h2>Counting the leading bits</h2>
+
+<p>If we have the Zbb (Basic bit-manipulation) extension available and our mask
+still fits in a general purpose register, we can just count the leading bits
+without having to reverse the mask. We still need to reverse the value taking
+into account that the last bit is one extra, so to say, leading zero.</p>
+
+<p>On riscv64 it looks like this:</p>
+
+<figure class="highlight"><figcaption>vlast-clz.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_clz</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Reintepret the mask vector as data vector.</span>
+    <span class="n">vuint64m1_t</span> <span class="n">mask_as_data</span> <span class="o">=</span> <span class="n">__riscv_vreinterpret_v_b32_u64m1</span><span class="p">(</span><span class="n">m</span><span class="p">);</span>
+    <span class="c1">// Extract the lowest 64-bit elements of the vector (i.e. the first element)</span>
+    <span class="kt">uint64_t</span> <span class="n">first_element</span> <span class="o">=</span> <span class="n">__riscv_vmv_x_s_u64m1_u64</span><span class="p">(</span><span class="n">mask_as_data</span><span class="p">);</span>
+    <span class="n">assert</span><span class="p">(</span><span class="n">vl</span> <span class="o">&lt;</span> <span class="mi">64</span><span class="p">);</span>
+    <span class="c1">// Clear the bits beyond vl because they might be garbage.</span>
+    <span class="n">first_element</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Align the relevant bits to the higher part of the register.</span>
+    <span class="n">first_element</span> <span class="o">&lt;&lt;=</span> <span class="mi">64</span> <span class="o">-</span> <span class="n">vl</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">clz</span><span class="p">;</span>
+    <span class="c1">// Compute the leading zeroes.</span>
+    <span class="n">asm</span> <span class="p">(</span><span class="s">"clz %0, %1"</span> <span class="o">:</span> <span class="s">"=r"</span><span class="p">(</span><span class="n">clz</span><span class="p">)</span> <span class="o">:</span> <span class="s">"r"</span><span class="p">(</span><span class="n">first_element</span><span class="p">));</span>
+    <span class="c1">// clz counts the number of leading zeroes, so the first bit set will be</span>
+    <span class="c1">// found at (clz + 1). Because we are counting from the most significant</span>
+    <span class="c1">// bit, we need to reverse the index using vl.</span>
+    <span class="k">return</span> <span class="n">clz</span> <span class="o">==</span> <span class="mi">64</span> <span class="o">?</span> <span class="o">-</span><span class="mi">1</span> <span class="o">:</span> <span class="n">vl</span> <span class="o">-</span> <span class="p">(</span><span class="n">clz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<h2>Using the prefix sum</h2>
+
+<p>This one is a fun and clever approach that still stays inside V and does not
+require any assumption about the number of elements of the mask. It relies on
+the <code class="language-plaintext highlighter-rouge">viota.m</code> instruction that computes the prefix sum of a mask: the result is an
+integer data vector where each element contains the count of elements that are
+set in the corresponding previous elements of the mask.</p>
+
+<p>The count of elements that are set in a mask is called the population count,
+and can be computed using the <code class="language-plaintext highlighter-rouge">vpopc.m</code> instruction. So, the prefix sum is the
+population count of the subrange from the beginning to the mask right before
+the previous element of the current one.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | viota.m         | vpopc.m
+----------+---------------+-----------------+----------
+ mask  | 0 0 0 0 0 0 0 0  | 0 0 0 0 0 0 0 0 | 0
+       | 0 0 0 0 0 0 0 1  | 1 1 1 1 1 1 1 0 | 1
+       | 0 0 0 0 0 0 1 0  | 1 1 1 1 1 1 0 0 | 1
+       | 0 0 0 0 0 1 1 0  | 2 2 2 2 2 1 0 0 | 2
+       | 1 0 0 0 0 0 0 0  | 0 0 0 0 0 0 0 0 | 1
+       | 1 0 0 0 0 1 0 0  | 2 2 2 2 1 0 0 0 | 2
+       | 0 1 1 1 0 1 0 0  | 4 3 2 1 1 0 0 0 | 4
+       | 1 1 1 1 0 1 0 0  | 4 3 2 1 1 0 0 0 | 5
+</code></pre></div></div>
+
+<p>One interesting property of the prefixsum is that the last element is either
+the population count of the mask or that value minus one (in the specific case
+where the largest numbered element is set). We will prove this fact in the next
+part using Lean.</p>
+
+<p>To compute the last bit set we first compute the population count. If the
+population count is zero there is no last bit and the result is trivially -1.
+Now we compute the prefix sum and we compute a mask comparing all the elements
+of the prefix sum with the population count.</p>
+
+<p>If the most significant bit is not set, one of the elements of the prefix sum
+will be exactly the population count. And the first bit where this happens is
+exactly the first zero element after the last bit, so we only have to subtract
+one to the result of <code class="language-plaintext highlighter-rouge">vfirst.m</code>.</p>
+
+<p>If the most significant bit is set, the population count is not found in the
+prefix sum (and <code class="language-plaintext highlighter-rouge">vfirst.m</code> computes -1) but at this point we know there is at
+least one bit, so we know the last bit is exactly the most significant one.</p>
+
+<figure class="highlight"><figcaption>vlast-prefixsum.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_prefixsum</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Compute the population count.</span>
+    <span class="kt">uint64_t</span> <span class="n">popc</span> <span class="o">=</span> <span class="n">__riscv_vcpop_m_b32</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// If no bit is set we're done: there is no last bit.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">popc</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// Compute the prefix sum of the mask.</span>
+    <span class="n">vuint32m1_t</span> <span class="n">prefixsum</span> <span class="o">=</span> <span class="n">__riscv_viota_m_u32m1</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Compute a mask of elements equal to the population count.</span>
+    <span class="n">vbool32_t</span> <span class="n">equal_to_popc</span> <span class="o">=</span> <span class="n">__riscv_vmseq_vx_u32m1_b32</span><span class="p">(</span><span class="n">prefixsum</span><span class="p">,</span> <span class="n">popc</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Get the index of the lowest numbered element equal to the population count.</span>
+    <span class="kt">long</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">__riscv_vfirst_m_b32</span><span class="p">(</span><span class="n">equal_to_popc</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// If there was none, the result is `vl - 1` otherwise `idx - 1` as we</span>
+    <span class="c1">// are always counting only the previous elements.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">vl</span> <span class="o">:</span> <span class="n">idx</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="riscv" /><category term="vectors" /><category term="rvv" /><category term="intrinsics" /><summary type="html"><![CDATA[The RISC-V Vector Extension (RVV) includes several instructions to operate on masks and compute interesting things. One of them is vfirst.m that compute the lowest-numbered element of the mask that is set. However, there is no vlast.m instruction that computes the highest-numbered element of the mask that is set.]]></summary></entry><entry><title type="html">Migrate from VirtualBox to libvirt</title><link href="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/" rel="alternate" type="text/html" title="Migrate from VirtualBox to libvirt" /><published>2025-08-13T00:00:00+00:00</published><updated>2025-08-13T00:00:00+00:00</updated><id>https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt</id><content type="html" xml:base="https://thinkingeek.com/2025/08/13/2025-08-13-migrate-to-libvirt/"><![CDATA[<p>In my day job sometimes I need to edit documents using tools that are only
 available on Windows. As such, I have a virtual machine with Windows 10 running
 on VirtualBox.</p>
 
@@ -3495,613 +4080,4 @@ properties, signals and interfaces must have been registered during class
 initialisationn (not later, like glibmm allows us to do).</p>
 
 <p>And I would like to use C++ to do that, as much as possible. So in a next
-post I will explore some approaches I have been using in my projects.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="gtk" /><category term="gobject" /><category term="gnome" /><category term="cpp" /><category term="cplusplus" /><summary type="html"><![CDATA[GObject is the foundational dynamic type system implemented on top of the C language that is used by many other libraries like GLib, GTK and many other components, most of them part of the GNOME desktop environment stack. I’ve been lately wrapping a C library that uses GObject for C++ and I learned about some of the challenges.]]></summary></entry><entry><title type="html">Bisecting flaky tests with rspec and GitHub Actions</title><link href="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/" rel="alternate" type="text/html" title="Bisecting flaky tests with rspec and GitHub Actions" /><published>2022-08-04T00:00:00+00:00</published><updated>2022-08-04T00:00:00+00:00</updated><id>https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions</id><content type="html" xml:base="https://thinkingeek.com/2022/08/04/rspec-bisect-github-actions/"><![CDATA[<p>Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.</p>
-
-<!--more-->
-
-<h2>Order dependant test failures</h2>
-
-<p>An order dependant test failure is one that happens when:</p>
-
-<ul>
-  <li>There is more than one test being run as part of the suite.</li>
-  <li>One of the test fails only when the suite is run in a specific order.</li>
-</ul>
-
-<p>Let’s simplify things and assume you have a very small test suite consisting of two tests: Test A and Test B. This post will assume we’re using ruby as our language of choice, and rspec as our testing framework, however the fundamentals apply to any other language and good testing framework. In this case, we might be dealing with a situation like this:</p>
-
-<ol>
-  <li>When we run Test A, it passes.</li>
-  <li>When we run Test B, it passes.</li>
-  <li>When we run Test A and Test B, they both pass.</li>
-  <li>When we run Test B and Test A, Test B passes but Test A fails.</li>
-</ol>
-
-<p><img src="/assets/images/bisect-small.png" alt="Test scenarios" title="Test scenarios. Green/Solid node represents a passing test, red/dotted note represents a failing test" class="centered" /></p>
-
-<p>If using rspec in its default configuration, you are probably running your test suite in a random order. This makes rspec generate a random seed and use that seed to determine in which order tests should be run. When running the above test suite using rspec in a random order, you can expect your suite to break roughly 50% of the times.</p>
-
-<p>However, order dependant test failures can be very pernicious because they are introduced silently, they can make your test suite fail only occasionally, which leads to developers being lazy and use the <em>retry the tests until they pass</em> technique. The bogus test doesn’t get dealt with until it’s too late: the test suite now fails <em>often</em>, causing delays in releases, frustration, or even panic situations when the need for a quick release arises: there’s nothing worse than having to hotfix a production issue quickly and not being able to because your test suite keeps failing.</p>
-
-<h2>Bisect to the rescue</h2>
-
-<p>One of the features of rspec is the ability to run a <a href="https://relishapp.com/rspec/rspec-core/docs/command-line/bisect">bisect</a>. Once you discover an order dependant failure and can consistently reproduce it with a fixed seed, it can still be difficult to determine which test is causing the issue. In our example we only have 2 tests, but in bigger test suites the failing test might be executed after other hundreds of tests, making it hard to determine which one of them is the bad apple. Bisect solves that problem by consistently running all your tests to try and determine <em>the minimal set of examples that reproduce the same failures</em>.  The way rou run bisect is by providing rspec with the exact same options and seed that caused the order dependant failure, and adding the <code class="language-plaintext highlighter-rouge">--bisect</code>flag to the CLI. Interally <a href="https://en.wikipedia.org/wiki/Bisection_method">bisect</a> will split tests into two chunks, run those tests, discard the chunk that does not fail, and carry on recursively until the smallest failing number of tests is found.</p>
-
-<h2>Our example</h2>
-
-<p>I have created a proof of concept gem with a test suite that has an order dependant failure. The repository can be checked at <a href="https://github.com/brafales/flaky_specs_poc">brafales/flaky_specs_poc</a>.</p>
-
-<p>If you’re not interested in the nitty gritty of why this particular test suite is problematic and are only interested in the GitHub Actions Workflow file, please skip this section.</p>
-
-<p>The problematic spec in this gem is <a href="https://github.com/brafales/flaky_specs_poc/blob/main/spec/flaky_specs_poc/job_two_spec.rb">spec/flaky_specs_poc/job_two_spec.rb</a>. This proof of concept uses Sidekiq to show a common testing issue with this popular background job processing framework.</p>
-
-<p>Sidekiq works on the basis of jobs, which get pushed into a queue, and then picked up by a worker process. Sidekiq will use a backend to store jobs, for example a redis instance; however, when running your tests you might not want to have to mess around with having a redis instance available for use. For this reason, Sidekiq in test mode uses a virtual backend which will queue jobs in memory, and doesn’t process them by default.</p>
-
-<p>If you want to test a bit of code that queues a Sidekiq job, you do it like this:</p>
-
-<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># frozen_string_literal: true</span>
-
-<span class="nb">require</span> <span class="s2">"sidekiq/testing"</span>
-
-<span class="no">RSpec</span><span class="p">.</span><span class="nf">describe</span> <span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">JobOne</span> <span class="k">do</span>
-  <span class="n">it</span> <span class="s2">"queues an HttpJob"</span> <span class="k">do</span>
-    <span class="n">expect</span> <span class="k">do</span>
-      <span class="n">subject</span><span class="p">.</span><span class="nf">perform</span>
-    <span class="k">end</span><span class="p">.</span><span class="nf">to</span> <span class="n">change</span><span class="p">(</span><span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">HttpJob</span><span class="p">.</span><span class="nf">jobs</span><span class="p">,</span> <span class="ss">:size</span><span class="p">).</span><span class="nf">by</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-</code></pre></div></div>
-
-<p>This is a good way to check that your code did the right thing (queue a job) without having to worry about the specifics about what that job does. It’s essentially the same as mocking a third party HTTP request.</p>
-
-<p>However, sometimes you <em>might</em> want to know not only that a job was queued, but also  that a certain side effect of that job having run took place. One might argue that this is a bad test since we should not be testing for side effects, but the reality is these kind of tests (especially feature or end to end tests) are ubiquitous. For this, Sidekiq provides a <a href="https://github.com/mperham/sidekiq/wiki/Testing">special method</a> that allows you to run jobs that get queued immediately, in an in-line fashion. This method can be used in two ways:</p>
-
-<ul>
-  <li>With a block, where inline test mode will be enabled for the code that runs inside the block, and disabled once the code in the block has been executed.</li>
-  <li>Without a block, which enables inline testing <em>globally</em>.</li>
-</ul>
-
-<p>And it’s very easy to do something like this in a spec where you want your Sidekiq jobs to run inline:</p>
-
-<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># frozen_string_literal: true</span>
-
-<span class="nb">require</span> <span class="s2">"sidekiq/testing"</span>
-
-<span class="no">RSpec</span><span class="p">.</span><span class="nf">describe</span> <span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">JobOne</span> <span class="k">do</span>
-  <span class="n">before</span> <span class="k">do</span>
-    <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Testing</span><span class="p">.</span><span class="nf">inline!</span>
-  <span class="k">end</span>
-
-  <span class="n">it</span> <span class="s2">"checks something done by the HttpJob"</span> <span class="k">do</span>
-    <span class="no">VCR</span><span class="p">.</span><span class="nf">use_cassette</span><span class="p">(</span><span class="s2">"job_one"</span><span class="p">)</span> <span class="k">do</span>
-      <span class="n">subject</span><span class="p">.</span><span class="nf">perform</span>
-    <span class="k">end</span>
-    <span class="n">expect</span><span class="p">(</span><span class="kp">true</span><span class="p">).</span><span class="nf">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-</code></pre></div></div>
-
-<p>What the code above will do when run is to enable Sidekiq inline testing and <em>leaving it on for the rest of the test suite execution</em>. The problem with this is that if another test after this runs and queues a Sidekiq job, that job will be run inline instead of being queued in memory. If that test does not expect that, it’ll fail <em>only if run after the first test</em>.</p>
-
-<p>I’ve recreated this scenario in my gem by having a spec that tests that a job is queued, then having a spec that mistakenly enables inline testing for Sidekiq globally, and finally by having the Sidekiq job that gets queued make an HTTP request. I’m using VCR to record and then mock external HTTP calls.</p>
-
-<p>So what happens is the following:</p>
-
-<ul>
-  <li>If the test that checks if a job is queued runs first, it passes, because no external HTTP calls are made, since the Sidekiq job simply gets queued in memory, but never executed inline.</li>
-  <li>If the test that sets inline testing runs first, then when the other test runs after it, the Sidekiq job <em>will run, make an HTTP call and cause a failure since VCR does not expect that external call to be made</em>.</li>
-</ul>
-
-<p>For reference, this is what a correct way to write this spec is:</p>
-
-<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># frozen_string_literal: true</span>
-
-<span class="nb">require</span> <span class="s2">"sidekiq/testing"</span>
-
-<span class="no">RSpec</span><span class="p">.</span><span class="nf">describe</span> <span class="no">FlakySpecsPoc</span><span class="o">::</span><span class="no">JobOne</span> <span class="k">do</span>
-  <span class="n">around</span> <span class="k">do</span> <span class="o">|</span><span class="n">spec</span><span class="o">|</span>
-    <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Testing</span><span class="p">.</span><span class="nf">inline!</span> <span class="k">do</span>
-      <span class="n">spec</span><span class="p">.</span><span class="nf">call</span>
-    <span class="k">end</span>
-  <span class="k">end</span>
-
-  <span class="n">it</span> <span class="s2">"checks something done by the HttpJob"</span> <span class="k">do</span>
-    <span class="no">VCR</span><span class="p">.</span><span class="nf">use_cassette</span><span class="p">(</span><span class="s2">"job_one"</span><span class="p">)</span> <span class="k">do</span>
-      <span class="n">subject</span><span class="p">.</span><span class="nf">perform</span>
-    <span class="k">end</span>
-    <span class="n">expect</span><span class="p">(</span><span class="kp">true</span><span class="p">).</span><span class="nf">to</span> <span class="n">eq</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-</code></pre></div></div>
-
-<p>You can easily recreate this by running the following command on the gem source code:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>rspec <span class="nt">--order</span><span class="o">=</span>rand <span class="nt">--seed</span><span class="o">=</span>55702
-</code></pre></div></div>
-
-<p>Which should give you this output:</p>
-
-<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-Randomized with seed 55702
-
-FlakySpecsPoc::JobOne
-  checks something done by the HttpJob
-
-FlakySpecsPoc::HttpJob
-  gets a response from a server
-
-FlakySpecsPoc::JobOne
-  queues an HttpJob (FAILED - 1)
-
-Failures:
-
-  1) FlakySpecsPoc::JobOne queues an HttpJob
-     Failure/Error: res = Net::HTTP.get_response(uri)
-
-     VCR::Errors::UnhandledHTTPRequestError:
-
-
-       ================================================================================
-       An HTTP request has been made that VCR does not know how to handle:
-         GET https://reqbin.com/echo/get/json
-
-       There is currently no cassette in use. There are a few ways
-       you can configure VCR to handle this request:
-
-         * If you're surprised VCR is raising this error
-           and want insight about how VCR attempted to handle the request,
-           you can use the debug_logger configuration option to log more details [1].
-         * If you want VCR to record this request and play it back during future test
-           runs, you should wrap your test (or this portion of your test) in a
-           `VCR.use_cassette` block [2].
-         * If you only want VCR to handle requests made while a cassette is in use,
-           configure `allow_http_connections_when_no_cassette = true`. VCR will
-           ignore this request since it is made when there is no cassette [3].
-         * If you want VCR to ignore this request (and others like it), you can
-           set an `ignore_request` callback [4].
-
-       [1] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/debug-logging
-       [2] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/getting-started
-       [3] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/allow-http-connections-when-no-cassette
-       [4] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/ignore-request
-       ================================================================================
-     # ./lib/flaky_specs_poc/http_job.rb:13:in `perform'
-     # ./lib/flaky_specs_poc/job_one.rb:10:in `perform'
-     # ./spec/flaky_specs_poc/job_one_spec.rb:8:in `block (3 levels) in &lt;top (required)&gt;'
-     # ./spec/flaky_specs_poc/job_one_spec.rb:7:in `block (2 levels) in &lt;top (required)&gt;'
-
-Finished in 0.03305 seconds (files took 0.85052 seconds to load)
-3 examples, 1 failure
-
-Failed examples:
-
-rspec ./spec/flaky_specs_poc/job_one_spec.rb:6 # FlakySpecsPoc::JobOne queues an HttpJob
-
-Randomized with seed 55702
-</code></pre></div></div>
-
-<p>Run the same test suite with a different seed though:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>rspec <span class="nt">--order</span><span class="o">=</span>rand <span class="nt">--seed</span><span class="o">=</span>3164
-</code></pre></div></div>
-
-<p>And everything’s good:</p>
-
-<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Randomized with seed 3164
-
-FlakySpecsPoc::HttpJob
-  gets a response from a server
-
-FlakySpecsPoc::JobOne
-  queues an HttpJob
-
-FlakySpecsPoc::JobOne
-  checks something done by the HttpJob
-
-Finished in 0.02717 seconds (files took 0.39785 seconds to load)
-3 examples, 0 failures
-
-Randomized with seed 3164
-</code></pre></div></div>
-
-<p>In this case, given we have very little tests, this could be relatively easy to debug manually, but with a bigger test suite we can use rspect bisect:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bundle <span class="nb">exec </span>rspec <span class="nt">--order</span><span class="o">=</span>rand <span class="nt">--seed</span><span class="o">=</span>55702 <span class="nt">--bisect</span>
-</code></pre></div></div>
-
-<p>Which will give us the following:</p>
-
-<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Bisect started using options: "--order=rand --seed=55702"
-Running suite to find failures... (0.10595 seconds)
-Starting bisect with 1 failing example and 2 non-failing examples.
-Checking that failure(s) are order-dependent... failure appears to be order-dependent
-
-Round 1: bisecting over non-failing examples 1-2 .. ignoring example 2 (0.19095 seconds)
-Bisect complete! Reduced necessary non-failing examples from 2 to 1 in 0.25318 seconds.
-
-The minimal reproduction command is:
-  rspec './spec/flaky_specs_poc/job_one_spec.rb[1:1]' './spec/flaky_specs_poc/job_two_spec.rb[1:1]' --order=rand --seed=55702
-</code></pre></div></div>
-
-<p>And now we know how to consistently reproduce the error with the minimum number of tests, which will make pinpointing the sneaky bogus test easier.</p>
-
-<h2>Automating bisects</h2>
-
-<p>The next step is clear: automate it! I’m going to show you a GitHub Actions Workflow that will automatically run a bisect on a failing test suite.</p>
-
-<p>First of all a couple of disclaimers:</p>
-
-<ul>
-  <li>This has not been productionised, so as usual, use at your own risk ;)</li>
-  <li>This flow does a bisect on failing test suites. This will make your test pipeline slower, since a bunch of failing tests will be run twice, <em>including failures which are not caused by flaky tests!</em></li>
-</ul>
-
-<p>Here’s the complete flow:</p>
-
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">name</span><span class="pi">:</span> <span class="s">Ruby</span>
-
-<span class="na">on</span><span class="pi">:</span>
-  <span class="na">push</span><span class="pi">:</span>
-    <span class="na">branches</span><span class="pi">:</span>
-      <span class="pi">-</span> <span class="s">main</span>
-
-  <span class="na">pull_request</span><span class="pi">:</span>
-
-<span class="na">jobs</span><span class="pi">:</span>
-  <span class="na">RunTests</span><span class="pi">:</span>
-    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">ubuntu-latest</span>
-    <span class="na">steps</span><span class="pi">:</span>
-    <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v2</span>
-    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Set up Ruby</span>
-      <span class="na">uses</span><span class="pi">:</span> <span class="s">ruby/setup-ruby@v1</span>
-      <span class="na">with</span><span class="pi">:</span>
-        <span class="na">bundler-cache</span><span class="pi">:</span> <span class="no">true</span>
-    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Run the tests</span>
-      <span class="na">id</span><span class="pi">:</span> <span class="s">tests</span>
-      <span class="na">continue-on-error</span><span class="pi">:</span> <span class="no">true</span>
-      <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand -f j -o tmp/rspec_results.json</span>
-    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Bisect flaky specs</span>
-      <span class="na">if</span><span class="pi">:</span> <span class="s">steps.tests.outcome != 'success'</span>
-      <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand --seed $(cat tmp/rspec_results.json | jq '.seed') --bisect</span>
-</code></pre></div></div>
-
-<p>The first bit of the flow is a pretty standard way of doing things. The bits that interest us are the <code class="language-plaintext highlighter-rouge">Run the tests</code>and <code class="language-plaintext highlighter-rouge">Bisect flaky specs</code> steps.</p>
-
-<p>This step will run our tests:</p>
-
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Run the tests</span>
-  <span class="na">id</span><span class="pi">:</span> <span class="s">tests</span>
-  <span class="na">continue-on-error</span><span class="pi">:</span> <span class="no">true</span>
-  <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand -f j -o tmp/rspec_results.json</span>
-</code></pre></div></div>
-
-<ul>
-  <li><code class="language-plaintext highlighter-rouge">--order=rand</code> will ensure the suite is run in random order.</li>
-  <li><code class="language-plaintext highlighter-rouge">-f j</code> will make sure the output of the tests is in JSON format. This is important since we need to be able to parse the test results easily.</li>
-  <li><code class="language-plaintext highlighter-rouge">-o tmp/rspec_results.json</code> sends the results into a file instead of <code class="language-plaintext highlighter-rouge">STDOUT</code>.</li>
-  <li>We also use <code class="language-plaintext highlighter-rouge">continue-on-error: true</code> to tell GitHub Actions that when the tests fail, the rest of the steps will still be executed, otherwise on a test failure the flow would immediately end.</li>
-</ul>
-
-<p>And this is the step that will run a bisect:</p>
-
-<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Bisect flaky specs</span>
-  <span class="na">if</span><span class="pi">:</span> <span class="s">steps.tests.outcome != 'success'</span>
-  <span class="na">run</span><span class="pi">:</span> <span class="s">bundle exec rspec --order=rand --seed $(cat tmp/rspec_results.json | jq '.seed') --bisect</span>
-</code></pre></div></div>
-
-<p>A few noteworthy bits:</p>
-
-<ul>
-  <li><code class="language-plaintext highlighter-rouge">if: steps.tests.outcome != 'success'</code> will ensure this step is only run if the original test suite failed.</li>
-  <li>We use <code class="language-plaintext highlighter-rouge">cat tmp/rspec_results.json | jq '.seed'</code> to get the seed that was originally used to run the tests, so we can pass it to the bisect.</li>
-</ul>
-
-<p>For reference, this is what an rspec result in JSON format looks like:</p>
-
-<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-    </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3.11.0"</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"seed"</span><span class="p">:</span><span class="w"> </span><span class="mi">55702</span><span class="p">,</span><span class="w">
-    </span><span class="nl">"examples"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_two_spec.rb[1:1]"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checks something done by the HttpJob"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"full_description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FlakySpecsPoc::JobOne checks something done by the HttpJob"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"file_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_two_spec.rb"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"line_number"</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"run_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.009731</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"pending_message"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
-        </span><span class="p">},</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/http_job_spec.rb[1:1]"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gets a response from a server"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"full_description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FlakySpecsPoc::HttpJob gets a response from a server"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passed"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"file_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/http_job_spec.rb"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"line_number"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"run_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.003383</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"pending_message"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
-        </span><span class="p">},</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-            </span><span class="nl">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_one_spec.rb[1:1]"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"queues an HttpJob"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"full_description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FlakySpecsPoc::JobOne queues an HttpJob"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"failed"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"file_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./spec/flaky_specs_poc/job_one_spec.rb"</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"line_number"</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"run_time"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.021981</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"pending_message"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-            </span><span class="nl">"exception"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-                </span><span class="nl">"class"</span><span class="p">:</span><span class="w"> </span><span class="s2">"VCR::Errors::UnhandledHTTPRequestError"</span><span class="p">,</span><span class="w">
-                </span><span class="nl">"message"</span><span class="p">:</span><span class="w"> </span><span class="s2">"</span><span class="se">\n\n</span><span class="s2">================================================================================</span><span class="se">\n</span><span class="s2">An HTTP request has been made that VCR does not know how to handle:</span><span class="se">\n</span><span class="s2">  GET https://reqbin.com/echo/get/json</span><span class="se">\n\n</span><span class="s2">There is currently no cassette in use. There are a few ways</span><span class="se">\n</span><span class="s2">you can configure VCR to handle this request:</span><span class="se">\n\n</span><span class="s2">  * If you're surprised VCR is raising this error</span><span class="se">\n</span><span class="s2">    and want insight about how VCR attempted to handle the request,</span><span class="se">\n</span><span class="s2">    you can use the debug_logger configuration option to log more details [1].</span><span class="se">\n</span><span class="s2">  * If you want VCR to record this request and play it back during future test</span><span class="se">\n</span><span class="s2">    runs, you should wrap your test (or this portion of your test) in a</span><span class="se">\n</span><span class="s2">    `VCR.use_cassette` block [2].</span><span class="se">\n</span><span class="s2">  * If you only want VCR to handle requests made while a cassette is in use,</span><span class="se">\n</span><span class="s2">    configure `allow_http_connections_when_no_cassette = true`. VCR will</span><span class="se">\n</span><span class="s2">    ignore this request since it is made when there is no cassette [3].</span><span class="se">\n</span><span class="s2">  * If you want VCR to ignore this request (and others like it), you can</span><span class="se">\n</span><span class="s2">    set an `ignore_request` callback [4].</span><span class="se">\n\n</span><span class="s2">[1] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/debug-logging</span><span class="se">\n</span><span class="s2">[2] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/getting-started</span><span class="se">\n</span><span class="s2">[3] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/allow-http-connections-when-no-cassette</span><span class="se">\n</span><span class="s2">[4] https://www.relishapp.com/vcr/vcr/v/6-1-0/docs/configuration/ignore-request</span><span class="se">\n</span><span class="s2">================================================================================</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">,</span><span class="w">
-                </span><span class="nl">"backtrace"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-                    </span><span class="s2">"REDACTED FOR LEGIBILITY"</span><span class="w">
-                </span><span class="p">]</span><span class="w">
-            </span><span class="p">}</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-    </span><span class="p">],</span><span class="w">
-    </span><span class="nl">"summary"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-        </span><span class="nl">"duration"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.037856</span><span class="p">,</span><span class="w">
-        </span><span class="nl">"example_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
-        </span><span class="nl">"failure_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
-        </span><span class="nl">"pending_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
-        </span><span class="nl">"errors_outside_of_examples_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="w">
-    </span><span class="p">},</span><span class="w">
-    </span><span class="nl">"summary_line"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3 examples, 1 failure"</span><span class="w">
-</span><span class="p">}</span><span class="w">
-</span></code></pre></div></div>
-
-<p>What we do with this file is send it to the <a href="https://stedolan.github.io/jq/">jq</a> tool for parsing, and telling it to get us the value for top level key <code class="language-plaintext highlighter-rouge">seed</code>. jq is a really useful and powerful tool so I suggest you check it out if you’re unfamiliar with it.</p>
-
-<p>Below you can see a screenshot of this flow successfully bisecting our example test suite.</p>
-
-<p><img src="/assets/images/github-actions-bisect.png" alt="GitHub Actions Workflow" title="GitHub Actions Workflow" class="centered" /></p>
-
-<h2>Conclusions</h2>
-
-<p>In this post we have learned about a specific, pernicious test failure that manifests itself when a test suite is run in a specific order. We have then seen how a technique called bisecting can help determine what test of potentially many is causing te failure. Last but not least, we have shown a GitHub Actions Workflow that will automatically run the bisect task when a test suite fails to execute.</p>
-
-<p>This is a very small, toy example of how to make this work. Your real life test suites are probably a lot more complex, bigger, and so this example might not work for you, but the fundamentals should be the same.</p>]]></content><author><name>Bernat Ràfales</name></author><category term="ruby" /><category term="testing" /><category term="github-actions" /><category term="rspec" /><summary type="html"><![CDATA[Ah, those good, old flaky test suites! Sooner or later you’ll encounter one of them. They are test suites that sometimes pass, sometimes fail, depending on certain environmental conditions. A lot has been written about flaky tests and what causes them, but in this post I’d like to discuss a specific type of flaky test –order dependant test failures–, and how to help debug them using GitHub Actions as part of your CI/CD pipelines.]]></summary></entry><entry><title type="html">OpenSSH as a SOCKS server</title><link href="https://thinkingeek.com/2022/01/03/ssh-and-socks/" rel="alternate" type="text/html" title="OpenSSH as a SOCKS server" /><published>2022-01-03T22:03:00+00:00</published><updated>2022-01-03T22:03:00+00:00</updated><id>https://thinkingeek.com/2022/01/03/ssh-and-socks</id><content type="html" xml:base="https://thinkingeek.com/2022/01/03/ssh-and-socks/"><![CDATA[<p>Sometimes we are given access via ssh to nodes that do not have, for policy or
-technical reasons, access to the internet (i.e. they cannot make outbound
-connections).  Depending on the policies, we may be able to open reverse SSH
-tunnels, so things are not so bad.</p>
-
-<p>Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated.
-This is probably a well known feature of OpenSSH but I thought it was
-interesting to share how it can be used.</p>
-
-<!--more-->
-
-<h2>SOCKS</h2>
-
-<p>Nowadays, access to the Internet is ubiquitous and most of the time assumed as
-a fact. However, in some circumstances, direct access to the internet is not
-available or not desirable. In those cases we can resort on proxy servers that
-act as intermediaries between the Internet and the node without direct access.</p>
-
-<p>Many tools used commonly assume one is connected to the Internet: package
-managers such as <code class="language-plaintext highlighter-rouge">pip</code> and <code class="language-plaintext highlighter-rouge">cargo</code> can automatically download the files
-required to install a package. If no outbound connection is possible,
-software deployment and installation becomes complicated.</p>
-
-<p>However, most of the time, those tools only require HTTP/HTTPS support. So
-a proxy that only forwards HTTP and HTTPS requests is enough. Examples
-of these kind of proxies are <a href="http://tinyproxy.github.io/">tinyproxy</a> and
-<a href="http://www.squid-cache.org/">squid</a>.</p>
-
-<p><a href="https://en.wikipedia.org/wiki/SOCKS">SOCKS</a>, is a general proxy protocol that
-can be used for any TCP connection, not only those for HTTP/HTTPS. An
-interesting thing is that <code class="language-plaintext highlighter-rouge">ssh</code> comes with an integrated SOCKS proxy which is
-relatively easy to use. Often most tools that can use a HTTP/HTTPS proxy can
-also use a SOCKS proxy so this is a handy option to consider.</p>
-
-<h2>Example: Installing Rust through a proxy</h2>
-
-<p>If we try to install <a href="https://www.rust-lang.org/learn/get-started">Rust</a> on a
-machine that does not allow outbound connections, this is what happens. (Let’s
-ignore the question whether piping a download directly to the shell is a
-reasonable thing to do).</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>curl <span class="nt">--proto</span> <span class="s1">'=https'</span> <span class="nt">--tlsv1</span>.2 <span class="nt">-sSf</span> https://sh.rustup.rs | sh
-</code></pre></div></div>
-
-<p>This command will likely time out after a long time because outbound
-connections are silently dropped and the installation will fail.</p>
-
-<h3>Set up proxy server</h3>
-
-<p>To address this, let’s first open a SOCKS proxy using <code class="language-plaintext highlighter-rouge">ssh</code> on our local machine
-(<code class="language-plaintext highlighter-rouge">with-internet</code>). This machine <strong>must</strong> have internet access (change <code class="language-plaintext highlighter-rouge">user</code> to
-your username). <code class="language-plaintext highlighter-rouge">ssh</code> will request you to authenticate (via password or ssh
-key).</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>ssh <span class="nt">-N</span> <span class="nt">-D</span> 127.0.0.1:12345 user@localhost
-</code></pre></div></div>
-
-<p>The flag <code class="language-plaintext highlighter-rouge">-N</code> means not to execute a command and <code class="language-plaintext highlighter-rouge">-D interface:port</code> means to
-open the <code class="language-plaintext highlighter-rouge">port</code> bound to the <code class="language-plaintext highlighter-rouge">interface</code>. This is the SOCKS proxy. In this
-example we are opening port 12345 and binding it to the 127.0.0.1 (localhost)
-interface. We are using the same machine as the proxy, hence <code class="language-plaintext highlighter-rouge">user@localhost</code>
-(it is possible to use another node, but we don’t have to given that
-<code class="language-plaintext highlighter-rouge">with-internet</code> already can connect to the internet). This must stay running so
-you will have to open another terminal and set up the reverse tunnel.</p>
-
-<p>To set up the reverse tunnel do the following.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>ssh <span class="nt">-R</span> 127.0.0.1:9999:127.0.0.1:12345 <span class="nt">-N</span> user@no-internet
-</code></pre></div></div>
-
-<p>This opens the port 9999 in the host without internet (<code class="language-plaintext highlighter-rouge">no-internet</code>) and binds
-it to its localhost (i.e. the <code class="language-plaintext highlighter-rouge">localhost</code> of <code class="language-plaintext highlighter-rouge">no-internet</code>) then it tunnels it
-to the port 12345 bound to the interface <code class="language-plaintext highlighter-rouge">127.0.0.1</code> of our local node
-(<code class="language-plaintext highlighter-rouge">with-internet</code>). Again this will not run any command (due to <code class="language-plaintext highlighter-rouge">-N</code>) and the
-syntax of -R is <code class="language-plaintext highlighter-rouge">-R remote-interface:remote-port:local-interface:local-port</code>.
-Keep this command running.</p>
-
-<p><strong>Note:</strong> Because we are using an unprivileged port on <code class="language-plaintext highlighter-rouge">no-internet</code> and the
-<code class="language-plaintext highlighter-rouge">-D</code> option does not allow setting authentication, anyone in <code class="language-plaintext highlighter-rouge">no-internet</code>
-could proxy connections through <code class="language-plaintext highlighter-rouge">with-internet</code>. Do this only on a
-<code class="language-plaintext highlighter-rouge">no-internet</code> host you trust.</p>
-
-<h3>Proxy configuration</h3>
-
-<p>Now we can setup <code class="language-plaintext highlighter-rouge">curl</code> to use a socks proxy. We do this with the
-<code class="language-plaintext highlighter-rouge">--proxy-option</code>. For convenience we will first download the installation
-script into a file.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>curl <span class="nt">--proto</span> <span class="s1">'=https'</span> <span class="nt">--tlsv1</span>.2 <span class="nt">-sSf</span> https://sh.rustup.rs <span class="se">\</span>
-                       <span class="nt">--proxy</span> socks5://localhost:9999 <span class="nt">-o</span>  install-rust.sh
-</code></pre></div></div>
-
-<p>We can do a quick check that it contains what we expect</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span><span class="nb">head </span>install-rust.sh 
-<span class="c">#!/bin/sh</span>
-<span class="c"># shellcheck shell=dash</span>
-
-<span class="c"># This is just a little script that can be downloaded from the internet to</span>
-<span class="c"># install rustup. It just does platform detection, downloads the installer</span>
-<span class="c"># and runs it.</span>
-
-<span class="c"># It runs on Unix shells like {a,ba,da,k,z}sh. It uses the common `local`</span>
-<span class="c"># extension. Note: Most shells limit `local` to 1 var per line, contra bash.</span>
-</code></pre></div></div>
-
-<h3>Install Rust</h3>
-
-<p>We can set up <code class="language-plaintext highlighter-rouge">https_proxy</code> environment variable to point to the SOCKS
-server so it is used by the installation script.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span><span class="nb">export </span><span class="nv">https_proxy</span><span class="o">=</span>socks5://localhost:9999
-</code></pre></div></div>
-
-<p>Now we are read to install Rust using the script we downloaded.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet <span class="nv">$ </span>bash install-rust.sh 
-</code></pre></div></div>
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>info: downloading installer
-
-Welcome to Rust!
-
-This will download and install the official compiler for the Rust
-programming language, and its package manager, Cargo.
-
-Rustup metadata and toolchains will be installed into the Rustup
-home directory, located at:
-
-  /home/user/.rustup
-
-This can be modified with the RUSTUP_HOME environment variable.
-
-The Cargo home directory located at:
-
-  /home/user/.cargo
-
-This can be modified with the CARGO_HOME environment variable.
-
-The cargo, rustc, rustup and other commands will be added to
-Cargo's bin directory, located at:
-
-  /home/user/.cargo/bin
-
-This path will then be added to your PATH environment variable by
-modifying the profile files located at:
-
-  /home/user/.profile
-  /home/user/.zshenv
-
-You can uninstall at any time with rustup self uninstall and
-these changes will be reverted.
-
-Current installation options:
-
-
-   default host triple: x86_64-unknown-linux-gnu
-     default toolchain: stable (default)
-               profile: default
-  modify PATH variable: yes
-
-1) Proceed with installation (default)
-2) Customize installation
-3) Cancel installation
-&gt;1
-
-info: profile set to 'default'
-info: default host triple is x86_64-unknown-linux-gnu
-info: syncing channel updates for 'stable-x86_64-unknown-linux-gnu'
-info: latest update on 2021-12-02, rust version 1.57.0 (f1edd0429 2021-11-29)
-info: downloading component 'cargo'
-info: downloading component 'clippy'
-info: downloading component 'rust-docs'
-info: downloading component 'rust-std'
- 24.9 MiB /  24.9 MiB (100 %)  19.9 MiB/s in  1s ETA:  0s
-info: downloading component 'rustc'
- 53.9 MiB /  53.9 MiB (100 %)  20.1 MiB/s in  2s ETA:  0s
-info: downloading component 'rustfmt'
-info: installing component 'cargo'
-info: installing component 'clippy'
-info: installing component 'rust-docs'
-  5.3 MiB /  17.9 MiB ( 29 %)   1.7 MiB/s in  6s ETA:  7s
-...
-</code></pre></div></div>
-
-<p>Once Rust is installed, <a href="https://doc.rust-lang.org/cargo/reference/config.html#httpproxy">you can setup <code class="language-plaintext highlighter-rouge">cargo</code> so it always uses this
-proxy</a>.</p>
-
-<h2>Example: Using pip using SOCKS</h2>
-
-<p><code class="language-plaintext highlighter-rouge">pip</code> is used to install Python packages. Unfortunately <code class="language-plaintext highlighter-rouge">pip</code> does not support
-SOCKS by default. If you try to install <a href="https://github.com/google/yapf">yapf</a>
-using the configuration above this happens:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>pip <span class="nb">install</span> <span class="nt">--proxy</span><span class="o">=</span>socks5://localhost:9999 yapf
-Collecting yapf
-ERROR: Could not <span class="nb">install </span>packages due to an EnvironmentError: Missing dependencies <span class="k">for </span>SOCKS support.
-</code></pre></div></div>
-
-<p>Based on <a href="https://stackoverflow.com/a/68745571">this answer from Stack Overflow</a>
-we need to first install <code class="language-plaintext highlighter-rouge">pysocks</code>. Now we have a chicken-and-egg situation
-that we need to solve: we cannot download <code class="language-plaintext highlighter-rouge">pysocks</code> on the <code class="language-plaintext highlighter-rouge">no-internet</code> machine!
-To solve it, download <code class="language-plaintext highlighter-rouge">pysocks</code> locally:</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>python3 <span class="nt">-m</span> pip download pysocks
-Collecting pysocks
-  Downloading PySocks-1.7.1-py3-none-any.whl <span class="o">(</span>16 kB<span class="o">)</span>
-Saved ./PySocks-1.7.1-py3-none-any.whl
-Successfully downloaded pysocks
-</code></pre></div></div>
-
-<p>Copy this <a href="https://pythonwheels.com/">python wheels</a> file to <code class="language-plaintext highlighter-rouge">no-internet</code>, for
-instance using <code class="language-plaintext highlighter-rouge">scp</code>.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@with-internet<span class="nv">$ </span>scp PySocks-1.7.1-py3-none-any.whl user@no-internet
-</code></pre></div></div>
-
-<p>And install it manually there. I’m installing it in the user environment
-(<code class="language-plaintext highlighter-rouge">--user</code> flag) because in this machine I don’t have enough permissions, but
-your mileage may vary here.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>pip <span class="nb">install</span> <span class="nt">--user</span> PySocks-1.7.1-py3-none-any.whl 
-Processing ./PySocks-1.7.1-py3-none-any.whl
-Installing collected packages: PySocks
-Successfully installed PySocks-1.7.1
-</code></pre></div></div>
-
-<p>If we use pip and SOCKS, now we succeed.</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>user@no-internet<span class="nv">$ </span>pip <span class="nb">install</span> <span class="nt">--user</span> <span class="nt">--proxy</span><span class="o">=</span>socks5://localhost:9999 yapf
-Collecting yapf
-  Downloading https://files.pythonhosted.org/packages/47/88/843c2e68f18a5879b4fbf37cb99fbabe1ffc4343b2e63191c8462235c008/yapf-0.32.0-py2.py3-none-any.whl <span class="o">(</span>190kB<span class="o">)</span>
-     |████████████████████████████████| 194kB 933kB/s 
-Installing collected packages: yapf
-Successfully installed yapf-0.32.0
-</code></pre></div></div>
-
-<p>Yay!</p>
-
-<h3>Cleanup</h3>
-
-<p>Recall that we have two connections opened: one is the SOCKS proxy (<code class="language-plaintext highlighter-rouge">-D</code>) and
-the other the reverse tunnel (<code class="language-plaintext highlighter-rouge">-R</code>). Just end them both with Ctrl-C and you are
-done. I’m sure this can be scripted somehow but given that the <code class="language-plaintext highlighter-rouge">ssh</code> commands
-may require password input, this is not a trivial thing to do.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="SOCKS" /><category term="proxy" /><category term="ssh" /><summary type="html"><![CDATA[Sometimes we are given access via ssh to nodes that do not have, for policy or technical reasons, access to the internet (i.e. they cannot make outbound connections). Depending on the policies, we may be able to open reverse SSH tunnels, so things are not so bad. Recently I discovered that OpenSSH comes with a SOCKS proxy server integrated. This is probably a well known feature of OpenSSH but I thought it was interesting to share how it can be used.]]></summary></entry></feed>
+post I will explore some approaches I have been using in my projects.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="gtk" /><category term="gobject" /><category term="gnome" /><category term="cpp" /><category term="cplusplus" /><summary type="html"><![CDATA[GObject is the foundational dynamic type system implemented on top of the C language that is used by many other libraries like GLib, GTK and many other components, most of them part of the GNOME desktop environment stack. I’ve been lately wrapping a C library that uses GObject for C++ and I learned about some of the challenges.]]></summary></entry></feed>

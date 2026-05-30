@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>The last bit – Part 2</title>
+  <meta name="description" content="In the previous part we ended with a nifty way of computing the last bit of a mask using the prefix sum. The key of the approch is based on the fact that the last element of the prefix sum of a mask is either the population count or population count minus one. Let’s prove that using Lean.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="The last bit – Part 2">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/">
+  <meta property="og:description" content="In the previous part we ended with a nifty way of computing the last bit of a mask using the prefix sum. The key of the approch is based on the fact that the last element of the prefix sum of a mask is either the population count or population count minus one. Let’s prove that using Lean.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="The last bit – Part 2">
+  <meta name="twitter:description" content="In the previous part we ended with a nifty way of computing the last bit of a mask using the prefix sum. The key of the approch is based on the fact that the last element of the prefix sum of a mas...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/series/">Series</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">The last bit – Part 2</h1>
+    
+    <p class="post-meta"><time datetime="2026-05-30T00:00:00+00:00" itemprop="datePublished">May 30, 2026</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the previous part we ended with a nifty way of computing the last bit of
+a mask using the prefix sum. The key of the approch is based on the fact that
+the last element of the prefix sum of a mask is either the population count
+or population count minus one.</p>
+
+<p>Let’s prove that using Lean.</p>
+
+<!--more-->
+
+<h1>What we want to prove</h1>
+
+<p>Given the following two definitions, we want to prove the presented Theorem.</p>
+
+<figure>
+    <img src="/assets/images/popc-theorem.svg" alt="Definifitions of popc and prefixsum" />
+</figure>
+
+<p>This is pretty obvious after thinking about it for a bit but we will prove it
+anyways.</p>
+
+<h1>Lean</h1>
+
+<p>Lean is a functional programming language built on top of a powerful formalism
+called calculus of constructions and supporting a thing called inductive types
+(types built on top of other types in a systematic way). But the most
+interesting part of Lean is its capability as a proof assistant.</p>
+
+<p>There is ample <a href="https://lean-lang.org/learn/">documentation</a> of the Lean
+language covering the different users and use cases.</p>
+
+<h1>Representation</h1>
+
+<p>While Lean supports <code class="language-plaintext highlighter-rouge">Array</code> and <code class="language-plaintext highlighter-rouge">Vector</code> types, it will make everything a bit
+simpler if we prove it using plain old <code class="language-plaintext highlighter-rouge">List</code> types. Functional languages have
+excellent support for list-like types due to its <em>inductive</em> way of
+constructing them (a list is either the empty list, or the resulting list of
+prepending an element in front of an existing list). In fact, in Lean, sees
+<code class="language-plaintext highlighter-rouge">Array</code> (proof-wise) as a wrapper to a <code class="language-plaintext highlighter-rouge">List</code> (where the size is cached in the
+data type itself, rather than being recomputed as in the length of a <code class="language-plaintext highlighter-rouge">List</code>)
+and a <code class="language-plaintext highlighter-rouge">Vector</code> is a wrapper of an <code class="language-plaintext highlighter-rouge">Array</code> where the size is a parameter of the
+type making it a dependent type. <code class="language-plaintext highlighter-rouge">Vector</code> being a dependent type means that
+some proofs get a bit hairy specially if we intend to use induction (that we
+will because makes things easier).</p>
+
+<p>It makes sense to represent the 1 and 0 above by the <code class="language-plaintext highlighter-rouge">true</code> and <code class="language-plaintext highlighter-rouge">false</code> terms
+of type <code class="language-plaintext highlighter-rouge">Bool</code>. For this reason we will define an alias <code class="language-plaintext highlighter-rouge">Mask</code> to be a <code class="language-plaintext highlighter-rouge">List
+Bool</code>.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">abbrev</span> <span class="n">Mask</span> := <span class="n">List</span> <span class="n">Bool</span></code></pre></figure>
+
+<h1>Population count</h1>
+
+<p>Now we can define <code class="language-plaintext highlighter-rouge">popc</code> using the <code class="language-plaintext highlighter-rouge">List.count</code> function that basically counts
+the number of ocurrences that are <code class="language-plaintext highlighter-rouge">true</code> in a given mask.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">def</span> <span class="n">popc</span> (<span class="n">m</span>: <span class="n">Mask</span>) : <span class="n">Nat</span> := <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">m</span></code></pre></figure>
+
+<p>We can already define some very simple theorems as a warm up for <code class="language-plaintext highlighter-rouge">popc</code>. They
+are very simple so the <code class="language-plaintext highlighter-rouge">rfl</code> tactic is enough.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_of_empty_is_zero</span> : <span class="n">popc</span> [] <span class="o">=</span> <span class="mi">0</span> := <span class="k">by</span> <span class="k">rfl</span>
+
+<span class="k">theorem</span> <span class="n">popc_of_singleton_false</span> : <span class="n">popc</span> [<span class="k">false</span>] <span class="o">=</span> <span class="mi">0</span> := <span class="k">by</span> <span class="k">rfl</span>
+<span class="k">theorem</span> <span class="n">popc_of_singleton_true</span> : <span class="n">popc</span> [<span class="k">true</span>] <span class="o">=</span> <span class="mi">1</span> := <span class="k">by</span> <span class="k">rfl</span></code></pre></figure>
+
+<p>We can generalise the last two theorems into a single one.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_of_singleton</span> : <span class="n">popc</span> [<span class="n">b</span>] <span class="o">=</span> <span class="n">if</span> <span class="n">b</span> <span class="n">then</span> <span class="mi">1</span> <span class="n">else</span> <span class="mi">0</span> := <span class="k">by</span>
+  <span class="k">cases</span> <span class="n">b</span> <span class="k">with</span>
+  <span class="o">|</span> <span class="k">true</span> <span class="o">=&gt;</span> <span class="k">rw</span>[<span class="n">popc_of_singleton_true</span>]<span class="o">;</span> <span class="k">rfl</span>
+  <span class="o">|</span> <span class="k">false</span> <span class="o">=&gt;</span> <span class="k">rw</span>[<span class="n">popc_of_singleton_false</span>]<span class="o">;</span> <span class="k">rfl</span></code></pre></figure>
+
+<p>Now we will prove that <code class="language-plaintext highlighter-rouge">popc</code> of a list that has been prepended an element is
+the popcount of that list plus whether that element is true or false. Before that
+we need a small helper</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">count_true_is_boolean</span> (<span class="n">x</span>: <span class="n">Bool</span>) : <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">=</span> <span class="n">if</span> <span class="n">x</span> <span class="n">then</span> <span class="mi">1</span> <span class="n">else</span> <span class="mi">0</span> := <span class="k">by</span> <span class="k">grind</span></code></pre></figure>
+
+<p>In some of our proofs we will slightly (ab)use the <code class="language-plaintext highlighter-rouge">grind</code> tactic. It feels a
+bit like cheating but my colleagues with more knowledge than me on these topics
+tell me that it is fine.</p>
+
+<p>Now we can prove that <code class="language-plaintext highlighter-rouge">popc</code> of prepending a mask with another element is basically the <code class="language-plaintext highlighter-rouge">popc</code> of that list
+and adding one if the new element prepended is <code class="language-plaintext highlighter-rouge">true</code>.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_of_cons</span> : <span class="n">popc</span> (<span class="n">a</span> :: <span class="n">b</span>) <span class="o">=</span> (<span class="n">if</span> <span class="n">a</span> <span class="n">then</span> <span class="mi">1</span> <span class="n">else</span> <span class="mi">0</span>) <span class="o">+</span> <span class="n">popc</span> <span class="n">b</span> := <span class="k">by</span>
+  <span class="k">induction</span> <span class="n">b</span> <span class="k">with</span>
+  <span class="o">|</span> <span class="k">nil</span> <span class="o">=&gt;</span> <span class="k">rw</span> [<span class="n">popc_of_empty_is_zero</span>]
+           <span class="k">rw</span> [<span class="n">popc_of_singleton</span>]
+           <span class="k">simp</span>
+  <span class="o">|</span> <span class="k">cons</span> <span class="n">x</span> <span class="n">b1</span> <span class="n">ih</span> <span class="o">=&gt;</span> <span class="k">unfold</span> <span class="n">popc</span>
+                    <span class="k">have</span> <span class="n">count_associates_1</span> : <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">a</span> :: <span class="n">x</span> :: <span class="n">b1</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">a</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">b1</span> := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">have</span> <span class="n">count_associates_2</span> : <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">x</span> :: <span class="n">b1</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">b1</span>  := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">rw</span> [<span class="n">count_associates_1</span>]
+                    <span class="k">rw</span> [<span class="n">count_associates_2</span>]
+                    <span class="k">rw</span> [<span class="n">count_true_is_boolean</span> <span class="n">x</span>]
+                    <span class="k">rw</span> [<span class="n">count_true_is_boolean</span> <span class="n">a</span>]
+                    <span class="k">ring</span></code></pre></figure>
+
+<p>Using a <code class="language-plaintext highlighter-rouge">List</code> is convenient because we can prove using <code class="language-plaintext highlighter-rouge">induction</code>. The base
+case is prepending to an empty list. We will be using <code class="language-plaintext highlighter-rouge">rw</code> a lot as we are
+basically proving equalities. Then we prove it for the inductive case and this needs
+to rewrite the inductive case until we get something simple enough.</p>
+
+<p>Finally we want to prove that <code class="language-plaintext highlighter-rouge">popc</code> distributes over kind concatenation (I
+called it associates in the proof but I don’t think this is the right
+terminology).</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">popc_associates</span> : <span class="n">popc</span> (<span class="n">a</span> <span class="o">++</span> <span class="n">b</span>) <span class="o">=</span> <span class="n">popc</span> <span class="n">a</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">b</span> := <span class="k">by</span>
+ <span class="k">induction</span> <span class="n">a</span> <span class="k">with</span>
+  <span class="o">|</span> <span class="k">nil</span> <span class="o">=&gt;</span> <span class="k">rw</span> [<span class="n">popc_of_empty_is_zero</span>]<span class="o">;</span> <span class="k">simp</span>
+  <span class="o">|</span> <span class="k">cons</span> <span class="n">x</span> <span class="n">a1</span> <span class="n">ih</span> <span class="o">=&gt;</span> <span class="k">unfold</span> <span class="n">popc</span>
+                    <span class="k">have</span> <span class="n">count_associates_1</span>: <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">x</span> :: <span class="n">a1</span> <span class="o">++</span> <span class="n">b</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">a1</span> <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">b</span> := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">have</span> <span class="n">count_associates_2</span>: <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> (<span class="n">x</span> :: <span class="n">a1</span>) <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> [<span class="n">x</span>] <span class="o">+</span> <span class="n">List</span><span class="o">.</span><span class="n">count</span> <span class="k">true</span> <span class="n">a1</span> := <span class="k">by</span> <span class="k">grind</span>
+                    <span class="k">rw</span> [<span class="n">count_associates_1</span>]
+                    <span class="k">rw</span> [<span class="n">count_associates_2</span>]</code></pre></figure>
+
+<p>I keep abusing the <code class="language-plaintext highlighter-rouge">grind</code> tactic for the subtheorems introduced using <code class="language-plaintext highlighter-rouge">have</code>.</p>
+
+<h1>Prefix sum</h1>
+
+<p>Now we can define the prefix sum.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">def</span> <span class="n">prefixsum</span> (<span class="n">m</span>: <span class="n">Mask</span>) : <span class="n">List</span> <span class="n">Nat</span> := <span class="n">List</span><span class="o">.</span><span class="n">mapIdx</span> (<span class="k">fun</span> <span class="n">idx</span> <span class="n">_</span> <span class="o">=&gt;</span> <span class="n">popc</span> (<span class="n">List</span><span class="o">.</span><span class="n">take</span> <span class="n">idx</span> <span class="n">m</span>)) <span class="n">m</span></code></pre></figure>
+
+<p>Note that this definition puts the “least significant bits” at the beginning of the list.
+This holds:</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">#eval</span> <span class="n">prefixsum</span> [<span class="k">true</span>, <span class="k">false</span>, <span class="k">true</span>, <span class="k">true</span>, <span class="k">false</span>]
+                [<span class="mi">0</span>,    <span class="mi">1</span>,     <span class="mi">1</span>,    <span class="mi">2</span>,    <span class="mi">3</span>    ]
+<span class="k">#eval</span> <span class="n">prefixsum</span> [<span class="k">false</span>, <span class="k">false</span>, <span class="k">true</span>, <span class="k">true</span>, <span class="k">false</span>]
+                [<span class="mi">0</span>,     <span class="mi">0</span>,     <span class="mi">0</span>,    <span class="mi">1</span>,    <span class="mi">2</span>    ]</code></pre></figure>
+
+<p>Before we can prove our theorem, we will need some helpers: non-empty lists have a last element, the emptiness of a list is the same as the emptiness of that list after we have mapped and how to obtain that last element we have appended to a list.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">non_empty_lists_have_a_last</span> (<span class="n">l</span> : <span class="n">List</span> α) (<span class="n">h</span> : <span class="n">l</span> <span class="o">≠</span> []) : <span class="o">∃</span> (<span class="n">l</span><span class="err">'</span>: <span class="n">List</span> α) (<span class="n">last</span>: α), <span class="n">l</span> <span class="o">=</span> <span class="n">l</span><span class="err">'</span> <span class="o">++</span> [<span class="n">last</span>] := <span class="k">by</span>
+  <span class="k">match</span> <span class="n">l</span> <span class="k">with</span>
+  <span class="o">|</span> [<span class="n">x</span>] <span class="o">=&gt;</span> <span class="k">use</span> []<span class="o">;</span> <span class="k">use</span> <span class="n">x</span><span class="o">;</span> <span class="k">rfl</span>
+  <span class="o">|</span> <span class="n">x</span> :: <span class="n">y</span> :: <span class="n">xs</span> <span class="o">=&gt;</span> <span class="k">obtain</span> <span class="o">⟨</span><span class="n">hl</span>, <span class="n">hlast</span>, <span class="n">p</span><span class="o">⟩</span> := <span class="n">non_empty_lists_have_a_last</span> (<span class="n">y</span>::<span class="n">xs</span>) (<span class="n">List</span><span class="o">.</span><span class="n">cons_ne_nil</span> <span class="n">y</span> <span class="n">xs</span>)
+                    <span class="k">use</span> (<span class="n">x</span> :: <span class="n">hl</span>)<span class="o">;</span> <span class="k">use</span> <span class="n">hlast</span><span class="o">;</span> <span class="k">rw</span> [<span class="n">p</span>]<span class="o">;</span> <span class="k">simp</span>
+
+<span class="k">theorem</span> <span class="n">map_ne_nil_iff</span>: <span class="n">List</span><span class="o">.</span><span class="n">map</span> <span class="n">f</span> <span class="n">l</span> <span class="o">≠</span> [] <span class="o">↔</span> <span class="n">l</span> <span class="o">≠</span> [] := <span class="k">by</span>
+  <span class="k">simp</span>
+
+<span class="k">theorem</span> <span class="n">get_last_of_concat_to_singleton</span> (<span class="n">h</span> : <span class="n">l</span> <span class="o">++</span> [<span class="n">x</span>] <span class="o">≠</span> []) : <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">l</span> <span class="o">++</span> [<span class="n">x</span>]) <span class="n">h</span> <span class="o">=</span> <span class="n">x</span> := <span class="k">by</span> <span class="k">simp</span></code></pre></figure>
+
+<p>Our proof gets a bit annoying because we want to use <code class="language-plaintext highlighter-rouge">List.getLast</code> but it
+needs a proof that the list is non empty. We didn’t do explicitly in our proof
+but it should be possible to deduce that <code class="language-plaintext highlighter-rouge">m ≠ []</code> implies <code class="language-plaintext highlighter-rouge">prefixsum m ≠ []</code>.
+We simply passed the two proofs as a parameter. It should be possible to have a
+theorem with only the first assumption and prove the second one before
+rewriting with our presented theorem.</p>
+
+<p>Part of the tedium of this proof is making sure we can do the rewrites. Every
+operand of <code class="language-plaintext highlighter-rouge">List.getLast</code> needs a proof that the list is not empty. But if we
+substitue the operand then the proof may not apply and Lean will diagnose a
+type mismatch. So we need to slowly replace everything. This leads to some
+gnarly equivalences in the successive <code class="language-plaintext highlighter-rouge">eq1</code>, <code class="language-plaintext highlighter-rouge">eq2</code>, etc. A lot of the
+subtheorems (<code class="language-plaintext highlighter-rouge">h3</code>, <code class="language-plaintext highlighter-rouge">h4</code>, …) are just there to be able to carry the proof of the
+non-emptyness prior to the rewrite.</p>
+
+<p>Finally once we have managed to replace everything, we can pull the last item
+of the <code class="language-plaintext highlighter-rouge">List.getLast</code> using <code class="language-plaintext highlighter-rouge">get_last_of_concat_to_singleton</code>. Witht this the
+proof is a relatively simple one where we prove by cases of the last element.</p>
+
+<figure class="highlight"><pre><code class="language-lean" data-lang="lean"><span class="k">theorem</span> <span class="n">last_element_of_prefixsum_is_popc_or_popc_minus_one</span> (<span class="n">m</span>: <span class="n">Mask</span>) (<span class="n">h</span> : <span class="n">m</span> <span class="o">≠</span> []) (<span class="n">h2</span> : <span class="n">prefixsum</span> <span class="n">m</span> <span class="o">≠</span> []) : 
+   <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> <span class="n">m</span>) <span class="n">h2</span> <span class="o">=</span> <span class="n">popc</span> <span class="n">m</span> <span class="o">∨</span>  <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> <span class="n">m</span>) <span class="n">h2</span> <span class="o">=</span> (<span class="n">popc</span> <span class="n">m</span>) <span class="o">-</span> <span class="mi">1</span> := <span class="k">by</span>
+
+   <span class="k">obtain</span> <span class="o">⟨</span><span class="n">prefix_bools</span>, <span class="n">last_bool</span>, <span class="n">lh</span><span class="o">⟩</span> := <span class="n">non_empty_lists_have_a_last</span> <span class="n">m</span> <span class="n">h</span>
+   <span class="k">have</span> <span class="n">h3</span> : <span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>] <span class="o">≠</span> [] :=
+     <span class="k">by</span> <span class="k">simp</span>
+
+   <span class="k">have</span> <span class="n">h2</span> : <span class="n">prefixsum</span> <span class="n">m</span> <span class="o">≠</span> [] := <span class="k">by</span>
+      <span class="k">unfold</span> <span class="n">prefixsum</span>
+      <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">List</span><span class="o">.</span><span class="n">mapIdx_ne_nil_iff</span> <span class="n">h</span>
+   <span class="k">have</span> <span class="n">h4</span> : <span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>]) <span class="o">≠</span> [] := <span class="k">by</span>
+     <span class="k">unfold</span> <span class="n">prefixsum</span>
+     <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">List</span><span class="o">.</span><span class="n">mapIdx_ne_nil_iff</span> <span class="n">h3</span>
+
+   <span class="n">let</span> <span class="n">last2</span> := <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>])) <span class="n">h4</span>
+
+   <span class="k">have</span> <span class="n">eq1</span> : <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> <span class="n">m</span>) <span class="n">h2</span> <span class="o">=</span> <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>])) <span class="n">h4</span> := <span class="k">by</span>
+      <span class="k">unfold</span> <span class="n">prefixsum</span>
+      <span class="k">grind</span>
+
+   <span class="k">have</span> <span class="n">h5</span> : [<span class="n">last_bool</span>] <span class="o">≠</span> [] := <span class="k">by</span> <span class="k">simp</span>
+   <span class="k">have</span> <span class="n">h6</span> : <span class="n">prefixsum</span> [<span class="n">last_bool</span>] <span class="o">≠</span> [] := <span class="k">by</span>
+     <span class="k">unfold</span> <span class="n">prefixsum</span>
+     <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">List</span><span class="o">.</span><span class="n">mapIdx_ne_nil_iff</span> <span class="n">h5</span>
+
+   <span class="k">rw</span> [<span class="n">eq1</span>]
+
+   <span class="k">have</span> <span class="n">h7</span> : (<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> <span class="n">List</span><span class="o">.</span><span class="n">map</span> (<span class="k">fun</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">prefix_bools</span>) (<span class="n">prefixsum</span> [<span class="n">last_bool</span>]) <span class="o">≠</span> [] := <span class="k">by</span>
+    <span class="k">apply</span> <span class="n">List</span><span class="o">.</span><span class="n">append_ne_nil_of_right_ne_nil</span>
+    <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">map_ne_nil_iff</span> <span class="n">h6</span> 
+
+   <span class="k">have</span> <span class="n">eq2</span> : <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> (<span class="n">prefixsum</span> (<span class="n">prefix_bools</span> <span class="o">++</span> [<span class="n">last_bool</span>])) <span class="n">h4</span> <span class="o">=</span> 
+              <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> ((<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> <span class="n">List</span><span class="o">.</span><span class="n">map</span> (<span class="k">fun</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">prefix_bools</span>) (<span class="n">prefixsum</span> [<span class="n">last_bool</span>])) <span class="n">h7</span> := <span class="k">by</span> 
+              <span class="k">unfold</span> <span class="n">prefixsum</span>
+              <span class="k">aesop</span>
+
+   <span class="k">rw</span> [<span class="n">eq2</span>]
+
+   <span class="k">have</span> <span class="n">h8</span> : (<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> [<span class="n">popc</span> <span class="n">prefix_bools</span>] <span class="o">≠</span> [] := <span class="k">by</span>
+    <span class="k">apply</span> <span class="n">List</span><span class="o">.</span><span class="n">append_ne_nil_of_right_ne_nil</span>
+    <span class="k">apply</span> <span class="n">Iff</span><span class="o">.</span><span class="n">mpr</span> <span class="n">map_ne_nil_iff</span> <span class="n">h6</span> 
+
+   <span class="k">have</span> <span class="n">eq3</span>: <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> ((<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> <span class="n">List</span><span class="o">.</span><span class="n">map</span> (<span class="k">fun</span> <span class="n">x</span> <span class="o">=&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">popc</span> <span class="n">prefix_bools</span>) (<span class="n">prefixsum</span> [<span class="n">last_bool</span>])) <span class="n">h7</span> <span class="o">=</span>
+            <span class="n">List</span><span class="o">.</span><span class="n">getLast</span> ((<span class="n">prefixsum</span> <span class="n">prefix_bools</span>) <span class="o">++</span> [<span class="n">popc</span> <span class="n">prefix_bools</span>]) <span class="n">h8</span> := <span class="k">by</span>
+            <span class="k">unfold</span> <span class="n">prefixsum</span>
+            <span class="k">aesop</span>
+
+   <span class="k">rw</span> [<span class="n">eq3</span>]
+
+   <span class="k">rw</span> [<span class="n">get_last_of_concat_to_singleton</span>]
+
+   <span class="cd">-- I am sure this can be simplified</span>
+   <span class="k">match</span> <span class="n">last_bool</span> <span class="k">with</span>
+   <span class="o">|</span> <span class="k">true</span> <span class="o">=&gt;</span> <span class="k">right</span>
+             <span class="k">rw</span> [<span class="n">lh</span>]
+             <span class="k">rw</span> [<span class="n">popc_associates</span>]
+             <span class="k">rw</span> [<span class="n">popc_of_singleton</span>]
+             <span class="k">simp</span>
+   <span class="o">|</span> <span class="k">false</span> <span class="o">=&gt;</span> <span class="k">left</span>
+              <span class="k">rw</span> [<span class="n">lh</span>]
+              <span class="k">rw</span> [<span class="n">popc_associates</span>]
+              <span class="k">rw</span> [<span class="n">popc_of_singleton</span>]
+              <span class="k">simp</span></code></pre></figure>
+
+<p>Again I have abused of <code class="language-plaintext highlighter-rouge">grind</code> and <code class="language-plaintext highlighter-rouge">aesop</code> in the subtheorems.</p>
+
+<p>I’m clearly not even a rookie proving theorems but it was a fun exercise.  I
+stay convinced of two things: 1) my proofs can be improved a lot 2) being able
+to prove things with the help of a proof assistant such as Lean is very useful
+to gain confidence in our algorithms.</p>
+
+<p>It would have been cool to prove that <code class="language-plaintext highlighter-rouge">vlast.m</code> as implemented using the prefix
+sum in Part 1 computes indeed the index of the last non-zero element. I’m happy
+enough to have proved the key insight that allows us to use prefix sum to
+do that. I’ll leave that as an exercise for the reader 😉.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2026/05/28/compute-vlast-part-1/">&laquo; The last bit – Part 1</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

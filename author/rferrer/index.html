@@ -69,6 +69,44 @@
   <div class="post-content">
     <ul class="post-list"><li>
       <header class="post-header">
+        <h1 class="post-title"><a class="post-link" href="/2026/05/30/compute-vlast-part-2/">The last bit – Part 2</a></h1>
+
+        <p class="post-meta">
+          May 30, 2026• <span itemprop="author" itemscope="" itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+      </header>
+
+      <div class="post-content">
+        <p>In the previous part we ended with a nifty way of computing the last bit of
+a mask using the prefix sum. The key of the approch is based on the fact that
+the last element of the prefix sum of a mask is either the population count
+or population count minus one.</p>
+
+<p>Let’s prove that using Lean.</p>
+
+
+      </div><p class="post-continue">
+          <a href="/2026/05/30/compute-vlast-part-2/">Read on &rarr;</a>
+        </p></li><li>
+      <header class="post-header">
+        <h1 class="post-title"><a class="post-link" href="/2026/05/28/compute-vlast-part-1/">The last bit – Part 1</a></h1>
+
+        <p class="post-meta">
+          May 28, 2026• <span itemprop="author" itemscope="" itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+      </header>
+
+      <div class="post-content">
+        <p>The RISC-V Vector Extension (RVV) includes several instructions to operate
+on masks and compute interesting things. One of them is <code class="language-plaintext highlighter-rouge">vfirst.m</code> that compute
+the lowest-numbered element of the mask that is set.</p>
+
+<p>However, there is no <code class="language-plaintext highlighter-rouge">vlast.m</code> instruction that computes the highest-numbered
+element of the mask that is set.</p>
+
+
+      </div><p class="post-continue">
+          <a href="/2026/05/28/compute-vlast-part-1/">Read on &rarr;</a>
+        </p></li><li>
+      <header class="post-header">
         <h1 class="post-title"><a class="post-link" href="/2025/08/13/2025-08-13-migrate-to-libvirt/">Migrate from VirtualBox to libvirt</a></h1>
 
         <p class="post-meta">
