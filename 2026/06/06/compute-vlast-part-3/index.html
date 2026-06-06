@@ -220,7 +220,7 @@ vector length value. In our example where vectors can hold 8 elements, we can
 set the vector length to 5 and all loads and stores will just operate with the
 first 5 elements. But not just memory accesses, any instruction will do that.</p>
 
-<p>Now the question we need to address is what is the value of the elements in the
+<p>Now the question we need to address is: what is the value of the elements in the
 result that are past the vector length? In our example, what about the last 3
 elements of the vector that are not operated because we are operating just 5?</p>
 
@@ -231,7 +231,7 @@ left untouched (undisturbed).</p>
 <p>If the tail policy is agnostic, two implementations are possible: a behaviour
 like undisturbed is allowed or, alternatively, the bits of the elements of the
 tail get set to 1. This is so to discourage the use of those elements (because
-it could be semantically incorrect).</p>
+it is likely to be semantically incorrect).</p>
 
 <h2>Masked execution</h2>
 
