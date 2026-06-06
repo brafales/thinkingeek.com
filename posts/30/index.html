@@ -64,6 +64,22 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2009/06/08/disabling-updatepanels-when-an-asynchronous-postback-is-done/">Disabling UpdatePanels when an asynchronous postback in progress</a></h1>
+
+          <p class="post-meta">
+            Jun 8, 2009 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/ajax/">ajax</a>, <a href="/tags/asp/">asp</a>, <a href="/tags/javascript/">javascript</a>, <a href="/tags/jquery/">jquery</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>If you’ve ever worked with relatively large UpdatePanels maybe you’ll have had a problem: blocking the user some elements while the asynchronous postback is running. When working with local or LAN environments, the async responses might be fast, but over the internet, or on large calculations the async postback may take a while. During this period, you may want to block the UpdatePanel controls so the user can’t trigger another postback or do any other operations on that UpdatePanel. I’ll show you an easy way to do so by using the AJAX framework for .NET and <a href="http://jquery.com">jQuery</a> and one of its plugins: <a href="http://malsup.com/jquery/block/">blockUI</a>.</p>
+
+<p>For those who don’t know jQuery, it’s an opensource Javascript framework that <a href="http://weblogs.asp.net/scottgu/archive/2008/09/28/jquery-and-microsoft.aspx">is going to be embedded on future versions of Visual Studio</a>. It’s a very good framework because of its simplicity and its extensibility, having lots of plugins. One of those plugins is the blockUI plugin, which allows you to block and unlock any part of the DOM at will.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2009/06/08/disabling-updatepanels-when-an-asynchronous-postback-is-done/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2009/03/11/using-ironpython-to-extend-your-net-applications/">Using IronPython to extend your .NET applications</a></h1>
 
           <p class="post-meta">
@@ -277,19 +293,6 @@ If you ever need some users the ability to run only some specific commands with 
 
         </div><p class="post-continue">
             <a href="/2008/07/16/c-and-the-stringbuilder-class/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2007/09/23/repeatable-read-and-deadlocks-in-sql-server/">Repeatable read and deadlocks in SQL Server</a></h1>
-
-          <p class="post-meta">
-            Sep 23, 2007 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Bernat Ràfales</span></span> • <a href="/categories/uncategorized/">Uncategorized</a> • <a href="/tags/sql-server/">sql server</a>, <a href="/tags/tips-and-tricks/">tips and tricks</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>This week we had a bug report of one of our products regarding some strange deadlocks in our database access. For those of you who don't know what a deadlock is, I'll try to summarize here what a transaction is in a relational database environment and why those transactions might lead to those nasty errors, and try to explain what was causing this deadlock in our SQL Server 2005 engine.</p>
-
-        </div><p class="post-continue">
-            <a href="/2007/09/23/repeatable-read-and-deadlocks-in-sql-server/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     

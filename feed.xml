@@ -1,4 +1,254 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-05-30T12:11:17+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the previous part we ended with a nifty way of computing the last bit of
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-06T21:53:32+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the last two instalments of this series, we saw a few alternatives to
+compute the last bit of a mask. Turns out there is still a new one, but it
+relies on a policy of RVV. Let’s see this approach and use it to talk about why
+RVV has policies.</p>
+
+<!--more-->
+
+<h1>The last bit</h1>
+
+<p>Recall from the <a href="/2026/05/28/compute-vlast-part-1/">first part</a>,
+that we want to compute the last bit in a mask, that is, the highest numbered
+element that is set (enabled) in the mask.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | vlast.m
+----------+---------------+-----------
+ mask  | 0 0 0 0 0 0 0 0  | -1
+       | 0 0 0 0 0 0 0 1  |  0
+       | 0 0 0 0 0 0 1 0  |  1
+       | 0 0 0 0 0 1 1 0  |  2
+       | 1 0 0 0 0 0 0 0  |  7
+       | 1 0 0 0 0 1 0 0  |  7
+       | 0 1 1 1 0 1 0 0  |  6
+       | 1 1 1 1 0 1 0 0  |  7
+</code></pre></div></div>
+
+<h1>An LLVM intrinsic</h1>
+
+<p>Due to my day job, I discovered that LLVM has an intrinsic function called
+<code class="language-plaintext highlighter-rouge">llvm.experimental.vector.extract.last.active</code>. This intrinsic receives a
+vector of values and a mask (a mask, in LLVM parlance, is a vector of <code class="language-plaintext highlighter-rouge">i1</code>,
+where <code class="language-plaintext highlighter-rouge">i1</code> stands for integer of 1 bit).  This function is extracts the element
+from the vector of values that corresponds to the highest numbered element that
+is active in the mask. That highest numbered element is exactly the last bit we
+want to compute! So I wondered how it does that. Turns out it uses yet another
+approach!</p>
+
+<p>I will first  present the approach using C intrinsics.</p>
+
+<figure class="highlight"><figcaption>vlast-using-vid-vredmaxu.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_vid_vredmaxu</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Compute the population count.</span>
+    <span class="kt">uint64_t</span> <span class="n">popc</span> <span class="o">=</span> <span class="n">__riscv_vcpop_m_b32</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// If no bit is set we're done: there is no last bit.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">popc</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// Initialize sequence to all zeroes.</span>
+    <span class="n">vuint32m1_t</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">__riscv_vmv_v_x_u32m1</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Compute the vector [0, 1, 2, 3, … vl-1] but using the mask</span>
+    <span class="n">sequence</span> <span class="o">=</span> <span class="n">__riscv_vid_v_u32m1_mu</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Now compute the maximum element in the vector.</span>
+    <span class="n">vuint32m1_t</span> <span class="n">maxvalue</span> <span class="o">=</span> <span class="n">__riscv_vredmaxu_vs_u32m1_u32m1</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Extract the maximum element (stored in the first element)</span>
+    <span class="kt">int</span> <span class="n">result</span> <span class="o">=</span> <span class="n">__riscv_vmv_x_s_u32m1_u32</span><span class="p">(</span><span class="n">maxvalue</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>First we check if no bit is set, in that case the result is trivially -1.
+Otherwise, we first initialize a vector with all zeroes. Then we compute the
+sequence vector [0, 1, 2, 3, …, vl-1] using the <code class="language-plaintext highlighter-rouge">vid</code> instruction. Note,
+though, that this is using the mask of which we want to compute its <code class="language-plaintext highlighter-rouge">vlast.m</code>.
+So the result is [0, 1, 2, 3, …, vl-1] but where the corresponding elements of
+<code class="language-plaintext highlighter-rouge">m</code> is not set (i.e., cleared, a zero) we say the element is <em>disabled by the
+mask</em> and instead we set it to the corresponding element of <code class="language-plaintext highlighter-rouge">sequence</code>. Due to
+the earlier initialization, this means the disabled elements are going to be
+zero.</p>
+
+<p>This behaviour is crucial for the next step, where we compute the maximum
+element of the whole vector. This is called a reduction operation because we
+reduce all the elements of the vector into a single value using some
+accumulator-like operation (e.g. an addition to get a sum or a multiplication
+to get a product).  In this case we compute the maximum value of the whole
+vector. The result of reductions is another vector where only the first element
+is set (this is called a <em>scalar vector</em> in RVV terminology) so there is a
+final extraction for the result.</p>
+
+<p>(If you wonder why <code class="language-plaintext highlighter-rouge">__riscv_vredmaxu_vs_u32m1_u32m1</code> receives an additional
+operand, the reason is because the second operand is a vector whose first
+element acts as the initial value of the accumulation. In this case it is very
+convenient as <code class="language-plaintext highlighter-rouge">sequence</code> will always have a zero in its first element (even if
+the mask disabled that element), which acts as the neutral value of the maximum
+in this case. This is useful when chaining consecutive reductions. As already
+mentioned, the result of a reduction is precisely a vector where the reduction
+result is stored in the first element.)</p>
+
+<p>This approach work because we have turned into zero all the elements in the
+vector [0, 1, 2, 3, …, vl-1] that were disabled by the mask.  set. So the
+maximum index corresponds to the last bit index.</p>
+
+<p>This approach relies on a feature of RVV called policies.</p>
+
+<h1>Policies in RVV</h1>
+
+<p>The RISC-V Vector Extension has several features that make it a bit unusual
+comparing to the existing SIMD extensions/subsets of more mainstream
+architectures.</p>
+
+<p>One of them is the
+<a href="https://docs.riscv.org/reference/isa/unpriv/v-st-ext.html#sec-agnostic">policies</a>.
+There are two different policy types: tail policy and mask policy. Both can be
+agnostic or undisturbed. So there are four possible combinations:</p>
+
+<ul>
+  <li>tail agnostic, mask agnostic</li>
+  <li>tail agnostic, mask undisturbed</li>
+  <li>tail undisturbed, mask agnostic</li>
+  <li>tail undisturbed, mask undisturbed</li>
+</ul>
+
+<p>The tail policy is applied to the elements that are past the vector length. The
+mask policy is applied to the elements that are disabled because of a masked
+instruction.</p>
+
+<h2>Vector length</h2>
+
+<p>Another feature of RVV is the vector length.</p>
+
+<p>Most SIMD ISAs assume that a vector instruction will compute values for all the
+elements of the vector. For most instructions this is fine. Memory accesses are
+problematic: imagine your vectors can hold 8 elements, but your program only
+operates 5 contiguous elements in memory. Storing 8 elements is unsafe, so we
+need a way to limit the number of elements stored.</p>
+
+<p>Most ISAs solve this using masks. Masks are very general and sometimes
+impractical. If we want to load only 5 elements we will need a mask [0, 0, 0,
+1, 1, 1, 1, 1] and so a way to create this mask easily. Often ISAs provide
+specialised instructions for this case.</p>
+
+<p>RVV solves this common case using a vector length. Without entering in too many
+details, before using vector instructions a vector configuration must be set.
+Among a number of things to set (including the tail and mask policy) there is a
+vector length value. In our example where vectors can hold 8 elements, we can
+set the vector length to 5 and all loads and stores will just operate with the
+first 5 elements. But not just memory accesses, any instruction will do that.</p>
+
+<p>Now the question we need to address is what is the value of the elements in the
+result that are past the vector length? In our example, what about the last 3
+elements of the vector that are not operated because we are operating just 5?</p>
+
+<p>This is where the tail policy enters into play. If the tail policy is
+undisturbed, the vector register used for the result will have those elements
+left untouched (undisturbed).</p>
+
+<p>If the tail policy is agnostic, two implementations are possible: a behaviour
+like undisturbed is allowed or, alternatively, the bits of the elements of the
+tail get set to 1. This is so to discourage the use of those elements (because
+it could be semantically incorrect).</p>
+
+<h2>Masked execution</h2>
+
+<p>A same observation is possible when using masks. Elements disabled by the mask
+can be left untouched, this is mask undisturbed, or optionally
+set all their bits to 1, this is mask agnostic.</p>
+
+<p>Needless to say, that the mask policy is only relevant for masked instructions.</p>
+
+<h2>But why?</h2>
+
+<p>The reason is a bit complicated and is due to how RVV evolved. The first
+realistic version of RVV 0.7.1 (which was infamously implemented in commercial
+hardware) did not have policies. Well, it did, but they were kind of hardcoded
+and never given a name. We can call them <em>tail zeroing</em>, mask undisturbed.</p>
+
+<p>In the current ratified RVV 1.0, tail agnostic may set all bits to 1 in the
+tail. Imagine that instead, we mandated (i.e., not optional) to set all the
+bits to 0. This was never given a name but that would be <em>tail-zeroing</em>. This
+was what RVV 0.7.1 did.</p>
+
+<p>When RVV 0.8 was proposed, the policy was changed to be hardcoded to tail
+undisturbed, mask undisturbed (so, again, there was no policy as such). But
+this comes with drawbacks: an undisturbed policy forces us to say what are
+going to be the values in the result for elements past the vector length or
+that are disabled by the mask. And we often do not care about
+those. So an undisturbed policy means that our instructions have an extra
+operand which represents the values that are undisturbed. For some hardware
+implementations, in particular those using <em>register renaming</em>, this implies
+doing an extra copy of the destination register.</p>
+
+<p>When RVV 0.9 was proposed, the policies as presented earlier were introduced.
+This meant that everything got multiplied by 4 in the ISA in exchange of
+flexibility. Software should prioritize agnostic policies where possible and
+hardware can opt-in to benefit from the agnostic policy. For instance,
+implementations that use <em>register renaming</em> can avoid copying the destination
+and if they remember the vector length of the operation, the rest of
+the bits are presented to the software as if they were 1s.</p>
+
+<p>Most implementations definitely implement mask agnostic as mask undisturbed
+(but this should only be relevant for masked instructions). Some
+implementations have chosen to implement a proper tail agnostic policy.</p>
+
+<p>One downside of the current policy mechanism is that at least one combination
+(tail undisturbed, mask agnostic) is of very little use to the software.
+Hardware implementors need to validate it though (even if it means mask
+undisturbed).</p>
+
+<p>As already stated above, ideally, software should use agnostic policies when
+possible, but masked code will likely always use mask undisturbed because of
+its merge semantics.</p>
+
+<h2>Merge semantics</h2>
+
+<p>One interesting effect of mask undisturbed is that allows us to <em>fold</em> a merge
+operation. RVV has a <code class="language-plaintext highlighter-rouge">vmerge.vvm</code> instruction:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vmerge.vvm vd, vs2, vs1, v0  # vd[i] = v0.mask[i] ? vs1[i] : vs2[i]
+</code></pre></div></div>
+
+<p>Earlier we saw we computed 0, 1, 2, 3, …, vl-1 but setting zeroes where the
+element is disabled by the mask. We could do this in two steps.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                      # 0 ≤ i &lt; vl
+vid.v v1              # Sets v1[i] ← i
+vmv.v.i v2, 0         # Sets v2[i] ← 0
+vmerge v3, v2, v1, v0 # The mask is always in v0
+                      # if v0.mask[i] = 0 then v3[i] ← v2[i] else v3[i] ← v1[i]
+</code></pre></div></div>
+
+<p>but using a mask undisturbed policy, we can just use a masked instruction</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Something here sets the mask policy to undisturbed.
+               # 0 ≤ i &lt; vl
+vmv.v.i v3, 0  # Sets v3[i] ← 0
+vid.v v3, v0.t # if v0.mask[i] = 1 then v3[i] ← i else v3[i] ← v3[i]
+</code></pre></div></div>
+
+<p>(If you wonder why <code class="language-plaintext highlighter-rouge">v0.t</code> in this case, it is because the ISA reserves the
+possibility that in the future <code class="language-plaintext highlighter-rouge">v0.f</code> can be used as the mask operand. For
+<code class="language-plaintext highlighter-rouge">v0.f</code> the condition to update the result would be <code class="language-plaintext highlighter-rouge">v0[i] = 0</code>)</p>
+
+<h3>An extra operand, conceptually</h3>
+
+<p>Even if the hardware does not have to update the destination, now the result we
+want to have as part of the undisturbed policy is an operand of the
+instruction. And this is the reason why our intrinsic <code class="language-plaintext highlighter-rouge">__riscv_vid_v_u32m1_mu</code>
+(<code class="language-plaintext highlighter-rouge">mu</code> for mask undisturbed) needs an additional operand.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="riscv" /><category term="vectors" /><category term="rvv" /><category term="intrinsics" /><summary type="html"><![CDATA[In the last two instalments of this series, we saw a few alternatives to compute the last bit of a mask. Turns out there is still a new one, but it relies on a policy of RVV. Let’s see this approach and use it to talk about why RVV has policies.]]></summary></entry><entry><title type="html">The last bit – Part 2</title><link href="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/" rel="alternate" type="text/html" title="The last bit – Part 2" /><published>2026-05-30T00:00:00+00:00</published><updated>2026-05-30T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/05/30/compute-vlast-part-2</id><content type="html" xml:base="https://thinkingeek.com/2026/05/30/compute-vlast-part-2/"><![CDATA[<p>In the <a href="/2026/05/28/compute-vlast-part-1/">previous part</a>
+we ended with a nifty way of computing the last bit of
 a mask using the prefix sum. The key of the approch is based on the fact that
 the last element of the prefix sum of a mask is either the population count
 or population count minus one.</p>
@@ -3781,315 +4031,4 @@ glibmm does not wrap much the C API for classes itself, we find ourselves forced
 to use GObject C interfaces.</p>
 
 <p>All in all, I believe the recommended approach is more reasonable as long as
-we understand the nuance with the registration of the derived GObject class.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="gtk" /><category term="gobject" /><category term="gnome" /><category term="cpp" /><category term="cplusplus" /><summary type="html"><![CDATA[In the last post I discussed about how glibmm, the wrapper of the GLib library exposes GObjects and we finished about a rationale about why one would want to write full-fledged GObjects in C++. Today we are exploring this venue and observing some of the pain points we are going to face.]]></summary></entry><entry><title type="html">Wrapping GObjects in C++</title><link href="https://thinkingeek.com/2023/01/15/wrapping-gobjects-in-cpp/" rel="alternate" type="text/html" title="Wrapping GObjects in C++" /><published>2023-01-15T06:55:00+00:00</published><updated>2023-01-15T06:55:00+00:00</updated><id>https://thinkingeek.com/2023/01/15/wrapping-gobjects-in-cpp</id><content type="html" xml:base="https://thinkingeek.com/2023/01/15/wrapping-gobjects-in-cpp/"><![CDATA[<p><a href="https://docs.gtk.org/gobject/">GObject</a> is the foundational dynamic type
-system implemented on top of the C language that is used by many other
-libraries like GLib, GTK and many other components, most of them part of the
-<a href="https://www.gnome.org/">GNOME desktop</a> environment stack.</p>
-
-<p><a href="https://github.com/rofirrim/libadwaitamm">I’ve been lately wrapping</a> a <a href="https://gnome.pages.gitlab.gnome.org/libadwaita/doc/1.2/">C
-library</a> that uses
-GObject for C++ and I learned about some of the challenges.</p>
-
-<!--more-->
-
-<h1>GObject</h1>
-
-<p>Any general programming language can be used under the Object Oriented
-Programming (OOP) paradigm, and the difference between them is whether the
-language offers built-in support for that or not. So, when we say that Java is
-OOP we basically mean that the language has concepts which are meant to support
-this paradigm out of the box.</p>
-
-<p>C is not one of those languages.</p>
-
-<p>For reasons lost in the mist of time, related to the origins of the <a href="https://www.gimp.org/about/ancient_history.html">GNU Image
-Manipulation Program</a>, the
-<a href="https://www.gtk.org/">GTK toolkit</a>, a GUI toolkit, was written in C. And its
-foundations are built on top of a library called GLib. GLib provides GObject: a
-library based OOP type system built on top of C. GTK and other libraries, part
-of the GNOME Desktop software stack, are built on top of GObject.</p>
-
-<p>Now, GObject is powerful (<a href="https://docs.gtk.org/gobject/concepts.html">just read about
-it</a> but it also acknowledges the
-fact that there are more programming languages than just C, even if C serves as
-the common denominator here.</p>
-
-<p>This is also the current reality: C these days can be seen as an interoperable
-layer between programming languages. Most foreign-function interfaces (foreign
-as in “written in another programming language”) target C as the interoperable
-layer. There are technical reasons for that fact, which are out of scope of
-this blog.</p>
-
-<p>C++ is not, strictly, a superset of C but it can interoperate with C very, very
-easily (the C heritage in C++ enables this and also fuels many pain points
-of C++ itself). And C++, even if it has been dubbed as “multi paradigm”, has
-reasonable support for OOP.</p>
-
-<p>So it makes sense to provide a C++ interface to GObject.</p>
-
-<h1>Wrapping on top of glibmm</h1>
-
-<p>GLib is the library that contains GObject and there already exists a C++ version
-of it called <a href="https://gitlab.gnome.org/GNOME/glibmm">glibmm</a>.</p>
-
-<p>glibmm, along with another component called mm-common, allows systematically
-wrapping GObject-based C libraries in a consistent and coherent way. This is
-achieved using a tool called <code class="language-plaintext highlighter-rouge">gmmproc</code>. I used this approach for <a href="https://github.com/rofirrim/libadwaitamm">my wrap of
-libadwaitamm</a>.</p>
-
-<p>There are some design decisions made by glibmm that permeate and impact
-the wrappers.</p>
-
-<h2>Classes and objects</h2>
-
-<p>Because GObject is actually a library and implements an OOP type system, all
-the concepts of such system must exist as entities of the program. When working
-on a typical OOP language like C++ or Java, the concept of “class” is a concept
-provided and supported by the language itself.</p>
-
-<p>This is not the case in GObject. Classes are entities represented in the memory
-of the program like regular data.</p>
-
-<p>In fact when reading the <a href="https://docs.gtk.org/gobject/tutorial.html">GObject
-tutorial</a> you will identify lots of
-steps required to register (or bring up) a class in GObject. GObject programmers
-identify that some of those steps are annoying and feel like boilerplate. To
-ease the pain they use C macros so the GObject classes can be declared
-and defined in a more convenient way.</p>
-
-<div style="display: flow-root; background-color: #efe; padding: 15px; padding-bottom: 0px; margin-bottom: 15px;">
-  <p>Toshio Sekiya made this excellent
-<a href="https://toshiocp.github.io/Gobject-tutorial">GObject tutorial</a> in C that is worth
-checking.</p>
-</div>
-
-<p>Once a class has been registered in GObject, we can instantiate it.</p>
-
-<p>glibmm tries to make the use of GObject instances as convenient as regular C++
-objects so it combines the class registration in GObject with the instantiation
-of a GObject class.</p>
-
-<p>This works most of the time but complicates the process because classes
-themselves do not have a “constructor” method in C++ (only instances do). These
-“class constructors” are used to register class-level attributes like signals
-and properties.</p>
-
-<p>glibmm solves this problem by using a secondary class, which is automatically
-generated by the wrapping machinery, that represents the class itself. This
-class object is used as a singleton of the application and it is
-initialised upon the creation of the first instance of a GObject class. This
-initialisation can then invoke a function that can register properties,
-signals and interfaces implementations.</p>
-
-<h2>Signals</h2>
-
-<p>Signals in GObject are close to what in other programming languages (like C# or
-Java) are called delegates or listeners. It is possible to connect to a signal
-so a piece of code, as a callback, is executed when something happens. Signals
-can be arbitrarily defined by a GObject class so the GObject instance can emit
-those signals as needed.</p>
-
-<p>glibmm was written in a pre-C++11 world and back then it used the
-<a href="https://libsigcplusplus.github.io/libsigcplusplus/">libsigc++</a> library to
-ensure type-safety in the callbacks (something that C can’t do and it is
-sometimes [ab]used by the C libraries). This library is still very useful these
-days, but in a post-C++11 world some of the heavy lifting can be delegated to
-the C++ standard library itself.</p>
-
-<p>libsigc++ provides two concepts: signals (something that can be emitted) and
-slots (something that can be connected to a signal and will be invoked when the
-signal is emitted). Because libsigc++ is generic and not tied to glibmm (even
-if it is, maybe, one of its biggest users), the glibmm wrapping machinery has
-to translate a signal callback (a C callback) into a proper libsigc++ slot.
-Luckily, almost all callbacks in GObject are closures that receive a <code class="language-plaintext highlighter-rouge">void*</code>
-argument where anything related to the context can be passed to the callback.
-This way, when wrapping a GObject implemented in C, the wrapping machinery
-connects the existing (GObject’s) signals to a callback (a free function,
-typically generated) that unwraps the context pointer into libsigc++’s slots
-for that libsigc++ signal.</p>
-
-<h2>Properties</h2>
-
-<p>Many OOP programming languages (like C# or Object Pascal) have the concept of
-“properties”. They look like object attributes (fields) but can invoke a
-function when reading or writing the attribute.</p>
-
-<p>GObject properties follow this philosophy and introduce a couple of extra
-features: properties have a (GObject) signal associated to them that can be
-used to signal updates to the property and can be generically read and written
-using GObject generic mechanisms. These two features allow properties to be
-bound to other properties and build expressive GUIs with reasonable effort.</p>
-
-<p>For instance, if we have a hypothetical list widget with a property
-<code class="language-plaintext highlighter-rouge">number-of-elements</code>, we can bind this property to the <code class="language-plaintext highlighter-rouge">sensitive</code> property of
-a <a href="https://docs.gtk.org/gtk4/class.Button.html">Gtk.Button</a> intended to clear
-that list widget. This way, we can enable or disable the button based on
-whether the list widget contains items. More complex scenarios are possible
-using <a href="https://docs.gtk.org/gtk4/class.Expression.html">Gtk.Expression</a>.</p>
-
-<p>Properties are implemented in GObject with two callbacks that
-are invoked when a property is read or written, respectively.</p>
-
-<h1>The challenge of subclassing</h1>
-
-<p>Now, if our goal was to only wrap existing GObjects, a scenario that all
-the machinery of glibmm supports very well, we would be done.</p>
-
-<p>Although the GObject type system allows to introduce <a href="https://docs.gtk.org/gobject/concepts.html#non-instantiatable-non-classed-fundamental-types">new fundamental
-types</a>
-(which are mostly meant to represent built-in language types such as <code class="language-plaintext highlighter-rouge">int</code> or
-<code class="language-plaintext highlighter-rouge">double</code>), most of the new types defined by a library or application are
-created by means of subclassing (if indirectly) the
-<a href="https://docs.gtk.org/gobject/class.Object.html">GObject.Object</a> class type
-itself.</p>
-
-<p>Now, subclassing a class in GObject means registering a class and letting the
-registration procedure know the parent class (GObject, like Java or C# but in
-contrast to C++, allows only single base class). This process would be
-burdensome given that the additional class that represents the class is a bit
-of a pain to write. The glibmm mechanism of a separate class that represents
-the class entity in GObject is not super convenient to write manually.</p>
-
-<p>So in that line glibmm devised a convenient mechanism in which by using the
-regular C++ inheritance one could create a new class almost transparently.</p>
-
-<h2>Subclassing is magic</h2>
-
-<p>Consider that you want to subclass <code class="language-plaintext highlighter-rouge">Gtk::Button</code>.</p>
-
-<p>You can just do</p>
-
-<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span> <span class="p">{</span>
- <span class="nl">public:</span>
-  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span> <span class="o">:</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="p">{}</span>
-  <span class="c1">// ...</span>
-<span class="p">};</span>
-</code></pre></div></div>
-
-<p>And that’s it. No need for a separate <code class="language-plaintext highlighter-rouge">MyButton_Class</code> or the likes that
-represents the GObject class itself. Cool, but how does this work?</p>
-
-<p><code class="language-plaintext highlighter-rouge">gmmproc</code>-wrapped classes always register a derived class that just clones the
-original wrapped class. In the case of Gtk::Button, the original C class is
-<code class="language-plaintext highlighter-rouge">GtkButton</code>. The wrapped code registers (just once) a <code class="language-plaintext highlighter-rouge">gtkmm__GtkButton</code> class
-in the GObject typesystem and makes it a subclass of <code class="language-plaintext highlighter-rouge">GtkButton</code>. The reason
-why this is done is in order to allow implementing a virtual method mechanism,
-explained below.</p>
-
-<p>Note, however, that no class is registered in GObject for <code class="language-plaintext highlighter-rouge">MyButton</code>. At
-the eyes of GObject any instance of <code class="language-plaintext highlighter-rouge">MyButton</code> is just a
-<code class="language-plaintext highlighter-rouge">gtkmm__GtkButton</code>.</p>
-
-<h2>Virtual methods</h2>
-
-<p>GObject would not be a complete OOP mechanism if it did not support
-polymorphism via virtual table classes. In the C implementation, virtual methods
-are implemented as pointers to functions and those are overriden explicitly
-by subclasses in the “class constructor” by setting them to point to specific
-functions.</p>
-
-<p>Virtual methods are exposed as a convenience in <code class="language-plaintext highlighter-rouge">gmmproc</code>-wrapped classes as
-regular C++ virtual methods. To make this work, however, the class must have
-had to overriden the GObject virtual method so it ultimately calls the C++
-virtual method. This can only happen in the “class constructor”. By subclassing
-with a wrapper that introduces no extra data, gmmproc-wrapped classes can
-override GObject virtual methods at will.</p>
-
-<p>This is exactly what happens with <code class="language-plaintext highlighter-rouge">Gtk.Button.clicked</code> virtual method. When
-initialising the class <code class="language-plaintext highlighter-rouge">gtkmm__GtkButton</code> this virtual method is made to invoke
-a C++ virtual method (generated by <code class="language-plaintext highlighter-rouge">gmmproc</code>) called <code class="language-plaintext highlighter-rouge">on_clicked</code>. If the method
-is not actually overridden in the subclass, gmmproc calls the current virtual
-method implementation (if any).</p>
-
-<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span> <span class="p">{</span>
- <span class="nl">public:</span>
-  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span> <span class="o">:</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="p">{}</span>
-
-  <span class="k">virtual</span> <span class="n">on_clicked</span><span class="p">()</span> <span class="k">override</span> <span class="p">{</span>
-    <span class="c1">// ...</span>
-  <span class="p">}</span>
-<span class="p">};</span>
-</code></pre></div></div>
-
-<h2>Properties</h2>
-
-<p>But if we did not create a new GObject class to represent <code class="language-plaintext highlighter-rouge">MyButton</code> and
-we’re just using C++ owns mechanism for virtual methods, what about new signals
-or properties we might want to add?</p>
-
-<p>This is where this convenient scheme of inheriting, one that does not require a
-description of the class, starts showing its limits.</p>
-
-<p>First we need to make sure the new class is actually a new one. This can be
-achieved using a different constructor of <code class="language-plaintext highlighter-rouge">Glib::ObjectBase</code>. While the root
-of the hierarchy is <code class="language-plaintext highlighter-rouge">Glib::Object</code> (it wraps <code class="language-plaintext highlighter-rouge">GObject.Object</code>), <code class="language-plaintext highlighter-rouge">Glib::ObjectBase</code>
-is a virtual base of <code class="language-plaintext highlighter-rouge">Glib::Object</code> that is used to change some of the behaviour
-when creating <code class="language-plaintext highlighter-rouge">Glib::Object</code>. <code class="language-plaintext highlighter-rouge">Glib::ObjectBase</code> has a constructor where you can
-specify a class name.</p>
-
-<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span>
-<span class="p">{</span>
- <span class="nl">public:</span>
-  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span> <span class="o">:</span>
-    <span class="n">Glib</span><span class="o">::</span><span class="n">ObjectBase</span><span class="p">(</span><span class="s">"MyButton"</span><span class="p">),</span>
-    <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="p">{}</span>
-  <span class="c1">// ...</span>
-<span class="p">};</span>
-</code></pre></div></div>
-
-<p>When using this constructor, glibmm will register a new class
-<code class="language-plaintext highlighter-rouge">gtkmm__CustomObject_MyButton</code>. And this allow us to define properties.</p>
-
-<div class="language-cpp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">MyButton</span> <span class="o">:</span> <span class="k">public</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span> <span class="p">{</span>
- <span class="nl">public:</span>
-  <span class="n">MyButton</span><span class="p">(</span><span class="k">const</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ustring</span> <span class="o">&amp;</span><span class="n">label</span><span class="p">)</span>
-      <span class="o">:</span> <span class="n">Glib</span><span class="o">::</span><span class="n">ObjectBase</span><span class="p">(</span><span class="s">"MyButton"</span><span class="p">),</span> <span class="n">Gtk</span><span class="o">::</span><span class="n">Button</span><span class="p">(</span><span class="n">str</span><span class="p">)</span> <span class="p">{}</span>
-
-  <span class="n">Glib</span><span class="o">::</span><span class="n">Property</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">my_value</span><span class="p">{</span><span class="o">*</span><span class="k">this</span><span class="p">,</span> <span class="s">"my-value"</span><span class="p">,</span> <span class="mi">0</span><span class="p">};</span>
-<span class="p">};</span>
-</code></pre></div></div>
-
-<p>Now, properties are class-level attributes so ideally those should be
-registered (installed) in the class constructor, which we cannot access.
-However, GObject allows installing properties later and this is what happens
-when executing the constructor of the property <code class="language-plaintext highlighter-rouge">my_value</code> that is run as part
-of the constructor of <code class="language-plaintext highlighter-rouge">MyButton</code>.</p>
-
-<h2>Signals</h2>
-
-<p>What about signals?  Unfortunately, as far as I can tell, there is no
-straightforward way to install new custom GObject signals.</p>
-
-<p>Note that libsigc++ can be used in some signalling scenarios as an alternative
-to GObject signals. This is because, in contrast to properties, GObject signals
-do not seem to be composable between them. So we may only need a thing that
-acts like a wrapped signal even if it is not a proper GObject signal.</p>
-
-<p>If we do want a GObject signal, one thing we can do is using
-<a href="https://gnome.pages.gitlab.gnome.org/glibmm/classGlib_1_1ExtraClassInit.html"><code class="language-plaintext highlighter-rouge">Glib::ExtraClassInit</code></a>
-which allows us to define our own class initialisation function. But note that
-this will be executed the first time we instantiate our class. This fragile (at
-least to me) behaviour is again part the price we pay for not decoupling the
-C++ class that represents instances from the C++ class that represents the
-GObject class itself.</p>
-
-<h1>Why would we want to use C++ to write a GObject?</h1>
-
-<p>If we look at the wrapper libraries as a mean to write C++, one might think
-that we only need the minimal wrapping surface and then be able to use C++,
-outside of GObject, to develop the rest of the functionality.</p>
-
-<p>While I do not think is super essential to be able to write a GObject in C++ so
-it can be called from outside C++ (this would force us to provide a C interface
-anyways), I think it is useful to be able to bring up a GObject in C++ so it
-can be used in some of the convenient machinery that GTK provides: mainly
-<code class="language-plaintext highlighter-rouge">.ui</code> files and <a href="https://docs.gtk.org/gtk4/class.Builder.html">Gtk.Builder</a>.</p>
-
-<p>Now, <code class="language-plaintext highlighter-rouge">.ui</code> files are very powerful and can do lots of things for us in a
-convenient way. But this can only happen if the GTK library sees a full-fledged
-GObject. The class type must have been registered in GObject and its
-properties, signals and interfaces must have been registered during class
-initialisationn (not later, like glibmm allows us to do).</p>
-
-<p>And I would like to use C++ to do that, as much as possible. So in a next
-post I will explore some approaches I have been using in my projects.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="gtk" /><category term="gobject" /><category term="gnome" /><category term="cpp" /><category term="cplusplus" /><summary type="html"><![CDATA[GObject is the foundational dynamic type system implemented on top of the C language that is used by many other libraries like GLib, GTK and many other components, most of them part of the GNOME desktop environment stack. I’ve been lately wrapping a C library that uses GObject for C++ and I learned about some of the challenges.]]></summary></entry></feed>
+we understand the nuance with the registration of the derived GObject class.</p>]]></content><author><name>Roger Ferrer Ibáñez</name></author><category term="gtk" /><category term="gobject" /><category term="gnome" /><category term="cpp" /><category term="cplusplus" /><summary type="html"><![CDATA[In the last post I discussed about how glibmm, the wrapper of the GLib library exposes GObjects and we finished about a rationale about why one would want to write full-fledged GObjects in C++. Today we are exploring this venue and observing some of the pain points we are going to face.]]></summary></entry></feed>

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  
+  
+  <title>The last bit – Part 3</title>
+  <meta name="description" content="In the last two instalments of this series, we saw a few alternatives to compute the last bit of a mask. Turns out there is still a new one, but it relies on a policy of RVV. Let’s see this approach and use it to talk about why RVV has policies.">
+  
+
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="canonical" href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/">
+  
+  
+  <link rel="alternate" type="application/rss+xml" title="Think In Geek" href="https://thinkingeek.com/feed.xml">
+
+  
+
+  
+  <meta property="og:title" content="The last bit – Part 3">
+  <meta property="og:site_name" content="Think In Geek">
+  <meta property="og:url" content="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/">
+  <meta property="og:description" content="In the last two instalments of this series, we saw a few alternatives to compute the last bit of a mask. Turns out there is still a new one, but it relies on a policy of RVV. Let’s see this approach and use it to talk about why RVV has policies.">
+  
+  
+  <meta name="twitter:card" content="summary">
+  
+  <meta name="twitter:title" content="The last bit – Part 3">
+  <meta name="twitter:description" content="In the last two instalments of this series, we saw a few alternatives to compute the last bit of a mask. Turns out there is still a new one, but it relies on a policy of RVV. Let’s see this approac...">
+  
+  
+
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
+
+  
+
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+      <span class="site-title"><a href="/">Think In Geek</a> | </span>
+      <span class="site-slogan">In geek we trust</span>
+
+    <nav class="site-nav"><a class="page-link" href="/series/">Series</a><a class="page-link" href="/author/brafales/">Posts by Bernat Ràfales</a><a class="page-link" href="/archives/">Archives</a></nav>
+
+  </div>
+
+</header>
+
+
+    <main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    
+      <h1 class="post-title" itemprop="name headline">The last bit – Part 3</h1>
+    
+    <p class="post-meta"><time datetime="2026-06-06T00:00:00+00:00" itemprop="datePublished">Jun 6, 2026</time> • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>In the last two instalments of this series, we saw a few alternatives to
+compute the last bit of a mask. Turns out there is still a new one, but it
+relies on a policy of RVV. Let’s see this approach and use it to talk about why
+RVV has policies.</p>
+
+<!--more-->
+
+<h1>The last bit</h1>
+
+<p>Recall from the <a href="/2026/05/28/compute-vlast-part-1/">first part</a>,
+that we want to compute the last bit in a mask, that is, the highest numbered
+element that is set (enabled) in the mask.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
+       |                  |
+       | 7 6 5 4 3 2 1 0  | vlast.m
+----------+---------------+-----------
+ mask  | 0 0 0 0 0 0 0 0  | -1
+       | 0 0 0 0 0 0 0 1  |  0
+       | 0 0 0 0 0 0 1 0  |  1
+       | 0 0 0 0 0 1 1 0  |  2
+       | 1 0 0 0 0 0 0 0  |  7
+       | 1 0 0 0 0 1 0 0  |  7
+       | 0 1 1 1 0 1 0 0  |  6
+       | 1 1 1 1 0 1 0 0  |  7
+</code></pre></div></div>
+
+<h1>An LLVM intrinsic</h1>
+
+<p>Due to my day job, I discovered that LLVM has an intrinsic function called
+<code class="language-plaintext highlighter-rouge">llvm.experimental.vector.extract.last.active</code>. This intrinsic receives a
+vector of values and a mask (a mask, in LLVM parlance, is a vector of <code class="language-plaintext highlighter-rouge">i1</code>,
+where <code class="language-plaintext highlighter-rouge">i1</code> stands for integer of 1 bit).  This function is extracts the element
+from the vector of values that corresponds to the highest numbered element that
+is active in the mask. That highest numbered element is exactly the last bit we
+want to compute! So I wondered how it does that. Turns out it uses yet another
+approach!</p>
+
+<p>I will first  present the approach using C intrinsics.</p>
+
+<figure class="highlight"><figcaption>vlast-using-vid-vredmaxu.c</figcaption><pre class="with_line_numbers"><code class="language-c" data-lang="c"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td><td class="code"><pre><span class="kt">int</span> <span class="nf">vlast_vid_vredmaxu</span><span class="p">(</span><span class="n">vbool32_t</span> <span class="n">m</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">vl</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// Compute the population count.</span>
+    <span class="kt">uint64_t</span> <span class="n">popc</span> <span class="o">=</span> <span class="n">__riscv_vcpop_m_b32</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// If no bit is set we're done: there is no last bit.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">popc</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="c1">// Initialize sequence to all zeroes.</span>
+    <span class="n">vuint32m1_t</span> <span class="n">sequence</span> <span class="o">=</span> <span class="n">__riscv_vmv_v_x_u32m1</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Compute the vector [0, 1, 2, 3, … vl-1] but using the mask</span>
+    <span class="n">sequence</span> <span class="o">=</span> <span class="n">__riscv_vid_v_u32m1_mu</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Now compute the maximum element in the vector.</span>
+    <span class="n">vuint32m1_t</span> <span class="n">maxvalue</span> <span class="o">=</span> <span class="n">__riscv_vredmaxu_vs_u32m1_u32m1</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">vl</span><span class="p">);</span>
+    <span class="c1">// Extract the maximum element (stored in the first element)</span>
+    <span class="kt">int</span> <span class="n">result</span> <span class="o">=</span> <span class="n">__riscv_vmv_x_s_u32m1_u32</span><span class="p">(</span><span class="n">maxvalue</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>First we check if no bit is set, in that case the result is trivially -1.
+Otherwise, we first initialize a vector with all zeroes. Then we compute the
+sequence vector [0, 1, 2, 3, …, vl-1] using the <code class="language-plaintext highlighter-rouge">vid</code> instruction. Note,
+though, that this is using the mask of which we want to compute its <code class="language-plaintext highlighter-rouge">vlast.m</code>.
+So the result is [0, 1, 2, 3, …, vl-1] but where the corresponding elements of
+<code class="language-plaintext highlighter-rouge">m</code> is not set (i.e., cleared, a zero) we say the element is <em>disabled by the
+mask</em> and instead we set it to the corresponding element of <code class="language-plaintext highlighter-rouge">sequence</code>. Due to
+the earlier initialization, this means the disabled elements are going to be
+zero.</p>
+
+<p>This behaviour is crucial for the next step, where we compute the maximum
+element of the whole vector. This is called a reduction operation because we
+reduce all the elements of the vector into a single value using some
+accumulator-like operation (e.g. an addition to get a sum or a multiplication
+to get a product).  In this case we compute the maximum value of the whole
+vector. The result of reductions is another vector where only the first element
+is set (this is called a <em>scalar vector</em> in RVV terminology) so there is a
+final extraction for the result.</p>
+
+<p>(If you wonder why <code class="language-plaintext highlighter-rouge">__riscv_vredmaxu_vs_u32m1_u32m1</code> receives an additional
+operand, the reason is because the second operand is a vector whose first
+element acts as the initial value of the accumulation. In this case it is very
+convenient as <code class="language-plaintext highlighter-rouge">sequence</code> will always have a zero in its first element (even if
+the mask disabled that element), which acts as the neutral value of the maximum
+in this case. This is useful when chaining consecutive reductions. As already
+mentioned, the result of a reduction is precisely a vector where the reduction
+result is stored in the first element.)</p>
+
+<p>This approach work because we have turned into zero all the elements in the
+vector [0, 1, 2, 3, …, vl-1] that were disabled by the mask.  set. So the
+maximum index corresponds to the last bit index.</p>
+
+<p>This approach relies on a feature of RVV called policies.</p>
+
+<h1>Policies in RVV</h1>
+
+<p>The RISC-V Vector Extension has several features that make it a bit unusual
+comparing to the existing SIMD extensions/subsets of more mainstream
+architectures.</p>
+
+<p>One of them is the
+<a href="https://docs.riscv.org/reference/isa/unpriv/v-st-ext.html#sec-agnostic">policies</a>.
+There are two different policy types: tail policy and mask policy. Both can be
+agnostic or undisturbed. So there are four possible combinations:</p>
+
+<ul>
+  <li>tail agnostic, mask agnostic</li>
+  <li>tail agnostic, mask undisturbed</li>
+  <li>tail undisturbed, mask agnostic</li>
+  <li>tail undisturbed, mask undisturbed</li>
+</ul>
+
+<p>The tail policy is applied to the elements that are past the vector length. The
+mask policy is applied to the elements that are disabled because of a masked
+instruction.</p>
+
+<h2>Vector length</h2>
+
+<p>Another feature of RVV is the vector length.</p>
+
+<p>Most SIMD ISAs assume that a vector instruction will compute values for all the
+elements of the vector. For most instructions this is fine. Memory accesses are
+problematic: imagine your vectors can hold 8 elements, but your program only
+operates 5 contiguous elements in memory. Storing 8 elements is unsafe, so we
+need a way to limit the number of elements stored.</p>
+
+<p>Most ISAs solve this using masks. Masks are very general and sometimes
+impractical. If we want to load only 5 elements we will need a mask [0, 0, 0,
+1, 1, 1, 1, 1] and so a way to create this mask easily. Often ISAs provide
+specialised instructions for this case.</p>
+
+<p>RVV solves this common case using a vector length. Without entering in too many
+details, before using vector instructions a vector configuration must be set.
+Among a number of things to set (including the tail and mask policy) there is a
+vector length value. In our example where vectors can hold 8 elements, we can
+set the vector length to 5 and all loads and stores will just operate with the
+first 5 elements. But not just memory accesses, any instruction will do that.</p>
+
+<p>Now the question we need to address is what is the value of the elements in the
+result that are past the vector length? In our example, what about the last 3
+elements of the vector that are not operated because we are operating just 5?</p>
+
+<p>This is where the tail policy enters into play. If the tail policy is
+undisturbed, the vector register used for the result will have those elements
+left untouched (undisturbed).</p>
+
+<p>If the tail policy is agnostic, two implementations are possible: a behaviour
+like undisturbed is allowed or, alternatively, the bits of the elements of the
+tail get set to 1. This is so to discourage the use of those elements (because
+it could be semantically incorrect).</p>
+
+<h2>Masked execution</h2>
+
+<p>A same observation is possible when using masks. Elements disabled by the mask
+can be left untouched, this is mask undisturbed, or optionally
+set all their bits to 1, this is mask agnostic.</p>
+
+<p>Needless to say, that the mask policy is only relevant for masked instructions.</p>
+
+<h2>But why?</h2>
+
+<p>The reason is a bit complicated and is due to how RVV evolved. The first
+realistic version of RVV 0.7.1 (which was infamously implemented in commercial
+hardware) did not have policies. Well, it did, but they were kind of hardcoded
+and never given a name. We can call them <em>tail zeroing</em>, mask undisturbed.</p>
+
+<p>In the current ratified RVV 1.0, tail agnostic may set all bits to 1 in the
+tail. Imagine that instead, we mandated (i.e., not optional) to set all the
+bits to 0. This was never given a name but that would be <em>tail-zeroing</em>. This
+was what RVV 0.7.1 did.</p>
+
+<p>When RVV 0.8 was proposed, the policy was changed to be hardcoded to tail
+undisturbed, mask undisturbed (so, again, there was no policy as such). But
+this comes with drawbacks: an undisturbed policy forces us to say what are
+going to be the values in the result for elements past the vector length or
+that are disabled by the mask. And we often do not care about
+those. So an undisturbed policy means that our instructions have an extra
+operand which represents the values that are undisturbed. For some hardware
+implementations, in particular those using <em>register renaming</em>, this implies
+doing an extra copy of the destination register.</p>
+
+<p>When RVV 0.9 was proposed, the policies as presented earlier were introduced.
+This meant that everything got multiplied by 4 in the ISA in exchange of
+flexibility. Software should prioritize agnostic policies where possible and
+hardware can opt-in to benefit from the agnostic policy. For instance,
+implementations that use <em>register renaming</em> can avoid copying the destination
+and if they remember the vector length of the operation, the rest of
+the bits are presented to the software as if they were 1s.</p>
+
+<p>Most implementations definitely implement mask agnostic as mask undisturbed
+(but this should only be relevant for masked instructions). Some
+implementations have chosen to implement a proper tail agnostic policy.</p>
+
+<p>One downside of the current policy mechanism is that at least one combination
+(tail undisturbed, mask agnostic) is of very little use to the software.
+Hardware implementors need to validate it though (even if it means mask
+undisturbed).</p>
+
+<p>As already stated above, ideally, software should use agnostic policies when
+possible, but masked code will likely always use mask undisturbed because of
+its merge semantics.</p>
+
+<h2>Merge semantics</h2>
+
+<p>One interesting effect of mask undisturbed is that allows us to <em>fold</em> a merge
+operation. RVV has a <code class="language-plaintext highlighter-rouge">vmerge.vvm</code> instruction:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vmerge.vvm vd, vs2, vs1, v0  # vd[i] = v0.mask[i] ? vs1[i] : vs2[i]
+</code></pre></div></div>
+
+<p>Earlier we saw we computed 0, 1, 2, 3, …, vl-1 but setting zeroes where the
+element is disabled by the mask. We could do this in two steps.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                      # 0 ≤ i &lt; vl
+vid.v v1              # Sets v1[i] ← i
+vmv.v.i v2, 0         # Sets v2[i] ← 0
+vmerge v3, v2, v1, v0 # The mask is always in v0
+                      # if v0.mask[i] = 0 then v3[i] ← v2[i] else v3[i] ← v1[i]
+</code></pre></div></div>
+
+<p>but using a mask undisturbed policy, we can just use a masked instruction</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Something here sets the mask policy to undisturbed.
+               # 0 ≤ i &lt; vl
+vmv.v.i v3, 0  # Sets v3[i] ← 0
+vid.v v3, v0.t # if v0.mask[i] = 1 then v3[i] ← i else v3[i] ← v3[i]
+</code></pre></div></div>
+
+<p>(If you wonder why <code class="language-plaintext highlighter-rouge">v0.t</code> in this case, it is because the ISA reserves the
+possibility that in the future <code class="language-plaintext highlighter-rouge">v0.f</code> can be used as the mask operand. For
+<code class="language-plaintext highlighter-rouge">v0.f</code> the condition to update the result would be <code class="language-plaintext highlighter-rouge">v0[i] = 0</code>)</p>
+
+<h3>An extra operand, conceptually</h3>
+
+<p>Even if the hardware does not have to update the destination, now the result we
+want to have as part of the undisturbed policy is an operand of the
+instruction. And this is the reason why our intrinsic <code class="language-plaintext highlighter-rouge">__riscv_vid_v_u32m1_mu</code>
+(<code class="language-plaintext highlighter-rouge">mu</code> for mask undisturbed) needs an additional operand.</p>
+
+  </div>
+
+</article>
+
+<div class="pagination">
+
+  <a class="previous" href="/2026/05/30/compute-vlast-part-2/">&laquo; The last bit – Part 2</a>
+
+
+</div>
+
+
+
+      </div>
+    </main>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <p>
+      
+
+Powered by <a href="https://jekyllrb.com">Jekyll</a>. Theme based on <a href="https://github.com/yous/whiteglass">whiteglass</a>
+<br>
+Subscribe via <a href="https://thinkingeek.com/feed.xml">RSS</a>
+
+    </p>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

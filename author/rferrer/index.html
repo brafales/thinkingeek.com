@@ -69,6 +69,23 @@
   <div class="post-content">
     <ul class="post-list"><li>
       <header class="post-header">
+        <h1 class="post-title"><a class="post-link" href="/2026/06/06/compute-vlast-part-3/">The last bit – Part 3</a></h1>
+
+        <p class="post-meta">
+          Jun 6, 2026• <span itemprop="author" itemscope="" itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/riscv/">riscv</a>, <a href="/categories/vectors/">vectors</a>, <a href="/categories/rvv/">rvv</a>, <a href="/categories/intrinsics/">intrinsics</a></p>
+      </header>
+
+      <div class="post-content">
+        <p>In the last two instalments of this series, we saw a few alternatives to
+compute the last bit of a mask. Turns out there is still a new one, but it
+relies on a policy of RVV. Let’s see this approach and use it to talk about why
+RVV has policies.</p>
+
+
+      </div><p class="post-continue">
+          <a href="/2026/06/06/compute-vlast-part-3/">Read on &rarr;</a>
+        </p></li><li>
+      <header class="post-header">
         <h1 class="post-title"><a class="post-link" href="/2026/05/30/compute-vlast-part-2/">The last bit – Part 2</a></h1>
 
         <p class="post-meta">
@@ -76,7 +93,8 @@
       </header>
 
       <div class="post-content">
-        <p>In the previous part we ended with a nifty way of computing the last bit of
+        <p>In the <a href="/2026/05/28/compute-vlast-part-1/">previous part</a>
+we ended with a nifty way of computing the last bit of
 a mask using the prefix sum. The key of the approch is based on the fact that
 the last element of the prefix sum of a mask is either the population count
 or population count minus one.</p>

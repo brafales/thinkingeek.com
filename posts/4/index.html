@@ -64,6 +64,23 @@
 
   <ul class="post-list"><li>
         <header class="post-header">
+          <h1 class="post-title"><a class="post-link" href="/2021/08/15/raspberry-vectors-part-8/">Fun with vectors in the Raspberry Pi 1 - Part 8</a></h1>
+
+          <p class="post-meta">
+            Aug 15, 2021 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
+        </header>
+
+        <div class="post-content">
+          <p>In the last installment I mentioned we could start looking at enabling
+the vectoriser in the compiler. However when I did that I realised some
+benchmarks were giving weird results. I had made a mistake with copies,
+so let’s remediate this.</p>
+
+
+        </div><p class="post-continue">
+            <a href="/2021/08/15/raspberry-vectors-part-8/">Read on &rarr;</a>
+          </p></li><li>
+        <header class="post-header">
           <h1 class="post-title"><a class="post-link" href="/2021/07/31/raspberry-vectors-part-7/">Fun with vectors in the Raspberry Pi 1 - Part 7</a></h1>
 
           <p class="post-meta">
@@ -125,24 +142,6 @@ so we can start emitting code.</p>
 
         </div><p class="post-continue">
             <a href="/2021/06/27/raspberry-vectors-part-4/">Read on &rarr;</a>
-          </p></li><li>
-        <header class="post-header">
-          <h1 class="post-title"><a class="post-link" href="/2021/06/26/raspberry-vectors-part-3/">Fun with vectors in the Raspberry Pi 1 - Part 3</a></h1>
-
-          <p class="post-meta">
-            Jun 26, 2021 • <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Roger Ferrer Ibáñez</span></span> • <a href="/categories/vectors/">vectors</a>, <a href="/categories/raspberry-pi-1/">raspberry pi 1</a>, <a href="/categories/llvm/">llvm</a>, <a href="/categories/compilers/">compilers</a>, <a href="/categories/arm/">arm</a></p>
-        </header>
-
-        <div class="post-content">
-          <p>In the last chapter we modelled the storage in form of pairs and quadruples of
-registers that we will use for vectors of double and single precision,
-respectively.</p>
-
-<p>But before we can do anything we need to deal with <code class="language-plaintext highlighter-rouge">fpscr</code>.</p>
-
-
-        </div><p class="post-continue">
-            <a href="/2021/06/26/raspberry-vectors-part-3/">Read on &rarr;</a>
           </p></li></ul>
   <div class="pagination">
     
