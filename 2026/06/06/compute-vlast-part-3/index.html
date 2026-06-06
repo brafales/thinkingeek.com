@@ -289,7 +289,7 @@ its merge semantics.</p>
 <p>One interesting effect of mask undisturbed is that allows us to <em>fold</em> a merge
 operation. RVV has a <code class="language-plaintext highlighter-rouge">vmerge.vvm</code> instruction:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vmerge.vvm vd, vs2, vs1, v0  # vd[i] = v0.mask[i] ? vs1[i] : vs2[i]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← v0.mask[i] ? vs1[i] : vs2[i]
 </code></pre></div></div>
 
 <p>Earlier we saw we computed 0, 1, 2, 3, …, vl-1 but setting zeroes where the
