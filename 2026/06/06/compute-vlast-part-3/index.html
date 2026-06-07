@@ -102,7 +102,7 @@ element that is set (enabled) in the mask.</p>
 <p>Due to my day job, I discovered that LLVM has an intrinsic function called
 <code class="language-plaintext highlighter-rouge">llvm.experimental.vector.extract.last.active</code>. This intrinsic receives a
 vector of values and a mask (a mask, in LLVM parlance, is a vector of <code class="language-plaintext highlighter-rouge">i1</code>,
-where <code class="language-plaintext highlighter-rouge">i1</code> stands for integer of 1 bit).  This function is extracts the element
+where <code class="language-plaintext highlighter-rouge">i1</code> stands for integer of 1 bit).  This function extracts the element
 from the vector of values that corresponds to the highest numbered element that
 is active in the mask. That highest numbered element is exactly the last bit we
 want to compute! So I wondered how it does that. Turns out it uses yet another
