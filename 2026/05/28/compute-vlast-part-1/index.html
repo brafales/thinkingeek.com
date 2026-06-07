@@ -137,7 +137,7 @@ case is an all-zero mask, in this case the instruction returns -1 instead of 8.<
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
        |                  |
        | 7 6 5 4 3 2 1 0  | vfirst.m
-----------+---------------+-----------
+-------+------------------+-----------
  mask  | 0 0 0 0 0 0 0 0  | -1
        | 0 0 0 0 0 0 0 1  |  0
        | 0 0 0 0 0 0 1 0  |  1
@@ -157,7 +157,7 @@ name <code class="language-plaintext highlighter-rouge">vlast.m</code>.</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
        |                  |
        | 7 6 5 4 3 2 1 0  | vlast.m
-----------+---------------+-----------
+-------+------------------+-----------
  mask  | 0 0 0 0 0 0 0 0  | -1
        | 0 0 0 0 0 0 0 1  |  0
        | 0 0 0 0 0 0 1 0  |  1
@@ -356,7 +356,7 @@ element of the current element.</p>
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>       | element number   |
        |                  |
        | 7 6 5 4 3 2 1 0  | viota.m         | vpopc.m
-----------+---------------+-----------------+----------
+-------+------------------+-----------------+----------
  mask  | 0 0 0 0 0 0 0 0  | 0 0 0 0 0 0 0 0 | 0
        | 0 0 0 0 0 0 0 1  | 1 1 1 1 1 1 1 0 | 1
        | 0 0 0 0 0 0 1 0  | 1 1 1 1 1 1 0 0 | 1
