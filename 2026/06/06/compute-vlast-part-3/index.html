@@ -289,15 +289,16 @@ its merge semantics.</p>
 <p>One interesting effect of mask undisturbed is that allows us to <em>fold</em> a merge
 operation. RVV has a <code class="language-plaintext highlighter-rouge">vmerge.vvm</code> instruction:</p>
 
-<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← v0.mask[i] ? vs1[i] : vs2[i]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                             # 0 ≤ i &lt; vl
+vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← v0.mask[i] ? vs1[i] : vs2[i]
 </code></pre></div></div>
 
 <p>Earlier we saw we computed 0, 1, 2, 3, …, vl-1 but setting zeroes where the
 element is disabled by the mask. We could do this in two steps.</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                      # 0 ≤ i &lt; vl
-vid.v v1              # Sets v1[i] ← i
-vmv.v.i v2, 0         # Sets v2[i] ← 0
+vid.v v1              # v1[i] ← i
+vmv.v.i v2, 0         # v2[i] ← 0
 vmerge v3, v2, v1, v0 # The mask is always in v0
                       # if v0.mask[i] = 0 then v3[i] ← v2[i] else v3[i] ← v1[i]
 </code></pre></div></div>
@@ -306,7 +307,7 @@ vmerge v3, v2, v1, v0 # The mask is always in v0
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># Something here sets the mask policy to undisturbed.
                # 0 ≤ i &lt; vl
-vmv.v.i v3, 0  # Sets v3[i] ← 0
+vmv.v.i v3, 0  # v3[i] ← 0
 vid.v v3, v0.t # if v0.mask[i] = 1 then v3[i] ← i else v3[i] ← v3[i]
 </code></pre></div></div>
 
