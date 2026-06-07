@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-07T08:09:47+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the first instalment of this series, we saw a few alternatives to compute
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-07T08:14:05+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the first instalment of this series, we saw a few alternatives to compute
 the last bit of a mask. Turns out there is yet another way to do compute it,
 but it relies on a policy of RVV. Let’s see this approach and use it to talk
 about why RVV has policies.</p>
@@ -241,7 +241,7 @@ vid.v v3, v0.t # if v0.mask[i] = 1 then v3[i] ← i else v3[i] ← v3[i]
 
 <p>(If you wonder why <code class="language-plaintext highlighter-rouge">v0.t</code> in this case, it is because the ISA reserves the
 possibility that in the future <code class="language-plaintext highlighter-rouge">v0.f</code> can be used as the mask operand. For
-<code class="language-plaintext highlighter-rouge">v0.f</code> the condition to update the result would be <code class="language-plaintext highlighter-rouge">v0[i] = 0</code>)</p>
+<code class="language-plaintext highlighter-rouge">v0.f</code> the condition to update the result would be <code class="language-plaintext highlighter-rouge">v0.mask[i] = 0</code>)</p>
 
 <h3>An extra operand, conceptually</h3>
 

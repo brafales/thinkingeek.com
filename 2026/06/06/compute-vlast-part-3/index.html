@@ -313,7 +313,7 @@ vid.v v3, v0.t # if v0.mask[i] = 1 then v3[i] ← i else v3[i] ← v3[i]
 
 <p>(If you wonder why <code class="language-plaintext highlighter-rouge">v0.t</code> in this case, it is because the ISA reserves the
 possibility that in the future <code class="language-plaintext highlighter-rouge">v0.f</code> can be used as the mask operand. For
-<code class="language-plaintext highlighter-rouge">v0.f</code> the condition to update the result would be <code class="language-plaintext highlighter-rouge">v0[i] = 0</code>)</p>
+<code class="language-plaintext highlighter-rouge">v0.f</code> the condition to update the result would be <code class="language-plaintext highlighter-rouge">v0.mask[i] = 0</code>)</p>
 
 <h3>An extra operand, conceptually</h3>
 
