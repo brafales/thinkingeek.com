@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-07T08:51:34+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the first instalment of this series, we saw a few alternatives to compute
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-07T08:57:55+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the first instalment of this series, we saw a few alternatives to compute
 the last bit of a mask. Turns out there is yet another way to do compute it,
 but it relies on a policy of RVV. Let’s see this approach and use it to talk
 about why RVV has policies.</p>
@@ -219,7 +219,7 @@ its merge semantics.</p>
 operation. RVV has a <code class="language-plaintext highlighter-rouge">vmerge.vvm</code> instruction:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                             # 0 ≤ i &lt; vl
-vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← v0.mask[i] ? vs1[i] : vs2[i]
+vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← (v0.mask[i] = 1) ? vs1[i] : vs2[i]
 </code></pre></div></div>
 
 <p>Earlier we saw we computed 0, 1, 2, 3, …, vl-1 but setting zeroes where the
@@ -229,7 +229,7 @@ element is disabled by the mask. We could do this in two steps.</p>
 vid.v v1              # v1[i] ← i
 vmv.v.i v2, 0         # v2[i] ← 0
 vmerge v3, v2, v1, v0 # The mask is always in v0
-                      # if v0.mask[i] = 0 then v3[i] ← v2[i] else v3[i] ← v1[i]
+                      # if v0.mask[i] = 1 then v3[i] ← v1[i] else v3[i] ← v2[i]
 </code></pre></div></div>
 
 <p>but using a mask undisturbed policy, we can just use a masked instruction</p>

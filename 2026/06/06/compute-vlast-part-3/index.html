@@ -291,7 +291,7 @@ its merge semantics.</p>
 operation. RVV has a <code class="language-plaintext highlighter-rouge">vmerge.vvm</code> instruction:</p>
 
 <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>                             # 0 ≤ i &lt; vl
-vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← v0.mask[i] ? vs1[i] : vs2[i]
+vmerge.vvm vd, vs2, vs1, v0  # vd[i] ← (v0.mask[i] = 1) ? vs1[i] : vs2[i]
 </code></pre></div></div>
 
 <p>Earlier we saw we computed 0, 1, 2, 3, …, vl-1 but setting zeroes where the
@@ -301,7 +301,7 @@ element is disabled by the mask. We could do this in two steps.</p>
 vid.v v1              # v1[i] ← i
 vmv.v.i v2, 0         # v2[i] ← 0
 vmerge v3, v2, v1, v0 # The mask is always in v0
-                      # if v0.mask[i] = 0 then v3[i] ← v2[i] else v3[i] ← v1[i]
+                      # if v0.mask[i] = 1 then v3[i] ← v1[i] else v3[i] ← v2[i]
 </code></pre></div></div>
 
 <p>but using a mask undisturbed policy, we can just use a masked instruction</p>
