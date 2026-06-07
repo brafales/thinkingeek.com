@@ -205,13 +205,14 @@ instruction.</p>
 <p>Most SIMD ISAs assume that a vector instruction will compute values for all the
 elements of the vector. For most instructions this is fine. Memory accesses are
 problematic: imagine your vectors can hold 8 elements, but your program only
-operates 5 contiguous elements in memory. Storing 8 elements is unsafe, so we
-need a way to limit the number of elements stored.</p>
+operates 5 contiguous elements in memory. In thi case, storing (and sometimes
+even loading) 8 elements is unsafe, so we need a way to limit the number of
+elements stored (loaded).</p>
 
-<p>Most ISAs solve this using masks. Masks are very general and sometimes
-impractical. If we want to load only 5 elements we will need a mask [0, 0, 0,
-1, 1, 1, 1, 1] and so a way to create this mask easily. Often ISAs provide
-specialised instructions for this case.</p>
+<p>Commonly, SIMD ISAs solve this using masks. Masks are very general and
+sometimes impractical. If we want to load and store only 5 elements we will
+need a mask [0, 0, 0, 1, 1, 1, 1, 1] and so a way to create this mask easily.
+Often, ISAs provide specialised instructions to compute these specific masks.</p>
 
 <p>RVV solves this common case using a vector length. Without entering in too many
 details, before using vector instructions a vector configuration must be set.

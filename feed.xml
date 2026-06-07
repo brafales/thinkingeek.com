@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-07T08:33:25+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the first instalment of this series, we saw a few alternatives to compute
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.4">Jekyll</generator><link href="https://thinkingeek.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://thinkingeek.com/" rel="alternate" type="text/html" /><updated>2026-06-07T08:51:34+00:00</updated><id>https://thinkingeek.com/feed.xml</id><title type="html">Think In Geek</title><subtitle>In geek we trust</subtitle><entry><title type="html">The last bit – Part 3</title><link href="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/" rel="alternate" type="text/html" title="The last bit – Part 3" /><published>2026-06-06T00:00:00+00:00</published><updated>2026-06-06T00:00:00+00:00</updated><id>https://thinkingeek.com/2026/06/06/compute-vlast-part-3</id><content type="html" xml:base="https://thinkingeek.com/2026/06/06/compute-vlast-part-3/"><![CDATA[<p>In the first instalment of this series, we saw a few alternatives to compute
 the last bit of a mask. Turns out there is yet another way to do compute it,
 but it relies on a policy of RVV. Let’s see this approach and use it to talk
 about why RVV has policies.</p>
@@ -133,13 +133,14 @@ instruction.</p>
 <p>Most SIMD ISAs assume that a vector instruction will compute values for all the
 elements of the vector. For most instructions this is fine. Memory accesses are
 problematic: imagine your vectors can hold 8 elements, but your program only
-operates 5 contiguous elements in memory. Storing 8 elements is unsafe, so we
-need a way to limit the number of elements stored.</p>
+operates 5 contiguous elements in memory. In thi case, storing (and sometimes
+even loading) 8 elements is unsafe, so we need a way to limit the number of
+elements stored (loaded).</p>
 
-<p>Most ISAs solve this using masks. Masks are very general and sometimes
-impractical. If we want to load only 5 elements we will need a mask [0, 0, 0,
-1, 1, 1, 1, 1] and so a way to create this mask easily. Often ISAs provide
-specialised instructions for this case.</p>
+<p>Commonly, SIMD ISAs solve this using masks. Masks are very general and
+sometimes impractical. If we want to load and store only 5 elements we will
+need a mask [0, 0, 0, 1, 1, 1, 1, 1] and so a way to create this mask easily.
+Often, ISAs provide specialised instructions to compute these specific masks.</p>
 
 <p>RVV solves this common case using a vector length. Without entering in too many
 details, before using vector instructions a vector configuration must be set.
